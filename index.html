@@ -349,6 +349,24 @@
   @keyframes sheetup{ from{ transform:translateY(16px); opacity:0.6; } to{ transform:translateY(0); opacity:1; } }
   .sheet-handle{ width:36px; height:4px; background:var(--surface-3); border-radius:99px; margin:0 auto 12px; }
   .sheet-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+
+  /* side drawer */
+  .drawer-overlay{ position:fixed; inset:0; background:rgba(10,14,12,0.5); z-index:45; display:flex; align-items:stretch; justify-content:flex-start; }
+  .drawer{
+    width:84%; max-width:320px; height:100%; background:var(--surface);
+    box-shadow:4px 0 28px rgba(0,0,0,0.28); overflow-y:auto; -webkit-overflow-scrolling:touch;
+    padding:calc(16px + env(safe-area-inset-top,0px)) 14px calc(20px + env(safe-area-inset-bottom,0px));
+    animation: drawerin 0.2s ease-out; display:flex; flex-direction:column;
+  }
+  @keyframes drawerin{ from{ transform:translateX(-100%); } to{ transform:translateX(0); } }
+  .drawer-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:0 6px; }
+  .drawer-head h2{ font-size:17px; flex:1; }
+  .drawer-close{ width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .drawer-sub{ font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:14px 8px 4px; }
+  .drawer-row{ display:flex; align-items:center; gap:12px; padding:12px 8px; border-radius:12px; cursor:pointer; border:none; background:none; width:100%; text-align:left; color:var(--text); font-size:14.5px; font-weight:600; }
+  .drawer-row:active{ background:var(--surface-2); }
+  .drawer-row .ico{ width:34px; height:34px; border-radius:10px; background:var(--surface-2); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .drawer-row .cnt{ margin-left:auto; font-size:12px; font-weight:600; color:var(--text-muted); }
   .sheet-head h2{ font-size:17px; flex:1; }
   .field{ margin-bottom:12px; }
   .field label{ display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:5px; }
@@ -569,6 +587,9 @@
 <div class="app" id="app">
   <div class="app-watermark" aria-hidden="true"></div>
   <div class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Menu" style="display:none;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+    </button>
     <div class="brandmark" aria-hidden="true"></div>
     <div class="shopmeta">
       <div class="shopname" id="shopNameEl">Pesa</div>
@@ -1740,7 +1761,14 @@ var ICONS = {
   bolt: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"></path></svg>',
   camera: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"></path><circle cx="12" cy="13" r="4"></circle></svg>',
   fileup: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M12 18v-6"></path><path d="m9.5 14.5 2.5-2.5 2.5 2.5"></path></svg>',
-  stack: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"></path><path d="m3 12 9 5 9-5"></path><path d="m3 17 9 5 9-5"></path></svg>'
+  stack: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"></path><path d="m3 12 9 5 9-5"></path><path d="m3 17 9 5 9-5"></path></svg>',
+  truck: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h13v13H1z"></path><path d="M14 8h4l4 4v4h-8V8Z"></path><circle cx="6" cy="18.5" r="1.8"></circle><circle cx="17.5" cy="18.5" r="1.8"></circle></svg>',
+  clipboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"></path><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path><path d="M8 11h8M8 15h8"></path></svg>',
+  branch: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.5"></circle><circle cx="6" cy="19" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><path d="M6 7.5v9"></path><path d="M6 12c0 3 3 3 10 0"></path></svg>',
+  percent: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19"></path><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>',
+  trash: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>',
+  clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>',
+  chartbar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M10 20V4M17 20v-7"></path></svg>'
 };
 
 /* ============================== small chart helpers ============================== */
@@ -3524,6 +3552,60 @@ function accountSectionHtml(){
     '</div>';
 }
 
+/* ============================== DASHBOARD SIDE DRAWER ============================== */
+function openDashboardDrawer(){
+  var root = document.getElementById('modalRoot');
+  var overlay = document.createElement('div');
+  overlay.className = 'drawer-overlay';
+  var rows = '';
+  rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
+  if(isManagerOrOwner()){
+    rows += '<div class="drawer-sub">Operations</div>';
+    rows += drawerRowHtml('suppliers', ICONS.truck, 'Suppliers', State.suppliers.length);
+    rows += drawerRowHtml('pos', ICONS.clipboard, 'Purchase orders', State.purchaseOrders.length);
+    rows += drawerRowHtml('wastage', ICONS.trash, 'Wastage & shrinkage');
+    if(isOwner()) rows += drawerRowHtml('branches', ICONS.branch, 'Branches', State.branches.length+1);
+    rows += drawerRowHtml('vat', ICONS.percent, 'NamRA VAT summary');
+    rows += drawerRowHtml('audit', ICONS.clock, 'Activity log');
+  }
+  overlay.innerHTML = '<div class="drawer">' +
+    '<div class="drawer-head"><h2>Menu</h2><button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
+    '</button></div>' +
+    rows +
+  '</div>';
+  root.innerHTML = '';
+  root.appendChild(overlay);
+  function closeDrawer(){ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) closeDrawer(); });
+  overlay.querySelector('#drawerCloseBtn').addEventListener('click', closeDrawer);
+  overlay.querySelectorAll('[data-drawer-row]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var key = el.getAttribute('data-drawer-row');
+      closeDrawer();
+      if(key==='insights'){
+        _insightsOpen = true;
+        render();
+        setTimeout(function(){
+          var t = document.getElementById('insightsToggle');
+          if(t) t.scrollIntoView({behavior:'smooth', block:'start'});
+        }, 60);
+      } else if(key==='suppliers') openSuppliersSheet();
+      else if(key==='pos') openPurchaseOrdersSheet();
+      else if(key==='wastage') openWastageSheet();
+      else if(key==='branches') openBranchesSheet();
+      else if(key==='vat') openVatSummarySheet();
+      else if(key==='audit') openAuditLogSheet();
+    });
+  });
+}
+function drawerRowHtml(key, icon, label, count){
+  return '<button class="drawer-row" type="button" data-drawer-row="'+key+'">' +
+    '<span class="ico">'+icon+'</span><span>'+esc(label)+'</span>' +
+    (count!=null ? '<span class="cnt">'+count+'</span>' : '') +
+  '</button>';
+}
+
 function openCashierSettingsSheet(){
   var s = State.settings;
   var html = '<div class="sheet-head"><h2>'+tr('Settings')+'</h2></div>' +
@@ -3557,17 +3639,6 @@ function openSettingsSheet(){
       '<button class="btn btn-ghost" id="openTeamBtn" type="button">'+tr('Team')+' ('+State.users.length+')</button>' +
     '</div>' +
 
-    (isManagerOrOwner() ? (
-    '<div class="section-title">Operations</div>' +
-    '<div class="actions">' +
-      '<button class="btn btn-ghost" id="openSuppliersBtn" type="button">Suppliers ('+State.suppliers.length+')</button>' +
-      '<button class="btn btn-ghost" id="openPOsBtn" type="button">Purchase orders ('+State.purchaseOrders.length+')</button>' +
-      '<button class="btn btn-ghost" id="openWastageBtn" type="button">Wastage &amp; shrinkage</button>' +
-      (isOwner() ? '<button class="btn btn-ghost" id="openBranchesBtn" type="button">Branches ('+(State.branches.length+1)+')</button>' : '') +
-      '<button class="btn btn-ghost" id="openVatBtn" type="button">NamRA VAT summary</button>' +
-      '<button class="btn btn-ghost" id="openAuditBtn" type="button">Activity log</button>' +
-    '</div>'
-    ) : '') +
     (isOwner() && State.branches.length>0 ? (
       '<div class="field"><label>Viewing branch</label><select id="stBranchSelect">' +
         '<option value="all" '+((State.settings.currentBranchId||'all')==='all'?'selected':'')+'>All branches (combined)</option>' +
@@ -3727,12 +3798,6 @@ function openSettingsSheet(){
   ov.querySelector('#acctLogoutBtn').addEventListener('click', logout);
   ov.querySelector('#openCompanyBtn').addEventListener('click', function(){ closeModal(); openCompanyDetailsSheet(); });
   ov.querySelector('#openTeamBtn').addEventListener('click', function(){ closeModal(); openTeamSheet(); });
-  var supBtn = ov.querySelector('#openSuppliersBtn'); if(supBtn) supBtn.addEventListener('click', function(){ closeModal(); openSuppliersSheet(); });
-  var poBtn = ov.querySelector('#openPOsBtn'); if(poBtn) poBtn.addEventListener('click', function(){ closeModal(); openPurchaseOrdersSheet(); });
-  var wasteBtn = ov.querySelector('#openWastageBtn'); if(wasteBtn) wasteBtn.addEventListener('click', function(){ closeModal(); openWastageSheet(); });
-  var brBtn = ov.querySelector('#openBranchesBtn'); if(brBtn) brBtn.addEventListener('click', function(){ closeModal(); openBranchesSheet(); });
-  var vatBtn = ov.querySelector('#openVatBtn'); if(vatBtn) vatBtn.addEventListener('click', function(){ closeModal(); openVatSummarySheet(); });
-  var auditBtn = ov.querySelector('#openAuditBtn'); if(auditBtn) auditBtn.addEventListener('click', function(){ closeModal(); openAuditLogSheet(); });
   var branchSelect = ov.querySelector('#stBranchSelect'); if(branchSelect) branchSelect.addEventListener('change', function(){ setActiveBranch(branchSelect.value); });
   ov.querySelector('#stExportBtn').addEventListener('click', exportData);
   ov.querySelector('#stImportBtn').addEventListener('click', function(){
@@ -4197,6 +4262,8 @@ function updateHeader(){
 
 function render(){
   updateHeader();
+  var menuBtn = document.getElementById('menuBtn');
+  if(menuBtn) menuBtn.style.display = (State.tab === 'dashboard') ? 'flex' : 'none';
   applyStaticTranslations();
   document.documentElement.setAttribute('lang', currentLangCode()==='en' ? 'en' : currentLangCode());
   var content = document.getElementById('content');
@@ -5084,6 +5151,7 @@ document.getElementById('bottomnav').addEventListener('click', function(e){
 });
 document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
 document.getElementById('aiChatBtn').addEventListener('click', openAIChatSheet);
+document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer);
 
 // Show a loading state behind the auth gate until we know whether a company
 // is already registered and who (if anyone) is already logged in.
