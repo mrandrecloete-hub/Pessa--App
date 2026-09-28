@@ -34,6 +34,11 @@
     --success-bg:#E7F3EA;
     --border:#DDE3DC;
     --shadow: 0 1px 2px rgba(20,30,25,0.06), 0 6px 16px -8px rgba(20,30,25,0.18);
+    /* The in-app background watermark logo. Defaults to the Pesa mark and is
+       overridden at runtime (see applyBrandLogo()) with the shop's own
+       uploaded logo once one is set, so the watermark — unlike the splash
+       screen — always reflects whichever business is using the app. */
+    --brand-logo-img: var(--logo-img);
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark){
@@ -104,14 +109,37 @@
        can render partly or fully below the visible fold on phones. */
     transform:translateZ(0);
   }
+  /* Large, soft, "glassy" background watermark of the shop's logo (or the
+     default Pesa mark), sitting behind the topbar/content/bottomnav inside
+     the app shell — see the #app-watermark note near <div class="app"> for
+     why one shared element here covers every tab and sheet instead of each
+     screen drawing its own. Kept faint and blurred so it never fights with
+     text or buttons, and pointer-events:none keeps it from ever blocking a
+     tap even though it already sits behind everything in paint order. */
   .app-watermark{
-    position:absolute; z-index:-1; pointer-events:none;
-    right:-70px; bottom:64px; width:300px; height:291px;
-    background-image:var(--logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
-    opacity:0.05; transform:rotate(-6deg);
+    position:absolute; inset:0; z-index:-1; pointer-events:none;
+    overflow:hidden;
   }
-  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app-watermark{ opacity:0.08; } }
-  :root[data-theme="dark"] .app-watermark{ opacity:0.08; }
+  .app-watermark::before{
+    content:""; position:absolute; left:50%; top:44%; width:380px; height:369px;
+    margin-left:-190px; margin-top:-184.5px;
+    background-image:var(--brand-logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
+    opacity:0.055; filter:blur(0.6px); transform:rotate(-5deg);
+    transition:opacity 0.3s ease;
+  }
+  /* A very soft light sheen over the mark for the "glass" feel — subtle in
+     both themes, never enough to read as a shape of its own. */
+  .app-watermark::after{
+    content:""; position:absolute; inset:-25%;
+    background:radial-gradient(circle at 50% 38%, rgba(255,255,255,0.5), rgba(255,255,255,0) 62%);
+    opacity:0.4; mix-blend-mode:soft-light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) .app-watermark::before{ opacity:0.1; }
+    :root:not([data-theme="light"]) .app-watermark::after{ opacity:0.12; mix-blend-mode:overlay; }
+  }
+  :root[data-theme="dark"] .app-watermark::before{ opacity:0.1; }
+  :root[data-theme="dark"] .app-watermark::after{ opacity:0.12; mix-blend-mode:overlay; }
   .brandmark{
     width:30px; height:30px; flex-shrink:0;
     background-image:var(--logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
@@ -338,7 +366,7 @@
   .cartbar-inner .tot{ font-size:15px; font-weight:700; }
 
   /* sheet / modal */
-  .overlay{ position:fixed; inset:0; background:rgba(10,14,12,0.5); z-index:40; display:flex; align-items:flex-end; justify-content:center; }
+  .overlay{ position:fixed; inset:0; background:rgba(10,14,12,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); z-index:40; display:flex; align-items:flex-end; justify-content:center; }
   .overlay.center{ align-items:center; padding:20px; }
   .sheet{
     width:100%; max-width:480px; background:var(--surface); border-radius:20px 20px 0 0;
@@ -455,7 +483,7 @@
       display:grid; grid-template-columns:104px 1fr; grid-template-rows:auto 1fr;
       grid-template-areas:"nav topbar" "nav content";
     }
-    .app-watermark{ right:40px; bottom:40px; }
+    .app-watermark::before{ width:480px; height:466px; margin-left:-240px; margin-top:-233px; }
     .topbar{ grid-area:topbar; }
     .content{ grid-area:content; padding:22px 28px 40px; max-width:1040px; width:100%; margin:0 auto; overflow-y:auto; height:100%; }
     .bottomnav{
@@ -585,6 +613,10 @@
 <div class="authscreen" id="authScreen"></div>
 
 <div class="app" id="app">
+  <!-- One shared watermark element for the whole app shell (behind topbar,
+       content and bottomnav, and behind every sheet/modal too since they all
+       render inside #app) rather than one per tab — applyBrandLogo() keeps
+       its logo (shop's own upload, or the default Pesa mark) in sync. -->
   <div class="app-watermark" aria-hidden="true"></div>
   <div class="topbar">
     <button class="icon-btn" id="menuBtn" aria-label="Menu" style="display:none;">
@@ -4252,7 +4284,20 @@ function applyStaticTranslations(){
   });
 }
 
+/** Keeps the in-app background watermark (--brand-logo-img) showing the
+ * shop's own uploaded logo once the owner has set one in Settings ›
+ * Invoice branding, falling back to the default Pesa mark — same source
+ * and precedence as the logo already drawn on invoices/receipts/reports.
+ * Cheap and idempotent, so it's fine to call on every render(). */
+function applyBrandLogo(){
+  try{
+    var url = (State.settings && State.settings.logoDataUrl) ? State.settings.logoDataUrl : PESA_LOGO_DATA_URL;
+    document.documentElement.style.setProperty('--brand-logo-img', 'url("'+url+'")');
+  }catch(e){}
+}
+
 function updateHeader(){
+  applyBrandLogo();
   document.getElementById('shopNameEl').textContent = State.settings.shopName;
   document.getElementById('shopDateEl').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
   var todayTotal = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt))===todayKey(); }).reduce(function(s,x){return s+x.total;},0);
@@ -5112,15 +5157,27 @@ function openVatSummarySheet(){
     var ready = await ensureJsPDF();
     if(!ready){ btn.disabled=false; btn.textContent=old; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     var JsPDFCtor = getJsPDF();
-    var doc = new JsPDFCtor({ unit:'pt', format:'a4' });
-    var margin = 48, y = 60;
-    doc.setFont('helvetica','bold'); doc.setFontSize(16);
-    doc.text(State.settings.shopName||'Pesa', margin, y); y += 22;
-    doc.setFontSize(12); doc.setFont('helvetica','normal');
-    doc.text('NamRA VAT Summary', margin, y); y += 16;
-    if(State.company && State.company.vatNumber){ doc.text('VAT number: '+State.company.vatNumber, margin, y); y += 16; }
-    doc.text('Period: '+(c.from||'—')+' to '+(c.to||'—'), margin, y); y += 16;
-    doc.text('VAT rate: '+c.r+'%', margin, y); y += 26;
+    // mm units (not pt) so this can share drawDocHeader() with the
+    // invoice/receipt/report PDFs — that's what puts the shop's logo (or
+    // the default Pesa mark) at the top of this document too.
+    var doc = new JsPDFCtor({ unit:'mm', format:'a4' });
+    var head = drawDocHeader(doc);
+    var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
+    var t = head.t, primary=t.primary, muted=t.muted, dark=t.dark;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text(State.settings.shopName || 'Pesa', margin, y+6);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text('NamRA VAT summary', margin, y+12);
+    doc.text('Generated '+fmtDateNice(new Date()), pageW-margin, y+6, {align:'right'});
+    y += 20;
+    doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y+=9;
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    if(State.company && State.company.vatNumber){ doc.text('VAT number: '+State.company.vatNumber, margin, y); y += 6; }
+    doc.text('Period: '+(c.from||'—')+' to '+(c.to||'—'), margin, y); y += 6;
+    doc.text('VAT rate: '+c.r+'%', margin, y); y += 10;
+
     var rows = [
       ['Total sales (incl. VAT)', fmtMoney(c.salesTotal)],
       ['Output VAT', fmtMoney(c.outputVat)],
@@ -5129,14 +5186,15 @@ function openVatSummarySheet(){
       ['Net VAT ' + (c.net>=0?'payable':'refundable'), fmtMoney(Math.abs(c.net))]
     ];
     rows.forEach(function(r, i){
-      doc.setFont('helvetica', i===rows.length-1 ? 'bold' : 'normal');
-      doc.text(r[0], margin, y);
-      doc.text(r[1], margin+320, y);
-      y += 20;
+      var last = i===rows.length-1;
+      if(last){ doc.setDrawColor(220,224,218); doc.line(margin,y-4,pageW-margin,y-4); y += 2; }
+      pdfSummaryLine(doc, margin, y, contentW, r[0], r[1], {bold:last, size: last?12:10});
+      y += last ? 9 : 6.5;
     });
-    y += 10;
-    doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.text('This is a working summary generated from your recorded sales and expenses. Please confirm figures and filing requirements with NamRA.', margin, y, {maxWidth: 480});
+    y += 8;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+    var vatNoteLines = doc.splitTextToSize('This is a working summary generated from your recorded sales and expenses. Please confirm figures and filing requirements with NamRA.', contentW);
+    doc.text(vatNoteLines, margin, y);
     saveGeneratedPdf(doc, 'namra-vat-summary-'+(c.from||'')+'_to_'+(c.to||'')+'.pdf').then(function(ok){
       btn.disabled=false; btn.textContent=old;
       if(ok) toast('VAT summary downloaded');
