@@ -40,6 +40,12 @@
        screen — always reflects whichever business is using the app. */
     --brand-logo-img: var(--logo-img);
     color-scheme: light;
+
+    /* ---------- design tokens (shared across every screen/theme) ---------- */
+    --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:20px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-8:32px;
+    --fs-caption:12px; --fs-small:13px; --fs-body:14.5px; --fs-card-heading:16px; --fs-section:14px; --fs-title:26px; --fs-financial:34px;
+    --sidebar-w:264px;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -85,7 +91,7 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  :root{ --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  :root{ --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; }
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:var(--font-sans);
@@ -110,7 +116,7 @@
     transform:translateZ(0);
   }
   /* Large, soft, "glassy" background watermark of the shop's logo (or the
-     default Pesa mark), sitting behind the topbar/content/bottomnav inside
+     default Pesa mark), sitting behind the sidebar/topbar/content inside
      the app shell — see the #app-watermark note near <div class="app"> for
      why one shared element here covers every tab and sheet instead of each
      screen drawing its own. Kept faint and blurred so it never fights with
@@ -174,8 +180,8 @@
   .icon-btn:active{ background:rgba(255,255,255,0.2); }
 
   /* ---------- content ---------- */
-  .content{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px calc(88px + env(safe-area-inset-bottom,0px)); }
-  .section-title{ font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); margin: 18px 2px 8px; display:flex; align-items:center; justify-content:space-between; }
+  .content{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px calc(20px + env(safe-area-inset-bottom,0px)); }
+  .section-title{ font-size:var(--fs-section); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); margin: 18px 2px 8px; display:flex; align-items:center; justify-content:space-between; }
   .section-title:first-child{ margin-top:2px; }
   .section-title .see-all{ font-size:11.5px; font-weight:600; color:var(--primary-dim); text-transform:none; letter-spacing:0; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
   :root[data-theme="dark"] .section-title .see-all{ color:var(--primary); }
@@ -297,7 +303,7 @@
   .row .rowcheck.checked{ background:var(--primary); border-color:var(--primary); }
   .row .rowcheck.checked svg{ display:block; }
   .row.checked{ outline:2px solid var(--primary); outline-offset:-2px; }
-  .selectbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(64px + env(safe-area-inset-bottom,0px)); width:100%; max-width:480px; padding:0 14px; z-index:26; }
+  .selectbar{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px)); width:100%; max-width:480px; padding:0 14px; z-index:26; }
   .selectbar-inner{ background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); border-radius:14px; padding:10px 12px; display:flex; align-items:center; gap:8px; }
   .selectbar-inner .cnt{ font-size:12.5px; color:var(--text-muted); flex:0 0 auto; padding-left:2px; }
   .selectbar-inner .spacer{ flex:1; }
@@ -321,31 +327,27 @@
   :root[data-theme="dark"] .barrow .bfill{ background:var(--primary); }
   .barrow .bv{ font-size:12px; flex:0 0 62px; text-align:right; color:var(--text-muted); }
 
-  /* bottom nav */
-  .bottomnav{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:480px;
-    background:var(--surface); border-top:1px solid var(--border);
-    display:flex; padding: 6px 4px calc(6px + env(safe-area-inset-bottom,0px));
-    z-index:30;
-  }
-  .navbtn{
-    flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 2px;
-    background:none; border:none; color:var(--text-muted); cursor:pointer; border-radius:10px;
-  }
-  .navbtn.active{ color:var(--primary); }
-  :root[data-theme="dark"] .navbtn.active{ color:var(--primary); }
-  .navbtn .lbl{ font-size:10px; font-weight:600; }
+  /* ---------- app-shell layout wrapper (replaces the removed bottom nav) ----------
+     .appmain wraps the topbar+content+cartbarSlot so the persistent desktop
+     sidebar (#appSidebar) can sit beside it as a flex row at wide viewports,
+     while staying a plain block on mobile/tablet where the sidebar is an
+     overlay drawer instead (see #appSidebar rules below). */
+  .appmain{ display:flex; flex-direction:column; flex:1; min-height:0; min-width:0; }
+  #appSidebar{ display:none; }
 
   /* buttons */
-  .btn{ appearance:none; border:none; border-radius:12px; padding:12px 16px; font-size:14.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .btn{ appearance:none; border:none; border-radius:12px; padding:12px 16px; font-size:14.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; transition:background .12s ease, opacity .12s ease; }
   .btn-primary{ background:var(--primary); color:var(--primary-contrast); }
   .btn-accent{ background:var(--accent); color:var(--accent-contrast); }
   .btn-ghost{ background:var(--surface-2); color:var(--text); }
   .btn-danger{ background:var(--danger-bg); color:var(--danger); }
   .btn-block{ width:100%; }
   .btn:disabled{ opacity:0.5; cursor:default; }
+  .btn:focus-visible, .icon-btn:focus-visible, .navbig:focus-visible, .drawer-row:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
   .fab{
-    position:fixed; left:50%; bottom:calc(70px + env(safe-area-inset-bottom,0px));
+    position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px));
     transform:translateX(calc(-50% + 200px)); z-index:25;
     width:52px; height:52px; border-radius:16px; background:var(--accent); color:var(--accent-contrast);
     border:none; box-shadow:var(--shadow); display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -354,7 +356,7 @@
 
   /* cart bar */
   .cartbar{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(64px + env(safe-area-inset-bottom,0px));
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px));
     width:100%; max-width:480px; padding:0 14px; z-index:24;
   }
   .cartbar-inner{
@@ -459,7 +461,7 @@
   .sumline.total{ font-size:16px; font-weight:700; color:var(--text); padding-top:9px; border-top:1px solid var(--border); margin-top:5px; }
 
   .toast{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(78px + env(safe-area-inset-bottom,0px));
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(20px + env(safe-area-inset-bottom,0px));
     background:var(--text); color:var(--bg); padding:10px 16px; border-radius:10px; font-size:13px; z-index:60;
     box-shadow:var(--shadow); max-width:90%; text-align:center;
   }
@@ -501,24 +503,38 @@
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .ai-suggest{ color:var(--primary); } }
   .sheet:has(.ai-sheet){ padding:0; max-height:82vh; }
 
-  /* ---------- desktop / installed-app shell ---------- */
-  @media (min-width:900px){
+  /* ---------- tablet: full-width single column, still an overlay drawer ---------- */
+  @media (min-width:640px) and (max-width:1023px){
+    body{ align-items:flex-start; }
+    .app{ max-width:none; width:100%; }
+    .content{ max-width:680px; margin:0 auto; width:100%; }
+  }
+
+  /* ---------- desktop / installed-app shell: persistent pinned sidebar ----------
+     Below this breakpoint the sidebar is the overlay drawer opened from the
+     hamburger (openDashboardDrawer()); at or above it, the SAME row markup
+     (menuRowsHtml()) is rendered permanently into #appSidebar instead — see
+     renderSidebar() in the script. The bottom nav has been removed entirely;
+     this pinned sidebar plus the drawer below the breakpoint are the only
+     navigation surfaces, per the current design. */
+  @media (min-width:1024px){
     body{ align-items:stretch; }
     .app{
       max-width:none; width:100%; height:100vh; height:100dvh; min-height:100vh; min-height:100dvh;
-      display:grid; grid-template-columns:104px 1fr; grid-template-rows:auto 1fr;
-      grid-template-areas:"nav topbar" "nav content";
+      display:flex; flex-direction:row;
     }
+    #menuBtn{ display:none !important; }
     .app-watermark::before{ width:480px; height:466px; margin-left:-240px; margin-top:-233px; }
-    .topbar{ grid-area:topbar; }
-    .content{ grid-area:content; padding:22px 28px 40px; max-width:1040px; width:100%; margin:0 auto; overflow-y:auto; height:100%; }
-    .bottomnav{
-      grid-area:nav; position:sticky; top:0; left:auto; transform:none; bottom:auto;
-      width:100%; max-width:none; height:100vh; height:100dvh; flex-direction:column; justify-content:flex-start;
-      gap:4px; padding:20px 8px; border-top:none; border-right:1px solid var(--border);
+    #appSidebar{
+      display:flex; flex-direction:column; flex:0 0 var(--sidebar-w); width:var(--sidebar-w);
+      height:100%; background:var(--surface); border-right:1px solid var(--border);
+      overflow-y:auto; -webkit-overflow-scrolling:touch;
+      padding:calc(18px + env(safe-area-inset-top,0px)) 12px calc(18px + env(safe-area-inset-bottom,0px));
+      position:relative; isolation:isolate;
     }
-    .navbtn{ flex:none; width:100%; padding:12px 4px; border-radius:12px; }
-    .navbtn:hover{ background:var(--surface-2); }
+    .appmain{ flex:1; min-width:0; height:100%; }
+    .topbar{ position:sticky; top:0; }
+    .content{ padding:26px 32px 44px; max-width:1400px; width:100%; margin:0 auto; overflow-y:auto; height:100%; }
     .fab{ left:auto; right:36px; bottom:36px; transform:none; }
     .cartbar{ left:auto; right:28px; transform:none; width:380px; max-width:380px; bottom:28px; }
     .selectbar{ left:auto; right:28px; transform:none; width:380px; max-width:380px; bottom:28px; }
@@ -527,10 +543,16 @@
     .overlay{ align-items:center; }
     .stats{ grid-template-columns:repeat(4,1fr) !important; }
     .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .grid{ grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); }
   }
-  @media (min-width:1300px){
-    .content{ max-width:1200px; }
+  @media (min-width:1600px){
+    .content{ max-width:1600px; }
   }
+  /* ---------- persistent sidebar contents (reuses .drawer-row/.drawer-sub etc.) ---------- */
+  .sidebar-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; padding:2px 8px 12px; border-bottom:1px solid var(--border); }
+  .sidebar-head h2{ font-size:16px; flex:1; }
+  .drawer-row.active{ background:var(--surface-2); color:var(--primary); }
+  .drawer-row.active .ico{ background:var(--surface); color:var(--primary); }
 
   /* ---------- auth: company registration / login ---------- */
   .authscreen{
@@ -639,62 +661,44 @@
 <div class="authscreen" id="authScreen"></div>
 
 <div class="app" id="app">
-  <!-- One shared watermark element for the whole app shell (behind topbar,
-       content and bottomnav, and behind every sheet/modal too since they all
-       render inside #app) rather than one per tab — applyBrandLogo() keeps
-       its logo (shop's own upload, or the default Pesa mark) in sync. -->
+  <!-- One shared watermark element for the whole app shell (behind the
+       sidebar, topbar, content, and behind every sheet/modal too since they
+       all render inside #app) rather than one per tab — applyBrandLogo()
+       keeps its logo (shop's own upload, or the default Pesa mark) in sync. -->
   <div class="app-watermark" aria-hidden="true"></div>
-  <div class="topbar">
-    <button class="icon-btn" id="menuBtn" aria-label="Menu" style="display:none;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
-    </button>
-    <div class="brandmark" aria-hidden="true"></div>
-    <div class="shopmeta">
-      <div class="shopname" id="shopNameEl">Pesa</div>
-      <div class="shopdate" id="shopDateEl"></div>
-      <div id="syncBadgeSlot"></div>
+
+  <!-- Persistent pinned sidebar (desktop, >=1024px only — see CSS). Below
+       that width this stays empty/hidden and the hamburger opens the same
+       menu as an overlay drawer instead (openDashboardDrawer()). Both are
+       populated from the same menuRowsHtml() so the two stay in sync. -->
+  <div id="appSidebar"></div>
+
+  <div class="appmain">
+    <div class="topbar">
+      <button class="icon-btn" id="menuBtn" aria-label="Menu" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+      </button>
+      <div class="brandmark" aria-hidden="true"></div>
+      <div class="shopmeta">
+        <div class="shopname" id="shopNameEl">Pesa</div>
+        <div class="shopdate" id="shopDateEl"></div>
+        <div id="syncBadgeSlot"></div>
+      </div>
+      <div class="todaypill">
+        <div class="lbl">Today</div>
+        <div class="val num" id="todayTotalEl">N$0.00</div>
+      </div>
+      <button class="icon-btn" id="aiChatBtn" aria-label="Pessa AI Assistant" style="background:rgba(255,255,255,0.16);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path><circle cx="12" cy="12" r="3.2"></circle></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path></svg>
+      </button>
     </div>
-    <div class="todaypill">
-      <div class="lbl">Today</div>
-      <div class="val num" id="todayTotalEl">N$0.00</div>
-    </div>
-    <button class="icon-btn" id="aiChatBtn" aria-label="Pessa AI Assistant" style="background:rgba(255,255,255,0.16);">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path><circle cx="12" cy="12" r="3.2"></circle></svg>
-    </button>
-    <button class="icon-btn" id="settingsBtn" aria-label="Settings">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path></svg>
-    </button>
-  </div>
 
-  <div class="content" id="content"></div>
+    <div class="content" id="content"></div>
 
-  <div id="cartbarSlot"></div>
-
-  <div class="bottomnav" id="bottomnav">
-    <button class="navbtn" data-tab="dashboard">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
-      <span class="lbl" data-i18n="Dashboard">Dashboard</span>
-    </button>
-    <button class="navbtn" data-tab="sell">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.5 3h2l2.7 12.4a2 2 0 0 0 2 1.6h8.1a2 2 0 0 0 2-1.6L21 8H6"></path></svg>
-      <span class="lbl" data-i18n="Sell">Sell</span>
-    </button>
-    <button class="navbtn" data-tab="stock">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"></path><path d="M3 8l9 5 9-5"></path><path d="M12 13v8"></path></svg>
-      <span class="lbl" data-i18n="Stock">Stock</span>
-    </button>
-    <button class="navbtn" data-tab="credit">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-      <span class="lbl" data-i18n="Credit">Credit</span>
-    </button>
-    <button class="navbtn" data-tab="expenses">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M9 13h6"></path><path d="M9 17h6"></path></svg>
-      <span class="lbl" data-i18n="Expenses">Expenses</span>
-    </button>
-    <button class="navbtn" data-tab="till">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 3v4M8 3v4M2 11h20"></path><circle cx="12" cy="16" r="2"></circle></svg>
-      <span class="lbl" data-i18n="Till">Till</span>
-    </button>
+    <div id="cartbarSlot"></div>
   </div>
 
   <div id="modalRoot"></div>
@@ -3646,22 +3650,25 @@ function accountSectionHtml(){
 }
 
 /* ============================== DASHBOARD SIDE DRAWER ============================== */
-function openDashboardDrawer(){
-  var root = document.getElementById('modalRoot');
-  var overlay = document.createElement('div');
-  overlay.className = 'drawer-overlay';
+// Builds the app's one complete navigation menu — used both for the mobile
+// overlay drawer (openDashboardDrawer(), below the desktop breakpoint) and
+// for the persistent pinned sidebar (renderSidebar(), at/above it) — so the
+// two surfaces can never drift out of sync. Tab rows are filtered by the
+// signed-in role the same way the old bottom nav used to (roleTabs()).
+function menuRowsHtml(){
+  var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','expenses','till'];
   var rows = '';
-  // Every page in the app, listed in one place — the bottom nav stays for
-  // quick thumb access, but the sidebar is now the complete menu.
   rows += '<div class="drawer-sub">Main menu</div>';
-  rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
-  rows += drawerRowHtml('tab-sell', ICONS.cart, 'Sell');
-  rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
-  rows += drawerRowHtml('tab-credit', ICONS.people, 'Credit');
-  rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
-  rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
-  rows += '<div class="drawer-sub">Insights</div>';
-  rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
+  if(allowedTabs.indexOf('dashboard')!==-1) rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
+  if(allowedTabs.indexOf('sell')!==-1) rows += drawerRowHtml('tab-sell', ICONS.cart, 'Sell');
+  if(allowedTabs.indexOf('stock')!==-1) rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
+  if(allowedTabs.indexOf('credit')!==-1) rows += drawerRowHtml('tab-credit', ICONS.people, 'Credit');
+  if(allowedTabs.indexOf('expenses')!==-1) rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
+  if(allowedTabs.indexOf('till')!==-1) rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
+  if(!isCashier()){
+    rows += '<div class="drawer-sub">Insights</div>';
+    rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
+  }
   if(isManagerOrOwner()){
     rows += '<div class="drawer-sub">Operations</div>';
     rows += drawerRowHtml('suppliers', ICONS.truck, 'Suppliers', State.suppliers.length);
@@ -3674,6 +3681,37 @@ function openDashboardDrawer(){
   rows += '<div class="drawer-sub">Help</div>';
   rows += drawerRowHtml('training', ICONS.book, 'Training');
   rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
+  return rows;
+}
+// Shared destination for a menu row click, whichever surface it came from.
+function handleDrawerAction(key){
+  if(key==='tab-dashboard') setTab('dashboard');
+  else if(key==='tab-sell') setTab('sell');
+  else if(key==='tab-stock') setTab('stock');
+  else if(key==='tab-credit') setTab('credit');
+  else if(key==='tab-expenses') setTab('expenses');
+  else if(key==='tab-till') setTab('till');
+  else if(key==='insights'){
+    setTab('dashboard');
+    _insightsOpen = true;
+    render();
+    setTimeout(function(){
+      var t = document.getElementById('insightsToggle');
+      if(t) t.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 60);
+  } else if(key==='suppliers') openSuppliersSheet();
+  else if(key==='pos') openPurchaseOrdersSheet();
+  else if(key==='wastage') openWastageSheet();
+  else if(key==='branches') openBranchesSheet();
+  else if(key==='vat') openVatSummarySheet();
+  else if(key==='audit') openAuditLogSheet();
+  else if(key==='training') openTrainingSheet();
+  else if(key==='about') openAboutSheet();
+}
+function openDashboardDrawer(){
+  var root = document.getElementById('modalRoot');
+  var overlay = document.createElement('div');
+  overlay.className = 'drawer-overlay';
   overlay.innerHTML = '<div class="drawer">' +
     '<div class="app-watermark" aria-hidden="true"></div>' +
     '<div class="drawer-head"><h2>Menu</h2>' +
@@ -3681,7 +3719,7 @@ function openDashboardDrawer(){
       '<button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
     '</button></div>' +
-    rows +
+    menuRowsHtml() +
   '</div>';
   root.innerHTML = '';
   root.appendChild(overlay);
@@ -3692,29 +3730,24 @@ function openDashboardDrawer(){
     el.addEventListener('click', function(){
       var key = el.getAttribute('data-drawer-row');
       closeDrawer();
-      if(key==='tab-dashboard') setTab('dashboard');
-      else if(key==='tab-sell') setTab('sell');
-      else if(key==='tab-stock') setTab('stock');
-      else if(key==='tab-credit') setTab('credit');
-      else if(key==='tab-expenses') setTab('expenses');
-      else if(key==='tab-till') setTab('till');
-      else if(key==='insights'){
-        setTab('dashboard');
-        _insightsOpen = true;
-        render();
-        setTimeout(function(){
-          var t = document.getElementById('insightsToggle');
-          if(t) t.scrollIntoView({behavior:'smooth', block:'start'});
-        }, 60);
-      } else if(key==='suppliers') openSuppliersSheet();
-      else if(key==='pos') openPurchaseOrdersSheet();
-      else if(key==='wastage') openWastageSheet();
-      else if(key==='branches') openBranchesSheet();
-      else if(key==='vat') openVatSummarySheet();
-      else if(key==='audit') openAuditLogSheet();
-      else if(key==='training') openTrainingSheet();
-      else if(key==='about') openAboutSheet();
+      handleDrawerAction(key);
     });
+  });
+}
+// Renders the SAME menu permanently into the persistent desktop sidebar
+// (#appSidebar, shown only at >=1024px — see CSS). Called from render() so
+// it always reflects the current tab, role and counts, just like the drawer
+// does when it's (re)opened.
+function renderSidebar(){
+  var el = document.getElementById('appSidebar');
+  if(!el) return;
+  el.innerHTML = '<div class="app-watermark" aria-hidden="true"></div>' +
+    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa"></div><h2>Pesa</h2></div>' +
+    menuRowsHtml();
+  el.querySelectorAll('[data-drawer-row]').forEach(function(rowEl){
+    var key = rowEl.getAttribute('data-drawer-row');
+    rowEl.classList.toggle('active', key === 'tab-'+State.tab);
+    rowEl.addEventListener('click', function(){ handleDrawerAction(key); });
   });
 }
 function drawerRowHtml(key, icon, label, count){
@@ -4415,13 +4448,7 @@ function render(){
   content.innerHTML = html;
   wireContent();
   renderCartBar();
-
-  var allowedTabs = State.session ? roleTabs(State.session.role) : [];
-  document.querySelectorAll('.navbtn').forEach(function(b){
-    var t = b.getAttribute('data-tab');
-    b.classList.toggle('active', t === State.tab);
-    b.style.display = allowedTabs.indexOf(t) === -1 ? 'none' : '';
-  });
+  renderSidebar();
 
   // FAB for stock/credit/expenses (add new)
   var oldFab = document.getElementById('fabBtn');
@@ -5760,10 +5787,6 @@ function generateAboutPdf(){
 }
 
 /* ============================== boot ============================== */
-document.getElementById('bottomnav').addEventListener('click', function(e){
-  var btn = e.target.closest('.navbtn');
-  if(btn) setTab(btn.getAttribute('data-tab'));
-});
 document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
 document.getElementById('aiChatBtn').addEventListener('click', openAIChatSheet);
 document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer);
