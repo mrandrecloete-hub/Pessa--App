@@ -315,7 +315,7 @@
   /* stat tiles */
   .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
-  .stat .lbl{ font-size:11px; color:var(--text-muted); font-weight:500; }
+  .stat .lbl{ font-size:10.5px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.03em; }
   .stat .v{ font-size:20px; font-weight:700; margin-top:3px; font-family:var(--font-sans); letter-spacing:-0.02em; }
   .stat.wide{ grid-column:1/-1; }
   .stat .v.small{ font-size:16px; }
@@ -3331,7 +3331,7 @@ function openLedgerSheet(customer){
     var list = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
     var body = ov.querySelector('#ledgerList');
     if(!body) { unsub(); return; }
-    if(list.length === 0){ body.innerHTML = '<div class="empty" style="padding:16px 0;">No activity yet</div>'; return; }
+    if(list.length === 0){ body.innerHTML = '<div class="empty" style="padding:16px 0;">No transactions on this account yet.</div>'; return; }
     body.innerHTML = list.slice(0,30).map(function(t){
       var isCharge = t.type === 'charge';
       return '<div class="ledgeritem"><div class="lt-l">'+(isCharge?'Sale on credit':'Payment received')+'<span class="d">'+fmtDateTime(t.createdAt)+'</span></div>' +
@@ -3418,7 +3418,7 @@ function openExpenseSheet(expense){
   });
   if(isEdit){
     ov.querySelector('#efDelete').addEventListener('click', function(){
-      confirmSheet('Delete expense?', 'This cannot be undone.', 'Delete', function(){ refs.expenses.doc(expense.id).delete(); logAudit('delete','expense',expense.id,'Deleted expense'); toast('Deleted'); }, true);
+      confirmSheet('Delete expense?', 'This cannot be undone.', 'Delete', function(){ refs.expenses.doc(expense.id).delete(); logAudit('delete','expense',expense.id,'Deleted expense'); toast('Expense deleted'); }, true);
     });
   }
 }
@@ -4942,7 +4942,7 @@ function openSuppliersSheet(){
   var ov = openSheet(html);
   function renderList(){
     var list = ov.querySelector('#supList');
-    if(State.suppliers.length === 0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No suppliers yet</div>'; return; }
+    if(State.suppliers.length === 0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No suppliers added yet. Add one to start placing orders.</div>'; return; }
     list.innerHTML = '<div class="rowlist">' + State.suppliers.map(function(s){
       return '<div class="row" data-sup="'+s.id+'"><div class="avatar">'+esc(initials(s.name))+'</div>' +
         '<div class="main"><div class="title">'+esc(s.name)+'</div><div class="sub">'+esc(s.phone||s.contact||'No contact on file')+'</div></div></div>';
@@ -4998,7 +4998,7 @@ function openPurchaseOrdersSheet(){
   var ov = openSheet(html);
   function renderList(){
     var list = ov.querySelector('#poList');
-    if(State.purchaseOrders.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No purchase orders yet</div>'; return; }
+    if(State.purchaseOrders.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No purchase orders yet. Create one to reorder stock from a supplier.</div>'; return; }
     list.innerHTML = '<div class="rowlist">' + State.purchaseOrders.map(function(po){
       var sup = State.suppliers.find(function(s){ return s.id===po.supplierId; });
       var total = (po.items||[]).reduce(function(a,i){ return a+(i.qty*i.cost); },0);
@@ -5174,7 +5174,7 @@ function openWastageSheet(){
   var ov = openSheet(html);
   function renderList(){
     var list = ov.querySelector('#wasteList');
-    if(State.wastage.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No wastage recorded yet</div>'; return; }
+    if(State.wastage.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No wastage recorded yet. Log damaged or expired stock here to keep your numbers accurate.</div>'; return; }
     var totalValue = State.wastage.reduce(function(s,w){
       var p = State.products.find(function(x){ return x.id===w.productId; });
       return s + (w.qty||0) * (p?p.costPrice||0:0);
@@ -5218,7 +5218,7 @@ function openRecordWastageSheet(onDone){
 /* ============================== AUDIT TRAIL VIEWER ============================== */
 function openAuditLogSheet(){
   var html = '<div class="sheet-head"><h2>Activity log</h2></div>' +
-    (State.auditLog.length===0 ? '<div class="empty" style="padding:16px 0;">No activity recorded yet</div>' :
+    (State.auditLog.length===0 ? '<div class="empty" style="padding:16px 0;">No activity recorded yet. Actions your team takes will show up here.</div>' :
       '<div class="rowlist">' + State.auditLog.slice(0,300).map(function(a){
         return '<div class="row" style="cursor:default;"><div class="avatar">'+esc(initials(a.userName||'?'))+'</div>' +
           '<div class="main"><div class="title">'+esc(a.summary||a.action)+'</div><div class="sub">'+esc(a.userName||'System')+' · '+fmtDateTime(a.createdAt)+'</div></div></div>';
