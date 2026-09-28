@@ -5534,6 +5534,55 @@ function openAboutSheet(){
   });
 }
 
+// Draws a "wet ink" style rubber stamp graphic (double ring border, the
+// PESA name, the word CERTIFIED and the real current date) using jsPDF's
+// own vector drawing primitives, so it regenerates fresh every time rather
+// than being a fixed embedded picture. It is tilted a few degrees off
+// straight and drawn with a translucent stamp red ink color, the way a
+// genuine hand pressed rubber stamp looks on paper. Every string drawn
+// here contains zero hyphen or dash characters, matching the rest of this
+// document.
+function drawWetStamp(doc, pageW, pageH){
+  var cx = pageW - 40, cy = pageH - 44, tilt = 11; // degrees, hand stamped tilt
+  var rad = tilt * Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
+  function rot(dx,dy){ return { x: cx + dx*cos - dy*sin, y: cy + dx*sin + dy*cos }; }
+
+  var inkRed = [178,34,52];
+  var gStateOk = true;
+  try{
+    doc.saveGraphicsState();
+    doc.setGState(new doc.GState({opacity:0.55}));
+  }catch(e){ gStateOk = false; }
+  // If the opacity API is not available in this jsPDF build, fall back to
+  // a lighter tint of the same stamp red so the worn ink look still reads.
+  var ink = gStateOk ? inkRed : [214,150,160];
+
+  doc.setDrawColor(ink[0],ink[1],ink[2]);
+  doc.setTextColor(ink[0],ink[1],ink[2]);
+
+  doc.setLineWidth(1.1);
+  doc.circle(cx, cy, 21, 'S');
+  doc.setLineWidth(0.5);
+  doc.circle(cx, cy, 17.5, 'S');
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.2);
+  var top = rot(0,-10.5);
+  doc.text('CERTIFIED', top.x, top.y, {align:'center', angle: tilt});
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(17);
+  var mid = rot(0,2);
+  doc.text('PESA', mid.x, mid.y, {align:'center', angle: tilt});
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.6);
+  var bottom = rot(0,11.5);
+  doc.text(fmtDateNice(new Date()), bottom.x, bottom.y, {align:'center', angle: tilt});
+
+  if(gStateOk){
+    try{ doc.setGState(new doc.GState({opacity:1})); }catch(e){}
+    try{ doc.restoreGraphicsState(); }catch(e){}
+  }
+}
+
 // Builds the "About Pesa" PDF, sharing drawDocHeader() so it carries the
 // same logo and layout conventions as every other Pesa document. The text
 // content contains no hyphen or dash character, same as the in app page.
@@ -5578,6 +5627,15 @@ function generateAboutPdf(){
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
   var crLines = doc.splitTextToSize(copyrightLine(), contentW);
   doc.text(crLines, margin, y);
+  y += crLines.length*4;
+
+  // The stamp graphic needs a clear block of space near the bottom right
+  // corner of the page. If the credit and copyright text already runs
+  // close to the bottom, give the stamp a fresh page instead of letting
+  // it crowd or overlap that text.
+  var pageH = doc.internal.pageSize.getHeight();
+  if(y > pageH-70){ doc.addPage(); }
+  drawWetStamp(doc, pageW, pageH);
 
   return doc;
 }
