@@ -382,19 +382,45 @@
   .drawer-overlay{ position:fixed; inset:0; background:rgba(10,14,12,0.5); z-index:45; display:flex; align-items:stretch; justify-content:flex-start; }
   .drawer{
     width:84%; max-width:320px; height:100%; background:var(--surface);
-    box-shadow:4px 0 28px rgba(0,0,0,0.28); overflow-y:auto; -webkit-overflow-scrolling:touch;
+    box-shadow:4px 0 28px rgba(0,0,0,0.28); overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch;
     padding:calc(16px + env(safe-area-inset-top,0px)) 14px calc(20px + env(safe-area-inset-bottom,0px));
     animation: drawerin 0.2s ease-out; display:flex; flex-direction:column;
+    /* position:relative + isolation:isolate makes this drawer its own
+       containing/stacking context for the watermark below, the same trick
+       .app uses for the app-wide one — keeps the watermark clipped to the
+       drawer and pinned behind its rows regardless of scroll position. */
+    position:relative; isolation:isolate;
   }
   @keyframes drawerin{ from{ transform:translateX(-100%); } to{ transform:translateX(0); } }
   .drawer-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:0 6px; }
   .drawer-head h2{ font-size:17px; flex:1; }
+  /* Shop's own logo (or the default Pesa mark) in the top-right corner of
+     the drawer header — shares --brand-logo-img with the topbar brandmark
+     and the app watermark, so it stays in sync automatically. */
+  .drawer-logo{
+    width:28px; height:28px; flex-shrink:0; border-radius:8px;
+    background-image:var(--brand-logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,0.25));
+  }
   .drawer-close{ width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
   .drawer-sub{ font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; margin:14px 8px 4px; }
-  .drawer-row{ display:flex; align-items:center; gap:12px; padding:12px 8px; border-radius:12px; cursor:pointer; border:none; background:none; width:100%; text-align:left; color:var(--text); font-size:14.5px; font-weight:600; }
+  .drawer-row{ display:flex; align-items:center; gap:12px; padding:12px 8px; border-radius:12px; cursor:pointer; border:none; background:none; width:100%; text-align:left; color:var(--text); font-size:14.5px; font-weight:600; position:relative; z-index:1; }
   .drawer-row:active{ background:var(--surface-2); }
   .drawer-row .ico{ width:34px; height:34px; border-radius:10px; background:var(--surface-2); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .drawer-row .cnt{ margin-left:auto; font-size:12px; font-weight:600; color:var(--text-muted); }
+
+  /* Training slideshow */
+  .lesson-slide{ text-align:center; padding:8px 4px 4px; }
+  .lesson-slide .ico{ width:72px; height:72px; border-radius:20px; background:var(--surface-2); color:var(--primary); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+  .lesson-slide .ico svg{ width:34px; height:34px; }
+  .lesson-slide h3{ font-size:17px; margin-bottom:10px; }
+  .lesson-slide p{ font-size:14px; line-height:1.6; color:var(--text-muted); text-align:left; }
+  .lesson-progress{ text-align:center; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:10px; }
+  .lesson-progressbar{ height:4px; border-radius:99px; background:var(--surface-2); overflow:hidden; margin-bottom:16px; }
+  .lesson-progressbar .fill{ height:100%; background:var(--primary); border-radius:99px; transition:width 0.25s ease; }
+  .lesson-controls{ display:flex; align-items:center; gap:8px; margin-top:18px; }
+  .lesson-controls .icon-btn{ width:42px; height:42px; border-radius:12px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .lesson-controls .navbig{ flex:1; }
   .sheet-head h2{ font-size:17px; flex:1; }
   .field{ margin-bottom:12px; }
   .field label{ display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:5px; }
@@ -953,7 +979,7 @@ var Store = (function(){
 
 /* ============================== state ============================== */
 var State = {
-  settings: { shopName:'Pesa', lowStockDefault:5 },
+  settings: { shopName:'Pesa', lowStockDefault:5, soundEnabled:true },
   products: [],
   customers: [],
   sales: [],
@@ -1800,7 +1826,17 @@ var ICONS = {
   percent: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19"></path><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>',
   trash: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>',
   clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>',
-  chartbar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M10 20V4M17 20v-7"></path></svg>'
+  chartbar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M10 20V4M17 20v-7"></path></svg>',
+  dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>',
+  till: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 3v4M8 3v4M2 11h20"></path><circle cx="12" cy="16" r="2"></circle></svg>',
+  book: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg>',
+  info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-5"></path><path d="M12 8h.01"></path></svg>',
+  globe: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18Z"></path></svg>',
+  printer: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 14h12v8H6z"></path></svg>',
+  play: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8 5v14l11-7z"></path></svg>',
+  pause: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>',
+  soundOn: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>',
+  soundOff: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"></path><path d="M23 9l-6 6"></path><path d="M17 9l6 6"></path></svg>'
 };
 
 /* ============================== small chart helpers ============================== */
@@ -3573,6 +3609,19 @@ function exportData(){
   })();
 }
 
+/* ============================== ABOUT / CREDIT ============================== */
+var DEV_CREDIT_LINE = 'Developed by Björn Van Rensburg';
+function copyrightLine(){
+  return 'Copyright ' + new Date().getFullYear() + ' Björn Van Rensburg. All rights reserved. This application and its source code are protected by copyright law. Unauthorized copying, distribution, or modification without express written permission is prohibited.';
+}
+function settingsAboutFooterHtml(){
+  return '<div class="section-title">'+tr('About')+'</div>' +
+    '<button class="btn btn-ghost btn-block" id="stAboutBtn" type="button">'+ICONS.info+'<span style="margin-left:6px;">'+tr('About Pesa')+'</span></button>' +
+    '<div style="text-align:center;font-size:11.5px;color:var(--text-muted);line-height:1.6;margin:12px 4px 4px;">' +
+      esc(DEV_CREDIT_LINE) + '<br>' + esc(copyrightLine()) +
+    '</div>';
+}
+
 /* ============================== SETTINGS ============================== */
 function accountSectionHtml(){
   var u = State.session || {};
@@ -3590,6 +3639,16 @@ function openDashboardDrawer(){
   var overlay = document.createElement('div');
   overlay.className = 'drawer-overlay';
   var rows = '';
+  // Every page in the app, listed in one place — the bottom nav stays for
+  // quick thumb access, but the sidebar is now the complete menu.
+  rows += '<div class="drawer-sub">Main menu</div>';
+  rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
+  rows += drawerRowHtml('tab-sell', ICONS.cart, 'Sell');
+  rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
+  rows += drawerRowHtml('tab-credit', ICONS.people, 'Credit');
+  rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
+  rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
+  rows += '<div class="drawer-sub">Insights</div>';
   rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
   if(isManagerOrOwner()){
     rows += '<div class="drawer-sub">Operations</div>';
@@ -3600,8 +3659,14 @@ function openDashboardDrawer(){
     rows += drawerRowHtml('vat', ICONS.percent, 'NamRA VAT summary');
     rows += drawerRowHtml('audit', ICONS.clock, 'Activity log');
   }
+  rows += '<div class="drawer-sub">Help</div>';
+  rows += drawerRowHtml('training', ICONS.book, 'Training');
+  rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
   overlay.innerHTML = '<div class="drawer">' +
-    '<div class="drawer-head"><h2>Menu</h2><button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close">' +
+    '<div class="app-watermark" aria-hidden="true"></div>' +
+    '<div class="drawer-head"><h2>Menu</h2>' +
+      '<div class="drawer-logo" aria-hidden="true" title="Pesa"></div>' +
+      '<button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
     '</button></div>' +
     rows +
@@ -3615,7 +3680,14 @@ function openDashboardDrawer(){
     el.addEventListener('click', function(){
       var key = el.getAttribute('data-drawer-row');
       closeDrawer();
-      if(key==='insights'){
+      if(key==='tab-dashboard') setTab('dashboard');
+      else if(key==='tab-sell') setTab('sell');
+      else if(key==='tab-stock') setTab('stock');
+      else if(key==='tab-credit') setTab('credit');
+      else if(key==='tab-expenses') setTab('expenses');
+      else if(key==='tab-till') setTab('till');
+      else if(key==='insights'){
+        setTab('dashboard');
         _insightsOpen = true;
         render();
         setTimeout(function(){
@@ -3628,6 +3700,8 @@ function openDashboardDrawer(){
       else if(key==='branches') openBranchesSheet();
       else if(key==='vat') openVatSummarySheet();
       else if(key==='audit') openAuditLogSheet();
+      else if(key==='training') openTrainingSheet();
+      else if(key==='about') openAboutSheet();
     });
   });
 }
@@ -3649,7 +3723,8 @@ function openCashierSettingsSheet(){
         return '<option value="'+code+'" '+((s.language||'en')===code?'selected':'')+'>'+esc(l.native)+langConfidenceLabel(code)+'</option>';
       }).join('') +
     '</select></div>' +
-    '<div class="actions"><button class="btn btn-primary btn-block" id="stSaveLangOnly">'+tr('Save settings')+'</button></div>';
+    '<div class="actions"><button class="btn btn-primary btn-block" id="stSaveLangOnly">'+tr('Save settings')+'</button></div>' +
+    settingsAboutFooterHtml();
   var ov = openSheet(html);
   ov.querySelector('#acctLogoutBtn').addEventListener('click', logout);
   ov.querySelector('#stSaveLangOnly').addEventListener('click', function(){
@@ -3658,6 +3733,7 @@ function openCashierSettingsSheet(){
     closeModal();
     toast(tr('Settings saved'));
   });
+  ov.querySelector('#stAboutBtn').addEventListener('click', function(){ closeModal(); openAboutSheet(); });
 }
 
 function openSettingsSheet(){
@@ -3755,7 +3831,8 @@ function openSettingsSheet(){
     '</div>' +
     '<input type="file" id="stImportInput" accept="application/json" style="display:none;">' +
 
-    '<div class="actions"><button class="btn btn-primary btn-block" id="stSave">'+tr('Save settings')+'</button></div>';
+    '<div class="actions"><button class="btn btn-primary btn-block" id="stSave">'+tr('Save settings')+'</button></div>' +
+    settingsAboutFooterHtml();
   var ov = openSheet(html);
 
   function readCustomTemplate(){
@@ -3839,6 +3916,7 @@ function openSettingsSheet(){
     var file = e.target.files && e.target.files[0];
     if(file) importDataFromFile(file);
   });
+  ov.querySelector('#stAboutBtn').addEventListener('click', function(){ closeModal(); openAboutSheet(); });
 }
 
 function importDataFromFile(file){
@@ -4307,8 +4385,11 @@ function updateHeader(){
 
 function render(){
   updateHeader();
+  // The hamburger lives in the persistent app-shell topbar, so it opens the
+  // sidebar drawer from every tab, not just Dashboard — the sidebar is now
+  // the one place that lists every page in the app (see openDashboardDrawer()).
   var menuBtn = document.getElementById('menuBtn');
-  if(menuBtn) menuBtn.style.display = (State.tab === 'dashboard') ? 'flex' : 'none';
+  if(menuBtn) menuBtn.style.display = 'flex';
   applyStaticTranslations();
   document.documentElement.setAttribute('lang', currentLangCode()==='en' ? 'en' : currentLangCode());
   var content = document.getElementById('content');
@@ -5200,6 +5281,305 @@ function openVatSummarySheet(){
       if(ok) toast('VAT summary downloaded');
     });
   });
+}
+
+/* ============================== TRAINING ============================== */
+// A browsable set of short, narrated lessons covering every real feature in
+// the app, aimed at a shop assistant learning the till for the first time.
+// Narration uses the browser's own window.speechSynthesis — no account, no
+// API key, and it works fully offline.
+var LESSONS = [
+  { id:'dashboard', title:'Dashboard overview', icon:'dashboard', slides:[
+    { title:'What the Dashboard shows', text:'The Dashboard is the first screen you see. It shows today’s total sales at the top, a quick sales trend, and shortcuts to the things you use most.' },
+    { title:'Low stock and alerts', text:'Scroll down on the Dashboard to see products running low on stock and any other alerts that need your attention today.' },
+    { title:'The menu button', text:'Tap the menu icon (the three lines) at the top left of any screen to open the sidebar. It lists every page in the app, including Sell, Stock, Credit, Expenses, Till and the pages in this Training section.' }
+  ]},
+  { id:'sell', title:'Making a sale', icon:'cart', slides:[
+    { title:'Open the Sell tab', text:'Tap Sell in the bottom bar. Search for a product by name, or use the barcode scanner button next to the search box to scan an item quickly.' },
+    { title:'Build the cart', text:'Tap a product to add it to the cart. Tap it again, or adjust the quantity, to sell more than one. The cart total updates automatically as you add items.' },
+    { title:'Charge the customer', text:'When the cart is ready, tap Charge. Choose how the customer is paying, for example cash, card, or on credit for a customer with an account. Confirm the amount received.' },
+    { title:'Give the receipt', text:'After a sale is completed you can print a receipt on a connected Bluetooth printer, or share a digital copy. The sale is saved automatically, even if you are offline.' }
+  ]},
+  { id:'stock', title:'Managing stock', icon:'box', slides:[
+    { title:'Adding a product', text:'Go to the Stock tab and tap the plus button to add a new product. Fill in the name, price, cost, and how many you have on hand.' },
+    { title:'Scanning a barcode', text:'When adding or editing a product, tap the barcode icon to scan its barcode with your camera instead of typing a code by hand.' },
+    { title:'Editing and low stock alerts', text:'Tap any product to edit its details or adjust the quantity after a delivery or a stock count. Set a low stock number so the app warns you before you run out.' }
+  ]},
+  { id:'credit', title:'Credit and customers', icon:'people', slides:[
+    { title:'Selling on credit', text:'On the Credit tab you can add customers and let trusted customers buy now and pay later. Each customer has a running balance of what they owe.' },
+    { title:'Recording a repayment', text:'When a customer pays back some or all of what they owe, open their profile on the Credit tab and record the payment. Their balance updates immediately.' },
+    { title:'Keeping track', text:'The Credit tab shows every customer and their current balance at a glance, so you always know who owes money and how much.' }
+  ]},
+  { id:'expenses', title:'Expenses', icon:'receipt', slides:[
+    { title:'Recording an expense', text:'Use the Expenses tab to record money spent on the business, for example stock deliveries, rent, electricity, or supplies.' },
+    { title:'Why this matters', text:'Recording every expense keeps your real profit accurate and makes your VAT summary and end of month reporting correct.' }
+  ]},
+  { id:'till', title:'Till, opening and closing', icon:'till', slides:[
+    { title:'Opening the till', text:'Before you start selling, open the Till tab and count the cash in the drawer. Enter that starting amount to open your register for the shift.' },
+    { title:'During the shift', text:'While the till is open, every cash sale and any cash paid out is tracked automatically against it.' },
+    { title:'Closing the till', text:'At the end of the shift, count the cash in the drawer again and enter it to close the till. The app compares what it expected against what you counted, and shows any difference.' }
+  ]},
+  { id:'suppliers', title:'Suppliers and purchase orders', icon:'truck', slides:[
+    { title:'Suppliers', text:'Open the sidebar and choose Suppliers to keep a list of the businesses you buy stock from, with their contact details.' },
+    { title:'Creating a purchase order', text:'From Purchase orders in the sidebar, create an order listing what you want to buy from a supplier and how much of each item.' },
+    { title:'Receiving stock', text:'When the order arrives, mark it as received. The quantities are added to your stock automatically, so you do not have to update each product by hand.' }
+  ]},
+  { id:'branches', title:'Branches', icon:'branch', slides:[
+    { title:'Multiple branches', text:'If your business has more than one shop location, the owner can add each one as a branch from the sidebar.' },
+    { title:'Switching branches', text:'You can view one branch at a time or view all branches combined, and each branch keeps its own stock, sales and till sessions.' }
+  ]},
+  { id:'wastage', title:'Wastage and shrinkage', icon:'trash', slides:[
+    { title:'Recording losses', text:'Open Wastage and shrinkage from the sidebar to record stock that was damaged, expired, or went missing, instead of just quietly adjusting the stock count.' },
+    { title:'Why record it', text:'This keeps your stock numbers honest and gives the owner a clear picture of how much stock is being lost and why.' }
+  ]},
+  { id:'vat', title:'NamRA VAT summary', icon:'percent', slides:[
+    { title:'What it is', text:'The NamRA VAT summary, found in the sidebar, adds up the VAT on your sales and on your expenses for a period you choose.' },
+    { title:'Using it', text:'Pick a start and end date, then download the summary as a PDF to help with filing VAT with NamRA. Always double check the figures against your own records before filing.' }
+  ]},
+  { id:'printing', title:'Bluetooth receipt printing', icon:'printer', slides:[
+    { title:'Connecting a printer', text:'Pesa can print receipts on a small Bluetooth receipt printer. Make sure the printer is switched on and paired with your device first.' },
+    { title:'Printing a receipt', text:'After completing a sale, choose the print option and select your printer from the list. If no printer is available, you can still share or save a digital copy of the receipt.' }
+  ]},
+  { id:'audit', title:'Activity log', icon:'clock', slides:[
+    { title:'What it tracks', text:'The Activity log, in the sidebar, keeps a record of important actions taken in the app, such as changes to stock, sales, and settings, along with who did them and when.' },
+    { title:'Why it helps', text:'This gives the owner and managers a clear, honest trail of what happened in the business, which is useful for accountability and for solving disagreements.' }
+  ]},
+  { id:'language', title:'Changing language', icon:'globe', slides:[
+    { title:'Where to find it', text:'Open Settings from the gear icon at the top of the screen, then choose your preferred app language from the Language section.' },
+    { title:'A note on translations', text:'Some languages are still being completed. Any screen that is not yet fully translated will simply show in English until it is finished.' }
+  ]}
+];
+
+var _trainState = { lessonId:null, idx:0, playing:false, autoTimer:null };
+
+function speechSupported(){
+  return typeof window!=='undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance!=='undefined';
+}
+
+function stopNarration(){
+  _trainState.playing = false;
+  if(_trainState.autoTimer){ clearTimeout(_trainState.autoTimer); _trainState.autoTimer = null; }
+  try{ if(speechSupported()) window.speechSynthesis.cancel(); }catch(e){}
+}
+
+function openTrainingSheet(){
+  var html = '<div class="sheet-head"><h2>'+ICONS.book+'<span style="margin-left:8px;">'+tr('Training')+'</span></h2></div>' +
+    '<div class="banner">'+tr('Short lessons on every part of the app, read aloud where your device supports it. Pick a topic to review, or work through them one by one.')+'</div>' +
+    '<div class="rowlist">' +
+    LESSONS.map(function(l){
+      return '<div class="row" data-lesson="'+l.id+'"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+ICONS[l.icon]+'</div>' +
+        '<div class="main"><div class="title">'+esc(tr(l.title))+'</div><div class="sub">'+l.slides.length+' '+tr('slides')+'</div></div></div>';
+    }).join('') +
+    '</div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-lesson]').forEach(function(el){
+    el.addEventListener('click', function(){ openLessonSlideshow(el.getAttribute('data-lesson')); });
+  });
+}
+
+function openLessonSlideshow(lessonId){
+  var lesson = LESSONS.filter(function(l){ return l.id===lessonId; })[0];
+  if(!lesson) return;
+  stopNarration();
+  _trainState.lessonId = lessonId;
+  _trainState.idx = 0;
+  var supported = speechSupported();
+
+  function renderSlide(){
+    var ov = document.querySelector('#modalRoot .sheet');
+    if(!ov) return;
+    var i = _trainState.idx, n = lesson.slides.length, slide = lesson.slides[i];
+    var pct = Math.round(((i+1)/n)*100);
+    var muted = !(State.settings.soundEnabled!==false);
+    ov.querySelector('#lsBody').innerHTML =
+      '<div class="lesson-progress">'+tr('Slide')+' '+(i+1)+' '+tr('of')+' '+n+'</div>' +
+      '<div class="lesson-progressbar"><div class="fill" style="width:'+pct+'%;"></div></div>' +
+      '<div class="lesson-slide"><div class="ico">'+ICONS[lesson.icon]+'</div>' +
+        '<h3>'+esc(tr(slide.title))+'</h3>' +
+        '<p>'+esc(tr(slide.text))+'</p>' +
+      '</div>' +
+      (supported ?
+        '<div class="lesson-controls">' +
+          '<button class="icon-btn" id="lsPrev" type="button" aria-label="Previous" '+(i===0?'disabled style="opacity:.4;"':'')+'>'+ICONS.back+'</button>' +
+          '<button class="icon-btn" id="lsMute" type="button" aria-label="Mute">'+(muted?ICONS.soundOff:ICONS.soundOn)+'</button>' +
+          '<button class="btn btn-primary navbig" id="lsPlay" type="button">'+(_trainState.playing?tr('Pause'):tr('Play'))+'</button>' +
+          '<button class="icon-btn" id="lsNext" type="button" aria-label="Next" '+(i===n-1?'disabled style="opacity:.4;"':'')+'><span style="display:inline-block;transform:rotate(180deg);">'+ICONS.back+'</span></button>' +
+        '</div>'
+        :
+        '<div class="lesson-controls">' +
+          '<button class="btn btn-ghost navbig" id="lsPrev" type="button" '+(i===0?'disabled':'')+'>'+tr('Previous')+'</button>' +
+          '<button class="btn btn-primary navbig" id="lsNext" type="button" '+(i===n-1?'disabled':'')+'>'+tr('Next')+'</button>' +
+        '</div>'
+      );
+    wireSlideButtons();
+    if(supported && State.settings.soundEnabled!==false){ startNarration(); } else { _trainState.playing=false; }
+  }
+
+  function goTo(newIdx){
+    stopNarration();
+    _trainState.idx = Math.max(0, Math.min(lesson.slides.length-1, newIdx));
+    renderSlide();
+  }
+
+  function startNarration(){
+    if(!supported || State.settings.soundEnabled===false) return;
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+    var slide = lesson.slides[_trainState.idx];
+    var u = new SpeechSynthesisUtterance(slide.title + '. ' + slide.text);
+    u.rate = 0.95;
+    u.onend = function(){
+      _trainState.playing = false;
+      var btn = document.getElementById('lsPlay');
+      if(btn) btn.textContent = tr('Play');
+      // Auto-advance to the next slide once narration finishes, after a
+      // short, natural pause — but only if the user hasn't navigated away.
+      if(_trainState.idx < lesson.slides.length-1){
+        _trainState.autoTimer = setTimeout(function(){ goTo(_trainState.idx+1); }, 900);
+      }
+    };
+    u.onerror = function(){ _trainState.playing = false; };
+    _trainState.playing = true;
+    try{ window.speechSynthesis.speak(u); }catch(e){ _trainState.playing = false; }
+  }
+
+  function togglePlay(){
+    if(!supported) return;
+    if(_trainState.playing){
+      try{ window.speechSynthesis.pause(); }catch(e){}
+      _trainState.playing = false;
+      if(_trainState.autoTimer){ clearTimeout(_trainState.autoTimer); _trainState.autoTimer = null; }
+    } else {
+      try{
+        if(window.speechSynthesis.paused){ window.speechSynthesis.resume(); _trainState.playing = true; }
+        else { startNarration(); }
+      }catch(e){ startNarration(); }
+    }
+    var btn = document.getElementById('lsPlay');
+    if(btn) btn.textContent = _trainState.playing ? tr('Pause') : tr('Play');
+  }
+
+  function toggleMute(){
+    var next = (State.settings.soundEnabled===false); // currently muted -> unmute, and vice versa
+    State.settings = Object.assign({}, State.settings, { soundEnabled: next });
+    refs.settings.set(State.settings);
+    if(!next){ stopNarration(); } else { startNarration(); }
+    renderSlide();
+  }
+
+  function wireSlideButtons(){
+    var ov = document.querySelector('#modalRoot .sheet');
+    if(!ov) return;
+    var prev = ov.querySelector('#lsPrev'); if(prev) prev.addEventListener('click', function(){ if(_trainState.idx>0) goTo(_trainState.idx-1); });
+    var next = ov.querySelector('#lsNext'); if(next) next.addEventListener('click', function(){ if(_trainState.idx<lesson.slides.length-1) goTo(_trainState.idx+1); });
+    var play = ov.querySelector('#lsPlay'); if(play) play.addEventListener('click', togglePlay);
+    var mute = ov.querySelector('#lsMute'); if(mute) mute.addEventListener('click', toggleMute);
+  }
+
+  var html = '<div class="sheet-head"><button class="drawer-close" id="lsBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+esc(tr(lesson.title))+'</h2></div>' +
+    '<div id="lsBody"></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#lsBack').addEventListener('click', function(){ stopNarration(); closeModal(); openTrainingSheet(); });
+  renderSlide();
+}
+
+/* ============================== ABOUT PESA ============================== */
+// Written without any hyphen or dash character, in app and in the PDF, as
+// requested — see the sentences below and generateAboutPdf(); everyday
+// compounds are written as separate words instead (for example "multi
+// branch" rather than a hyphenated form).
+var ABOUT_PARAGRAPHS = [
+  'Pesa is a point of sale and business management application built for small and medium shops. It helps an owner and their staff run the daily operations of a shop from a single app on a phone, tablet, or computer, whether the shop has one location or several branches.',
+  'Pesa is used for recording sales, tracking stock, managing customer credit, tracking expenses, running cash till sessions, working with suppliers, and producing reports for tax purposes, among other everyday shop tasks. It is built to work fully offline, so a shop can keep trading without an internet connection, and it syncs its data automatically once a connection is available again.',
+  'Pesa currently includes the following functions and features.'
+];
+var ABOUT_FEATURES = [
+  'Sales and till management, including a fast checkout screen, a shopping cart, and printed or digital receipts',
+  'Stock and inventory management, including barcode scanning to add or find products quickly',
+  'Customer credit tracking, so a shop can sell on account and record repayments over time',
+  'Expense tracking for everyday business costs',
+  'Till and cash session management, including opening float counts, closing counts, and variance checks',
+  'Supplier records and purchase order tracking',
+  'Support for multiple branches under one business',
+  'Wastage and shrinkage tracking, to record stock lost to damage, theft, or spoilage',
+  'Sales insights that summarise how the business is performing',
+  'A NamRA VAT summary report to help with Namibian tax filing',
+  'Bluetooth receipt printing to small handheld or countertop printers',
+  'Support for multiple languages',
+  'Offline capable operation that syncs data automatically once a connection is available',
+  'An activity and audit log that records important actions taken in the app, for accountability',
+  'A staff training section with narrated lessons covering every part of the app'
+];
+
+function openAboutSheet(){
+  var html = '<div class="sheet-head"><h2>'+tr('About Pesa')+'</h2></div>' +
+    ABOUT_PARAGRAPHS.map(function(p){ return '<p style="font-size:14px;line-height:1.6;color:var(--text);margin:0 0 12px;">'+esc(tr(p))+'</p>'; }).join('') +
+    '<ul style="margin:0 0 16px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
+      ABOUT_FEATURES.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') +
+    '</ul>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="aboutPdfBtn" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download PDF')+'</span></button></div>' +
+    '<div style="text-align:center;font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:18px;">' +
+      esc(DEV_CREDIT_LINE) + '<br>' + esc(copyrightLine()) +
+    '</div>';
+  var ov = openSheet(html);
+  ov.querySelector('#aboutPdfBtn').addEventListener('click', async function(){
+    var btn = ov.querySelector('#aboutPdfBtn');
+    btn.disabled = true; var old = btn.textContent; btn.textContent = tr('Preparing…');
+    var ready = await ensureJsPDF();
+    if(!ready){ btn.disabled=false; btn.textContent=old; toast(tr('Couldn’t load the PDF engine — check your connection and try again')); return; }
+    var doc = generateAboutPdf();
+    saveGeneratedPdf(doc, 'about-pesa.pdf').then(function(ok){
+      btn.disabled=false; btn.textContent=old;
+      if(ok) toast(tr('About Pesa PDF downloaded'));
+    });
+  });
+}
+
+// Builds the "About Pesa" PDF, sharing drawDocHeader() so it carries the
+// same logo and layout conventions as every other Pesa document. The text
+// content contains no hyphen or dash character, same as the in app page.
+function generateAboutPdf(){
+  var JsPDFCtor = getJsPDF();
+  var doc = new JsPDFCtor({ unit:'mm', format:'a4' });
+  var head = drawDocHeader(doc);
+  var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
+  var t = head.t, primary=t.primary, muted=t.muted, dark=t.dark;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(primary[0],primary[1],primary[2]);
+  doc.text('About Pesa', margin, y+6);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.text('Generated '+fmtDateNice(new Date()), pageW-margin, y+6, {align:'right'});
+  y += 16;
+  doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y += 9;
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(dark[0],dark[1],dark[2]);
+  ABOUT_PARAGRAPHS.forEach(function(p){
+    var lines = doc.splitTextToSize(p, contentW);
+    if(y + lines.length*5.2 > 280){ doc.addPage(); y = 20; }
+    doc.text(lines, margin, y);
+    y += lines.length*5.2 + 4;
+  });
+
+  doc.setFontSize(9.5);
+  ABOUT_FEATURES.forEach(function(f){
+    var lines = doc.splitTextToSize(f, contentW-6);
+    if(y + lines.length*4.8 > 280){ doc.addPage(); y = 20; }
+    doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text('•', margin, y);
+    doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text(lines, margin+5, y);
+    y += lines.length*4.8 + 2.5;
+  });
+
+  y += 6;
+  if(y > 265){ doc.addPage(); y = 20; }
+  doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y += 8;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+  doc.text(DEV_CREDIT_LINE, margin, y); y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+  var crLines = doc.splitTextToSize(copyrightLine(), contentW);
+  doc.text(crLines, margin, y);
+
+  return doc;
 }
 
 /* ============================== boot ============================== */
