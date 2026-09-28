@@ -2540,18 +2540,41 @@ function pdfTable(doc, opts){
   return y;
 }
 
-async function saveGeneratedPdf(doc, filename){
-  var blob = doc.output('blob');
-  if(!(window.claude && window.claude.use)){ toast('Downloads aren’t available in this view'); return false; }
-  var dl = await window.claude.use('downloads');
-  if(!dl){ toast('Downloads aren’t available in this view'); return false; }
+// Standard browser download — works anywhere the app is opened as a normal
+// web page (e.g. installed from GitHub Pages), unlike the Claude-only
+// 'downloads' capability which only exists inside the artifact host.
+function browserDownload(filename, blob){
   try{
-    await dl.save({ filename: filename, data: blob });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
     return true;
-  } catch(e){
-    if(!(e && e.code === 'declined')) toast('Couldn’t save the file — try again');
+  }catch(e){
     return false;
   }
+}
+
+async function saveGeneratedPdf(doc, filename){
+  var blob = doc.output('blob');
+  try{
+    if(window.claude && window.claude.use){
+      var dl = await window.claude.use('downloads');
+      if(dl){
+        await dl.save({ filename: filename, data: blob });
+        return true;
+      }
+    }
+  }catch(e){
+    if(e && e.code === 'declined') return false;
+    // fall through to the browser-native download below
+  }
+  if(browserDownload(filename, blob)) return true;
+  toast('Couldn’t save the file — try again');
+  return false;
 }
 
 /* ============================== INVOICES ============================== */
@@ -3323,18 +3346,25 @@ function exportData(){
     expenses: State.expenses
   };
   var json = JSON.stringify(payload, null, 2);
+  var filename = 'pesa-export-'+todayKey()+'.json';
   (async function(){
     try{
       if(window.claude && window.claude.use){
         var dl = await window.claude.use('downloads');
         if(dl){
-          await dl.save({ filename: 'pesa-export-'+todayKey()+'.json', data: json });
+          await dl.save({ filename: filename, data: json });
           toast('Export ready');
           return;
         }
       }
-    }catch(e){}
-    toast('Downloads not available in this view');
+    }catch(e){
+      if(e && e.code === 'declined') return;
+    }
+    if(browserDownload(filename, new Blob([json], {type:'application/json'}))){
+      toast('Export ready');
+    } else {
+      toast('Downloads not available in this view');
+    }
   })();
 }
 
