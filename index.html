@@ -573,6 +573,7 @@
     <div class="shopmeta">
       <div class="shopname" id="shopNameEl">Pesa</div>
       <div class="shopdate" id="shopDateEl"></div>
+      <div id="syncBadgeSlot"></div>
     </div>
     <div class="todaypill">
       <div class="lbl">Today</div>
@@ -698,12 +699,24 @@ var LANGS = {
     'Shop name':'Geschäftsname','Default low-stock alert':'Standard-Warnung bei niedrigem Bestand','Business details (shown on invoices)':'Geschäftsangaben (auf Rechnungen)','Logo':'Logo','Letterhead banner (optional)':'Briefkopf-Banner (optional)','Slogan / tagline (optional)':'Slogan (optional)','Template name':'Vorlagenname','Primary colour':'Primärfarbe','Accent colour':'Akzentfarbe','Default note / wording':'Standardtext','Bill to':'Rechnung an','Customer contact (optional)':'Kundenkontakt (optional)','Invoice date':'Rechnungsdatum','Due date (optional)':'Fälligkeitsdatum (optional)','Notes (optional)':'Anmerkungen (optional)','Note (optional)':'Notiz (optional)','From':'Von','To':'Bis','Name':'Name','Phone (optional)':'Telefon (optional)','Balance owed':'Ausstehender Betrag','Category':'Kategorie','Cost price':'Einkaufspreis','Sell price':'Verkaufspreis','Unit':'Einheit','Starting stock':'Anfangsbestand','Current stock':'Aktueller Bestand','Low stock alert at':'Warnung bei niedrigem Bestand ab','Payment method':'Zahlungsart','Amount':'Betrag','Amount received':'Erhaltener Betrag','Cash received':'Bargeld erhalten','Customer':'Kunde','One product per line':'Ein Produkt pro Zeile'
   }},
   osh: { name:'Oshiwambo (Oshindonga)', native:'Oshiwambo', confidence:'partial', strings:{
-    'Dashboard':'Etalelipo','Sell':'Landitha','Stock':'Oimaliwa','Credit':'Ongunga','Expenses':'Omahepeko',
-    'Settings':'Omalongekido','Cart':'Oshikutu','Name':'Edhina','Customer':'Omulandi','Amount':'Ondando','Cash':'Iimaliwa','Category':'Ombinga','Cancel':'Hulitha','Delete':'Fuutha po'
+    'Dashboard':'Etalelipo','Sell':'Landitha','Stock':'Iinima yomutumba','Credit':'Ongunga','Expenses':'Omahepeko',
+    'Overview':'Etalelipo','Quick actions':'Iilonga yopokati','Recent sales':'Omalanditho gopopeepi','Invoicing':'Omafaktuura','Reports':'Omalopota','Data':'Odhata',
+    'Top sellers this month':'Iinima ya landithwa unene omwedhi nguka','Recent activity':'Iilonga yopopeepi','Items':'Iinima','Document template':'Oshifano shedhokumende','Invoice branding':'Endhindhiliko lyefaktuura','Needs attention':'Otashi pumbwa elalakano',
+    'Settings':'Omalongekido','Cart':'Oshikutu','New invoice':'Efaktuura epe','Record payment':'Nyola efuto','Sale recorded':'Elanditho lya nyolwa','Add stock in bulk':'Gwedha iinima jontumba','Add product':'Gwedha oshilikwa','Edit product':'Lundulula oshilikwa','Add customer':'Gwedha omulandi','Edit customer':'Lundulula omulandi','Add expense':'Gwedha ehepeko','Edit expense':'Lundulula ehepeko',
+    'Save settings':'Yandja omalongekido','Save payment':'Yandja efuto','Add products':'Gwedha iilikwa','Add in bulk':'Gwedha jontumba','Create an invoice':'Hangana efaktuura','Download invoice (PDF)':'Kufa efaktuura (PDF)','Download report (PDF)':'Kufa elopota (PDF)','Receipt (PDF)':'Ombapila yefuto (PDF)','Export all data (.json)':'Tuma odhata adhihe (.json)','Cancel':'Hulitha','Delete':'Fuutha po','Confirm sale':'Koleka elanditho','Invoice':'Efaktuura','Not now':'Kaku shi ngashingeyi','This month':'Omwedhi nguka','Last month':'Omwedhi gwa piti','Custom':'Hogolola mwene','Choose image':'Hogolola oshithithiya','CSV file':'Ofaili yeCSV','Paste list':'Nathangeka oshike','Photo':'Oshithithiya','Go to Stock':'Ya koVoorraad','Cash':'Iimaliwa','Card':'Okaadi','Mobile wallet':'Oshimaliwa shombapila',
+    'No customers yet':'Kapu na omalandi ngashingeyi','No expenses logged':'Kapu na omahepeko ga nyolwa','No matches':'Kapu na sha sha adhika','No products yet':'Kapu na iilikwa ngashingeyi',
+    'Add items one at a time, or all at once.':'Gwedha iinima yimwe kumwe, nenge adhihe pamwe.','Add regulars who buy on credit.':'Gwedha aalandi mboka haya landa nongunga.','Add stock first, then come back to sell.':'Gwedha oimaliwa tango, opo to galukile okulanditha.','Track what goes out to see your real profit.':'Kwatela nawa shoka tashi zi mo opo u mone uuwanawa woye washili.','Try a different search.':'Kambadhala okukonga lya lundulukilwa.',
+    'Shop name':'Edhina lyoshitolo','Default low-stock alert':'Elondodho lyoimaliwa tayi hepa','Business details (shown on invoices)':'Uuyelele woilonga (u li kumona kefaktuura)','Logo':'Elogo','Letterhead banner (optional)':'Oshiholelwa shopombanda (kau shi lelela)','Slogan / tagline (optional)':'Oshitya oshipe (kau shi lelela)','Template name':'Edhina lyoshifano','Primary colour':'Onzalo onene','Accent colour':'Onzalo yekwatho','Default note / wording':'Oondjovo dhi lelwa','Bill to':'Efuto olyoka','Customer contact (optional)':'Omahokololo gomulandi (kau shi lelela)','Invoice date':'Esiku lyefaktuura','Due date (optional)':'Esiku lyokufuta (kau shi lelela)','Notes (optional)':'Oondjovo (kau shi lelela)','Note (optional)':'Ondjovo (kau shi lelela)','From':'Okuza','To':'Sigo','Name':'Edhina','Phone (optional)':'Ongodhi (kau shi lelela)','Balance owed':'Oshimaliwa tashi nangwa','Category':'Ombinga','Cost price':'Ondando yeliko','Sell price':'Ondando yokulanditha','Unit':'Oshitopolwa','Starting stock':'Iinima yotango','Current stock':'Iinima yongashingeyi','Low stock alert at':'Elondodho lyoimaliwa tayi hepa pu','Payment method':'Onkalo yefuto','Amount':'Ondando','Amount received':'Ondando ya taambwa','Cash received':'Iimaliwa ya taambwa','Customer':'Omulandi','One product per line':'Oshilikwa shimwe komulinga'
   }},
   her: { name:'Otjiherero', native:'Otjiherero', confidence:'partial', strings:{
     'Dashboard':'Omahungi','Sell':'Randisa','Stock':'Ovihuna','Credit':'Ombanguriro','Expenses':'Ozondjambi',
-    'Settings':'Omaano','Cart':'Otjari','Name':'Ena','Customer':'Omuranduise','Amount':'Ombura','Cash':'Oimariva','Cancel':'Isa po','Delete':'Yandisa'
+    'Overview':'Omahungi','Quick actions':'Oviungura vyongurova','Recent sales':'Omarandiso wozonganda','Invoicing':'Omariuriro','Reports':'Omeripura','Data':'Ozondjongarero',
+    'Top sellers this month':'Oviungurise mbi randisiwa tjinene omueze mbwi','Recent activity':'Oviungura vyongurova','Items':'Oviungurise','Document template':'Otjihonge tjombapira','Invoice branding':'Otjihako tjeriuriro','Needs attention':'Matji hepa okutarwa',
+    'Settings':'Omaano','Cart':'Otjari','New invoice':'Eriuriro epe','Record payment':'Tjanga ondjambi','Sale recorded':'Erandiso ratjangwa','Add stock in bulk':'Weza ovihuna tjinene','Add product':'Weza otjiungurise','Edit product':'Rundurura otjiungurise','Add customer':'Weza omuranduise','Edit customer':'Rundurura omuranduise','Add expense':'Weza ondjambi','Edit expense':'Rundurura ondjambi',
+    'Save settings':'Yama omaano','Save payment':'Yama ondjambi','Add products':'Weza oviungurise','Add in bulk':'Weza tjinene','Create an invoice':'Zeuparisa eriuriro','Download invoice (PDF)':'Kotora eriuriro (PDF)','Download report (PDF)':'Kotora eripura (PDF)','Receipt (PDF)':'Otjiyandjewa (PDF)','Export all data (.json)':'Tuma ozondjongarero azehe (.json)','Cancel':'Isa po','Delete':'Yandisa','Confirm sale':'Kondjatjisa erandiso','Invoice':'Eriuriro','Not now':'Kangara nambano','This month':'Omueze mbwi','Last month':'Omueze mbwa kapita','Custom':'Ritjindira','Choose image':'Toorora ombunikira','CSV file':'Otjipapa tjeCSV','Paste list':'Kapisa otjihongonone','Photo':'Ombunikira','Go to Stock':'Ya kOvihuna','Cash':'Oimariva','Card':'Okarata','Mobile wallet':'Otjari tjombeurita',
+    'No customers yet':'Kape nomuranduise nambano','No expenses logged':'Kape nozondjambi za tjangwa','No matches':'Kape na tji ya hakaenene','No products yet':'Kape na oviungurise nambano',
+    'Add items one at a time, or all at once.':'Weza oviungurise vimwe kombunda, poo avihe rumwe.','Add regulars who buy on credit.':'Weza omuranduise mbe randa nombanguriro.','Add stock first, then come back to sell.':'Weza ovihuna tja tenga, tji wa yaruka okurandisa.','Track what goes out to see your real profit.':'Tara ku tji tja za po kutja u mune ombune yoye ya tjiri.','Try a different search.':'Ndova okupaha rukwao.',
+    'Shop name':'Ena rotjihuro','Default low-stock alert':'Ombeka yovihuna tji vi hepa','Business details (shown on invoices)':'Ozondjongarero zovirongo (mari raisiwa momariuriro)','Logo':'Ondanisiro','Letterhead banner (optional)':'Otjiruvano tjopombanda (hatji hepere)','Slogan / tagline (optional)':'Embo enene (hatji hepere)','Template name':'Ena rotjihonge','Primary colour':'Oruvara oruhoro','Accent colour':'Oruvara oruvyu','Default note / wording':'Ombuze onane','Bill to':'Ondjambi ku','Customer contact (optional)':'Ozondaya zomuranduise (hatji hepere)','Invoice date':'Eyuva reriuriro','Due date (optional)':'Eyuva rokusuta (hatji hepere)','Notes (optional)':'Ombuze (hatji hepere)','Note (optional)':'Ombuze (hatji hepere)','From':'Okuza','To':'Nga','Name':'Ena','Phone (optional)':'Ongoro (hatji hepere)','Balance owed':'Ondjambi ndji notjinanga','Category':'Orupa','Cost price':'Ondando yokuranda','Sell price':'Ondando yokurandisa','Unit':'Otjiuru','Starting stock':'Ovihuna vyokutenga','Current stock':'Ovihuna vyanambano','Low stock alert at':'Ombeka yovihuna tji vi hepa pu','Payment method':'Ondjira yondjambi','Amount':'Ombura','Amount received':'Ombura ndja pewa','Cash received':'Oimariva mbya pewa','Customer':'Omuranduise','One product per line':'Otjiungurise tjimwe komurongo'
   }},
   naq: { name:'Khoekhoegowab (Nama/Damara)', native:'Khoekhoegowab', confidence:'unverified', strings:{
     'Cash':'Marisenǃgareb'
@@ -895,7 +908,8 @@ var State = {
   tab: 'dashboard',
   cart: [], // {productId, name, unitPrice, cost, qty, unit}
   sellSearch: '',
-  ready: { products:false, customers:false, sales:false, expenses:false, settings:false, company:false, users:false, tills:false },
+  ready: { products:false, customers:false, sales:false, expenses:false, settings:false, company:false, users:false, tills:false,
+    branches:false, suppliers:false, purchaseOrders:false, wastage:false, auditLog:false },
   select: {
     stock: { active:false, ids:{} },
     credit: { active:false, ids:{} },
@@ -905,7 +919,15 @@ var State = {
   users: [],          // staff accounts: owner / manager / cashier
   tillSessions: [],   // cash-register shift records
   session: null,      // {userId, name, role} of whoever is logged in right now
-  till: { current: null } // this device's currently-open till session, if any
+  till: { current: null }, // this device's currently-open till session, if any
+  branches: [],        // {id, name, address, createdAt}
+  suppliers: [],       // {id, name, contact, phone, notes}
+  purchaseOrders: [],  // {id, supplierId, items:[{productId,name,qty,cost}], status, createdAt, receivedAt}
+  wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
+  auditLog: [],        // {id, action, entityType, entityId, summary, userName, userId, createdAt}
+  currentBranchId: null, // owner-selected branch filter ('all' = combined view)
+  online: (typeof navigator!=='undefined' ? navigator.onLine : true),
+  syncing: false
 };
 
 /* ============================== select mode / bulk delete ============================== */
@@ -1003,6 +1025,11 @@ function initRefs(){
   refs.company = Store.collection('settings').doc('company');
   refs.users = Store.collection('users');
   refs.tills = Store.collection('tillSessions');
+  refs.branches = Store.collection('branches');
+  refs.suppliers = Store.collection('suppliers');
+  refs.purchaseOrders = Store.collection('purchaseOrders');
+  refs.wastage = Store.collection('wastage');
+  refs.auditLog = Store.collection('auditLog');
 }
 
 function subscribeAll(){
@@ -1048,6 +1075,45 @@ function subscribeAll(){
     State.till.current = mine || null;
     if(document.getElementById('app').style.display !== 'none') render();
   });
+  refs.branches.onSnapshot(function(docs){
+    State.branches = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+    State.ready.branches = true;
+    if(document.getElementById('app').style.display !== 'none') render();
+  });
+  refs.suppliers.onSnapshot(function(docs){
+    State.suppliers = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+    State.ready.suppliers = true;
+    if(document.getElementById('app').style.display !== 'none') render();
+  });
+  refs.purchaseOrders.onSnapshot(function(docs){
+    State.purchaseOrders = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
+    State.ready.purchaseOrders = true;
+    if(document.getElementById('app').style.display !== 'none') render();
+  });
+  refs.wastage.onSnapshot(function(docs){
+    State.wastage = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
+    State.ready.wastage = true;
+    if(document.getElementById('app').style.display !== 'none') render();
+  });
+  refs.auditLog.onSnapshot(function(docs){
+    State.auditLog = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
+    State.ready.auditLog = true;
+  });
+}
+
+/* ============================== audit trail ============================== */
+function logAudit(action, entityType, entityId, summary){
+  try{
+    refs.auditLog.add({
+      action: action, // 'create' | 'update' | 'delete' | 'other'
+      entityType: entityType, // 'product' | 'sale' | 'expense' | 'staff' | 'till' | 'purchaseOrder' | 'wastage' | 'branch' | 'supplier'
+      entityId: entityId || null,
+      summary: summary || '',
+      userId: State.session ? State.session.userId : null,
+      userName: State.session ? State.session.name : 'System',
+      createdAt: new Date().toISOString()
+    });
+  }catch(e){ /* never let audit logging break the app */ }
 }
 
 /* ============================== company / staff accounts / login / roles ============================== */
@@ -1410,6 +1476,7 @@ function openStaffSheet(user){
     ov.querySelector('#sfToggleActive').addEventListener('click', function(){
       var nowActive = user.active === false;
       refs.users.doc(user.id).update({ active: nowActive });
+      logAudit('update','staff',user.id,(nowActive?'Reactivated ':'Deactivated ')+user.name);
       toast(nowActive ? tr('Staff member reactivated') : tr('Staff member deactivated'));
       openTeamSheet();
     });
@@ -1428,6 +1495,7 @@ function openStaffSheet(user){
         var newPass = ov.querySelector('#sfNewPass') ? ov.querySelector('#sfNewPass').value : '';
         if(newPass){ patch.passHash = await sha256Hex(newPass); }
         refs.users.doc(user.id).update(patch);
+        logAudit('update','staff',user.id,'Edited '+name);
         toast(tr('Staff member updated'));
         if(isMe) State.session.name = name;
         openTeamSheet();
@@ -1440,6 +1508,7 @@ function openStaffSheet(user){
         if(role !== 'cashier' && (!pass || pass.length<4)) return fail(tr('Choose a password of at least 4 characters.'));
         var passHash = await sha256Hex(pass);
         refs.users.doc().set({ name:name, email:email, role:role, passHash:passHash, active:true, createdAt:new Date().toISOString() });
+        logAudit('create','staff',null,'Added '+name+' as '+role);
         toast(name+' '+tr('added as')+' '+tr(ROLE_LABELS[role]||role));
         openTeamSheet();
       }
@@ -1540,6 +1609,7 @@ function openStartTillSheet(){
       openingFloat: floatAmt, openedAt: new Date().toISOString(), status:'open'
     }).then(function(){
       State.till.current = { id: ref.id, cashierId:State.session.userId, cashierName:State.session.name, openingFloat:floatAmt, openedAt:new Date().toISOString(), status:'open' };
+      logAudit('create','till',ref.id,'Till opened with '+fmtMoney(floatAmt));
       closeModal();
       toast(tr('Till opened with')+' '+fmtMoney(floatAmt));
       render();
@@ -1586,6 +1656,7 @@ function openCloseTillSheet(session){
       totals:t.totals, items:t.items
     }).then(function(){
       if(State.till.current && State.till.current.id === session.id) State.till.current = null;
+      logAudit('update','till',session.id,'Till closed, variance '+fmtMoney(variance));
       closeModal();
       toast(tr('Till closed')+' — '+(Math.abs(variance)<0.01?tr('balanced'):(variance<0?tr('short')+' '+fmtMoney(Math.abs(variance)):tr('over')+' '+fmtMoney(variance))));
       render();
@@ -1731,7 +1802,10 @@ function renderSell(){
       '<div style="margin-top:14px;"><button class="btn btn-primary" id="goStock">'+tr('Go to Stock')+'</button></div></div>';
   }
 
-  var html = '<div class="searchbar">' + ICONS.search + '<input id="sellSearchInput" placeholder="Search products…" value="'+esc(State.sellSearch)+'"></div>';
+  var html = '<div style="display:flex;gap:8px;align-items:center;">' +
+    '<div class="searchbar" style="flex:1;">' + ICONS.search + '<input id="sellSearchInput" placeholder="Search products…" value="'+esc(State.sellSearch)+'"></div>' +
+    '<button class="icon-btn" id="sellScanBtn" type="button" title="Scan barcode" style="flex:0 0 auto;">'+ICONS.search+'</button>' +
+  '</div>';
 
   if(list.length === 0){
     html += '<div class="empty"><div class="t">'+tr('No matches')+'</div><div class="s">'+tr('Try a different search.')+'</div></div>';
@@ -1920,9 +1994,10 @@ function finalizeSale(method, customer){
     customerName: customer ? customer.name : null,
     tillId: State.till.current ? State.till.current.id : null,
     cashierName: State.session ? State.session.name : null,
+    branchId: (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null,
     createdAt: new Date().toISOString()
   };
-  refs.sales.add(sale);
+  refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, (items.length)+' item(s), '+fmtMoney(total)); });
   // decrement stock
   items.forEach(function(it){
     var p = State.products.find(function(x){ return x.id===it.productId; });
@@ -1958,10 +2033,13 @@ function offerSaleReceipt(sale, customer){
     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Total '+fmtMoney(sale.total)+'. Print a receipt for the customer?</div>' +
     '<div class="actions">' +
       '<button class="btn btn-ghost btn-block" id="saleSkipBtn">'+tr('Not now')+'</button>' +
+      bluetoothPrintButtonHtml('saleBtPrintBtn') +
       '<button class="btn btn-accent btn-block" id="saleReceiptBtn">'+tr('Receipt (PDF)')+'</button>' +
     '</div>';
   var ov = openSheet(html, {center:true});
   ov.querySelector('#saleSkipBtn').addEventListener('click', closeModal);
+  var btPrintBtn = ov.querySelector('#saleBtPrintBtn');
+  if(btPrintBtn && !btPrintBtn.disabled) btPrintBtn.addEventListener('click', function(){ printReceiptViaBluetooth(draft, btPrintBtn); });
   ov.querySelector('#saleReceiptBtn').addEventListener('click', async function(){
     var btn = ov.querySelector('#saleReceiptBtn');
     btn.disabled = true; var oldLabel = btn.textContent; btn.textContent = 'Preparing…';
@@ -1990,7 +2068,10 @@ function renderStock(){
     return html;
   }
   html += renderSelectToolbar('stock');
-  html += '<button class="btn btn-ghost btn-block" id="bulkAddBtn" style="margin-bottom:12px;">'+ICONS.stack+' '+tr('Add stock in bulk')+'</button>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
+    '<button class="btn btn-ghost" id="bulkAddBtn" style="flex:1;">'+ICONS.stack+' '+tr('Add stock in bulk')+'</button>' +
+    '<button class="btn btn-ghost" id="stockScanBtn" style="flex:1;">'+ICONS.search+' Scan barcode</button>' +
+  '</div>';
   var selS = selState('stock');
   html += '<div class="rowlist">' + State.products.map(function(p){
     var low = p.stockQty!=null && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault);
@@ -2013,7 +2094,7 @@ function renderStock(){
   return html;
 }
 
-function openProductSheet(product){
+function openProductSheet(product, prefillBarcode){
   var isEdit = !!product;
   var html =
     '<div class="sheet-head"><h2>'+(isEdit?tr('Edit product'):tr('Add product'))+'</h2></div>' +
@@ -2030,11 +2111,17 @@ function openProductSheet(product){
       '<div class="field"><label>'+(isEdit?tr('Current stock'):tr('Starting stock'))+'</label><input id="pfStock" type="number" inputmode="numeric" placeholder="0" value="'+(product?product.stockQty:'')+'"></div>' +
       '<div class="field"><label>'+tr('Low stock alert at')+'</label><input id="pfLow" type="number" inputmode="numeric" placeholder="'+State.settings.lowStockDefault+'" value="'+(product&&product.lowStock!=null?product.lowStock:'')+'"></div>' +
     '</div>' +
+    '<div class="field"><label>Barcode (optional)</label><div style="display:flex;gap:8px;"><input id="pfBarcode" placeholder="Scan or type a barcode" value="'+esc(product?product.barcode||'':(prefillBarcode||''))+'" style="flex:1;"><button class="btn btn-ghost" id="pfScanBtn" type="button" style="flex:0 0 auto;padding:0 14px;">'+ICONS.search+'</button></div></div>' +
     '<div class="actions">' +
       (isEdit ? '<button class="btn btn-danger" id="pfDelete">'+tr('Delete')+'</button>' : '') +
       '<button class="btn btn-primary btn-block" id="pfSave">'+(isEdit?'Save changes':tr('Add product'))+'</button>' +
     '</div>';
   var ov = openSheet(html);
+  ov.querySelector('#pfScanBtn').addEventListener('click', function(){
+    openBarcodeScanSheet(function(code){
+      ov.querySelector('#pfBarcode').value = code;
+    });
+  });
   ov.querySelector('#pfSave').addEventListener('click', function(){
     var name = ov.querySelector('#pfName').value.trim();
     if(!name){ toast('Enter a product name'); return; }
@@ -2048,12 +2135,16 @@ function openProductSheet(product){
       lowStock: ov.querySelector('#pfLow').value === '' ? null : parseInt(ov.querySelector('#pfLow').value,10),
       updatedAt: new Date().toISOString()
     };
+    data.barcode = (ov.querySelector('#pfBarcode') ? ov.querySelector('#pfBarcode').value.trim() : (product?product.barcode:'')) || '';
+    if(State.settings.currentBranchId && State.settings.currentBranchId!=='all' && !isEdit) data.branchId = State.settings.currentBranchId;
     if(isEdit){
       refs.products.doc(product.id).update(data);
+      logAudit('update','product',product.id,'Edited '+name);
       toast('Product updated');
     } else {
       data.createdAt = new Date().toISOString();
       refs.products.doc().set(data);
+      logAudit('create','product',null,'Added '+name);
       toast('Product added');
     }
     closeModal();
@@ -2062,6 +2153,7 @@ function openProductSheet(product){
     ov.querySelector('#pfDelete').addEventListener('click', function(){
       confirmSheet('Delete '+product.name+'?', 'This removes it from your stock list. Past sales already recorded are not affected.', 'Delete', function(){
         refs.products.doc(product.id).delete();
+        logAudit('delete','product',product.id,'Deleted '+product.name);
         toast('Product deleted');
       }, true);
     });
@@ -2848,8 +2940,14 @@ function openInvoiceSheet(prefill){
     '<div class="actions">' +
       '<button class="btn btn-ghost" id="invReceiptBtn" type="button">'+tr('Receipt (PDF)')+'</button>' +
       '<button class="btn btn-accent" style="flex:2;" id="invGenerateBtn" type="button">'+tr('Download invoice (PDF)')+'</button>' +
-    '</div>';
+    '</div>' +
+    '<div class="actions">' + bluetoothPrintButtonHtml('invBtPrintBtn') + '</div>';
   var ov = openSheet(html);
+  var btPrintBtn2 = ov.querySelector('#invBtPrintBtn');
+  if(btPrintBtn2 && !btPrintBtn2.disabled) btPrintBtn2.addEventListener('click', function(){
+    var draft = readDraft();
+    if(draft) printReceiptViaBluetooth(draft, btPrintBtn2);
+  });
   var itemsList = ov.querySelector('#invItemsList');
   invRenderItems(itemsList);
   invUpdateTotal();
@@ -3196,17 +3294,19 @@ function openExpenseSheet(expense){
     var data = { category: ov.querySelector('#efCat').value, amount:amt, note: ov.querySelector('#efNote').value.trim() };
     if(isEdit){
       refs.expenses.doc(expense.id).update(data);
+      logAudit('update','expense',expense.id,'Edited expense '+fmtMoney(amt)+' ('+data.category+')');
       toast('Expense updated');
     } else {
       data.createdAt = new Date().toISOString();
       refs.expenses.doc().set(data);
+      logAudit('create','expense',null,'Added expense '+fmtMoney(amt)+' ('+data.category+')');
       toast('Expense added');
     }
     closeModal();
   });
   if(isEdit){
     ov.querySelector('#efDelete').addEventListener('click', function(){
-      confirmSheet('Delete expense?', 'This cannot be undone.', 'Delete', function(){ refs.expenses.doc(expense.id).delete(); toast('Deleted'); }, true);
+      confirmSheet('Delete expense?', 'This cannot be undone.', 'Delete', function(){ refs.expenses.doc(expense.id).delete(); logAudit('delete','expense',expense.id,'Deleted expense'); toast('Deleted'); }, true);
     });
   }
 }
@@ -3215,6 +3315,22 @@ function openExpenseSheet(expense){
 function renderDashboard(){
   if(!State.ready.sales || !State.ready.expenses || !State.ready.products || !State.ready.customers){
     return '<div class="empty">Loading your shop…</div>';
+  }
+  // Multi-branch: an owner viewing a specific branch sees dashboard figures
+  // scoped to it (records with no branchId — i.e. everything made before
+  // multi-branch existed — still count everywhere, so nothing disappears).
+  // Non-owners, and owners who never create a second branch, see the exact
+  // same combined figures as before.
+  var realSales = State.sales, realProducts = State.products;
+  var branchBannerHtml = '';
+  if(isOwner() && State.branches.length>0){
+    var bid = State.settings.currentBranchId || 'all';
+    State.sales = branchScoped(realSales);
+    State.products = branchScoped(realProducts);
+    if(bid !== 'all'){
+      var b = State.branches.find(function(x){ return x.id===bid; });
+      branchBannerHtml = '<div class="banner">Viewing: <strong>'+esc(b?b.name:'branch')+'</strong> — switch branches in Settings.</div>';
+    }
   }
   var now = new Date();
   var wk = startOfWeek(now), mo = startOfMonth(now);
@@ -3313,6 +3429,9 @@ function renderDashboard(){
       top.map(function(t){ return '<div class="barrow"><div class="bl">'+esc(t.name)+'</div><div class="btrack"><div class="bfill" style="width:'+(t.v/topMax*100)+'%"></div></div><div class="bv num">'+fmtMoney(t.v)+'</div></div>'; }).join('')) +
   '</div>';
 
+  /* ---- sales insights (collapsible) ---- */
+  html += dashboardInsightsHtml();
+
   /* ---- recent sales ---- */
   html += '<div class="section-title">'+tr('Recent sales')+'</div>';
   if(State.sales.length === 0){
@@ -3358,7 +3477,8 @@ function renderDashboard(){
     '<div style="font-size:11.5px;color:var(--text-muted);text-align:center;">'+(Store.isCloud()?'Saved securely and synced automatically.':'Saved on this device only.')+'</div>' +
   '</div>';
 
-  return html;
+  State.sales = realSales; State.products = realProducts;
+  return branchBannerHtml + html;
 }
 
 function exportData(){
@@ -3436,6 +3556,24 @@ function openSettingsSheet(){
       '<button class="btn btn-ghost" id="openCompanyBtn" type="button">'+tr('Company details')+'</button>' +
       '<button class="btn btn-ghost" id="openTeamBtn" type="button">'+tr('Team')+' ('+State.users.length+')</button>' +
     '</div>' +
+
+    (isManagerOrOwner() ? (
+    '<div class="section-title">Operations</div>' +
+    '<div class="actions">' +
+      '<button class="btn btn-ghost" id="openSuppliersBtn" type="button">Suppliers ('+State.suppliers.length+')</button>' +
+      '<button class="btn btn-ghost" id="openPOsBtn" type="button">Purchase orders ('+State.purchaseOrders.length+')</button>' +
+      '<button class="btn btn-ghost" id="openWastageBtn" type="button">Wastage &amp; shrinkage</button>' +
+      (isOwner() ? '<button class="btn btn-ghost" id="openBranchesBtn" type="button">Branches ('+(State.branches.length+1)+')</button>' : '') +
+      '<button class="btn btn-ghost" id="openVatBtn" type="button">NamRA VAT summary</button>' +
+      '<button class="btn btn-ghost" id="openAuditBtn" type="button">Activity log</button>' +
+    '</div>'
+    ) : '') +
+    (isOwner() && State.branches.length>0 ? (
+      '<div class="field"><label>Viewing branch</label><select id="stBranchSelect">' +
+        '<option value="all" '+((State.settings.currentBranchId||'all')==='all'?'selected':'')+'>All branches (combined)</option>' +
+        State.branches.map(function(b){ return '<option value="'+b.id+'" '+(State.settings.currentBranchId===b.id?'selected':'')+'>'+esc(b.name)+'</option>'; }).join('') +
+      '</select></div>'
+    ) : '') +
 
     '<div class="field"><label>'+tr('Shop name')+'</label><input id="stName" value="'+esc(s.shopName)+'"></div>' +
     '<div class="field"><label>'+tr('Default low-stock alert')+'</label><input id="stLow" type="number" inputmode="numeric" value="'+s.lowStockDefault+'"></div>' +
@@ -3589,6 +3727,13 @@ function openSettingsSheet(){
   ov.querySelector('#acctLogoutBtn').addEventListener('click', logout);
   ov.querySelector('#openCompanyBtn').addEventListener('click', function(){ closeModal(); openCompanyDetailsSheet(); });
   ov.querySelector('#openTeamBtn').addEventListener('click', function(){ closeModal(); openTeamSheet(); });
+  var supBtn = ov.querySelector('#openSuppliersBtn'); if(supBtn) supBtn.addEventListener('click', function(){ closeModal(); openSuppliersSheet(); });
+  var poBtn = ov.querySelector('#openPOsBtn'); if(poBtn) poBtn.addEventListener('click', function(){ closeModal(); openPurchaseOrdersSheet(); });
+  var wasteBtn = ov.querySelector('#openWastageBtn'); if(wasteBtn) wasteBtn.addEventListener('click', function(){ closeModal(); openWastageSheet(); });
+  var brBtn = ov.querySelector('#openBranchesBtn'); if(brBtn) brBtn.addEventListener('click', function(){ closeModal(); openBranchesSheet(); });
+  var vatBtn = ov.querySelector('#openVatBtn'); if(vatBtn) vatBtn.addEventListener('click', function(){ closeModal(); openVatSummarySheet(); });
+  var auditBtn = ov.querySelector('#openAuditBtn'); if(auditBtn) auditBtn.addEventListener('click', function(){ closeModal(); openAuditLogSheet(); });
+  var branchSelect = ov.querySelector('#stBranchSelect'); if(branchSelect) branchSelect.addEventListener('change', function(){ setActiveBranch(branchSelect.value); });
   ov.querySelector('#stExportBtn').addEventListener('click', exportData);
   ov.querySelector('#stImportBtn').addEventListener('click', function(){
     ov.querySelector('#stImportInput').click();
@@ -4047,6 +4192,7 @@ function updateHeader(){
   document.getElementById('shopDateEl').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'});
   var todayTotal = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt))===todayKey(); }).reduce(function(s,x){return s+x.total;},0);
   document.getElementById('todayTotalEl').textContent = fmtMoney(todayTotal);
+  updateSyncBadge();
 }
 
 function render(){
@@ -4109,6 +4255,22 @@ function wireContent(){
 
   var bulkAddBtn = content.querySelector('#bulkAddBtn');
   if(bulkAddBtn) bulkAddBtn.addEventListener('click', openBulkAddSheet);
+  var stockScanBtn = content.querySelector('#stockScanBtn');
+  if(stockScanBtn) stockScanBtn.addEventListener('click', function(){
+    openBarcodeScanSheet(function(code){
+      var p = findProductByBarcode(code);
+      if(p) openProductSheet(p);
+      else openProductSheet(null, code);
+    });
+  });
+  var sellScanBtn = content.querySelector('#sellScanBtn');
+  if(sellScanBtn) sellScanBtn.addEventListener('click', function(){
+    openBarcodeScanSheet(function(code){
+      var p = findProductByBarcode(code);
+      if(p) addToCart(p.id);
+      else toast('No product found with that barcode');
+    });
+  });
   var bulkAddBtnEmpty = content.querySelector('#bulkAddBtnEmpty');
   if(bulkAddBtnEmpty) bulkAddBtnEmpty.addEventListener('click', openBulkAddSheet);
   var emptyAddOneBtn = content.querySelector('#emptyAddOneBtn');
@@ -4158,6 +4320,9 @@ function wireContent(){
   if(selectDeleteBarBtn) selectDeleteBarBtn.addEventListener('click', function(){ deleteSelectedInTab(selectDeleteBarBtn.getAttribute('data-tab')); });
   var exportBtn = content.querySelector('#exportDataBtn');
   if(exportBtn) exportBtn.addEventListener('click', exportData);
+
+  var insightsToggle = content.querySelector('#insightsToggle');
+  if(insightsToggle) insightsToggle.addEventListener('click', function(){ _insightsOpen = !_insightsOpen; render(); });
 
   var createInvoiceBtn = content.querySelector('#createInvoiceBtn');
   if(createInvoiceBtn) createInvoiceBtn.addEventListener('click', function(){ openInvoiceSheet(null); });
@@ -4241,6 +4406,677 @@ function setTab(tab){
   render();
 }
 
+/* ============================== BARCODE SCANNING ============================== */
+function openBarcodeScanSheet(onCode){
+  var supportsDetector = ('BarcodeDetector' in window);
+  var html = '<div class="sheet-head"><h2>Scan barcode</h2></div>' +
+    (supportsDetector ?
+      '<div id="bcCamWrap" style="position:relative;border-radius:12px;overflow:hidden;background:#000;margin-bottom:12px;">' +
+        '<video id="bcVideo" playsinline autoplay muted style="width:100%;display:block;max-height:260px;object-fit:cover;"></video>' +
+        '<div style="position:absolute;inset:0;border:2px solid rgba(255,255,255,0.5);pointer-events:none;"></div>' +
+      '</div><div id="bcCamStatus" class="banner">Point the camera at a barcode…</div>'
+      : '<div class="banner">'+ICONS.warn+'<span>Camera barcode scanning isn’t supported in this browser. Type the barcode instead.</span></div>') +
+    '<div class="field"><label>Barcode number</label><div style="display:flex;gap:8px;"><input id="bcManual" inputmode="numeric" placeholder="Type or scan a barcode" style="flex:1;"><button class="btn btn-primary" id="bcManualBtn" type="button">Use</button></div></div>';
+  var ov = openSheet(html, {center:true});
+  var stream = null, detecting = false, rafId = null, detector = null;
+  function stopCam(){
+    detecting = false;
+    if(rafId) cancelAnimationFrame(rafId);
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+  }
+  function finish(code){
+    stopCam();
+    closeModal();
+    if(onCode) onCode(String(code).trim());
+  }
+  ov.querySelector('#bcManualBtn').addEventListener('click', function(){
+    var v = ov.querySelector('#bcManual').value.trim();
+    if(!v){ toast('Type a barcode number first'); return; }
+    finish(v);
+  });
+  ov.querySelector('#bcManual').addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); ov.querySelector('#bcManualBtn').click(); }
+  });
+  if(supportsDetector){
+    (async function(){
+      try{
+        detector = new window.BarcodeDetector({ formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','itf'] });
+      }catch(e){
+        var st = ov.querySelector('#bcCamStatus');
+        if(st) st.innerHTML = ICONS.warn+'<span>Couldn’t start the scanner. Type the barcode instead.</span>';
+        return;
+      }
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode:'environment' } });
+      }catch(e){
+        var st2 = ov.querySelector('#bcCamStatus');
+        if(st2) st2.innerHTML = ICONS.warn+'<span>Camera access was denied. Type the barcode instead.</span>';
+        var wrap = ov.querySelector('#bcCamWrap'); if(wrap) wrap.style.display = 'none';
+        return;
+      }
+      var video = ov.querySelector('#bcVideo');
+      if(!video || !document.body.contains(video)){ stopCam(); return; }
+      video.srcObject = stream;
+      detecting = true;
+      var loop = async function(){
+        if(!detecting) return;
+        try{
+          var codes = await detector.detect(video);
+          if(codes && codes.length){ finish(codes[0].rawValue); return; }
+        }catch(e){ /* keep trying */ }
+        rafId = requestAnimationFrame(loop);
+      };
+      loop();
+    })();
+  }
+  var origClose = closeModal;
+  // Ensure the camera stops if the sheet is dismissed some other way (overlay tap / back).
+  var overlayEl = document.querySelector('.overlay');
+  if(overlayEl){
+    overlayEl.addEventListener('click', function(e){ if(e.target === overlayEl) stopCam(); });
+  }
+}
+
+function findProductByBarcode(code){
+  code = String(code||'').trim();
+  if(!code) return null;
+  return State.products.find(function(p){ return p.barcode && String(p.barcode).trim() === code; }) || null;
+}
+
+/* ============================== BLUETOOTH THERMAL RECEIPT PRINTING ============================== */
+var BLE_PRINTER_SERVICES = ['000018f0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455', 0xFFE0, 0xFF00];
+var BLE_PRINTER_WRITE_CHARS = ['00002af1-0000-1000-8000-00805f9b34fb', '49535343-8841-43f4-a8d4-ecbe34729bb3', 0xFFE1];
+var blePrinterDevice = null, blePrinterChar = null;
+
+function bluetoothSupported(){ return !!(navigator && navigator.bluetooth); }
+
+async function connectBluetoothPrinter(){
+  if(!bluetoothSupported()) throw new Error('unsupported');
+  var device = await navigator.bluetooth.requestDevice({
+    filters: BLE_PRINTER_SERVICES.map(function(s){ return { services:[s] }; }),
+    optionalServices: BLE_PRINTER_SERVICES
+  });
+  var server = await device.gatt.connect();
+  var char = null;
+  for(var i=0;i<BLE_PRINTER_SERVICES.length && !char; i++){
+    try{
+      var service = await server.getPrimaryService(BLE_PRINTER_SERVICES[i]);
+      var chars = await service.getCharacteristics();
+      char = chars.find(function(c){ return c.properties.write || c.properties.writeWithoutResponse; }) || null;
+    }catch(e){ /* try next known service uuid */ }
+  }
+  if(!char) throw new Error('no-writable-characteristic');
+  blePrinterDevice = device;
+  blePrinterChar = char;
+  return { device: device, char: char };
+}
+
+function escposReceiptBytes(draft, shopName){
+  var lines = [];
+  var ESC = '\x1b', GS = '\x1d';
+  lines.push(ESC + '@'); // init
+  lines.push(ESC + 'a' + '\x01'); // center
+  lines.push((shopName || 'Pesa') + '\n');
+  lines.push(ESC + 'a' + '\x00'); // left
+  lines.push('--------------------------------\n');
+  lines.push('Receipt ' + (draft.number||'') + '\n');
+  lines.push((draft.dateStr||'') + '\n');
+  if(draft.billToName) lines.push('Customer: ' + draft.billToName + '\n');
+  lines.push('--------------------------------\n');
+  var total = 0;
+  (draft.items||[]).forEach(function(it){
+    var lineTotal = (it.qty||0) * (it.unitPrice||0);
+    total += lineTotal;
+    var name = String(it.desc||'').slice(0,20);
+    lines.push(name + '\n');
+    lines.push('  ' + it.qty + ' x ' + fmtMoney(it.unitPrice) + ' = ' + fmtMoney(lineTotal) + '\n');
+  });
+  lines.push('--------------------------------\n');
+  lines.push('TOTAL: ' + fmtMoney(total) + '\n');
+  lines.push('\n');
+  lines.push('Thank you!\n');
+  lines.push('\n\n\n');
+  lines.push(GS + 'V' + '\x42' + '\x00'); // partial cut
+  var text = lines.join('');
+  var bytes = [];
+  for(var i=0;i<text.length;i++) bytes.push(text.charCodeAt(i) & 0xFF);
+  return new Uint8Array(bytes);
+}
+
+async function writeBleInChunks(char, bytes){
+  var chunkSize = 180;
+  for(var i=0;i<bytes.length;i+=chunkSize){
+    var chunk = bytes.slice(i, i+chunkSize);
+    if(char.properties.writeWithoutResponse){ await char.writeValueWithoutResponse(chunk); }
+    else { await char.writeValue(chunk); }
+  }
+}
+
+async function printReceiptViaBluetooth(draft, btn){
+  if(!bluetoothSupported()){ toast('Bluetooth printing isn’t supported on this device/browser'); return; }
+  var oldLabel = btn ? btn.textContent : '';
+  try{
+    if(btn){ btn.disabled = true; btn.textContent = 'Connecting…'; }
+    if(!blePrinterChar){ await connectBluetoothPrinter(); }
+    if(btn) btn.textContent = 'Printing…';
+    var bytes = escposReceiptBytes(draft, State.settings.shopName);
+    await writeBleInChunks(blePrinterChar, bytes);
+    toast('Sent to printer');
+  }catch(e){
+    if(e && e.name === 'NotFoundError'){ toast('No printer selected'); }
+    else toast('Couldn’t print — check the printer is on and paired');
+    blePrinterDevice = null; blePrinterChar = null;
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = oldLabel || 'Print via Bluetooth'; }
+  }
+}
+
+function bluetoothPrintButtonHtml(id){
+  var supported = bluetoothSupported();
+  return '<button class="btn btn-ghost btn-block" id="'+id+'" type="button" '+(supported?'':'disabled title="Bluetooth printing isn’t supported on this device/browser"')+' style="'+(supported?'':'opacity:.55;')+'">'+ (supported ? 'Print via Bluetooth' : 'Bluetooth printing unavailable') +'</button>';
+}
+
+/* ============================== SALES INSIGHTS (dashboard) ============================== */
+var _insightsOpen = false;
+function computeSalesInsights(sales){
+  var byQty = {}, byRev = {}, byDow = [0,0,0,0,0,0,0], byHour = new Array(24).fill(0);
+  sales.forEach(function(s){
+    var d = new Date(s.createdAt);
+    byDow[(d.getDay()+6)%7] += s.total; // Mon=0..Sun=6
+    byHour[d.getHours()] += s.total;
+    (s.items||[]).forEach(function(it){
+      byQty[it.name] = (byQty[it.name]||0) + it.qty;
+      byRev[it.name] = (byRev[it.name]||0) + it.lineTotal;
+    });
+  });
+  var toSorted = function(obj, asc){
+    return Object.keys(obj).map(function(k){ return {name:k, v:obj[k]}; }).sort(function(a,b){ return asc ? a.v-b.v : b.v-a.v; });
+  };
+  return {
+    bestByQty: toSorted(byQty).slice(0,5),
+    bestByRev: toSorted(byRev).slice(0,5),
+    worst: toSorted(byQty, true).slice(0,5),
+    byDow: byDow,
+    byHour: byHour
+  };
+}
+function dashboardInsightsHtml(){
+  if(State.sales.length === 0) return '';
+  var insights = computeSalesInsights(State.sales);
+  var dowLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var dowMax = Math.max.apply(null, insights.byDow.concat([1]));
+  var hourMax = Math.max.apply(null, insights.byHour.concat([1]));
+  var barList = function(items, fmt){
+    if(items.length===0) return '<div style="color:var(--text-muted);font-size:13px;">No data yet.</div>';
+    var max = Math.max.apply(null, items.map(function(i){return i.v;}).concat([1]));
+    return items.map(function(it){ return '<div class="barrow"><div class="bl">'+esc(it.name)+'</div><div class="btrack"><div class="bfill" style="width:'+(it.v/max*100)+'%"></div></div><div class="bv num">'+fmt(it.v)+'</div></div>'; }).join('');
+  };
+  var html = '<div class="section-title" id="insightsToggle" style="cursor:pointer;display:flex;align-items:center;gap:6px;">Sales insights <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;">('+(_insightsOpen?'hide':'show')+')</span></div>';
+  if(!_insightsOpen) return html;
+  html += '<div class="card pad" style="display:flex;flex-direction:column;gap:14px;">' +
+    '<div><div style="font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;">Best sellers by quantity</div>' + barList(insights.bestByQty, function(v){ return v+''; }) + '</div>' +
+    '<div><div style="font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;">Best sellers by revenue</div>' + barList(insights.bestByRev, fmtMoney) + '</div>' +
+    '<div><div style="font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;">Slowest sellers</div>' + barList(insights.worst, function(v){ return v+''; }) + '</div>' +
+    '<div><div style="font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;">Sales by day of week</div>' +
+      insights.byDow.map(function(v,i){ return '<div class="barrow"><div class="bl">'+dowLabels[i]+'</div><div class="btrack"><div class="bfill" style="width:'+(v/dowMax*100)+'%"></div></div><div class="bv num">'+fmtMoney(v)+'</div></div>'; }).join('') +
+    '</div>' +
+    '<div><div style="font-size:12.5px;font-weight:700;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;">Sales by hour of day</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:70px;">' + insights.byHour.map(function(v){ return '<div style="flex:1;background:var(--primary);opacity:'+(v>0?1:0.12)+';height:'+Math.max(3,(v/hourMax*100))+'%;border-radius:2px 2px 0 0;"></div>'; }).join('') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--text-muted);margin-top:3px;"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>' +
+    '</div>' +
+  '</div>';
+  return html;
+}
+
+/* ============================== SYNC STATUS ============================== */
+function syncStatusHtml(){
+  var dot, label;
+  if(Store.isCloud()){
+    dot = State.online ? 'var(--success)' : 'var(--danger)';
+    label = State.online ? 'Synced' : 'Offline';
+  } else if(window.claude && window.claude.use){
+    // We are on the artifact host but running on the local fallback — either
+    // still connecting, or genuinely offline; either way data is queued locally.
+    dot = 'var(--warn, #d98e2b)';
+    label = State.online ? 'Syncing…' : ('Offline — ' + localPendingCount() + ' pending');
+  } else {
+    dot = State.online ? 'var(--success)' : 'var(--danger)';
+    label = State.online ? 'Online (device only)' : 'Offline (device only)';
+  }
+  return '<div class="syncbadge" id="syncBadge" title="'+esc(label)+'" style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-muted);">' +
+    '<span style="width:7px;height:7px;border-radius:50%;background:'+dot+';flex-shrink:0;"></span><span>'+esc(label)+'</span>' +
+  '</div>';
+}
+function localPendingCount(){
+  try{
+    var all = JSON.parse(localStorage.getItem('otengu_shop_local_v1')||'{}');
+    var n = 0;
+    Object.keys(all).forEach(function(k){ n += Object.keys(all[k]||{}).length; });
+    return n;
+  }catch(e){ return 0; }
+}
+function updateSyncBadge(){
+  var slot = document.getElementById('syncBadgeSlot');
+  if(!slot) return;
+  slot.innerHTML = syncStatusHtml();
+}
+window.addEventListener('online', function(){ State.online = true; updateSyncBadge(); attemptCloudReconnect(); });
+window.addEventListener('offline', function(){ State.online = false; updateSyncBadge(); });
+
+var _reconnectTried = false;
+function attemptCloudReconnect(){
+  // Only meaningful inside the Claude artifact host, when we're currently on
+  // the local fallback (e.g. the very first window.claude.use('db') attempt
+  // failed while offline at cold load). GitHub Pages has no cloud db at all,
+  // so there is nothing to reconnect to there — the badge there only ever
+  // reflects navigator.onLine, never claims a cloud sync that can't exist.
+  if(Store.isCloud() || !(window.claude && window.claude.use) || _reconnectTried) return;
+  _reconnectTried = true;
+  (async function(){
+    try{
+      var ns = await window.claude.use('db');
+      if(!ns){ _reconnectTried = false; return; }
+      State.syncing = true; updateSyncBadge();
+      // Push every locally-queued record up into the matching cloud collection,
+      // using the same ids so a record already pushed is simply overwritten
+      // rather than duplicated.
+      var all = JSON.parse(localStorage.getItem('otengu_shop_local_v1')||'{}');
+      var paths = Object.keys(all);
+      for(var i=0;i<paths.length;i++){
+        var path = paths[i];
+        if(path.indexOf('/')>-1) continue; // skip nested sub-collections (e.g. ledger) — top-level only for this migration
+        var coll = ns.collection(path);
+        var ids = Object.keys(all[path]||{});
+        for(var j=0;j<ids.length;j++){
+          try{ await coll.doc(ids[j]).set(all[path][ids[j]]); }catch(e2){ /* keep going */ }
+        }
+      }
+      toast('Reconnected — your offline sales and changes are now synced to the cloud');
+      // Reload so every part of the app re-subscribes cleanly against the
+      // now-available cloud database instead of the local fallback.
+      setTimeout(function(){ location.reload(); }, 1200);
+    }catch(e){
+      _reconnectTried = false; // allow a later retry (e.g. next 'online' event)
+    }
+  })();
+}
+setInterval(function(){ if(State.online) attemptCloudReconnect(); }, 20000);
+
+/* ============================== SUPPLIERS ============================== */
+function openSuppliersSheet(){
+  var html = '<div class="sheet-head"><h2>Suppliers</h2></div>' +
+    '<div id="supList"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="supAddBtn">Add supplier</button></div>';
+  var ov = openSheet(html);
+  function renderList(){
+    var list = ov.querySelector('#supList');
+    if(State.suppliers.length === 0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No suppliers yet</div>'; return; }
+    list.innerHTML = '<div class="rowlist">' + State.suppliers.map(function(s){
+      return '<div class="row" data-sup="'+s.id+'"><div class="avatar">'+esc(initials(s.name))+'</div>' +
+        '<div class="main"><div class="title">'+esc(s.name)+'</div><div class="sub">'+esc(s.phone||s.contact||'No contact on file')+'</div></div></div>';
+    }).join('') + '</div>';
+    list.querySelectorAll('[data-sup]').forEach(function(row){
+      row.addEventListener('click', function(){
+        var s = State.suppliers.find(function(x){ return x.id===row.getAttribute('data-sup'); });
+        if(s) openSupplierFormSheet(s, openSuppliersSheet);
+      });
+    });
+  }
+  renderList();
+  ov.querySelector('#supAddBtn').addEventListener('click', function(){ openSupplierFormSheet(null, openSuppliersSheet); });
+}
+function openSupplierFormSheet(supplier, onDone){
+  var isEdit = !!supplier;
+  var html = '<div class="sheet-head"><h2>'+(isEdit?'Edit supplier':'Add supplier')+'</h2></div>' +
+    '<div class="field"><label>Name</label><input id="supName" value="'+esc(supplier?supplier.name:'')+'"></div>' +
+    '<div class="field"><label>Contact person (optional)</label><input id="supContact" value="'+esc(supplier?supplier.contact||'':'')+'"></div>' +
+    '<div class="field"><label>Phone (optional)</label><input id="supPhone" value="'+esc(supplier?supplier.phone||'':'')+'"></div>' +
+    '<div class="field"><label>Notes (optional)</label><textarea id="supNotes" rows="2">'+esc(supplier?supplier.notes||'':'')+'</textarea></div>' +
+    '<div class="actions">' + (isEdit?'<button class="btn btn-danger" id="supDelete">Delete</button>':'') +
+      '<button class="btn btn-primary btn-block" id="supSave">'+(isEdit?'Save changes':'Add supplier')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#supSave').addEventListener('click', function(){
+    var name = ov.querySelector('#supName').value.trim();
+    if(!name){ toast('Enter a supplier name'); return; }
+    var data = { name:name, contact: ov.querySelector('#supContact').value.trim(), phone: ov.querySelector('#supPhone').value.trim(), notes: ov.querySelector('#supNotes').value.trim() };
+    if(isEdit){ refs.suppliers.doc(supplier.id).update(data); logAudit('update','supplier',supplier.id,'Edited '+name); toast('Supplier updated'); }
+    else { data.createdAt = new Date().toISOString(); refs.suppliers.doc().set(data); logAudit('create','supplier',null,'Added supplier '+name); toast('Supplier added'); }
+    closeModal();
+    if(onDone) setTimeout(onDone, 50);
+  });
+  if(isEdit){
+    ov.querySelector('#supDelete').addEventListener('click', function(){
+      confirmSheet('Delete '+supplier.name+'?', 'This does not affect past purchase orders.', 'Delete', function(){
+        refs.suppliers.doc(supplier.id).delete();
+        logAudit('delete','supplier',supplier.id,'Deleted supplier '+supplier.name);
+        toast('Supplier deleted');
+        if(onDone) setTimeout(onDone, 50);
+      }, true);
+    });
+  }
+}
+
+/* ============================== PURCHASE ORDERS ============================== */
+var PO_DRAFT = { supplierId:'', items:[] };
+function openPurchaseOrdersSheet(){
+  var html = '<div class="sheet-head"><h2>Purchase orders</h2></div>' +
+    (State.suppliers.length===0 ? '<div class="banner">'+ICONS.warn+'<span>Add a supplier first, then create a purchase order against them.</span></div>' : '') +
+    '<div id="poList"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="poNewBtn" '+(State.suppliers.length===0?'disabled':'')+'>New purchase order</button></div>';
+  var ov = openSheet(html);
+  function renderList(){
+    var list = ov.querySelector('#poList');
+    if(State.purchaseOrders.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No purchase orders yet</div>'; return; }
+    list.innerHTML = '<div class="rowlist">' + State.purchaseOrders.map(function(po){
+      var sup = State.suppliers.find(function(s){ return s.id===po.supplierId; });
+      var total = (po.items||[]).reduce(function(a,i){ return a+(i.qty*i.cost); },0);
+      var statusColor = po.status==='received' ? 'var(--success)' : (po.status==='ordered' ? 'var(--accent, #d98e2b)' : 'var(--text-muted)');
+      return '<div class="row" data-po="'+po.id+'"><div class="avatar">'+ICONS.stack.replace(/width="18" height="18"/,'width="16" height="16"')+'</div>' +
+        '<div class="main"><div class="title">'+esc(sup?sup.name:'Unknown supplier')+'</div><div class="sub">'+(po.items||[]).length+' item(s) · '+fmtDateTime(po.createdAt)+'</div></div>' +
+        '<div class="trail"><div class="amt num">'+fmtMoney(total)+'</div><div class="note" style="color:'+statusColor+';font-weight:700;text-transform:capitalize;">'+esc(po.status)+'</div></div></div>';
+    }).join('') + '</div>';
+    list.querySelectorAll('[data-po]').forEach(function(row){
+      row.addEventListener('click', function(){
+        var po = State.purchaseOrders.find(function(x){ return x.id===row.getAttribute('data-po'); });
+        if(po) openPODetailSheet(po, openPurchaseOrdersSheet);
+      });
+    });
+  }
+  renderList();
+  ov.querySelector('#poNewBtn').addEventListener('click', function(){ openPOFormSheet(openPurchaseOrdersSheet); });
+}
+function openPOFormSheet(onDone){
+  var draft = { supplierId: State.suppliers[0] ? State.suppliers[0].id : '', items: [] };
+  var supOpts = State.suppliers.map(function(s){ return '<option value="'+s.id+'">'+esc(s.name)+'</option>'; }).join('');
+  var prodOpts = '<option value="">Choose a product…</option>' + State.products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('');
+  var html = '<div class="sheet-head"><h2>New purchase order</h2></div>' +
+    '<div class="field"><label>Supplier</label><select id="poSupplier">'+supOpts+'</select></div>' +
+    '<div class="field"><label>Add product</label><select id="poProdSelect">'+prodOpts+'</select></div>' +
+    '<div class="field-row"><div class="field"><label>Quantity</label><input id="poQty" type="number" inputmode="numeric" placeholder="1"></div><div class="field"><label>Cost each</label><input id="poCost" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>' +
+    '<button class="btn btn-ghost btn-block" id="poAddLineBtn" type="button" style="margin-bottom:10px;">Add line item</button>' +
+    '<div id="poLines"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="poSaveBtn">Save as draft</button></div>';
+  var ov = openSheet(html);
+  function renderLines(){
+    var el = ov.querySelector('#poLines');
+    if(draft.items.length===0){ el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">No line items yet.</div>'; return; }
+    el.innerHTML = draft.items.map(function(it,i){
+      return '<div class="cartitem"><div style="flex:1;"><div class="ci-name">'+esc(it.name)+'</div><div class="ci-price num">'+it.qty+' x '+fmtMoney(it.cost)+'</div></div><div class="ci-line num">'+fmtMoney(it.qty*it.cost)+'</div><button class="bulk-del" data-rmline="'+i+'" type="button">×</button></div>';
+    }).join('');
+    el.querySelectorAll('[data-rmline]').forEach(function(b){
+      b.addEventListener('click', function(){ draft.items.splice(parseInt(b.getAttribute('data-rmline'),10),1); renderLines(); });
+    });
+  }
+  renderLines();
+  ov.querySelector('#poAddLineBtn').addEventListener('click', function(){
+    var pid = ov.querySelector('#poProdSelect').value;
+    var p = State.products.find(function(x){ return x.id===pid; });
+    if(!p){ toast('Choose a product'); return; }
+    var qty = parseInt(ov.querySelector('#poQty').value,10) || 0;
+    var cost = parseFloat(ov.querySelector('#poCost').value);
+    if(isNaN(cost)) cost = p.costPrice||0;
+    if(qty<=0){ toast('Enter a quantity'); return; }
+    draft.items.push({ productId:p.id, name:p.name, qty:qty, cost:cost });
+    ov.querySelector('#poQty').value=''; ov.querySelector('#poCost').value='';
+    renderLines();
+  });
+  ov.querySelector('#poSaveBtn').addEventListener('click', function(){
+    var supplierId = ov.querySelector('#poSupplier').value;
+    if(!supplierId){ toast('Choose a supplier'); return; }
+    if(draft.items.length===0){ toast('Add at least one line item'); return; }
+    refs.purchaseOrders.doc().set({ supplierId:supplierId, items:draft.items, status:'draft', createdAt:new Date().toISOString() }).then(function(ref){
+      logAudit('create','purchaseOrder', ref&&ref.id, 'Created PO with '+draft.items.length+' line(s)');
+    });
+    toast('Purchase order saved as draft');
+    closeModal();
+    if(onDone) setTimeout(onDone, 50);
+  });
+}
+function openPODetailSheet(po, onDone){
+  var sup = State.suppliers.find(function(s){ return s.id===po.supplierId; });
+  var total = (po.items||[]).reduce(function(a,i){ return a+(i.qty*i.cost); },0);
+  var html = '<div class="sheet-head"><h2>Purchase order</h2></div>' +
+    '<div class="banner">Supplier: <strong>'+esc(sup?sup.name:'Unknown')+'</strong> · Status: <strong style="text-transform:capitalize;">'+esc(po.status)+'</strong></div>' +
+    '<div class="rowlist">' + (po.items||[]).map(function(it){
+      return '<div class="row" style="cursor:default;"><div class="main"><div class="title">'+esc(it.name)+'</div><div class="sub">'+it.qty+' x '+fmtMoney(it.cost)+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(it.qty*it.cost)+'</div></div></div>';
+    }).join('') + '</div>' +
+    '<div class="sumline total" style="margin-top:8px;"><span>Total</span><span class="num">'+fmtMoney(total)+'</span></div>' +
+    '<div class="actions">' +
+      (po.status==='draft' ? '<button class="btn btn-ghost btn-block" id="poMarkOrderedBtn">Mark as ordered</button>' : '') +
+      (po.status!=='received' ? '<button class="btn btn-primary btn-block" id="poMarkReceivedBtn">Mark as received (adds to stock)</button>' : '<div class="banner" style="color:var(--success);">'+ICONS.check.replace(/width="24" height="24"/,'width="15" height="15"')+'<span>Received '+fmtDateTime(po.receivedAt)+'</span></div>') +
+    '</div>';
+  var ov = openSheet(html, {center:true});
+  var markOrdered = ov.querySelector('#poMarkOrderedBtn');
+  if(markOrdered) markOrdered.addEventListener('click', function(){
+    refs.purchaseOrders.doc(po.id).update({ status:'ordered' });
+    logAudit('update','purchaseOrder',po.id,'Marked as ordered');
+    toast('Marked as ordered');
+    closeModal();
+    if(onDone) setTimeout(onDone, 50);
+  });
+  var markReceived = ov.querySelector('#poMarkReceivedBtn');
+  if(markReceived) markReceived.addEventListener('click', function(){
+    confirmSheet('Receive this order?', 'This adds the ordered quantities to your current stock levels.', 'Receive', function(){
+      (po.items||[]).forEach(function(it){
+        var p = State.products.find(function(x){ return x.id===it.productId; });
+        if(p){ refs.products.doc(p.id).update({ stockQty: (p.stockQty||0) + it.qty, costPrice: it.cost||p.costPrice }); }
+      });
+      refs.purchaseOrders.doc(po.id).update({ status:'received', receivedAt:new Date().toISOString() });
+      logAudit('update','purchaseOrder',po.id,'Received — stock increased for '+(po.items||[]).length+' item(s)');
+      toast('Stock updated from purchase order');
+      closeModal();
+      if(onDone) setTimeout(onDone, 50);
+    });
+  });
+}
+
+/* ============================== BRANCHES (multi-branch) ============================== */
+function openBranchesSheet(){
+  var html = '<div class="sheet-head"><h2>Branches</h2></div>' +
+    '<div class="banner">Add another branch if you run more than one shop location. Products, sales and till records made from here on can be tagged to a branch, and you can switch which one you’re viewing below.</div>' +
+    '<div id="brList"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="brAddBtn">Add branch</button></div>';
+  var ov = openSheet(html);
+  function renderList(){
+    var list = ov.querySelector('#brList');
+    if(State.branches.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">Only one branch so far (this one).</div>'; return; }
+    list.innerHTML = '<div class="rowlist">' + State.branches.map(function(b){
+      var active = (State.settings.currentBranchId||'all') === b.id;
+      return '<div class="row" data-br="'+b.id+'"><div class="avatar">'+esc(initials(b.name))+'</div><div class="main"><div class="title">'+esc(b.name)+(active?' (active)':'')+'</div><div class="sub">'+esc(b.address||'No address on file')+'</div></div></div>';
+    }).join('') + '</div>';
+    list.querySelectorAll('[data-br]').forEach(function(row){
+      row.addEventListener('click', function(){
+        var b = State.branches.find(function(x){ return x.id===row.getAttribute('data-br'); });
+        if(b) openBranchFormSheet(b, openBranchesSheet);
+      });
+    });
+  }
+  renderList();
+  ov.querySelector('#brAddBtn').addEventListener('click', function(){ openBranchFormSheet(null, openBranchesSheet); });
+}
+function openBranchFormSheet(branch, onDone){
+  var isEdit = !!branch;
+  var html = '<div class="sheet-head"><h2>'+(isEdit?'Edit branch':'Add branch')+'</h2></div>' +
+    '<div class="field"><label>Branch name</label><input id="brName" value="'+esc(branch?branch.name:'')+'" placeholder="e.g. Main Street"></div>' +
+    '<div class="field"><label>Address (optional)</label><textarea id="brAddr" rows="2">'+esc(branch?branch.address||'':'')+'</textarea></div>' +
+    '<div class="actions">' + (isEdit?'<button class="btn btn-danger" id="brDelete">Delete</button>':'') +
+      '<button class="btn btn-primary btn-block" id="brSave">'+(isEdit?'Save changes':'Add branch')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#brSave').addEventListener('click', function(){
+    var name = ov.querySelector('#brName').value.trim();
+    if(!name){ toast('Enter a branch name'); return; }
+    var data = { name:name, address: ov.querySelector('#brAddr').value.trim() };
+    if(isEdit){ refs.branches.doc(branch.id).update(data); logAudit('update','branch',branch.id,'Edited branch '+name); toast('Branch updated'); }
+    else { data.createdAt = new Date().toISOString(); refs.branches.doc().set(data); logAudit('create','branch',null,'Added branch '+name); toast('Branch added'); }
+    closeModal();
+    if(onDone) setTimeout(onDone, 50);
+  });
+  if(isEdit){
+    ov.querySelector('#brDelete').addEventListener('click', function(){
+      confirmSheet('Delete '+branch.name+'?', 'Records already tagged to this branch keep their history but will show under "All branches".', 'Delete', function(){
+        refs.branches.doc(branch.id).delete();
+        logAudit('delete','branch',branch.id,'Deleted branch '+branch.name);
+        toast('Branch deleted');
+        if(onDone) setTimeout(onDone, 50);
+      }, true);
+    });
+  }
+}
+function setActiveBranch(branchId){
+  State.settings = Object.assign({}, State.settings, { currentBranchId: branchId });
+  refs.settings.set(State.settings);
+  render();
+}
+function branchScoped(list){
+  var bid = State.settings.currentBranchId;
+  if(!bid || bid==='all' || State.branches.length===0) return list;
+  return list.filter(function(x){ return !x.branchId || x.branchId===bid; });
+}
+
+/* ============================== WASTAGE / SHRINKAGE ============================== */
+var WASTAGE_REASONS = ['spoilage','theft','damage','other'];
+function openWastageSheet(){
+  var html = '<div class="sheet-head"><h2>Wastage &amp; shrinkage</h2></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="wasteAddBtn">Record wastage</button></div>' +
+    '<div id="wasteList"></div>';
+  var ov = openSheet(html);
+  function renderList(){
+    var list = ov.querySelector('#wasteList');
+    if(State.wastage.length===0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No wastage recorded yet</div>'; return; }
+    var totalValue = State.wastage.reduce(function(s,w){
+      var p = State.products.find(function(x){ return x.id===w.productId; });
+      return s + (w.qty||0) * (p?p.costPrice||0:0);
+    },0);
+    list.innerHTML = '<div class="banner">Total recorded loss (at cost): <strong class="num">'+fmtMoney(totalValue)+'</strong></div><div class="rowlist">' + State.wastage.map(function(w){
+      return '<div class="row" style="cursor:default;"><div class="avatar">'+ICONS.warn+'</div><div class="main"><div class="title">'+esc(w.productName)+'</div><div class="sub">'+esc(w.reason)+' · '+fmtDateTime(w.createdAt)+(w.recordedBy?' · '+esc(w.recordedBy):'')+'</div></div><div class="trail"><div class="amt num">-'+w.qty+'</div></div></div>';
+    }).join('') + '</div>';
+  }
+  renderList();
+  ov.querySelector('#wasteAddBtn').addEventListener('click', function(){ openRecordWastageSheet(openWastageSheet); });
+}
+function openRecordWastageSheet(onDone){
+  var prodOpts = '<option value="">Choose a product…</option>' + State.products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+(p.stockQty!=null?p.stockQty:'—')+' in stock)</option>'; }).join('');
+  var reasonOpts = WASTAGE_REASONS.map(function(r){ return '<option value="'+r+'">'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>'; }).join('');
+  var html = '<div class="sheet-head"><h2>Record wastage</h2></div>' +
+    '<div class="field"><label>Product</label><select id="wProd">'+prodOpts+'</select></div>' +
+    '<div class="field"><label>Quantity lost</label><input id="wQty" type="number" inputmode="numeric" placeholder="1"></div>' +
+    '<div class="field"><label>Reason</label><select id="wReason">'+reasonOpts+'</select></div>' +
+    '<div class="field"><label>Notes (optional)</label><textarea id="wNotes" rows="2"></textarea></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="wSaveBtn">Record wastage</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#wSaveBtn').addEventListener('click', function(){
+    var pid = ov.querySelector('#wProd').value;
+    var p = State.products.find(function(x){ return x.id===pid; });
+    if(!p){ toast('Choose a product'); return; }
+    var qty = parseInt(ov.querySelector('#wQty').value,10) || 0;
+    if(qty<=0){ toast('Enter a quantity greater than 0'); return; }
+    var reason = ov.querySelector('#wReason').value;
+    var notes = ov.querySelector('#wNotes').value.trim();
+    refs.products.doc(p.id).update({ stockQty: Math.max(0, (p.stockQty||0) - qty) });
+    refs.wastage.doc().set({
+      productId:p.id, productName:p.name, qty:qty, reason:reason, notes:notes,
+      recordedBy: State.session?State.session.name:'', createdAt:new Date().toISOString()
+    }).then(function(ref){ logAudit('create','wastage', ref&&ref.id, qty+' x '+p.name+' ('+reason+')'); });
+    toast('Wastage recorded and stock adjusted');
+    closeModal();
+    if(onDone) setTimeout(onDone, 50);
+  });
+}
+
+/* ============================== AUDIT TRAIL VIEWER ============================== */
+function openAuditLogSheet(){
+  var html = '<div class="sheet-head"><h2>Activity log</h2></div>' +
+    (State.auditLog.length===0 ? '<div class="empty" style="padding:16px 0;">No activity recorded yet</div>' :
+      '<div class="rowlist">' + State.auditLog.slice(0,300).map(function(a){
+        return '<div class="row" style="cursor:default;"><div class="avatar">'+esc(initials(a.userName||'?'))+'</div>' +
+          '<div class="main"><div class="title">'+esc(a.summary||a.action)+'</div><div class="sub">'+esc(a.userName||'System')+' · '+fmtDateTime(a.createdAt)+'</div></div></div>';
+      }).join('') + '</div>');
+  openSheet(html);
+}
+
+/* ============================== NAMRA VAT SUMMARY ============================== */
+function openVatSummarySheet(){
+  var rate = (State.settings.vatRate!=null) ? State.settings.vatRate : 15;
+  var now = new Date();
+  var defFrom = todayKey(new Date(now.getFullYear(), now.getMonth(), 1));
+  var defTo = todayKey(now);
+  var html = '<div class="sheet-head"><h2>NamRA VAT summary</h2></div>' +
+    '<div class="banner">Uses your company’s VAT number (from Company details) and the VAT rate below, applied to sales and expenses as VAT-inclusive amounts.</div>' +
+    '<div class="field"><label>VAT rate (%)</label><input id="vatRate" type="number" inputmode="decimal" step="0.1" value="'+rate+'"></div>' +
+    '<div class="field-row"><div class="field"><label>From</label><input id="vatFrom" type="date" value="'+defFrom+'"></div><div class="field"><label>To</label><input id="vatTo" type="date" value="'+defTo+'"></div></div>' +
+    '<div id="vatResult"></div>' +
+    '<div class="actions"><button class="btn btn-accent btn-block" id="vatDownloadBtn">Download VAT summary (PDF)</button></div>';
+  var ov = openSheet(html);
+  function compute(){
+    var r = parseFloat(ov.querySelector('#vatRate').value) || 0;
+    var from = ov.querySelector('#vatFrom').value, to = ov.querySelector('#vatTo').value;
+    var fromD = from ? new Date(from+'T00:00:00') : new Date(0);
+    var toD = to ? new Date(to+'T23:59:59') : new Date();
+    var sales = State.sales.filter(function(s){ var d=new Date(s.createdAt); return d>=fromD && d<=toD; });
+    var expenses = State.expenses.filter(function(e){ var d=new Date(e.createdAt); return d>=fromD && d<=toD; });
+    var salesTotal = sales.reduce(function(s,x){ return s+x.total; },0);
+    var expTotal = expenses.reduce(function(s,x){ return s+x.amount; },0);
+    var outputVat = salesTotal * r / (100+r);
+    var inputVat = expTotal * r / (100+r);
+    var net = outputVat - inputVat;
+    return { r:r, from:from, to:to, salesTotal:salesTotal, expTotal:expTotal, outputVat:outputVat, inputVat:inputVat, net:net };
+  }
+  function renderResult(){
+    var c = compute();
+    ov.querySelector('#vatResult').innerHTML =
+      '<div class="tillcard">' +
+      '<div class="tillrow"><span class="l">Total sales (incl. VAT)</span><span class="v num">'+fmtMoney(c.salesTotal)+'</span></div>' +
+      '<div class="tillrow"><span class="l">Output VAT</span><span class="v num">'+fmtMoney(c.outputVat)+'</span></div>' +
+      '<div class="tillrow"><span class="l">Total expenses (incl. VAT)</span><span class="v num">'+fmtMoney(c.expTotal)+'</span></div>' +
+      '<div class="tillrow"><span class="l">Input VAT</span><span class="v num">'+fmtMoney(c.inputVat)+'</span></div>' +
+      '<div class="tillrow grand"><span class="l">Net VAT '+(c.net>=0?'payable':'refundable')+'</span><span class="v num">'+fmtMoney(Math.abs(c.net))+'</span></div>' +
+      '</div>';
+  }
+  renderResult();
+  ov.querySelector('#vatRate').addEventListener('input', renderResult);
+  ov.querySelector('#vatFrom').addEventListener('change', renderResult);
+  ov.querySelector('#vatTo').addEventListener('change', renderResult);
+  ov.querySelector('#vatDownloadBtn').addEventListener('click', async function(){
+    var c = compute();
+    State.settings = Object.assign({}, State.settings, { vatRate: c.r });
+    refs.settings.set(State.settings);
+    var btn = ov.querySelector('#vatDownloadBtn');
+    btn.disabled = true; var old = btn.textContent; btn.textContent = 'Preparing…';
+    var ready = await ensureJsPDF();
+    if(!ready){ btn.disabled=false; btn.textContent=old; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
+    var JsPDFCtor = getJsPDF();
+    var doc = new JsPDFCtor({ unit:'pt', format:'a4' });
+    var margin = 48, y = 60;
+    doc.setFont('helvetica','bold'); doc.setFontSize(16);
+    doc.text(State.settings.shopName||'Pesa', margin, y); y += 22;
+    doc.setFontSize(12); doc.setFont('helvetica','normal');
+    doc.text('NamRA VAT Summary', margin, y); y += 16;
+    if(State.company && State.company.vatNumber){ doc.text('VAT number: '+State.company.vatNumber, margin, y); y += 16; }
+    doc.text('Period: '+(c.from||'—')+' to '+(c.to||'—'), margin, y); y += 16;
+    doc.text('VAT rate: '+c.r+'%', margin, y); y += 26;
+    var rows = [
+      ['Total sales (incl. VAT)', fmtMoney(c.salesTotal)],
+      ['Output VAT', fmtMoney(c.outputVat)],
+      ['Total expenses (incl. VAT)', fmtMoney(c.expTotal)],
+      ['Input VAT', fmtMoney(c.inputVat)],
+      ['Net VAT ' + (c.net>=0?'payable':'refundable'), fmtMoney(Math.abs(c.net))]
+    ];
+    rows.forEach(function(r, i){
+      doc.setFont('helvetica', i===rows.length-1 ? 'bold' : 'normal');
+      doc.text(r[0], margin, y);
+      doc.text(r[1], margin+320, y);
+      y += 20;
+    });
+    y += 10;
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text('This is a working summary generated from your recorded sales and expenses. Please confirm figures and filing requirements with NamRA.', margin, y, {maxWidth: 480});
+    saveGeneratedPdf(doc, 'namra-vat-summary-'+(c.from||'')+'_to_'+(c.to||'')+'.pdf').then(function(ok){
+      btn.disabled=false; btn.textContent=old;
+      if(ok) toast('VAT summary downloaded');
+    });
+  });
+}
+
 /* ============================== boot ============================== */
 document.getElementById('bottomnav').addEventListener('click', function(e){
   var btn = e.target.closest('.navbtn');
@@ -4258,6 +5094,8 @@ document.getElementById('authScreen').innerHTML = '<div class="authcard"><div cl
 Store.ready.then(function(){
   initRefs();
   subscribeAll();
+  updateSyncBadge();
+  if(!Store.isCloud()) attemptCloudReconnect();
 });
 
 setInterval(updateHeader, 60000);
