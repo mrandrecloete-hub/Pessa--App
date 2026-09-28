@@ -5601,18 +5601,18 @@ function fmtStampDate(d){
 // inside and outside the ring for extra ink speckle texture.
 function drawGrungeRing(doc, cx, cy, radius, opts){
   opts = opts || {};
-  var segments = opts.segments || 100;
-  var skipChance = opts.skipChance != null ? opts.skipChance : 0.18;
-  var jitter = opts.jitter != null ? opts.jitter : 0.4;
-  var baseWidth = opts.width != null ? opts.width : 0.55;
-  var dashSpan = opts.dashSpan != null ? opts.dashSpan : 0.68; // fraction of each slot that is inked
+  var segments = opts.segments || 320;
+  var skipChance = opts.skipChance != null ? opts.skipChance : 0.05;
+  var jitter = opts.jitter != null ? opts.jitter : 0.35;
+  var baseWidth = opts.width != null ? opts.width : 1.0;
+  var dashSpan = opts.dashSpan != null ? opts.dashSpan : 0.94; // fraction of each slot that is inked
   for(var i=0;i<segments;i++){
     if(Math.random() < skipChance) continue;
     var a0 = (i/segments)*Math.PI*2;
     var a1 = ((i+dashSpan)/segments)*Math.PI*2;
     var r0 = radius + (Math.random()-0.5)*jitter;
     var r1 = radius + (Math.random()-0.5)*jitter;
-    doc.setLineWidth(Math.max(0.15, baseWidth + (Math.random()-0.5)*0.3));
+    doc.setLineWidth(Math.max(0.5, baseWidth + (Math.random()-0.5)*0.3));
     doc.line(cx+Math.cos(a0)*r0, cy+Math.sin(a0)*r0, cx+Math.cos(a1)*r1, cy+Math.sin(a1)*r1);
   }
   var dots = opts.dots != null ? opts.dots : Math.round(segments*0.22);
@@ -5634,7 +5634,7 @@ function drawGrungeRing(doc, cx, cy, radius, opts){
 // few degrees off straight and drawn with a translucent stamp red ink
 // color, the way a genuine hand pressed rubber stamp looks on paper.
 function drawWetStamp(doc, pageW, pageH){
-  var cx = pageW - 45, cy = pageH - 45, R = 23, tilt = -5; // degrees, hand stamped tilt
+  var cx = pageW - 45, cy = pageH - 45, R = 24, tilt = -5; // degrees, hand stamped tilt
   var rad = tilt * Math.PI/180, cos = Math.cos(rad), sin = Math.sin(rad);
   function rot(dx,dy){ return { x: cx + dx*cos - dy*sin, y: cy + dx*sin + dy*cos }; }
 
@@ -5657,13 +5657,19 @@ function drawWetStamp(doc, pageW, pageH){
   doc.setFillColor(ink[0],ink[1],ink[2]);
   doc.setTextColor(ink[0],ink[1],ink[2]);
 
-  // Distressed double ring border (a circle is rotation invariant, so this
-  // is drawn straight — the tilt below applies only to the content inside).
-  drawGrungeRing(doc, cx, cy, R, { segments:110, skipChance:0.16, jitter:0.42, width:0.65 });
-  drawGrungeRing(doc, cx, cy, R-3.4, { segments:80, skipChance:0.22, jitter:0.3, width:0.4, dots:12 });
+  // Bold, dense ring border (a circle is rotation invariant, so this is
+  // drawn straight — the tilt below applies only to the content inside).
+  // A single thick, densely packed band of near-continuous segments reads
+  // as one solid worn ring rather than a sparse dashed circle, with a
+  // close, thin hairline sitting just inside it to match a genuine rubber
+  // stamp's tightly grouped double edge.
+  drawGrungeRing(doc, cx, cy, R, { segments:300, skipChance:0.04, jitter:0.4, width:1.05, dashSpan:0.94 });
+  doc.setLineWidth(0.3);
+  doc.circle(cx, cy, R-1.7, 'S');
 
-  // The Pesa wordmark, styled larger and bolder than the rest, like a logo.
-  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  // The Pesa wordmark, large and bold like a logo, dominant at the top of
+  // the stamp.
+  doc.setFont('helvetica','bold'); doc.setFontSize(25);
   var word = rot(0,-13);
   doc.text('Pesa', word.x, word.y, {align:'center', angle: tilt});
 
@@ -5672,37 +5678,37 @@ function drawWetStamp(doc, pageW, pageH){
   var halfW = 13.5, halfH = 3.6, boxDy = -2.5;
   var bTL = rot(-halfW, boxDy-halfH), bTR = rot(halfW, boxDy-halfH);
   var bBR = rot(halfW, boxDy+halfH), bBL = rot(-halfW, boxDy+halfH);
-  doc.setLineWidth(0.45);
+  doc.setLineWidth(0.75);
   doc.line(bTL.x,bTL.y,bTR.x,bTR.y);
   doc.line(bTR.x,bTR.y,bBR.x,bBR.y);
   doc.line(bBR.x,bBR.y,bBL.x,bBL.y);
   doc.line(bBL.x,bBL.y,bTL.x,bTL.y);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(8.6);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.2);
   var dateP = rot(0, boxDy+1.2);
   doc.text(fmtStampDate(new Date()), dateP.x, dateP.y, {align:'center', angle: tilt});
 
   // Divider line below the date box.
   var dl = rot(-15, 4.6), dr = rot(15, 4.6);
-  doc.setLineWidth(0.35);
+  doc.setLineWidth(0.6);
   doc.line(dl.x,dl.y,dr.x,dr.y);
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(6.4);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.6);
   var verified = rot(0, 9);
   doc.text('DOCUMENT VERIFIED', verified.x, verified.y, {align:'center', angle: tilt});
 
-  // Small checkmark inside a thin circle near the bottom, flanked by two
+  // Small checkmark inside a bold circle near the bottom, flanked by two
   // short decorative line strokes — drawn shapes, not text characters.
   var checkC = rot(0, 15.5);
-  doc.setLineWidth(0.35);
+  doc.setLineWidth(0.55);
   doc.circle(checkC.x, checkC.y, 3, 'S');
   var c1 = rot(-1.35,15.7), c2 = rot(-0.25,17), c3 = rot(1.75,14.3);
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.95);
   doc.line(c1.x,c1.y,c2.x,c2.y);
   doc.line(c2.x,c2.y,c3.x,c3.y);
   var fl1a = rot(-9.5,15.5), fl1b = rot(-5.4,15.5);
   var fl2a = rot(5.4,15.5), fl2b = rot(9.5,15.5);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.7);
   doc.line(fl1a.x,fl1a.y,fl1b.x,fl1b.y);
   doc.line(fl2a.x,fl2a.y,fl2b.x,fl2b.y);
 
