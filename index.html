@@ -1962,11 +1962,13 @@ function offerSaleReceipt(sale, customer){
     '</div>';
   var ov = openSheet(html, {center:true});
   ov.querySelector('#saleSkipBtn').addEventListener('click', closeModal);
-  ov.querySelector('#saleReceiptBtn').addEventListener('click', function(){
-    var doc = buildReceiptPdf(draft);
-    if(!doc){ toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
+  ov.querySelector('#saleReceiptBtn').addEventListener('click', async function(){
     var btn = ov.querySelector('#saleReceiptBtn');
-    btn.disabled = true; btn.textContent = 'Preparing…';
+    btn.disabled = true; var oldLabel = btn.textContent; btn.textContent = 'Preparing…';
+    var ready = await ensureJsPDF();
+    if(!ready){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
+    var doc = buildReceiptPdf(draft);
+    if(!doc){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     saveGeneratedPdf(doc, 'receipt-'+todayKey()+'-'+sale.total+'.pdf').then(function(ok){
       if(ok) toast('Receipt downloaded');
       closeModal();
@@ -2425,6 +2427,23 @@ function resizeImageFile(file, maxDim, quality){
 
 /* ============================== PDF HELPERS ============================== */
 function getJsPDF(){ return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null; }
+// The PDF library loads from an external CDN via a <script> tag; on a slow
+// connection or right after a cold app launch it may not have finished
+// loading yet by the time someone taps a PDF button. Poll briefly instead
+// of failing immediately, so a slow-but-working load isn't mistaken for a
+// broken one.
+function ensureJsPDF(maxWaitMs){
+  if(getJsPDF()) return Promise.resolve(true);
+  maxWaitMs = maxWaitMs || 6000;
+  return new Promise(function(resolve){
+    var waited = 0, step = 150;
+    var timer = setInterval(function(){
+      if(getJsPDF()){ clearInterval(timer); resolve(true); return; }
+      waited += step;
+      if(waited >= maxWaitMs){ clearInterval(timer); resolve(false); }
+    }, step);
+  });
+}
 function fmtDateNice(d){ return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 
 function hexToRgb(hex){
@@ -2852,13 +2871,16 @@ function openInvoiceSheet(prefill){
       items: items
     };
   }
-  ov.querySelector('#invGenerateBtn').addEventListener('click', function(){
+  ov.querySelector('#invGenerateBtn').addEventListener('click', async function(){
     var draft = readDraft();
     if(!draft) return;
-    var doc = buildInvoicePdf(draft);
-    if(!doc){ toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     var btn = ov.querySelector('#invGenerateBtn');
+    var oldLabel = btn.textContent;
     btn.disabled = true; btn.textContent = 'Preparing…';
+    var ready = await ensureJsPDF();
+    if(!ready){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
+    var doc = buildInvoicePdf(draft);
+    if(!doc){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     saveGeneratedPdf(doc, 'invoice-'+draft.number+'.pdf').then(function(ok){
       btn.disabled = false; btn.textContent = 'Download invoice (PDF)';
       if(ok){
@@ -2870,13 +2892,16 @@ function openInvoiceSheet(prefill){
       }
     });
   });
-  ov.querySelector('#invReceiptBtn').addEventListener('click', function(){
+  ov.querySelector('#invReceiptBtn').addEventListener('click', async function(){
     var draft = readDraft();
     if(!draft) return;
-    var doc = buildReceiptPdf(draft);
-    if(!doc){ toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     var btn = ov.querySelector('#invReceiptBtn');
-    btn.disabled = true; var oldLabel = btn.textContent; btn.textContent = 'Preparing…';
+    var oldLabel = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Preparing…';
+    var ready = await ensureJsPDF();
+    if(!ready){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
+    var doc = buildReceiptPdf(draft);
+    if(!doc){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     saveGeneratedPdf(doc, 'receipt-'+draft.number+'.pdf').then(function(ok){
       btn.disabled = false; btn.textContent = oldLabel;
       if(ok) toast('Receipt downloaded');
@@ -4160,14 +4185,16 @@ function wireContent(){
   }
 
   var downloadReportBtn = content.querySelector('#downloadReportBtn');
-  if(downloadReportBtn) downloadReportBtn.addEventListener('click', function(){
+  if(downloadReportBtn) downloadReportBtn.addEventListener('click', async function(){
     var fromVal = content.querySelector('#reportFrom').value;
     var toVal = content.querySelector('#reportTo').value;
     if(!fromVal || !toVal){ toast('Pick a start and end date'); return; }
     if(fromVal > toVal){ toast('The start date must be before the end date'); return; }
-    var doc = buildReportPdfForRange(fromVal, toVal);
-    if(!doc){ toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     downloadReportBtn.disabled = true; downloadReportBtn.textContent = 'Preparing…';
+    var ready = await ensureJsPDF();
+    if(!ready){ downloadReportBtn.disabled = false; downloadReportBtn.textContent = 'Download report (PDF)'; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
+    var doc = buildReportPdfForRange(fromVal, toVal);
+    if(!doc){ downloadReportBtn.disabled = false; downloadReportBtn.textContent = 'Download report (PDF)'; toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     saveGeneratedPdf(doc, 'pesa-report-'+fromVal+'_to_'+toVal+'.pdf').then(function(ok){
       downloadReportBtn.disabled = false; downloadReportBtn.textContent = 'Download report (PDF)';
       if(ok) toast('Report downloaded');
