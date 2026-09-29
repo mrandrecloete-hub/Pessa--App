@@ -5,7 +5,7 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v3';
+var CACHE = 'pesa-shell-v4';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 // The page itself is updated often during testing — always prefer a fresh
 // copy over whatever's cached, and only fall back to cache when offline.
@@ -42,7 +42,7 @@ self.addEventListener('fetch', function(evt){
     // Network-first: always try to get the latest page/manifest; only use
     // the cached copy if the network is unreachable (offline).
     evt.respondWith(
-      fetch(evt.request).then(function(res){
+      fetch(evt.request, { cache: 'no-store' }).then(function(res){
         if(res && res.ok){
           var copy = res.clone();
           caches.open(CACHE).then(function(cache){ cache.put(evt.request, copy); });

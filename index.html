@@ -6756,7 +6756,14 @@ setInterval(updateHeader, 60000);
 (function registerServiceWorker(){
   try{
     if('serviceWorker' in navigator && window.self === window.top){
-      navigator.serviceWorker.register('sw.js').catch(function(){ /* not available in this host — ignore */ });
+      navigator.serviceWorker.register('sw.js').then(function(reg){
+          try{ reg.update(); }catch(e){}
+          var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+          navigator.serviceWorker.addEventListener('controllerchange', function(){
+            if(!hadController || reloaded) return; reloaded = true;
+            try{ window.location.reload(); }catch(e){}
+          });
+        }).catch(function(){ /* not available in this host — ignore */ });
     }
   }catch(e){ /* sandboxed context — ignore */ }
 })();
