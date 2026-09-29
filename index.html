@@ -341,6 +341,17 @@
   .inv-meta{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin:2px 0 12px; font-size:13px; }
   .inv-meta .l{ font-size:10.5px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.03em; }
 
+  /* monthly report archive */
+  .rep-tools{ display:flex; gap:10px; flex-wrap:wrap; }
+  .rep-tools .btn{ flex:1 1 180px; padding:11px 14px; font-size:13.5px; }
+  .rep-filters{ display:flex; gap:8px; margin:12px 0 2px; }
+  .rep-filters select{ flex:1; min-width:0; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:10px; padding:9px 10px; font-size:13px; font-family:inherit; }
+  .rep-sales{ text-align:right; flex-shrink:0; }
+  .rep-sales .amt{ font-size:18px; font-weight:700; letter-spacing:-0.02em; }
+  .rep-cap{ font-size:10px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-top:1px; }
+  .rep-figs{ white-space:normal !important; }
+  .rep-note{ font-size:11.5px; color:var(--text-muted); line-height:1.55; margin:18px 2px 4px; text-align:center; }
+
   /* stat tiles */
   .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
@@ -899,6 +910,146 @@ Object.assign(LANGS.de.strings, {
   'Invoices':'Rechnungen','View in Invoices':'In Rechnungen ansehen','Share':'Teilen','Download':'Herunterladen','Print':'Drucken','All time':'Gesamter Zeitraum','Search invoices':'Rechnungen suchen','No invoices stored yet':'Noch keine Rechnungen gespeichert','Invoices and receipts you create or send from now on are saved here, ready to share, download or print again. Ones made before this update were not saved, so they are not listed.':'Rechnungen und Belege, die Sie ab jetzt erstellen oder senden, werden hier gespeichert und können erneut geteilt, heruntergeladen oder gedruckt werden. Dokumente von vor diesem Update wurden nicht gespeichert und erscheinen daher nicht.','No client name':'Kein Kundenname','All clients':'Alle Kunden','Client':'Kunde','Use your browser’s print option':'Nutzen Sie die Druckfunktion Ihres Browsers','Couldn’t open the PDF. Download it and print from your files.':'Das PDF ließ sich nicht öffnen. Laden Sie es herunter und drucken Sie es aus Ihren Dateien.','Print dialog opened':'Druckdialog geöffnet','This removes the stored copy from the Invoices list only. It does not change your stock, sales, customer balances or the invoice numbers. Anything already sent stays with the client.':'Dies entfernt nur die gespeicherte Kopie aus der Rechnungsliste. Bestand, Verkäufe, Kundensalden und Rechnungsnummern bleiben unverändert. Bereits Gesendetes bleibt beim Kunden.','Receipt':'Beleg','Due':'Fällig','Qty':'Menge','Saved':'Gespeichert','Total':'Gesamt'
 });
 
+// Monthly report archive strings (Afrikaans and German only; other languages fall back to English).
+Object.assign(LANGS.af.strings, {
+  "Reports":"Verslae",
+  "Whole shop":"Hele winkel",
+  "Branch":"Tak",
+  "Interim":"Tussentydse",
+  "Final":"Finale",
+  "Generated":"Gegenereer",
+  "Expenses":"Uitgawes",
+  "Sales":"Verkope",
+  "Profit":"Wins",
+  "Loss":"Verlies",
+  "View report archive":"Bekyk verslagargief",
+  "Generate this month so far":"Genereer hierdie maand tot dusver",
+  "File a past month":"Lê ’n vorige maand af",
+  "Month":"Maand",
+  "File report":"Lê verslag af",
+  "Done":"Klaar",
+  "monthly report filed in Reports":"maandverslag in Verslae afgelê",
+  "monthly reports filed in Reports":"maandverslae in Verslae afgelê",
+  "No sales or expenses recorded yet this month":"Nog geen verkope of uitgawes hierdie maand aangeteken nie",
+  "Report for the month so far saved":"Verslag vir die maand tot dusver gestoor",
+  "Every finished month with sales or expenses already has a report.":"Elke afgehandelde maand met verkope of uitgawes het reeds ’n verslag.",
+  "The report is built from the records in Pesa today and saved as a permanent copy.":"Die verslag word uit die rekords in Pesa vandag opgestel en as ’n permanente kopie gestoor.",
+  "Report filed":"Verslag afgelê",
+  "That report already exists":"Daardie verslag bestaan reeds",
+  "Report downloaded":"Verslag afgelaai",
+  "CSV downloaded":"CSV afgelaai",
+  "Send report":"Stuur verslag",
+  "Only the owner can delete reports":"Slegs die eienaar kan verslae uitvee",
+  "Report deleted":"Verslag uitgevee",
+  "This removes the stored copy from the Reports list only. Your sales, expenses and stock are not changed. Copies you already downloaded, printed or sent stay with you. A deleted report is not filed again automatically; you can file that month again from File a past month.":"Dit verwyder slegs die gestoorde kopie uit die Verslae-lys. Jou verkope, uitgawes en voorraad word nie verander nie. Kopieë wat jy reeds afgelaai, gedruk of gestuur het, bly by jou. ’n Uitgevee verslag word nie outomaties weer afgelê nie; jy kan daardie maand weer aflê onder Lê ’n vorige maand af.",
+  "Try a different year or branch.":"Probeer ’n ander jaar of tak.",
+  "Year":"Jaar",
+  "All years":"Alle jare",
+  "All branches":"Alle takke",
+  "No reports filed yet":"Nog geen verslae afgelê nie",
+  "Monthly reports are saved here for your records, ready to download, print or share. The first ones are filed automatically once a month has finished and had sales or expenses.":"Maandverslae word hier vir jou rekords gestoor, gereed om af te laai, te druk of te deel. Die eerstes word outomaties afgelê sodra ’n maand verby is en verkope of uitgawes gehad het.",
+  "A report for each finished month is filed here automatically when the owner or a manager opens Pesa. Months with no sales or expenses are skipped, and only the latest 24 months are filed at first. Pesa cannot rebuild records from before it was used. Each saved report keeps its figures even if sales or products are changed later. Customer credit and stock are counted as at the day the report was filed.":"’n Verslag vir elke afgehandelde maand word hier outomaties afgelê wanneer die eienaar of ’n bestuurder Pesa oopmaak. Maande sonder verkope of uitgawes word oorgeslaan, en aanvanklik word slegs die laaste 24 maande afgelê. Pesa kan nie rekords van voor sy gebruik herbou nie. Elke gestoorde verslag behou sy syfers selfs al word verkope of produkte later verander. Kliëntekrediet en voorraad word getel soos op die dag toe die verslag afgelê is.",
+  "Scope":"Omvang",
+  "Period":"Tydperk",
+  "Generated by":"Gegenereer deur",
+  "Figures so far. The final report is filed automatically after the month ends.":"Syfers tot dusver. Die finale verslag word outomaties afgelê nadat die maand geëindig het.",
+  "Sales revenue":"Verkope-inkomste",
+  "Number of sales":"Aantal verkope",
+  "Cost of goods sold":"Koste van verkoopte goedere",
+  "Gross profit":"Bruto wins",
+  "Operating expenses":"Bedryfsuitgawes",
+  "Net profit":"Netto wins",
+  "Net loss":"Netto verlies",
+  "Payment methods":"Betaalmetodes",
+  "Cash":"Kontant",
+  "Card":"Kaart",
+  "Mobile wallet":"Mobiele beursie",
+  "Credit":"Krediet",
+  "VAT (working figures)":"BTW (werksyfers)",
+  "Output VAT":"Uitsette BTW",
+  "Input VAT":"Insette BTW",
+  "Net VAT payable":"Netto BTW betaalbaar",
+  "Net VAT refundable":"Netto BTW terugbetaalbaar",
+  "Expenses by category":"Uitgawes volgens kategorie",
+  "Top products":"Topprodukte",
+  "The PDF lists them all.":"Die PDF lys hulle almal.",
+  "Other records":"Ander rekords",
+  "Wastage at cost":"Wegdoening teen koste",
+  "Tills closed":"Kassas gesluit",
+  "Total till variance":"Totale kassaverskil",
+  "Customer credit when filed":"Kliëntekrediet met afleg",
+  "Stock at cost when filed":"Voorraad teen koste met afleg"
+});
+Object.assign(LANGS.de.strings, {
+  "Reports":"Berichte",
+  "Whole shop":"Gesamtes Geschäft",
+  "Branch":"Filiale",
+  "Interim":"Zwischenbericht",
+  "Final":"Endgültig",
+  "Generated":"Erstellt",
+  "Expenses":"Ausgaben",
+  "Sales":"Umsatz",
+  "Profit":"Gewinn",
+  "Loss":"Verlust",
+  "View report archive":"Berichtsarchiv ansehen",
+  "Generate this month so far":"Diesen Monat bisher erstellen",
+  "File a past month":"Vergangenen Monat ablegen",
+  "Month":"Monat",
+  "File report":"Bericht ablegen",
+  "Done":"Fertig",
+  "monthly report filed in Reports":"Monatsbericht in Berichten abgelegt",
+  "monthly reports filed in Reports":"Monatsberichte in Berichten abgelegt",
+  "No sales or expenses recorded yet this month":"Diesen Monat wurden noch keine Verkäufe oder Ausgaben erfasst",
+  "Report for the month so far saved":"Bericht für den bisherigen Monat gespeichert",
+  "Every finished month with sales or expenses already has a report.":"Jeder abgeschlossene Monat mit Verkäufen oder Ausgaben hat bereits einen Bericht.",
+  "The report is built from the records in Pesa today and saved as a permanent copy.":"Der Bericht wird aus den heutigen Daten in Pesa erstellt und als dauerhafte Kopie gespeichert.",
+  "Report filed":"Bericht abgelegt",
+  "That report already exists":"Dieser Bericht existiert bereits",
+  "Report downloaded":"Bericht heruntergeladen",
+  "CSV downloaded":"CSV heruntergeladen",
+  "Send report":"Bericht senden",
+  "Only the owner can delete reports":"Nur der Inhaber kann Berichte löschen",
+  "Report deleted":"Bericht gelöscht",
+  "This removes the stored copy from the Reports list only. Your sales, expenses and stock are not changed. Copies you already downloaded, printed or sent stay with you. A deleted report is not filed again automatically; you can file that month again from File a past month.":"Dies entfernt nur die gespeicherte Kopie aus der Berichteliste. Verkäufe, Ausgaben und Bestand bleiben unverändert. Bereits heruntergeladene, gedruckte oder gesendete Kopien bleiben bei Ihnen. Ein gelöschter Bericht wird nicht automatisch erneut abgelegt; Sie können den Monat unter Vergangenen Monat ablegen erneut ablegen.",
+  "Try a different year or branch.":"Versuchen Sie ein anderes Jahr oder eine andere Filiale.",
+  "Year":"Jahr",
+  "All years":"Alle Jahre",
+  "All branches":"Alle Filialen",
+  "No reports filed yet":"Noch keine Berichte abgelegt",
+  "Monthly reports are saved here for your records, ready to download, print or share. The first ones are filed automatically once a month has finished and had sales or expenses.":"Monatsberichte werden hier für Ihre Unterlagen gespeichert und können heruntergeladen, gedruckt oder geteilt werden. Die ersten werden automatisch abgelegt, sobald ein Monat vorbei ist und Verkäufe oder Ausgaben hatte.",
+  "A report for each finished month is filed here automatically when the owner or a manager opens Pesa. Months with no sales or expenses are skipped, and only the latest 24 months are filed at first. Pesa cannot rebuild records from before it was used. Each saved report keeps its figures even if sales or products are changed later. Customer credit and stock are counted as at the day the report was filed.":"Für jeden abgeschlossenen Monat wird hier automatisch ein Bericht abgelegt, wenn der Inhaber oder ein Manager Pesa öffnet. Monate ohne Verkäufe oder Ausgaben werden übersprungen, und zunächst werden nur die letzten 24 Monate abgelegt. Pesa kann keine Daten aus der Zeit vor der Nutzung rekonstruieren. Jeder gespeicherte Bericht behält seine Zahlen, auch wenn Verkäufe oder Produkte später geändert werden. Kundenkredit und Bestand gelten zum Tag der Ablage.",
+  "Scope":"Umfang",
+  "Period":"Zeitraum",
+  "Generated by":"Erstellt von",
+  "Figures so far. The final report is filed automatically after the month ends.":"Bisherige Zahlen. Der endgültige Bericht wird nach Monatsende automatisch abgelegt.",
+  "Sales revenue":"Umsatzerlöse",
+  "Number of sales":"Anzahl Verkäufe",
+  "Cost of goods sold":"Wareneinsatz",
+  "Gross profit":"Bruttogewinn",
+  "Operating expenses":"Betriebsausgaben",
+  "Net profit":"Nettogewinn",
+  "Net loss":"Nettoverlust",
+  "Payment methods":"Zahlungsarten",
+  "Cash":"Bar",
+  "Card":"Karte",
+  "Mobile wallet":"Mobile Wallet",
+  "Credit":"Kredit",
+  "VAT (working figures)":"MwSt (Arbeitszahlen)",
+  "Output VAT":"Umsatzsteuer",
+  "Input VAT":"Vorsteuer",
+  "Net VAT payable":"MwSt Zahllast",
+  "Net VAT refundable":"MwSt Erstattung",
+  "Expenses by category":"Ausgaben nach Kategorie",
+  "Top products":"Top Produkte",
+  "The PDF lists them all.":"Das PDF listet alle auf.",
+  "Other records":"Weitere Angaben",
+  "Wastage at cost":"Schwund zu Einkaufspreisen",
+  "Tills closed":"Kassen geschlossen",
+  "Total till variance":"Kassendifferenz gesamt",
+  "Customer credit when filed":"Kundenkredit bei Ablage",
+  "Stock at cost when filed":"Bestand zu Einkaufspreisen bei Ablage"
+});
+
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
   var code = currentLangCode();
@@ -1072,7 +1223,7 @@ var State = {
   cart: [], // {productId, name, unitPrice, cost, qty, unit}
   sellSearch: '',
   ready: { products:false, customers:false, sales:false, expenses:false, settings:false, company:false, users:false, tills:false,
-    branches:false, suppliers:false, purchaseOrders:false, wastage:false, auditLog:false, invoices:false },
+    branches:false, suppliers:false, purchaseOrders:false, wastage:false, auditLog:false, invoices:false, reports:false },
   select: {
     stock: { active:false, ids:{} },
     credit: { active:false, ids:{} },
@@ -1088,6 +1239,8 @@ var State = {
   purchaseOrders: [],  // {id, supplierId, items:[{productId,name,qty,cost}], status, createdAt, receivedAt}
   invoices: [],        // {id, type:'invoice'|'receipt', number, billToName, items, total, dateStr, customerId, branchId, createdBy, createdAt}
   invFilter: { q:'', period:'all', client:'' },
+  reports: [],         // immutable monthly report snapshots: {id, type:'monthly', interim, periodKey, branchId, generatedAt, figures, ...}
+  repFilter: { year:'all', scope:'any' },
   wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
   auditLog: [],        // {id, action, entityType, entityId, summary, userName, userId, createdAt}
   currentBranchId: null, // owner-selected branch filter ('all' = combined view)
@@ -1196,6 +1349,7 @@ function initRefs(){
   refs.wastage = Store.collection('wastage');
   refs.auditLog = Store.collection('auditLog');
   refs.invoices = Store.collection('invoices');
+  refs.reports = Store.collection('reports');
 }
 
 function subscribeAll(){
@@ -1264,6 +1418,11 @@ function subscribeAll(){
   refs.invoices.onSnapshot(function(docs){
     State.invoices = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt) || String(b.number).localeCompare(String(a.number)); });
     State.ready.invoices = true;
+    if(document.getElementById('app').style.display !== 'none') render();
+  });
+  refs.reports.onSnapshot(function(docs){
+    State.reports = docs.map(function(d){ return Object.assign({id:d.id}, d.data); });
+    State.ready.reports = true;
     if(document.getElementById('app').style.display !== 'none') render();
   });
   refs.auditLog.onSnapshot(function(docs){
@@ -1335,7 +1494,7 @@ function sha256Hex(str){
 }
 function roleTabs(role){
   if(role === 'cashier') return ['sell','till'];
-  return ['dashboard','sell','stock','credit','invoices','expenses','till'];
+  return ['dashboard','sell','stock','credit','invoices','reports','expenses','till'];
 }
 function isManagerOrOwner(){ return !!(State.session && (State.session.role==='owner' || State.session.role==='manager')); }
 function isOwner(){ return !!(State.session && State.session.role==='owner'); }
@@ -3489,6 +3648,10 @@ async function downloadInvoiceRecord(rec){
 async function printInvoiceRecord(rec){
   var doc = await invoiceRecordPdf(rec);
   if(!doc) return;
+  printPdfDoc(doc);
+}
+/** Shared by invoices and reports: print a built jsPDF document. */
+function printPdfDoc(doc){
   var blob = doc.output('blob');
   if(!blob || blob.type !== 'application/pdf') blob = new Blob([blob], { type:'application/pdf' });
   var url = URL.createObjectURL(blob);
@@ -4044,15 +4207,21 @@ function monthOptionsHtml(){
   return opts.join('');
 }
 
-/** Build the report PDF for an explicit date range [start, end).
- * rangeLabel is the human-readable heading shown on the report. */
-function buildReportPdf(start, end, rangeLabel){
-  var jsPDFCtor = getJsPDF();
-  if(!jsPDFCtor) return null;
-  var monthLabel = rangeLabel;
+/** Work out every figure the report shows for [start, end). This is the one
+ * place the report maths lives, so the live Dashboard report and archived
+ * (saved) monthly reports can never disagree.
+ * opts.scope: 'all' (default) or a branch id (strict match on branchId).
+ * opts.snapshot: true builds the compact, storable version used by the
+ * report archive (adds payments, VAT, wastage, till figures and caps the
+ * long lists). The live Dashboard report never sets it. */
+function computeReportFigures(start, end, opts){
+  opts = opts || {};
+  var scope = opts.scope || 'all';
+  var snap = !!opts.snapshot;
+  function inScope(x){ return scope === 'all' || x.branchId === scope; }
 
-  var salesIn = State.sales.filter(function(s){ var d=new Date(s.createdAt); return d>=start && d<end; });
-  var expensesIn = State.expenses.filter(function(e){ var d=new Date(e.createdAt); return d>=start && d<end; });
+  var salesIn = State.sales.filter(function(s){ var d=new Date(s.createdAt); return d>=start && d<end && inScope(s); });
+  var expensesIn = State.expenses.filter(function(e){ var d=new Date(e.createdAt); return d>=start && d<end && inScope(e); });
   var revenue = salesIn.reduce(function(s,x){return s+x.total;},0);
   var cogs = salesIn.reduce(function(s,x){return s+(x.cost||0);},0);
   var grossProfit = revenue-cogs;
@@ -4072,69 +4241,213 @@ function buildReportPdf(start, end, rangeLabel){
     .sort(function(a,b){ return b.revenue-a.revenue; });
 
   var totalStockValue = State.products.reduce(function(s,p){ return s+(p.costPrice||0)*(p.stockQty||0); }, 0);
+  var expenseRows = Object.keys(expByCat).sort(function(a,b){return expByCat[b]-expByCat[a];}).map(function(k){ return { category:String(k), amount:expByCat[k] }; });
+  var stockRows = State.products.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).map(function(p){
+    return { name:p.name, cost:p.costPrice, sell:p.sellPrice, qty:p.stockQty };
+  });
+
+  var fig = {
+    revenue:revenue, cogs:cogs, grossProfit:grossProfit, expensesTotal:expensesTotal, netProfit:netProfit,
+    expenseRows:expenseRows, productRows:productRows, totalOwed:totalOwed, totalStockValue:totalStockValue, stockRows:stockRows
+  };
+  if(!snap) return fig;
+
+  var PRODUCT_CAP = 300, STOCK_CAP = 200;
+  fig.salesCount = salesIn.length;
+  var pay = { cash:0, card:0, wallet:0, credit:0 };
+  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; pay[m] = (pay[m]||0) + s.total; });
+  fig.payments = pay;
+  var rate = (State.settings.vatRate != null) ? Number(State.settings.vatRate) || 0 : 15;
+  fig.vat = { rate:rate, output: revenue*rate/(100+rate), input: expensesTotal*rate/(100+rate) };
+  fig.vat.net = fig.vat.output - fig.vat.input;
+  fig.productsOmitted = Math.max(0, productRows.length - PRODUCT_CAP);
+  fig.productRows = productRows.slice(0, PRODUCT_CAP);
+  if(scope === 'all'){
+    var wIn = State.wastage.filter(function(w){ var d=new Date(w.createdAt); return d>=start && d<end; });
+    fig.wastageCount = wIn.length;
+    fig.wastageValue = wIn.reduce(function(s,w){
+      var p = State.products.find(function(x){ return x.id===w.productId; });
+      return s + (w.qty||0) * (p ? p.costPrice||0 : 0);
+    }, 0);
+    var tIn = State.tillSessions.filter(function(t){ if(t.status!=='closed' || !t.closedAt) return false; var d=new Date(t.closedAt); return d>=start && d<end; });
+    fig.tills = { closedCount:tIn.length,
+      cashCounted: tIn.reduce(function(s,t){ return s + (Number(t.closingCash)||0); }, 0),
+      variance: tIn.reduce(function(s,t){ return s + (Number(t.variance)||0); }, 0) };
+    fig.stockCount = stockRows.length;
+    var byValue = stockRows.slice().sort(function(a,b){ return (Number(b.cost)||0)*(Number(b.qty)||0) - (Number(a.cost)||0)*(Number(a.qty)||0); }).slice(0, STOCK_CAP);
+    fig.stockRows = byValue.map(function(p){ return { name:p.name||'', cost:Number(p.cost)||0, sell:Number(p.sell)||0, qty:Number(p.qty)||0 }; });
+    fig.stockTruncated = stockRows.length > STOCK_CAP;
+  } else {
+    // credit, stock, wastage and tills are shop wide, not tracked per branch
+    fig.totalOwed = null; fig.totalStockValue = null; fig.stockRows = null;
+  }
+  return JSON.parse(JSON.stringify(fig));
+}
+
+/** Draw the report PDF from a figures object. With no meta it is the live
+ * Dashboard report, exactly as before. With meta ({archived:true, interim,
+ * shopName, scopeLabel, generatedAt, generatedBy}) it is a saved monthly
+ * report: same layout plus the extra sections and the record footer. */
+function drawReportPdf(fig, monthLabel, meta){
+  var jsPDFCtor = getJsPDF();
+  if(!jsPDFCtor) return null;
+  var arch = !!meta;
+  var gen = arch ? new Date(meta.generatedAt) : null;
+  var genText = arch ? (fmtDateNice(gen) + ' ' + gen.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})) : '';
 
   var doc = new jsPDFCtor({ unit:'mm', format:'a4' });
   var head = drawDocHeader(doc);
   var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
   var t = head.t, primary=t.primary, accent=t.accent, muted=t.muted, dark=t.dark;
+  function need(h){ if(y+h>275){ doc.addPage(); y=margin; } }
+  // the live report keeps its original minus sign; saved reports use a plain hyphen, which every PDF font draws correctly
+  var MINUS = arch ? '-' : '−';
 
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(primary[0],primary[1],primary[2]);
-  doc.text(State.settings.shopName || 'Pesa', margin, y+6);
+  doc.text((arch ? meta.shopName : State.settings.shopName) || 'Pesa', margin, y+6);
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-  doc.text('Monthly report — '+monthLabel, margin, y+12);
-  doc.text('Generated '+fmtDateNice(new Date()), pageW-margin, y+6, {align:'right'});
+  if(arch){
+    doc.text((meta.interim ? 'Interim monthly report (month still open)' : 'Archived monthly report')+' — '+monthLabel, margin, y+12);
+    doc.text('Generated '+genText, pageW-margin, y+6, {align:'right'});
+  } else {
+    doc.text('Monthly report — '+monthLabel, margin, y+12);
+    doc.text('Generated '+fmtDateNice(new Date()), pageW-margin, y+6, {align:'right'});
+  }
   y += 20;
   doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y+=9;
+  if(arch){
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text('Scope: '+meta.scopeLabel+(meta.periodText ? '    Period: '+meta.periodText : ''), margin, y-3);
+    if(meta.interim){
+      doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('Figures so far. The final report for this month is filed automatically after month end.', margin, y+2.5);
+      y += 5.5;
+    }
+    y += 5;
+  }
 
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
   doc.text('Summary', margin, y); y+=7;
-  pdfSummaryLine(doc,margin,y,contentW,'Sales revenue', fmtMoney(revenue)); y+=6.5;
-  pdfSummaryLine(doc,margin,y,contentW,'Cost of goods sold', '−'+fmtMoney(cogs)); y+=6.5;
-  pdfSummaryLine(doc,margin,y,contentW,'Gross profit', fmtMoney(grossProfit), {bold:true}); y+=8;
+  pdfSummaryLine(doc,margin,y,contentW,'Sales revenue', fmtMoney(fig.revenue)); y+=6.5;
+  pdfSummaryLine(doc,margin,y,contentW,'Cost of goods sold', MINUS+fmtMoney(fig.cogs)); y+=6.5;
+  pdfSummaryLine(doc,margin,y,contentW,'Gross profit', fmtMoney(fig.grossProfit), {bold:true}); y+=8;
   doc.setDrawColor(220,224,218); doc.line(margin,y-5,pageW-margin,y-5);
-  pdfSummaryLine(doc,margin,y,contentW,'Operating expenses', '−'+fmtMoney(expensesTotal)); y+=8;
+  pdfSummaryLine(doc,margin,y,contentW,'Operating expenses', MINUS+fmtMoney(fig.expensesTotal)); y+=8;
   doc.setDrawColor(220,224,218); doc.line(margin,y-5,pageW-margin,y-5);
+  var netProfit = fig.netProfit;
   pdfSummaryLine(doc,margin,y,contentW, netProfit>=0?'Net profit':'Net loss', fmtMoney(Math.abs(netProfit)), {bold:true, size:12.5, color: netProfit>=0?[47,125,79]:[179,64,42]}); y+=10;
-  pdfSummaryLine(doc,margin,y,contentW,'Outstanding customer credit (as of today)', fmtMoney(totalOwed)); y+=6.5;
-  pdfSummaryLine(doc,margin,y,contentW,'Stock on hand, valued at cost (as of today)', fmtMoney(totalStockValue)); y+=10;
+  if(fig.totalOwed != null){
+    var asAt = arch ? 'as at '+fmtDateNice(gen) : 'as of today';
+    pdfSummaryLine(doc,margin,y,contentW,'Outstanding customer credit ('+asAt+')', fmtMoney(fig.totalOwed)); y+=6.5;
+    pdfSummaryLine(doc,margin,y,contentW,'Stock on hand, valued at cost ('+asAt+')', fmtMoney(fig.totalStockValue)); y+=10;
+  } else if(arch){
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text('Customer credit and stock are shop wide, so they appear only on the whole shop report.', margin, y); y+=9;
+  }
 
-  if(Object.keys(expByCat).length){
+  if(arch){
+    need(30);
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text('Sales and payment methods', margin, y); y+=7;
+    pdfSummaryLine(doc,margin,y,contentW,'Number of sales', String(fig.salesCount||0)); y+=6.5;
+    pdfSummaryLine(doc,margin,y,contentW,'Average sale', fmtMoney(fig.salesCount ? fig.revenue/fig.salesCount : 0)); y+=6;
+    var pay = fig.payments || {};
+    var payNames = { cash:'Cash', card:'Card', wallet:'Mobile wallet', credit:'Credit' };
+    y = pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
+      columns:[{label:'PAYMENT METHOD', width:contentW-70},{label:'AMOUNT', width:40, align:'right'},{label:'SHARE', width:30, align:'right'}],
+      rows: Object.keys(pay).map(function(k){ return [payNames[k]||k, fmtMoney(pay[k]), (fig.revenue ? Math.round(pay[k]/fig.revenue*1000)/10 : 0)+'%']; })
+    });
+    y += 8;
+
+    need(50);
+    var v = fig.vat || {rate:0, output:0, input:0, net:0};
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text('VAT summary (working figures)', margin, y); y+=7;
+    if(meta.vatNumber){ pdfSummaryLine(doc,margin,y,contentW,'VAT number', meta.vatNumber); y+=6.5; }
+    pdfSummaryLine(doc,margin,y,contentW,'VAT rate applied', v.rate+'%'); y+=6.5;
+    pdfSummaryLine(doc,margin,y,contentW,'Output VAT (on sales)', fmtMoney(v.output)); y+=6.5;
+    pdfSummaryLine(doc,margin,y,contentW,'Input VAT (on expenses)', fmtMoney(v.input)); y+=6.5;
+    pdfSummaryLine(doc,margin,y,contentW,'Net VAT '+(v.net>=0?'payable':'refundable'), fmtMoney(Math.abs(v.net)), {bold:true}); y+=6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text('Sales and expenses are treated as VAT inclusive. Please confirm filing requirements with NamRA.', margin, y); y+=9;
+
+    if(fig.wastageValue != null || fig.tills){
+      need(34);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text('Other records for the month', margin, y); y+=7;
+      if(fig.wastageValue != null){ pdfSummaryLine(doc,margin,y,contentW,'Wastage recorded, at cost ('+(fig.wastageCount||0)+' entries)', fmtMoney(fig.wastageValue)); y+=6.5; }
+      if(fig.tills){
+        pdfSummaryLine(doc,margin,y,contentW,'Tills closed', String(fig.tills.closedCount)); y+=6.5;
+        pdfSummaryLine(doc,margin,y,contentW,'Cash counted at till close', fmtMoney(fig.tills.cashCounted)); y+=6.5;
+        pdfSummaryLine(doc,margin,y,contentW,'Total till variance', (fig.tills.variance<0?'-':'')+fmtMoney(Math.abs(fig.tills.variance))); y+=6.5;
+      }
+      y += 4;
+    }
+  }
+
+  if(fig.expenseRows.length){
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
+    if(arch) need(24);
     doc.text('Expenses by category', margin, y); y+=5;
     y = pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
       columns:[{label:'CATEGORY', width:contentW-40},{label:'AMOUNT', width:40, align:'right'}],
-      rows: Object.keys(expByCat).sort(function(a,b){return expByCat[b]-expByCat[a];}).map(function(k){ return [k, fmtMoney(expByCat[k])]; })
+      rows: fig.expenseRows.map(function(r){ return [r.category, fmtMoney(r.amount)]; })
     });
     y += 8;
   }
 
-  if(productRows.length){
+  if(fig.productRows.length){
     if(y>230){ doc.addPage(); y=margin; }
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text('Product performance', margin, y); y+=5;
-    pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
+    y = pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
       columns:[{label:'PRODUCT', width:contentW-90},{label:'QTY SOLD', width:30, align:'right'},{label:'REVENUE', width:30, align:'right'},{label:'PROFIT', width:30, align:'right'}],
-      rows: productRows.map(function(p){ return [p.name, String(p.qty), fmtMoney(p.revenue), fmtMoney(p.profit)]; })
+      rows: fig.productRows.map(function(p){ return [p.name, String(p.qty), fmtMoney(p.revenue), fmtMoney(p.profit)]; })
     });
+    if(arch && fig.productsOmitted){
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('Top '+fig.productRows.length+' products by revenue shown. '+fig.productsOmitted+' smaller products are not listed.', margin, y+5);
+    }
   }
 
-  doc.addPage(); y = margin;
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
-  doc.text('Current stock', margin, y+2); y+=9;
-  var stockRows = State.products.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).map(function(p){
-    return [p.name, fmtMoney(p.costPrice), fmtMoney(p.sellPrice), String(p.stockQty), fmtMoney((p.costPrice||0)*(p.stockQty||0))];
-  });
-  y = pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
-    columns:[{label:'PRODUCT', width:contentW-100},{label:'COST', width:25,align:'right'},{label:'SELL', width:25,align:'right'},{label:'QTY', width:20,align:'right'},{label:'STOCK VALUE', width:30,align:'right'}],
-    rows: stockRows
-  });
-  y += 6;
-  doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y+=6;
-  pdfSummaryLine(doc, margin, y, contentW, 'Total stock value (at cost)', fmtMoney(totalStockValue), {bold:true});
+  if(fig.stockRows){
+    doc.addPage(); y = margin;
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text(arch ? 'Stock on hand when this report was filed' : 'Current stock', margin, y+2); y+=9;
+    y = pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
+      columns:[{label:'PRODUCT', width:contentW-100},{label:'COST', width:25,align:'right'},{label:'SELL', width:25,align:'right'},{label:'QTY', width:20,align:'right'},{label:'STOCK VALUE', width:30,align:'right'}],
+      rows: fig.stockRows.map(function(p){ return [p.name, fmtMoney(p.cost), fmtMoney(p.sell), String(p.qty), fmtMoney((p.cost||0)*(p.qty||0))]; })
+    });
+    y += 6;
+    if(arch && fig.stockTruncated){
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text('The '+fig.stockRows.length+' products with the highest stock value are listed, out of '+fig.stockCount+'.', margin, y); y+=6;
+    }
+    doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y+=6;
+    pdfSummaryLine(doc, margin, y, contentW, 'Total stock value (at cost)', fmtMoney(fig.totalStockValue), {bold:true});
+  }
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-  doc.text('Generated with Pesa', margin, 290);
+  if(arch){
+    var pages = doc.getNumberOfPages();
+    for(var pg=1; pg<=pages; pg++){
+      doc.setPage(pg);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(meta.interim ? 'Interim report. A snapshot of the month so far; the final report replaces it after month end.' : 'Archived monthly report. The saved figures do not change if records are edited later.', margin, 285);
+      doc.text('Generated by Pesa on '+genText+(meta.generatedBy ? ' by '+meta.generatedBy : ''), margin, 290);
+      doc.text('Page '+pg+' of '+pages, pageW-margin, 290, {align:'right'});
+    }
+  } else {
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text('Generated with Pesa', margin, 290);
+  }
   return doc;
+}
+
+/** Build the report PDF for an explicit date range [start, end).
+ * rangeLabel is the human-readable heading shown on the report. */
+function buildReportPdf(start, end, rangeLabel){
+  if(!getJsPDF()) return null;
+  return drawReportPdf(computeReportFigures(start, end), rangeLabel, null);
 }
 
 /** Legacy helper: build a report for a whole calendar month ("YYYY-MM"). */
@@ -4153,6 +4466,433 @@ function buildReportPdfForRange(fromStr, toStr){
   var end = new Date(toStr+'T00:00:00'); end.setDate(end.getDate()+1); // make end exclusive, inclusive of the picked day
   var label = fmtDateNice(start) + ' – ' + fmtDateNice(new Date(toStr+'T00:00:00'));
   return buildReportPdf(start, end, label);
+}
+
+/* ============================== MONTHLY REPORT ARCHIVE ==============================
+ * Every finished calendar month is filed as an immutable snapshot: the
+ * computed figures are stored (not a pointer to live data), so an archived
+ * report keeps showing what was true when it was filed even if sales,
+ * expenses or products are edited or deleted afterwards. The PDF is rebuilt
+ * on demand from the stored figures with drawReportPdf(), the same drawing
+ * code as the Dashboard report. There is deliberately no "regenerate" on a
+ * saved report: that would silently replace the record. To redo one, the
+ * owner deletes it and files the month again. */
+var REPORT_SNAPSHOT_VERSION = 1;
+var REPORT_CATCHUP_MONTHS = 24;
+var _reportsAutoFileDone = false;
+function periodKeyOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function periodLabelOf(key){ var p = key.split('-'); return new Date(+p[0], +p[1]-1, 1).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }
+function reportId(periodKey, scope, interim){ return (interim ? 'interim-' : 'monthly-') + periodKey + '-' + scope; }
+function reportScopeLabel(rec){
+  if(rec.branchId === 'all') return tr('Whole shop');
+  var b = State.branches.find(function(x){ return x.id === rec.branchId; });
+  return (b && b.name) || rec.branchName || tr('Branch');
+}
+function reportBranchName(scope){
+  if(scope === 'all') return 'Whole shop';
+  var b = State.branches.find(function(x){ return x.id === scope; });
+  return b ? b.name : 'Branch';
+}
+/** periodKey -> { all:true, branches:{id:true} } for every month with a sale or expense. */
+function reportMonthActivity(){
+  var act = {};
+  function mark(list){
+    list.forEach(function(x){
+      if(!x.createdAt) return;
+      var d = new Date(x.createdAt); if(isNaN(d)) return;
+      var k = periodKeyOf(d);
+      var a = act[k] || (act[k] = { branches:{} });
+      if(x.branchId) a.branches[x.branchId] = true;
+    });
+  }
+  mark(State.sales); mark(State.expenses);
+  return act;
+}
+function reportScopesFor(activity){
+  var scopes = ['all'];
+  if(State.branches.length >= 1){
+    State.branches.forEach(function(b){ if(activity.branches[b.id]) scopes.push(b.id); });
+  }
+  return scopes;
+}
+/** Builds the storable record. `now` is the one canonical Date for this filing. */
+function buildReportSnapshot(periodKey, scope, interim, now){
+  var p = periodKey.split('-'), yr = +p[0], mo = +p[1];
+  var start = new Date(yr, mo-1, 1), end = new Date(yr, mo, 1);
+  var lastDay = new Date(yr, mo, 0);
+  return {
+    type: 'monthly',
+    version: REPORT_SNAPSHOT_VERSION,
+    interim: !!interim,
+    periodKey: periodKey,
+    label: periodLabelOf(periodKey),
+    periodStart: todayKey(start),
+    periodEnd: interim ? todayKey(now) : todayKey(lastDay),
+    branchId: scope,
+    branchName: reportBranchName(scope),
+    generatedAt: now.toISOString(),
+    generatedBy: State.session ? State.session.name : null,
+    generatedById: State.session ? State.session.userId : null,
+    shopName: State.settings.shopName || 'Pesa',
+    vatNumber: (State.company && State.company.vatNumber) || '',
+    figures: computeReportFigures(start, end, { scope: scope, snapshot: true })
+  };
+}
+function fileMonthlyReports(periodKey, scopes, now, opts){
+  opts = opts || {};
+  var filed = 0;
+  scopes.forEach(function(scope){
+    var id = reportId(periodKey, scope, false);
+    if(State.reports.some(function(r){ return r.id === id; })) return;
+    refs.reports.doc(id).set(buildReportSnapshot(periodKey, scope, false, now));
+    filed++;
+    // the final report supersedes the interim one for the same month and scope
+    var iid = reportId(periodKey, scope, true);
+    if(State.reports.some(function(r){ return r.id === iid; })) refs.reports.doc(iid).delete();
+  });
+  return filed;
+}
+function reportsTombstones(){ return Array.isArray(State.settings.deletedReportIds) ? State.settings.deletedReportIds : []; }
+/** Runs once per session for the owner or a manager, after all data has loaded. */
+function maybeAutoFileReports(){
+  if(_reportsAutoFileDone) return;
+  if(!State.session || !isManagerOrOwner()) return;
+  var r = State.ready;
+  if(!(r.reports && r.sales && r.expenses && r.products && r.customers && r.settings && r.branches && r.wastage && r.tills)) return;
+  _reportsAutoFileDone = true;
+  try{
+    var now = new Date();
+    var cur = periodKeyOf(now);
+    var act = reportMonthActivity();
+    var keys = Object.keys(act).filter(function(k){ return k < cur; }).sort().reverse().slice(0, REPORT_CATCHUP_MONTHS);
+    var dead = reportsTombstones();
+    var filed = 0;
+    keys.forEach(function(k){
+      var scopes = reportScopesFor(act[k]).filter(function(s){ return dead.indexOf(reportId(k, s, false)) === -1; });
+      filed += fileMonthlyReports(k, scopes, now);
+    });
+    // interim reports for months that have finished and now have a final report
+    State.reports.forEach(function(rec){
+      if(!rec.interim || !(rec.periodKey < cur)) return;
+      var hasFinal = State.reports.some(function(x){ return x.id === reportId(rec.periodKey, rec.branchId, false); });
+      if(hasFinal) refs.reports.doc(rec.id).delete();
+    });
+    if(filed > 0){
+      logAudit('report_filed', 'report', null, 'Filed ' + filed + ' monthly report' + (filed === 1 ? '' : 's') + ' automatically', now);
+      toast(filed + ' ' + (filed === 1 ? tr('monthly report filed in Reports') : tr('monthly reports filed in Reports')));
+    }
+  }catch(e){ /* filing must never break the app */ }
+}
+/** Manual: file (or refresh) the interim report for the month so far. */
+function generateInterimReports(){
+  var now = new Date();
+  var key = periodKeyOf(now);
+  var act = reportMonthActivity()[key];
+  if(!act){ toast(tr('No sales or expenses recorded yet this month')); return; }
+  var scopes = reportScopesFor(act);
+  scopes.forEach(function(scope){ refs.reports.doc(reportId(key, scope, true)).set(buildReportSnapshot(key, scope, true, now)); });
+  logAudit('report_generated', 'report', null, 'Generated interim report for ' + periodLabelOf(key), now);
+  toast(tr('Report for the month so far saved'));
+}
+/** Manual: file a finished month that has no report (older than the automatic catch up, or deleted earlier). */
+function openFileMonthSheet(){
+  var now = new Date(), cur = periodKeyOf(now), act = reportMonthActivity();
+  var keys = Object.keys(act).filter(function(k){
+    return k < cur && !State.reports.some(function(r){ return r.id === reportId(k, 'all', false); });
+  }).sort().reverse();
+  var html = '<div class="sheet-head"><h2>'+tr('File a past month')+'</h2></div>';
+  if(keys.length === 0){
+    html += '<div class="banner">'+tr('Every finished month with sales or expenses already has a report.')+'</div>' +
+      '<div class="actions"><button class="btn btn-ghost btn-block" id="fmClose" type="button">'+tr('Done')+'</button></div>';
+    var ov0 = openSheet(html, {center:true});
+    ov0.querySelector('#fmClose').addEventListener('click', closeModal);
+    return;
+  }
+  html += '<div class="banner">'+tr('The report is built from the records in Pesa today and saved as a permanent copy.')+'</div>' +
+    '<div class="field"><label>'+tr('Month')+'</label><select id="fmMonth">' +
+      keys.map(function(k){ return '<option value="'+k+'">'+esc(periodLabelOf(k))+'</option>'; }).join('') + '</select></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="fmGo" type="button">'+tr('File report')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#fmGo').addEventListener('click', function(){
+    var k = ov.querySelector('#fmMonth').value;
+    var scopes = reportScopesFor(act[k]);
+    var ids = scopes.map(function(s){ return reportId(k, s, false); });
+    var left = reportsTombstones().filter(function(id){ return ids.indexOf(id) === -1; });
+    if(left.length !== reportsTombstones().length){
+      State.settings = Object.assign({}, State.settings, { deletedReportIds: left });
+      refs.settings.set(State.settings);
+    }
+    var n = fileMonthlyReports(k, scopes, new Date());
+    logAudit('report_generated', 'report', null, 'Filed monthly report for ' + periodLabelOf(k));
+    closeModal();
+    toast(n ? tr('Report filed') : tr('That report already exists'));
+  });
+}
+
+/* ---- records: PDF, CSV, print, share, delete ---- */
+function reportFilename(rec, ext){
+  var slug = rec.branchId === 'all' ? '' : '-' + String(reportScopeLabel(rec)).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return 'report-' + rec.periodKey + slug + (rec.interim ? '-interim' : '') + '.' + ext;
+}
+async function reportRecordPdf(rec){
+  var ready = await ensureJsPDF();
+  var doc = ready ? drawReportPdf(rec.figures, rec.label, {
+    archived: true, interim: !!rec.interim, shopName: rec.shopName, scopeLabel: reportScopeLabel(rec),
+    generatedAt: rec.generatedAt, generatedBy: rec.generatedBy, vatNumber: rec.vatNumber,
+    periodText: fmtDateNice(rec.periodStart+'T00:00:00') + ' to ' + fmtDateNice(rec.periodEnd+'T00:00:00')
+  }) : null;
+  if(!doc) toast('Couldn’t load the PDF engine — check your connection and try again');
+  return doc;
+}
+async function downloadReportRecord(rec){
+  var doc = await reportRecordPdf(rec);
+  if(!doc) return;
+  var ok = await saveGeneratedPdf(doc, reportFilename(rec, 'pdf'));
+  if(ok) toast(tr('Report downloaded'));
+}
+async function printReportRecord(rec){
+  var doc = await reportRecordPdf(rec);
+  if(doc) printPdfDoc(doc);
+}
+function reportCsv(rec){
+  var f = rec.figures || {};
+  function q(v){ v = String(v == null ? '' : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+  var rows = [];
+  function add(){ rows.push(Array.prototype.map.call(arguments, q).join(',')); }
+  function m(n){ return (Math.round((Number(n)||0)*100)/100).toFixed(2); }
+  add('Pesa monthly report', rec.label + (rec.interim ? ' (interim)' : ''));
+  add('Shop', rec.shopName); add('Scope', reportScopeLabel(rec));
+  add('Period', rec.periodStart + ' to ' + rec.periodEnd);
+  add('Generated', rec.generatedAt); add('Generated by', rec.generatedBy || '');
+  add('Amounts in', 'N$'); add();
+  add('Summary', 'Amount');
+  add('Sales revenue', m(f.revenue)); add('Number of sales', f.salesCount||0);
+  add('Cost of goods sold', m(f.cogs)); add('Gross profit', m(f.grossProfit));
+  add('Operating expenses', m(f.expensesTotal)); add('Net profit (loss)', m(f.netProfit));
+  if(f.totalOwed != null){ add('Outstanding customer credit when filed', m(f.totalOwed)); add('Stock on hand at cost when filed', m(f.totalStockValue)); }
+  add();
+  add('Payment method', 'Amount');
+  Object.keys(f.payments||{}).forEach(function(k){ add(k, m(f.payments[k])); });
+  add();
+  if(f.vat){ add('VAT', 'Amount'); add('VAT rate percent', f.vat.rate); add('Output VAT', m(f.vat.output)); add('Input VAT', m(f.vat.input)); add('Net VAT payable (refundable if negative)', m(f.vat.net)); add(); }
+  if(f.wastageValue != null){ add('Wastage recorded at cost', m(f.wastageValue)); }
+  if(f.tills){ add('Tills closed', f.tills.closedCount); add('Cash counted at till close', m(f.tills.cashCounted)); add('Total till variance', m(f.tills.variance)); }
+  add();
+  add('Expense category', 'Amount');
+  (f.expenseRows||[]).forEach(function(r){ add(r.category, m(r.amount)); });
+  add();
+  add('Product', 'Quantity sold', 'Revenue', 'Profit');
+  (f.productRows||[]).forEach(function(p){ add(p.name, p.qty, m(p.revenue), m(p.profit)); });
+  if(f.productsOmitted) add('(' + f.productsOmitted + ' smaller products not listed)');
+  return '﻿' + rows.join('\r\n') + '\r\n';
+}
+async function downloadReportCsv(rec){
+  var ok = await saveBlobFile(reportFilename(rec, 'csv'), new Blob([reportCsv(rec)], { type:'text/csv;charset=utf-8' }));
+  if(ok) toast(tr('CSV downloaded'));
+}
+function reportSendCtx(rec){
+  var me = senderIdentity(), contactLine = senderContactLine();
+  var f = rec.figures || {};
+  var scope = reportScopeLabel(rec);
+  var title = rec.label + (rec.interim ? ' (interim)' : '') + (rec.branchId === 'all' ? '' : ', ' + scope);
+  var net = (f.netProfit < 0 ? 'Net loss ' : 'Net profit ') + fmtMoney(Math.abs(f.netProfit || 0));
+  return {
+    title: tr('Send report'),
+    summaryHtml: esc(title) + ' · <strong class="num">' + esc(fmtMoney(f.revenue || 0)) + '</strong>',
+    subject: 'Monthly report ' + title + ' from ' + me.name,
+    emailBody: function(name, hasPdf){
+      var lines = ['Dear ' + (name || 'Sir/Madam') + ',', ''];
+      lines.push((hasPdf ? 'Please find attached' : 'Here is') + ' the monthly report for ' + title + ' from ' + me.name + '.', '');
+      lines.push('Sales: ' + fmtMoney(f.revenue || 0), 'Expenses: ' + fmtMoney(f.expensesTotal || 0), net, '');
+      if(hasPdf) lines.push('The report is attached as a PDF (' + reportFilename(rec, 'pdf') + ').', '');
+      lines.push(contactLine ? 'If you have any questions, please contact us on ' + contactLine + '.' : 'If you have any questions, simply reply to this message.', '');
+      lines.push('Kind regards,', me.name);
+      return lines.join('\n');
+    },
+    shortText: function(name){
+      return 'Hello' + (name ? ' ' + name : '') + ', monthly report for ' + title + ' from ' + me.name + '. Sales ' + fmtMoney(f.revenue || 0) + ', expenses ' + fmtMoney(f.expensesTotal || 0) + ', ' + net.toLowerCase() + '.' + (contactLine ? ' Questions? ' + contactLine : '');
+    },
+    buildFile: async function(){
+      var doc = await reportRecordPdf(rec);
+      if(!doc) return null;
+      return new File([doc.output('blob')], reportFilename(rec, 'pdf'), { type:'application/pdf' });
+    },
+    defaultRecipient: 'manual',
+    allowCustomers: false, allowSuppliers: false,
+    audit: { action:'report_shared', entityType:'report', entityId: rec.id, label: 'Monthly report ' + title, reference: rec.periodKey }
+  };
+}
+function deleteReportRecord(rec, after){
+  if(!isOwner()){ toast(tr('Only the owner can delete reports')); return; }
+  var name = rec.label + (rec.interim ? ' (' + tr('Interim') + ')' : '') + ' · ' + reportScopeLabel(rec);
+  confirmSheet(tr('Delete') + ' ' + name + '?',
+    tr('This removes the stored copy from the Reports list only. Your sales, expenses and stock are not changed. Copies you already downloaded, printed or sent stay with you. A deleted report is not filed again automatically; you can file that month again from File a past month.'),
+    tr('Delete'), function(){
+      refs.reports.doc(rec.id).delete();
+      if(!rec.interim){
+        var dead = reportsTombstones().filter(function(id){ return id !== rec.id; }); dead.push(rec.id);
+        State.settings = Object.assign({}, State.settings, { deletedReportIds: dead.slice(-500) });
+        refs.settings.set(State.settings);
+      }
+      logAudit('report_deleted', 'report', rec.id, 'Deleted ' + (rec.interim ? 'interim ' : 'monthly ') + 'report ' + rec.label + ' (' + reportScopeLabel(rec) + ', sales ' + fmtMoney((rec.figures||{}).revenue||0) + ')');
+      toast(tr('Report deleted'));
+      if(after) after();
+    }, true);
+}
+function reportRunAction(act, rec){
+  if(act === 'view') openReportDetailSheet(rec);
+  else if(act === 'share') openSendSheet(reportSendCtx(rec));
+  else if(act === 'download') downloadReportRecord(rec);
+  else if(act === 'print') printReportRecord(rec);
+  else if(act === 'csv') downloadReportCsv(rec);
+  else if(act === 'delete') deleteReportRecord(rec);
+}
+
+/* ---- page ---- */
+function repSortedList(){
+  return State.reports.slice().sort(function(a,b){
+    if(a.periodKey !== b.periodKey) return a.periodKey < b.periodKey ? 1 : -1;
+    var sa = a.branchId === 'all' ? 0 : 1, sb = b.branchId === 'all' ? 0 : 1;
+    if(sa !== sb) return sa - sb;
+    if(!!a.interim !== !!b.interim) return a.interim ? 1 : -1;
+    return String(reportScopeLabel(a)).localeCompare(String(reportScopeLabel(b)));
+  });
+}
+function repFilteredList(){
+  var f = State.repFilter || {};
+  return repSortedList().filter(function(r){
+    if(f.year && f.year !== 'all' && String(r.periodKey).slice(0,4) !== f.year) return false;
+    if(f.scope && f.scope !== 'any' && r.branchId !== f.scope) return false;
+    return true;
+  });
+}
+function repProfitHtml(fig){
+  var n = (fig && fig.netProfit) || 0;
+  return '<span class="num" style="color:var(--' + (n < 0 ? 'danger' : 'success') + ');">' + esc((n < 0 ? tr('Loss') : tr('Profit')) + ' ' + fmtMoney(Math.abs(n))) + '</span>';
+}
+function repRowHtml(r){
+  var fig = r.figures || {};
+  var canDelete = isOwner();
+  return '<div class="inv-card" data-rep="'+esc(r.id)+'">' +
+    '<div class="inv-top" data-rep-act="view" role="button" tabindex="0">' +
+      '<div class="main"><div class="title"><span>'+esc(r.label)+'</span><span class="chip inv-type">'+esc(r.interim ? tr('Interim') : tr('Final'))+'</span></div>' +
+      '<div class="sub">'+esc(reportScopeLabel(r)+' · '+tr('Generated')+' '+fmtDateNice(r.generatedAt))+'</div>' +
+      '<div class="sub rep-figs">'+esc(tr('Expenses')+' '+fmtMoney(fig.expensesTotal||0))+' · '+repProfitHtml(fig)+'</div></div>' +
+      '<div class="rep-sales"><div class="amt num">'+esc(fmtMoney(fig.revenue||0))+'</div><div class="rep-cap">'+esc(tr('Sales'))+'</div></div>' +
+    '</div>' +
+    '<div class="inv-actions">' +
+      '<button type="button" data-rep-act="share">'+INV_ICO.share+'<span>'+tr('Share')+'</span></button>' +
+      '<button type="button" data-rep-act="download">'+INV_ICO.download+'<span>PDF</span></button>' +
+      '<button type="button" data-rep-act="print">'+INV_ICO.print+'<span>'+tr('Print')+'</span></button>' +
+      (canDelete ? '<button type="button" class="danger" data-rep-act="delete">'+INV_ICO.trash+'<span>'+tr('Delete')+'</span></button>' : '') +
+    '</div>' +
+  '</div>';
+}
+function repListHtml(){
+  var list = repFilteredList();
+  if(list.length === 0) return '<div class="empty">'+ICONS.search+'<div class="t">'+tr('No matches')+'</div><div class="s">'+tr('Try a different year or branch.')+'</div></div>';
+  var html = '', year = null;
+  list.forEach(function(r){
+    var y = String(r.periodKey).slice(0,4);
+    if(y !== year){ if(year !== null) html += '</div>'; year = y; html += '<div class="section-title">'+esc(y)+'</div><div class="rowlist">'; }
+    html += repRowHtml(r);
+  });
+  return html + '</div>';
+}
+function reportsHelpHtml(){
+  return '<div class="rep-note">'+tr('A report for each finished month is filed here automatically when the owner or a manager opens Pesa. Months with no sales or expenses are skipped, and only the latest 24 months are filed at first. Pesa cannot rebuild records from before it was used. Each saved report keeps its figures even if sales or products are changed later. Customer credit and stock are counted as at the day the report was filed.')+'</div>';
+}
+function renderReportsPage(){
+  if(!State.ready.reports) return '<div class="empty">Loading…</div>';
+  var f = State.repFilter || (State.repFilter = { year:'all', scope:'any' });
+  var all = State.reports;
+  var html = '<div class="rep-tools"><button class="btn btn-primary" id="repGenBtn" type="button">'+tr('Generate this month so far')+'</button>' +
+    '<button class="btn btn-ghost" id="repFileBtn" type="button">'+tr('File a past month')+'</button></div>';
+  if(all.length === 0){
+    html += '<div class="empty">'+ICONS.chartbar.replace('width="18" height="18"','width="26" height="26"')+'<div class="t">'+tr('No reports filed yet')+'</div>' +
+      '<div class="s">'+tr('Monthly reports are saved here for your records, ready to download, print or share. The first ones are filed automatically once a month has finished and had sales or expenses.')+'</div></div>' + reportsHelpHtml();
+    return html;
+  }
+  var years = [], scopes = {};
+  all.forEach(function(r){ var y = String(r.periodKey).slice(0,4); if(years.indexOf(y) === -1) years.push(y); scopes[r.branchId] = reportScopeLabel(r); });
+  years.sort().reverse();
+  var scopeIds = Object.keys(scopes);
+  html += '<div class="rep-filters"><select id="repYearSel" aria-label="'+esc(tr('Year'))+'"><option value="all">'+esc(tr('All years'))+'</option>' +
+    years.map(function(y){ return '<option value="'+y+'"'+(f.year===y?' selected':'')+'>'+y+'</option>'; }).join('') + '</select>' +
+    (scopeIds.length > 1 ? '<select id="repScopeSel" aria-label="'+esc(tr('Branch'))+'"><option value="any">'+esc(tr('All branches'))+'</option>' +
+      scopeIds.map(function(id){ return '<option value="'+esc(id)+'"'+(f.scope===id?' selected':'')+'>'+esc(scopes[id])+'</option>'; }).join('') + '</select>' : '') +
+    '</div><div id="repListWrap">' + repListHtml() + '</div>' + reportsHelpHtml();
+  return html;
+}
+function wireReportsPage(content){
+  var g = content.querySelector('#repGenBtn'); if(g) g.addEventListener('click', generateInterimReports);
+  var fb = content.querySelector('#repFileBtn'); if(fb) fb.addEventListener('click', openFileMonthSheet);
+  var wrap = content.querySelector('#repListWrap');
+  function wireList(){
+    if(!wrap) return;
+    wrap.querySelectorAll('[data-rep-act]').forEach(function(el){
+      function go(){
+        var card = el.closest('[data-rep]');
+        var rec = card && State.reports.find(function(r){ return r.id === card.getAttribute('data-rep'); });
+        if(rec) reportRunAction(el.getAttribute('data-rep-act'), rec);
+      }
+      el.addEventListener('click', go);
+      if(el.getAttribute('role') === 'button') el.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
+    });
+  }
+  function refreshList(){ if(wrap){ wrap.innerHTML = repListHtml(); wireList(); } }
+  wireList();
+  var ys = content.querySelector('#repYearSel'); if(ys) ys.addEventListener('change', function(){ State.repFilter.year = ys.value; refreshList(); });
+  var ss = content.querySelector('#repScopeSel'); if(ss) ss.addEventListener('change', function(){ State.repFilter.scope = ss.value; refreshList(); });
+}
+function openReportDetailSheet(rec){
+  var f = rec.figures || {};
+  function row(l, v, cls){ return '<div class="tillrow'+(cls?' '+cls:'')+'"><span class="l">'+esc(l)+'</span><span class="v num">'+esc(v)+'</span></div>'; }
+  var pn = { cash:tr('Cash'), card:tr('Card'), wallet:tr('Mobile wallet'), credit:tr('Credit') };
+  var net = f.netProfit || 0;
+  var html = '<div class="sheet-head"><h2>'+esc(rec.label)+'</h2><span class="chip inv-type">'+esc(rec.interim ? tr('Interim') : tr('Final'))+'</span></div>' +
+    '<div class="inv-meta">' +
+      '<div><div class="l">'+tr('Scope')+'</div><div>'+esc(reportScopeLabel(rec))+'</div></div>' +
+      '<div><div class="l">'+tr('Period')+'</div><div>'+esc(fmtDateNice(rec.periodStart+'T00:00:00')+' – '+fmtDateNice(rec.periodEnd+'T00:00:00'))+'</div></div>' +
+      '<div><div class="l">'+tr('Generated')+'</div><div>'+esc(fmtDateTime(rec.generatedAt))+'</div></div>' +
+      '<div><div class="l">'+tr('Generated by')+'</div><div>'+esc(rec.generatedBy || '')+'</div></div>' +
+    '</div>' +
+    (rec.interim ? '<div class="banner">'+tr('Figures so far. The final report is filed automatically after the month ends.')+'</div>' : '') +
+    '<div class="tillcard">' +
+      row(tr('Sales revenue'), fmtMoney(f.revenue||0)) + row(tr('Number of sales'), String(f.salesCount||0)) +
+      row(tr('Cost of goods sold'), fmtMoney(f.cogs||0)) + row(tr('Gross profit'), fmtMoney(f.grossProfit||0)) +
+      row(tr('Operating expenses'), fmtMoney(f.expensesTotal||0)) +
+      row(net >= 0 ? tr('Net profit') : tr('Net loss'), fmtMoney(Math.abs(net)), 'grand') +
+    '</div>' +
+    '<div class="section-title" style="margin-top:0;">'+tr('Payment methods')+'</div><div class="tillcard">' +
+      Object.keys(f.payments||{}).map(function(k){ return row(pn[k]||k, fmtMoney(f.payments[k])); }).join('') + '</div>' +
+    (f.vat ? '<div class="section-title" style="margin-top:0;">'+tr('VAT (working figures)')+'</div><div class="tillcard">' +
+      row(tr('Output VAT'), fmtMoney(f.vat.output)) + row(tr('Input VAT'), fmtMoney(f.vat.input)) +
+      row(f.vat.net >= 0 ? tr('Net VAT payable') : tr('Net VAT refundable'), fmtMoney(Math.abs(f.vat.net)), 'grand') + '</div>' : '') +
+    ((f.expenseRows||[]).length ? '<div class="section-title" style="margin-top:0;">'+tr('Expenses by category')+'</div><div class="tillcard">' +
+      f.expenseRows.map(function(r){ return row(r.category, fmtMoney(r.amount)); }).join('') + '</div>' : '') +
+    ((f.productRows||[]).length ? '<div class="section-title" style="margin-top:0;">'+tr('Top products')+'</div><div class="tillcard">' +
+      f.productRows.slice(0,8).map(function(p){ return row(p.name+' × '+p.qty, fmtMoney(p.revenue)); }).join('') +
+      (f.productRows.length > 8 ? '<div style="font-size:11.5px;color:var(--text-muted);padding-top:6px;">'+esc(tr('The PDF lists them all.'))+'</div>' : '') + '</div>' : '') +
+    ((f.wastageValue != null || f.tills || f.totalOwed != null) ? '<div class="section-title" style="margin-top:0;">'+tr('Other records')+'</div><div class="tillcard">' +
+      (f.wastageValue != null ? row(tr('Wastage at cost'), fmtMoney(f.wastageValue)) : '') +
+      (f.tills ? row(tr('Tills closed'), String(f.tills.closedCount)) + row(tr('Total till variance'), (f.tills.variance<0?'-':'')+fmtMoney(Math.abs(f.tills.variance))) : '') +
+      (f.totalOwed != null ? row(tr('Customer credit when filed'), fmtMoney(f.totalOwed)) + row(tr('Stock at cost when filed'), fmtMoney(f.totalStockValue)) : '') + '</div>' : '') +
+    '<div class="inv-card" style="margin-top:14px;"><div class="inv-actions">' +
+      '<button type="button" data-d="share">'+INV_ICO.share+'<span>'+tr('Share')+'</span></button>' +
+      '<button type="button" data-d="download">'+INV_ICO.download+'<span>PDF</span></button>' +
+      '<button type="button" data-d="csv">'+INV_ICO.download+'<span>CSV</span></button>' +
+      '<button type="button" data-d="print">'+INV_ICO.print+'<span>'+tr('Print')+'</span></button>' +
+      (isOwner() ? '<button type="button" class="danger" data-d="delete">'+INV_ICO.trash+'<span>'+tr('Delete')+'</span></button>' : '') +
+    '</div></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-d]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var a = b.getAttribute('data-d');
+      if(a === 'delete') deleteReportRecord(rec, function(){ closeModal(); });
+      else reportRunAction(a, rec);
+    });
+  });
 }
 
 /* ============================== TAB: CREDIT ============================== */
@@ -4503,6 +5243,7 @@ function renderDashboard(){
       '<div class="field" style="margin:0;"><label>'+tr('To')+'</label><input type="date" id="reportTo" value="'+todayISO+'" max="'+todayISO+'"></div>' +
     '</div>' +
     '<button class="btn btn-ghost btn-block" id="downloadReportBtn">'+tr('Download report (PDF)')+'</button>' +
+    (isManagerOrOwner() ? '<button class="btn btn-ghost btn-block" id="viewReportArchiveBtn" type="button">'+tr('View report archive')+'</button>' : '') +
     '<div style="font-size:11.5px;color:var(--text-muted);text-align:center;">Revenue, cost of goods, expenses, profit or loss, and a full stock valuation for any date range you pick.</div>' +
   '</div>';
 
@@ -4524,7 +5265,8 @@ function exportData(){
     customers: State.customers,
     sales: State.sales,
     expenses: State.expenses,
-    invoices: State.invoices
+    invoices: State.invoices,
+    reports: State.reports
   };
   var json = JSON.stringify(payload, null, 2);
   var filename = 'pesa-export-'+todayKey()+'.json';
@@ -4580,7 +5322,7 @@ function accountSectionHtml(){
 // two surfaces can never drift out of sync. Tab rows are filtered by the
 // signed-in role the same way the old bottom nav used to (roleTabs()).
 function menuRowsHtml(){
-  var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','invoices','expenses','till'];
+  var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','invoices','reports','expenses','till'];
   var rows = '';
   rows += '<div class="drawer-sub">Main menu</div>';
   if(allowedTabs.indexOf('dashboard')!==-1) rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
@@ -4588,6 +5330,7 @@ function menuRowsHtml(){
   if(allowedTabs.indexOf('stock')!==-1) rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
   if(allowedTabs.indexOf('credit')!==-1) rows += drawerRowHtml('tab-credit', ICONS.people, 'Credit');
   if(allowedTabs.indexOf('invoices')!==-1) rows += drawerRowHtml('tab-invoices', ICONS.invoice, 'Invoices');
+  if(allowedTabs.indexOf('reports')!==-1) rows += drawerRowHtml('tab-reports', ICONS.chartbar, 'Reports');
   if(allowedTabs.indexOf('expenses')!==-1) rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
   if(allowedTabs.indexOf('till')!==-1) rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
   if(!isCashier()){
@@ -4615,6 +5358,7 @@ function handleDrawerAction(key){
   else if(key==='tab-stock') setTab('stock');
   else if(key==='tab-credit') setTab('credit');
   else if(key==='tab-invoices') setTab('invoices');
+  else if(key==='tab-reports') setTab('reports');
   else if(key==='tab-expenses') setTab('expenses');
   else if(key==='tab-till') setTab('till');
   else if(key==='insights'){
@@ -4900,7 +5644,7 @@ function importDataFromFile(file){
   reader.onload = function(){
     var data;
     try{ data = JSON.parse(reader.result); }catch(e){ toast('That file isn’t a valid Pesa backup'); return; }
-    confirmSheet('Restore backup?', 'This replaces your shop settings, products, customers, sales, expenses and stored invoices with the contents of this file. This cannot be undone.', 'Restore', function(){
+    confirmSheet('Restore backup?', 'This replaces your shop settings, products, customers, sales, expenses, stored invoices and saved monthly reports with the contents of this file. This cannot be undone.', 'Restore', function(){
       (async function(){
         try{
           if(data.shop) { State.settings = Object.assign({}, State.settings, data.shop); refs.settings.set(State.settings); }
@@ -4917,6 +5661,7 @@ function importDataFromFile(file){
           await restoreCollection(refs.sales, data.sales);
           await restoreCollection(refs.expenses, data.expenses);
           await restoreCollection(refs.invoices, data.invoices); // older backups have no invoices: restoreCollection skips a missing list
+          await restoreCollection(refs.reports, data.reports); // older backups have no reports: skipped the same way
           toast('Backup restored');
           closeModal();
         }catch(err){ toast('Restore failed — the backup file may be corrupted'); }
@@ -5378,10 +6123,12 @@ function render(){
   else if(State.tab === 'expenses') html = renderExpenses();
   else if(State.tab === 'till') html = renderTill();
   else if(State.tab === 'invoices') html = renderInvoicesPage();
+  else if(State.tab === 'reports') html = renderReportsPage();
   content.innerHTML = html;
   wireContent();
   renderCartBar();
   renderSidebar();
+  if(!_reportsAutoFileDone) setTimeout(maybeAutoFileReports, 0);
 
   // FAB for stock/credit/expenses (add new)
   var oldFab = document.getElementById('fabBtn');
@@ -5490,6 +6237,7 @@ function wireContent(){
   if(insightsToggle) insightsToggle.addEventListener('click', function(){ _insightsOpen = !_insightsOpen; render(); });
 
   if(State.tab === 'invoices') wireInvoicesPage(content);
+  if(State.tab === 'reports') wireReportsPage(content);
   var createInvoiceBtn = content.querySelector('#createInvoiceBtn');
   if(createInvoiceBtn) createInvoiceBtn.addEventListener('click', function(){ openInvoiceSheet(null); });
 
@@ -5514,6 +6262,9 @@ function wireContent(){
       });
     });
   }
+
+  var viewReportArchiveBtn = content.querySelector('#viewReportArchiveBtn');
+  if(viewReportArchiveBtn) viewReportArchiveBtn.addEventListener('click', function(){ setTab('reports'); });
 
   var downloadReportBtn = content.querySelector('#downloadReportBtn');
   if(downloadReportBtn) downloadReportBtn.addEventListener('click', async function(){
@@ -6525,6 +7276,7 @@ var ABOUT_FEATURES = [
   'Stock and inventory management, including barcode scanning to add or find products quickly',
   'Customer credit tracking, so a shop can sell on account and record repayments over time',
   'An invoice archive that keeps every invoice and receipt, ready to share, download, or print again',
+  'A monthly report archive that files every finished month automatically, ready to download, print, or share',
   'Expense tracking for everyday business costs',
   'Till and cash session management, including opening float counts, closing counts, and variance checks',
   'Supplier records and purchase order tracking',
