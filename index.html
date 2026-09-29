@@ -823,6 +823,45 @@ var LANGS = {
   san: { name:'San languages (Khwedam / Ju’hoan and others)', native:'San', confidence:'unverified', strings:{} }
 };
 
+// Send (email / WhatsApp / SMS) and device-alert strings. Afrikaans and
+// German are the two dictionaries marked "verified"; the partial languages
+// fall back to English for these until a native speaker supplies wording,
+// rather than guessing at money and messaging terms.
+Object.assign(LANGS.af.strings, {
+  'Customers':'Kliënte','Suppliers':'Verskaffers','Someone else (type below)':'Iemand anders (tik hieronder)','Send to':'Stuur aan','Email':'E-pos','Email (optional)':'E-pos (opsioneel)','Mobile number':'Selfoonnommer','Send by':'Stuur per','WhatsApp':'WhatsApp','SMS':'SMS','Done':'Klaar',
+  'This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.':'Dit maak jou eie e-pos-, WhatsApp- of SMS-toep oop met alles reeds ingevul. Kontroleer dit en tik dan daar op Stuur. Pesa stuur nie self boodskappe nie.',
+  'If nothing opened, tap here':'As niks oopgemaak het nie, tik hier','Copy message':'Kopieer boodskap','Message copied':'Boodskap gekopieer','Couldn’t copy — select the text in your app instead':'Kon nie kopieer nie. Kies eerder die teks in jou toep',
+  'Enter a valid email address':'Voer ’n geldige e-posadres in','Couldn’t prepare the PDF — opening the message without it':'Kon nie die PDF voorberei nie. Die boodskap word daarsonder oopgemaak',
+  'Handed to the app you picked. Check the message and tap Send there.':'Oorgegee aan die toep wat jy gekies het. Kontroleer die boodskap en tik daar op Stuur.',
+  'Couldn’t open the share menu — downloading the PDF instead':'Kon nie die deelkieslys oopmaak nie. Die PDF word eerder afgelaai',
+  'PDF downloaded. Attach it to the email before you tap Send.':'PDF afgelaai. Heg dit aan die e-pos voordat jy op Stuur tik.',
+  'Opening your email app…':'Jou e-postoep word oopgemaak…','Opening your email app… The PDF was downloaded: attach it to the email, then tap Send.':'Jou e-postoep word oopgemaak… Die PDF is afgelaai: heg dit aan die e-pos en tik dan op Stuur.',
+  'Check the mobile number':'Kontroleer die selfoonnommer','Opening WhatsApp…':'WhatsApp word oopgemaak…','Opening your SMS app…':'Jou SMS-toep word oopgemaak…','No number entered, so choose the contact in the app.':'Geen nommer ingevoer nie, kies dus die kontak in die toep.',
+  'Send invoice':'Stuur faktuur','Send receipt':'Stuur kwitansie','Send reminder':'Stuur herinnering','Send to supplier':'Stuur aan verskaffer','Invoice ready':'Faktuur gereed','owes':'skuld',
+  'Notifications':'Kennisgewings','Low-stock and till alerts on this device':'Lae-voorraad- en kasregister-waarskuwings op hierdie toestel','Off':'Af','On':'Aan','Device alerts off':'Toestelwaarskuwings af','Device alerts on':'Toestelwaarskuwings aan',
+  'Alerts show on this device while Pesa is open or was used recently: a product dropping to its low-stock level after a sale or wastage, and a short summary when the till is closed. They are not emails or SMS and are not sent to anyone else. Each staff phone switches this on for itself.':'Waarskuwings verskyn op hierdie toestel terwyl Pesa oop is of onlangs gebruik is: wanneer ’n produk ná ’n verkoop of verlies tot sy lae-voorraad-vlak daal, en ’n kort opsomming wanneer die kasregister toegemaak word. Dit is nie e-posse of SMS’e nie en word nie aan iemand anders gestuur nie. Elke personeelfoon skakel dit self aan.',
+  'Notifications are blocked for Pesa in this browser’s site settings. Allow them there, then switch this on again.':'Kennisgewings is vir Pesa in hierdie blaaier se werfinstellings geblokkeer. Laat dit daar toe en skakel dit dan weer aan.',
+  'This browser can’t show device notifications, so the switch is hidden. Low-stock warnings still appear inside Pesa as messages and under Needs attention on the dashboard.':'Hierdie blaaier kan nie toestelkennisgewings wys nie, dus is die skakelaar versteek. Lae-voorraad-waarskuwings verskyn steeds binne Pesa as boodskappe en onder Aandag nodig op die oorsig.',
+  'Notifications are blocked in this browser’s settings':'Kennisgewings is in hierdie blaaier se instellings geblokkeer','Notifications weren’t allowed, so alerts stay inside Pesa':'Kennisgewings is nie toegelaat nie, dus bly waarskuwings binne Pesa'
+});
+Object.assign(LANGS.de.strings, {
+  'Customers':'Kunden','Suppliers':'Lieferanten','Someone else (type below)':'Jemand anderes (unten eingeben)','Send to':'Senden an','Email':'E-Mail','Email (optional)':'E-Mail (optional)','Mobile number':'Handynummer','Send by':'Senden per','WhatsApp':'WhatsApp','SMS':'SMS','Done':'Fertig',
+  'This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.':'Damit öffnet sich Ihre eigene E-Mail-, WhatsApp- oder SMS-App mit allen Angaben bereits ausgefüllt. Prüfen Sie alles und tippen Sie dort auf Senden. Pesa verschickt selbst keine Nachrichten.',
+  'If nothing opened, tap here':'Falls sich nichts geöffnet hat, hier tippen','Copy message':'Nachricht kopieren','Message copied':'Nachricht kopiert','Couldn’t copy — select the text in your app instead':'Kopieren nicht möglich. Markieren Sie den Text stattdessen in Ihrer App',
+  'Enter a valid email address':'Geben Sie eine gültige E-Mail-Adresse ein','Couldn’t prepare the PDF — opening the message without it':'Das PDF konnte nicht erstellt werden. Die Nachricht wird ohne PDF geöffnet',
+  'Handed to the app you picked. Check the message and tap Send there.':'An die gewählte App übergeben. Prüfen Sie die Nachricht und tippen Sie dort auf Senden.',
+  'Couldn’t open the share menu — downloading the PDF instead':'Das Teilen-Menü ließ sich nicht öffnen. Das PDF wird stattdessen heruntergeladen',
+  'PDF downloaded. Attach it to the email before you tap Send.':'PDF heruntergeladen. Hängen Sie es an die E-Mail an, bevor Sie auf Senden tippen.',
+  'Opening your email app…':'Ihre E-Mail-App wird geöffnet…','Opening your email app… The PDF was downloaded: attach it to the email, then tap Send.':'Ihre E-Mail-App wird geöffnet… Das PDF wurde heruntergeladen: Hängen Sie es an die E-Mail an und tippen Sie dann auf Senden.',
+  'Check the mobile number':'Prüfen Sie die Handynummer','Opening WhatsApp…':'WhatsApp wird geöffnet…','Opening your SMS app…':'Ihre SMS-App wird geöffnet…','No number entered, so choose the contact in the app.':'Keine Nummer eingegeben, wählen Sie den Kontakt daher in der App.',
+  'Send invoice':'Rechnung senden','Send receipt':'Beleg senden','Send reminder':'Erinnerung senden','Send to supplier':'An Lieferanten senden','Invoice ready':'Rechnung bereit','owes':'schuldet',
+  'Notifications':'Benachrichtigungen','Low-stock and till alerts on this device':'Warnungen zu niedrigem Bestand und Kasse auf diesem Gerät','Off':'Aus','On':'Ein','Device alerts off':'Gerätewarnungen aus','Device alerts on':'Gerätewarnungen ein',
+  'Alerts show on this device while Pesa is open or was used recently: a product dropping to its low-stock level after a sale or wastage, and a short summary when the till is closed. They are not emails or SMS and are not sent to anyone else. Each staff phone switches this on for itself.':'Warnungen erscheinen auf diesem Gerät, solange Pesa geöffnet ist oder kürzlich benutzt wurde: wenn ein Produkt nach einem Verkauf oder Schwund auf seinen Mindestbestand fällt, und eine kurze Übersicht beim Kassenabschluss. Es sind keine E-Mails oder SMS und sie gehen an niemanden sonst. Jedes Mitarbeitertelefon schaltet dies selbst ein.',
+  'Notifications are blocked for Pesa in this browser’s site settings. Allow them there, then switch this on again.':'Benachrichtigungen für Pesa sind in den Website-Einstellungen dieses Browsers blockiert. Erlauben Sie sie dort und schalten Sie dies dann wieder ein.',
+  'This browser can’t show device notifications, so the switch is hidden. Low-stock warnings still appear inside Pesa as messages and under Needs attention on the dashboard.':'Dieser Browser kann keine Gerätebenachrichtigungen anzeigen, daher ist der Schalter ausgeblendet. Warnungen zu niedrigem Bestand erscheinen weiterhin in Pesa als Meldungen und unter Erfordert Aufmerksamkeit in der Übersicht.',
+  'Notifications are blocked in this browser’s settings':'Benachrichtigungen sind in den Einstellungen dieses Browsers blockiert','Notifications weren’t allowed, so alerts stay inside Pesa':'Benachrichtigungen wurden nicht erlaubt, daher bleiben Warnungen in Pesa'
+});
+
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
   var code = currentLangCode();
@@ -1197,17 +1236,20 @@ function subscribeAll(){
 // a document, rather than a second, separately computed "now" that could
 // in theory drift a few milliseconds from the first. Callers that have no
 // such single moment to share just omit it and get the current time.
-function logAudit(action, entityType, entityId, summary, whenDate){
+// extra is optional: a small object of additional fields stored on the
+// record (e.g. { channel:'email', recipient:'jane@example.com' } for a
+// document handed to the owner's email/WhatsApp/SMS app).
+function logAudit(action, entityType, entityId, summary, whenDate, extra){
   try{
-    refs.auditLog.add({
-      action: action, // 'create' | 'update' | 'delete' | 'other'
-      entityType: entityType, // 'product' | 'sale' | 'expense' | 'staff' | 'till' | 'purchaseOrder' | 'wastage' | 'branch' | 'supplier' | 'verification_stamp'
+    refs.auditLog.add(Object.assign({}, extra || {}, {
+      action: action, // 'create' | 'update' | 'delete' | 'other' | 'invoice_shared' | 'receipt_shared' | 'po_shared' | 'reminder_shared'
+      entityType: entityType, // 'product' | 'sale' | 'expense' | 'staff' | 'till' | 'purchaseOrder' | 'wastage' | 'branch' | 'supplier' | 'verification_stamp' | 'invoice' | 'receipt' | 'customer'
       entityId: entityId || null,
       summary: summary || '',
       userId: State.session ? State.session.userId : null,
       userName: State.session ? State.session.name : 'System',
       createdAt: (whenDate instanceof Date ? whenDate : new Date()).toISOString()
-    });
+    }));
   }catch(e){ /* never let audit logging break the app */ }
 }
 
@@ -1752,6 +1794,16 @@ function openCloseTillSheet(session){
     }).then(function(){
       if(State.till.current && State.till.current.id === session.id) State.till.current = null;
       logAudit('update','till',session.id,'Till closed, variance '+fmtMoney(variance));
+      if(notifyActive()){
+        var tillTotal = Object.keys(t.totals||{}).reduce(function(a,k){ return a + (Number(t.totals[k])||0); }, 0);
+        var today = todayKey();
+        var todays = State.sales.filter(function(s){ return s.createdAt && todayKey(new Date(s.createdAt)) === today; });
+        var dayTotal = todays.reduce(function(a,s){ return a + (s.total||0); }, 0);
+        showDeviceNotification('Till closed: ' + (State.settings.shopName || 'Pesa'),
+          'This till took ' + fmtMoney(tillTotal) + '. All sales today: ' + fmtMoney(dayTotal) + ' from ' + todays.length + ' sale(s). Cash ' +
+          (Math.abs(variance)<0.01 ? 'balanced.' : (variance<0 ? 'short by ' + fmtMoney(Math.abs(variance)) + '.' : 'over by ' + fmtMoney(variance) + '.')),
+          'pesa-till-' + session.id);
+      }
       closeModal();
       toast(tr('Till closed')+' — '+(Math.abs(variance)<0.01?tr('balanced'):(variance<0?tr('short')+' '+fmtMoney(Math.abs(variance)):tr('over')+' '+fmtMoney(variance))));
       render();
@@ -2111,12 +2163,16 @@ function finalizeSale(method, customer){
   };
   refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, (items.length)+' item(s), '+fmtMoney(total)); });
   // decrement stock
+  var stockChanges = [];
   items.forEach(function(it){
     var p = State.products.find(function(x){ return x.id===it.productId; });
     if(p && p.stockQty!=null){
-      refs.products.doc(p.id).update({ stockQty: Math.max(0, p.stockQty - it.qty) });
+      var newQty = Math.max(0, p.stockQty - it.qty);
+      refs.products.doc(p.id).update({ stockQty: newQty });
+      stockChanges.push({ product:p, newQty:newQty });
     }
   });
+  checkLowStockAlerts(stockChanges);
   // credit ledger
   if(method === 'credit' && customer){
     var newBal = (customer.balance||0) + total;
@@ -2135,21 +2191,30 @@ function offerSaleReceipt(sale, customer){
   var draft = {
     number: number,
     billToName: customer ? customer.name : 'Customer',
-    billToContact: customer ? (customer.phone||'') : '',
+    billToContact: customer ? [customer.phone, customer.email].filter(Boolean).join('\n') : '',
     dateStr: todayKey(),
     dueDateStr: '',
     notes: '',
     items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice }; })
   };
+  var sendKind = sale.paymentMethod === 'credit' ? 'invoice' : 'receipt';
   var html = '<div class="sheet-head"><h2>'+tr('Sale recorded')+'</h2></div>' +
     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Total '+fmtMoney(sale.total)+'. Print a receipt for the customer?</div>' +
     '<div class="actions">' +
       '<button class="btn btn-ghost btn-block" id="saleSkipBtn">'+tr('Not now')+'</button>' +
       bluetoothPrintButtonHtml('saleBtPrintBtn') +
       '<button class="btn btn-accent btn-block" id="saleReceiptBtn">'+tr('Receipt (PDF)')+'</button>' +
-    '</div>';
+    '</div>' +
+    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="saleSendBtn" type="button">'+(sendKind==='invoice'?tr('Send invoice'):tr('Send receipt'))+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>';
   var ov = openSheet(html, {center:true});
   ov.querySelector('#saleSkipBtn').addEventListener('click', closeModal);
+  var saleNumberCommitted = false;
+  ov.querySelector('#saleSendBtn').addEventListener('click', function(){
+    openSendSheet(documentSendCtx(draft, sendKind, {
+      customerId: customer ? customer.id : null,
+      onHandedOff: function(){ if(!saleNumberCommitted){ saleNumberCommitted = true; commitInvoiceNumber(); } }
+    }));
+  });
   var btPrintBtn = ov.querySelector('#saleBtPrintBtn');
   if(btPrintBtn && !btPrintBtn.disabled) btPrintBtn.addEventListener('click', function(){ printReceiptViaBluetooth(draft, btPrintBtn); });
   ov.querySelector('#saleReceiptBtn').addEventListener('click', async function(){
@@ -2782,7 +2847,9 @@ function browserDownload(filename, blob){
 }
 
 async function saveGeneratedPdf(doc, filename){
-  var blob = doc.output('blob');
+  return saveBlobFile(filename, doc.output('blob'));
+}
+async function saveBlobFile(filename, blob){
   try{
     if(window.claude && window.claude.use){
       var dl = await window.claude.use('downloads');
@@ -2798,6 +2865,535 @@ async function saveGeneratedPdf(doc, filename){
   if(browserDownload(filename, blob)) return true;
   toast('Couldn’t save the file — try again');
   return false;
+}
+
+/* ============================== SEND: email / WhatsApp / SMS ==============================
+ * Everything here runs on the device. Pesa never sends a message by itself:
+ * each channel opens the shop owner's own email, WhatsApp or SMS app with the
+ * message (and, where the phone supports it, the PDF) already filled in, and
+ * the owner taps Send there. Fully automatic sending would need a server and
+ * a paid email/SMS provider account with secret keys, which a public web page
+ * cannot hold safely, so it is deliberately not built.
+ * Message text stays in plain English ASCII (no curly quotes or dashes) so
+ * SMS stays in the cheap GSM character set and every mail app shows it
+ * cleanly, whatever language the app itself is set to. */
+function senderIdentity(){
+  var c = State.company || {};
+  return {
+    name: State.settings.shopName || c.tradingName || c.companyName || 'Our shop',
+    phone: c.phone || '',
+    email: c.email || ''
+  };
+}
+function senderContactLine(){
+  var s = senderIdentity(), bits = [];
+  if(s.phone) bits.push(s.phone);
+  if(s.email) bits.push(s.email);
+  return bits.join(' / ');
+}
+// Loose on purpose: something before an @, and a dot somewhere after it.
+function looksLikeEmail(s){
+  s = String(s||'').trim();
+  var at = s.indexOf('@');
+  if(at < 1 || /\s/.test(s)) return false;
+  var dot = s.indexOf('.', at);
+  return dot > at+1 && dot < s.length-1;
+}
+// Namibian numbers to international digits: "081 234 5678" -> "264812345678".
+// Keeps +264 / 264 / 00264 as-is (minus the + or 00), and leaves other
+// international numbers alone.
+function normalizeNamPhone(raw){
+  var s = String(raw||'').trim();
+  if(!s) return '';
+  s = s.replace(/[\s\-().\/]/g, '');
+  if(s.charAt(0) === '+') s = s.slice(1);
+  else if(s.indexOf('00') === 0) s = s.slice(2);
+  else if(s.charAt(0) === '0') s = '264' + s.slice(1);
+  else if(/^[68]\d{8}$/.test(s)) s = '264' + s;
+  return s.replace(/\D/g, '');
+}
+function buildMailtoUrl(to, subject, body){
+  var addr = String(to||'').split(/[;,]/).map(function(a){ return a.trim(); }).filter(Boolean)
+    .map(function(a){ return encodeURIComponent(a).replace(/%40/g, '@'); }).join(',');
+  return 'mailto:' + addr + '?subject=' + encodeURIComponent(subject||'') +
+    '&body=' + encodeURIComponent(String(body||'').replace(/\r?\n/g, '\r\n'));
+}
+function buildWhatsAppUrl(phone, text){
+  return 'https://wa.me/' + normalizeNamPhone(phone) + '?text=' + encodeURIComponent(text||'');
+}
+// "?&body=" is the form both iOS Messages and Android SMS apps accept.
+function buildSmsUrl(phone, text){
+  var n = normalizeNamPhone(phone);
+  return 'sms:' + (n ? '+'+n : '') + '?&body=' + encodeURIComponent(text||'');
+}
+function openExternalUrl(url){
+  try{
+    if(/^https?:/i.test(url)){
+      window.open(url, '_blank', 'noopener');
+      return true;
+    }
+    var a = document.createElement('a');
+    a.href = url; a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    return true;
+  }catch(e){ return false; }
+}
+// Pull the first email / phone number out of a free-text contact box.
+function contactFromText(text){
+  text = String(text||'');
+  var em = text.match(/[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+/);
+  var ph = text.match(/\+?\d[\d\s\-()]{6,}\d/);
+  return { email: em ? em[0] : '', phone: ph ? ph[0].trim() : '' };
+}
+function findCustomerByName(name){
+  name = String(name||'').trim().toLowerCase();
+  if(!name) return null;
+  return State.customers.find(function(c){ return (c.name||'').trim().toLowerCase() === name; }) || null;
+}
+
+/** Shared "Send" sheet. Opens on top of whatever sheet is showing (so an
+ * invoice being edited is not lost) and closes back to it.
+ * ctx = {
+ *   title, summaryHtml,             // heading + one-line banner
+ *   subject,                        // email subject
+ *   emailBody(name), shortText(name, channel),  // message builders
+ *   buildFile(): Promise<File|null> // optional PDF to attach
+ *   defaultRecipient: 'c:<id>' | 's:<id>' | 'manual',
+ *   manualEmail, manualPhone,       // prefill when no saved contact matches
+ *   allowCustomers, allowSuppliers, // which saved contacts to offer
+ *   audit: { action, entityType, entityId, label },
+ *   onHandedOff(channel)            // called once the message is handed to an app
+ * } */
+function openSendSheet(ctx){
+  var allowC = ctx.allowCustomers !== false, allowS = ctx.allowSuppliers !== false;
+  var opts = '';
+  if(allowC && State.customers.length){
+    opts += '<optgroup label="'+esc(tr('Customers'))+'">' + State.customers.map(function(c){
+      return '<option value="c:'+c.id+'">'+esc(c.name)+'</option>';
+    }).join('') + '</optgroup>';
+  }
+  if(allowS && State.suppliers.length){
+    opts += '<optgroup label="'+esc(tr('Suppliers'))+'">' + State.suppliers.map(function(s){
+      return '<option value="s:'+s.id+'">'+esc(s.name)+'</option>';
+    }).join('') + '</optgroup>';
+  }
+  opts += '<option value="manual">'+esc(tr('Someone else (type below)'))+'</option>';
+
+  var root = document.getElementById('modalRoot');
+  var overlay = document.createElement('div');
+  overlay.className = 'overlay center send-overlay';
+  overlay.innerHTML = '<div class="sheet">' +
+    '<div class="sheet-head"><h2>'+esc(ctx.title)+'</h2></div>' +
+    (ctx.summaryHtml ? '<div class="banner">'+ctx.summaryHtml+'</div>' : '') +
+    '<div class="field"><label>'+tr('Send to')+'</label><select id="sdRecipient">'+opts+'</select></div>' +
+    '<div class="field-row">' +
+      '<div class="field"><label>'+tr('Email')+'</label><input id="sdEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com"></div>' +
+      '<div class="field"><label>'+tr('Mobile number')+'</label><input id="sdPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="081 234 5678"></div>' +
+    '</div>' +
+    '<div class="section-title">'+tr('Send by')+'</div>' +
+    '<div class="actions" style="margin-top:0;">' +
+      '<button class="btn btn-primary" type="button" data-channel="email">'+tr('Email')+'</button>' +
+      '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+tr('WhatsApp')+'</button>' +
+      '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>' +
+    '</div>' +
+    '<div class="banner" style="margin-top:12px;">'+tr('This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.')+'</div>' +
+    '<div id="sdResult"></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" type="button" id="sdDone">'+tr('Done')+'</button></div>' +
+  '</div>';
+  root.appendChild(overlay);
+  function close(){ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }
+  overlay.addEventListener('mousedown', function(e){ if(e.target === overlay) close(); });
+  overlay.querySelector('#sdDone').addEventListener('click', close);
+
+  var sel = overlay.querySelector('#sdRecipient');
+  var emailIn = overlay.querySelector('#sdEmail'), phoneIn = overlay.querySelector('#sdPhone');
+  function contactFor(val){
+    if(!val || val === 'manual') return null;
+    var id = val.slice(2);
+    var list = val.charAt(0) === 'c' ? State.customers : State.suppliers;
+    return list.find(function(x){ return x.id === id; }) || null;
+  }
+  function fillFromSelection(){
+    var c = contactFor(sel.value);
+    if(c){ emailIn.value = c.email || ''; phoneIn.value = c.phone || ''; }
+    else { emailIn.value = ctx.manualEmail || ''; phoneIn.value = ctx.manualPhone || ''; }
+  }
+  var def = ctx.defaultRecipient || 'manual';
+  if(!sel.querySelector('option[value="'+def+'"]')) def = 'manual';
+  sel.value = def;
+  fillFromSelection();
+  sel.addEventListener('change', fillFromSelection);
+  function recipientName(){
+    var c = contactFor(sel.value);
+    if(c) return c.contact && sel.value.charAt(0) === 's' ? c.contact : c.name;
+    return ctx.manualName || '';
+  }
+  function recipientLabel(channel){
+    var c = contactFor(sel.value);
+    var who = c ? c.name : (ctx.manualName || 'a typed-in contact');
+    var addr = channel === 'email' ? emailIn.value.trim() : phoneIn.value.trim();
+    return who + (addr ? ' ('+addr+')' : '');
+  }
+
+  // Build the PDF as soon as the sheet opens, so that tapping Email can call
+  // the share sheet straight away (iOS only allows it right after a tap).
+  var readyFile, filePromise = Promise.resolve(null);
+  if(ctx.buildFile){
+    filePromise = Promise.resolve().then(ctx.buildFile).catch(function(){ return null; });
+    filePromise.then(function(f){ readyFile = f; });
+  }
+
+  var result = overlay.querySelector('#sdResult');
+  function showResult(msg, url, text){
+    result.innerHTML = '<div class="banner" style="flex-direction:column;gap:6px;">' +
+      '<span>'+esc(msg)+'</span>' +
+      (url ? '<a href="'+esc(url)+'" '+(/^https?:/i.test(url)?'target="_blank" rel="noopener"':'')+' style="color:var(--primary);font-weight:600;">'+tr('If nothing opened, tap here')+'</a>' : '') +
+      (text ? '<button class="btn btn-ghost" type="button" id="sdCopy" style="align-self:flex-start;padding:6px 12px;min-height:0;">'+tr('Copy message')+'</button>' : '') +
+    '</div>';
+    var cp = result.querySelector('#sdCopy');
+    if(cp) cp.addEventListener('click', function(){
+      try{
+        navigator.clipboard.writeText(text).then(function(){ toast(tr('Message copied')); }, function(){ toast(tr('Couldn’t copy — select the text in your app instead')); });
+      }catch(e){ toast(tr('Couldn’t copy — select the text in your app instead')); }
+    });
+  }
+  var handedOff = false;
+  function logSend(channel, how){
+    var a = ctx.audit || {};
+    var chLabel = channel === 'email' ? 'email' : (channel === 'whatsapp' ? 'WhatsApp' : 'SMS');
+    logAudit(a.action || 'other', a.entityType || 'document', a.entityId || null,
+      (a.label || 'Document') + ' prepared for ' + chLabel + ' to ' + recipientLabel(channel) + (how ? ' ('+how+')' : ''),
+      null,
+      { channel: channel, recipient: channel === 'email' ? emailIn.value.trim() : normalizeNamPhone(phoneIn.value), recipientName: recipientName() || null, reference: a.reference || null, method: how || null });
+    if(!handedOff){ handedOff = true; if(ctx.onHandedOff) try{ ctx.onHandedOff(channel); }catch(e){} }
+  }
+
+  async function sendEmail(){
+    var to = emailIn.value.trim();
+    if(to && !looksLikeEmail(to)){ toast(tr('Enter a valid email address')); emailIn.focus(); return; }
+    var name = recipientName();
+    var file = null;
+    if(ctx.buildFile){
+      file = (readyFile !== undefined) ? readyFile : await filePromise;
+      if(!file) toast(tr('Couldn’t prepare the PDF — opening the message without it'));
+    }
+    var body = ctx.emailBody(name, !!file);
+    var canShareFile = false;
+    if(file && navigator.share && navigator.canShare){
+      try{ canShareFile = navigator.canShare({ files:[file] }); }catch(e){ canShareFile = false; }
+    }
+    if(canShareFile){
+      try{
+        await navigator.share({ files:[file], title: ctx.subject, text: body });
+        logSend('email', 'share sheet with PDF');
+        showResult(tr('Handed to the app you picked. Check the message and tap Send there.'), null, null);
+        return;
+      }catch(e){
+        if(e && e.name === 'AbortError') return; // user closed the share sheet
+        toast(tr('Couldn’t open the share menu — downloading the PDF instead'));
+        // fall through to the download + mailto path below
+      }
+    }
+    var url = buildMailtoUrl(to, ctx.subject, body);
+    openExternalUrl(url);
+    if(file){
+      var saved = await saveBlobFile(file.name, file);
+      logSend('email', saved ? 'PDF downloaded, email app opened' : 'email app opened, PDF download failed');
+      toast(saved ? tr('PDF downloaded. Attach it to the email before you tap Send.') : tr('Opening your email app…'));
+      showResult(saved ? tr('Opening your email app… The PDF was downloaded: attach it to the email, then tap Send.') : tr('Opening your email app…'), url, body);
+    } else {
+      logSend('email', 'email app opened');
+      toast(tr('Opening your email app…'));
+      showResult(tr('Opening your email app…'), url, body);
+    }
+  }
+  function sendText(channel){
+    var phone = phoneIn.value.trim();
+    var n = normalizeNamPhone(phone);
+    if(phone && n.length < 8){ toast(tr('Check the mobile number')); phoneIn.focus(); return; }
+    var text = ctx.shortText(recipientName(), channel);
+    var url = channel === 'whatsapp' ? buildWhatsAppUrl(phone, text) : buildSmsUrl(phone, text);
+    openExternalUrl(url);
+    logSend(channel, channel === 'whatsapp' ? 'WhatsApp opened' : 'SMS app opened');
+    var msg = channel === 'whatsapp' ? tr('Opening WhatsApp…') : tr('Opening your SMS app…');
+    toast(msg);
+    showResult(msg + (n ? '' : ' ' + tr('No number entered, so choose the contact in the app.')), url, text);
+  }
+  overlay.querySelectorAll('[data-channel]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var ch = b.getAttribute('data-channel');
+      if(ch === 'email') sendEmail(); else sendText(ch);
+    });
+  });
+  return overlay;
+}
+
+/* ---- message builders ---- */
+function draftTotal(draft){
+  return (draft.items||[]).reduce(function(s,it){ return s + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
+}
+/** kind: 'invoice' (amount due) or 'receipt' (already paid). */
+function documentSendCtx(draft, kind, opts){
+  opts = opts || {};
+  var me = senderIdentity();
+  var isReceipt = kind === 'receipt';
+  var docWord = isReceipt ? 'Receipt' : 'Invoice';
+  var total = fmtMoney(draftTotal(draft));
+  var filename = (isReceipt ? 'receipt-' : 'invoice-') + draft.number + '.pdf';
+  var contactLine = senderContactLine();
+  var parsed = contactFromText(draft.billToContact);
+  var cust = opts.customerId ? State.customers.find(function(c){ return c.id === opts.customerId; }) : findCustomerByName(draft.billToName);
+  return {
+    title: isReceipt ? tr('Send receipt') : tr('Send invoice'),
+    summaryHtml: esc(docWord+' '+draft.number) + ' · <strong class="num">' + esc(total) + '</strong>' + (draft.billToName && draft.billToName !== 'Customer' ? ' · ' + esc(draft.billToName) : ''),
+    subject: docWord + ' ' + draft.number + ' from ' + me.name,
+    emailBody: function(name, hasPdf){
+      var lines = [];
+      lines.push('Dear ' + (name || 'Sir/Madam') + ',', '');
+      if(isReceipt){
+        lines.push('Thank you for your purchase. ' + (hasPdf ? 'Please find attached' : 'Here is') + ' your receipt ' + draft.number + ' from ' + me.name + '.', '');
+        lines.push('Amount paid: ' + total);
+        lines.push('Date: ' + fmtDateNice(draft.dateStr));
+      } else {
+        lines.push((hasPdf ? 'Please find attached' : 'Here are the details of') + ' invoice ' + draft.number + ' from ' + me.name + '.', '');
+        lines.push('Amount due: ' + total);
+        lines.push('Invoice date: ' + fmtDateNice(draft.dateStr));
+        if(draft.dueDateStr) lines.push('Due date: ' + fmtDateNice(draft.dueDateStr));
+      }
+      lines.push('');
+      if(hasPdf) lines.push('The ' + docWord.toLowerCase() + ' is attached as a PDF (' + filename + ').', '');
+      lines.push('If you have any questions' + (contactLine ? ', please contact us on ' + contactLine : ', simply reply to this message') + '.', '');
+      lines.push('Kind regards,', me.name);
+      return lines.join('\n');
+    },
+    shortText: function(name, channel){
+      var hi = 'Hello' + (name ? ' ' + name : '') + ', ';
+      var t;
+      if(isReceipt){
+        t = hi + 'thank you for shopping at ' + me.name + '. Receipt ' + draft.number + ': ' + total + ' paid on ' + fmtDateNice(draft.dateStr) + '.';
+      } else {
+        t = hi + 'this is invoice ' + draft.number + ' from ' + me.name + '. Amount due: ' + total + '.' +
+          (draft.dueDateStr ? ' Due date: ' + fmtDateNice(draft.dueDateStr) + '.' : '');
+        if(channel === 'whatsapp'){
+          t += '\n\n' + (draft.items||[]).slice(0,10).map(function(it){ return '- ' + (Number(it.qty)||0) + ' x ' + it.desc + ': ' + fmtMoney((Number(it.qty)||0)*(Number(it.unitPrice)||0)); }).join('\n') +
+            ((draft.items||[]).length > 10 ? '\n- and ' + ((draft.items||[]).length-10) + ' more item(s)' : '');
+        }
+      }
+      if(contactLine) t += (channel === 'whatsapp' ? '\n\n' : ' ') + 'Questions? ' + contactLine;
+      if(!isReceipt) t += (channel === 'whatsapp' ? '\n' : ' ') + 'Thank you.';
+      return t;
+    },
+    buildFile: async function(){
+      if(!(await ensureJsPDF())) return null;
+      var doc = isReceipt ? buildReceiptPdf(draft) : buildInvoicePdf(draft);
+      if(!doc) return null;
+      return new File([doc.output('blob')], filename, { type:'application/pdf' });
+    },
+    defaultRecipient: cust ? 'c:' + cust.id : 'manual',
+    manualName: cust ? '' : (draft.billToName && draft.billToName !== 'Customer' ? draft.billToName : ''),
+    manualEmail: parsed.email,
+    manualPhone: parsed.phone,
+    audit: { action: isReceipt ? 'receipt_shared' : 'invoice_shared', entityType: isReceipt ? 'receipt' : 'invoice', entityId: draft.number, label: docWord + ' ' + draft.number, reference: draft.number },
+    onHandedOff: opts.onHandedOff
+  };
+}
+function paymentReminderSendCtx(customer){
+  var me = senderIdentity(), contactLine = senderContactLine();
+  var bal = fmtMoney(customer.balance||0);
+  return {
+    title: tr('Send reminder'),
+    summaryHtml: esc(customer.name) + ' ' + esc(tr('owes')) + ' <strong class="num">' + esc(bal) + '</strong>',
+    subject: 'Friendly payment reminder from ' + me.name,
+    emailBody: function(name){
+      return ['Dear ' + (name || customer.name) + ',', '',
+        'This is a friendly reminder from ' + me.name + ' that your account has an outstanding balance of ' + bal + ' as of ' + fmtDateNice(new Date()) + '.', '',
+        'We would appreciate it if you could settle this at your earliest convenience. If you have already paid, thank you, and please ignore this message.', '',
+        contactLine ? 'If you have any questions, please contact us on ' + contactLine + '.' : 'If you have any questions, simply reply to this message.', '',
+        'Kind regards,', me.name].join('\n');
+    },
+    shortText: function(name){
+      return 'Hello ' + (name || customer.name) + ', this is a friendly reminder from ' + me.name + ' that your account balance of ' + bal +
+        ' is outstanding. Please settle it when you can. If you have already paid, thank you.' + (contactLine ? ' Questions? ' + contactLine : '');
+    },
+    defaultRecipient: 'c:' + customer.id,
+    allowSuppliers: false,
+    audit: { action:'reminder_shared', entityType:'customer', entityId: customer.id, label: 'Payment reminder (' + bal + ') for ' + customer.name }
+  };
+}
+function poReference(po){ return 'PO-' + String(po.id||'').replace(/[^a-zA-Z0-9]/g,'').slice(-6).toUpperCase(); }
+function purchaseOrderSendCtx(po){
+  var me = senderIdentity(), contactLine = senderContactLine();
+  var sup = State.suppliers.find(function(s){ return s.id === po.supplierId; });
+  var ref = poReference(po);
+  var total = (po.items||[]).reduce(function(a,i){ return a + (i.qty*i.cost); }, 0);
+  var itemLines = (po.items||[]).map(function(it){ return '- ' + it.qty + ' x ' + it.name + (it.cost ? ' @ ' + fmtMoney(it.cost) : ''); });
+  return {
+    title: tr('Send to supplier'),
+    summaryHtml: esc(ref) + ' · ' + esc(sup ? sup.name : 'Supplier') + ' · <strong class="num">' + esc(fmtMoney(total)) + '</strong>',
+    subject: 'Purchase order ' + ref + ' from ' + me.name,
+    emailBody: function(name){
+      return ['Dear ' + (name || (sup ? sup.name : 'Supplier')) + ',', '',
+        'Please supply the following for ' + me.name + ' (purchase order ' + ref + ', dated ' + fmtDateNice(po.createdAt) + '):', '',
+        itemLines.join('\n'), '',
+        'Estimated total: ' + fmtMoney(total) + ' (at the prices noted above)', '',
+        'Please confirm availability, final pricing and a delivery date.' + (contactLine ? ' You can reach us on ' + contactLine + '.' : ''), '',
+        'Kind regards,', me.name].join('\n');
+    },
+    shortText: function(name){
+      return 'Hello' + (name ? ' ' + name : '') + ', purchase order ' + ref + ' from ' + me.name + ':\n' + itemLines.join('\n') +
+        '\nEstimated total: ' + fmtMoney(total) + '.\nPlease confirm availability and delivery date.' + (contactLine ? ' Contact: ' + contactLine : '');
+    },
+    defaultRecipient: sup ? 's:' + sup.id : 'manual',
+    allowCustomers: false,
+    audit: { action:'po_shared', entityType:'purchaseOrder', entityId: po.id, label: 'Purchase order ' + ref + (sup ? ' for ' + sup.name : ''), reference: ref }
+  };
+}
+function commitInvoiceNumber(){
+  var nextNum = (State.settings.invoiceNextNumber||1) + 1;
+  State.settings = Object.assign({}, State.settings, { invoiceNextNumber: nextNum });
+  refs.settings.set(State.settings);
+}
+/** Shown after an invoice PDF has been downloaded, so it can go straight out. */
+function openInvoiceReadySheet(draft, customerId){
+  var html = '<div class="sheet-head"><h2>'+tr('Invoice ready')+'</h2></div>' +
+    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Invoice '+esc(draft.number)+' for '+esc(fmtMoney(draftTotal(draft)))+' was downloaded. Send it to the customer or a supplier now?</div>' +
+    '<div class="actions">' +
+      '<button class="btn btn-ghost btn-block" id="irDone" type="button">'+tr('Done')+'</button>' +
+      '<button class="btn btn-accent btn-block" id="irSend" type="button">'+tr('Send invoice')+'</button>' +
+    '</div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#irDone').addEventListener('click', closeModal);
+  ov.querySelector('#irSend').addEventListener('click', function(){ openSendSheet(documentSendCtx(draft, 'invoice', { customerId: customerId })); });
+}
+
+/* ============================== ON-DEVICE ALERTS (Notification API) ==============================
+ * Local notifications only: shown by this browser on this device while Pesa
+ * is open or was used recently. They are not emails or SMS and reach nobody
+ * else. The on/off choice is stored per device (each staff phone decides for
+ * itself), not in the shared business settings. */
+var NOTIFY_PREF_KEY = 'pesa_notify_v1';
+var NOTIFY_SEEN_KEY = 'pesa_lowstock_alerted_v1';
+function notifySupported(){ try{ return 'Notification' in window && typeof Notification.requestPermission === 'function'; }catch(e){ return false; } }
+function notifyPrefOn(){ try{ return localStorage.getItem(NOTIFY_PREF_KEY) === '1'; }catch(e){ return false; } }
+function setNotifyPref(on){ try{ localStorage.setItem(NOTIFY_PREF_KEY, on ? '1' : '0'); }catch(e){} }
+function notifyActive(){ return notifySupported() && notifyPrefOn() && Notification.permission === 'granted'; }
+var _lowAlerted = null;
+function lowAlertedMap(){
+  if(_lowAlerted) return _lowAlerted;
+  _lowAlerted = {};
+  try{ var raw = localStorage.getItem(NOTIFY_SEEN_KEY); if(raw) _lowAlerted = JSON.parse(raw) || {}; }catch(e){ _lowAlerted = {}; }
+  return _lowAlerted;
+}
+function saveLowAlerted(){ try{ localStorage.setItem(NOTIFY_SEEN_KEY, JSON.stringify(_lowAlerted || {})); }catch(e){} }
+function showDeviceNotification(title, body, tag){
+  if(!notifyActive()) return false;
+  var opts = { body: body, tag: tag || undefined, icon: 'icon-192.png' };
+  function direct(){ try{ new Notification(title, opts); return true; }catch(e){ return false; } }
+  try{
+    if(navigator.serviceWorker && navigator.serviceWorker.getRegistration){
+      navigator.serviceWorker.getRegistration().then(function(reg){
+        if(reg && reg.showNotification) return reg.showNotification(title, opts).catch(direct);
+        direct();
+      }).catch(direct);
+      return true;
+    }
+  }catch(e){}
+  return direct();
+}
+function lowThresholdOf(p){ return p.lowStock != null ? p.lowStock : State.settings.lowStockDefault; }
+/** changes: [{ product, newQty }] for products whose stock just went down.
+ * Alerts once per product; the product is released for a new alert only after
+ * it has been restocked above its threshold. */
+function checkLowStockAlerts(changes){
+  try{
+    var seen = lowAlertedMap(), changed = {}, fresh = [];
+    (changes||[]).forEach(function(c){
+      var p = c.product;
+      if(!p || c.newQty == null) return;
+      changed[p.id] = true;
+      // It was restocked above its threshold since the last alert: release it.
+      if(seen[p.id] && p.stockQty != null && p.stockQty > lowThresholdOf(p)) delete seen[p.id];
+      if(c.newQty <= lowThresholdOf(p)){
+        if(!seen[p.id]){ seen[p.id] = new Date().toISOString(); fresh.push({ p:p, qty:c.newQty }); }
+      } else if(seen[p.id]) delete seen[p.id];
+    });
+    State.products.forEach(function(p){
+      if(!changed[p.id] && seen[p.id] && p.stockQty != null && p.stockQty > lowThresholdOf(p)) delete seen[p.id];
+    });
+    saveLowAlerted();
+    if(!fresh.length) return;
+    var title = fresh.length === 1 ? 'Low stock: ' + fresh[0].p.name : fresh.length + ' products are low on stock';
+    var body = fresh.map(function(f){ return f.p.name + ': ' + f.qty + ' left'; }).join(', ') + '. Time to reorder.';
+    showDeviceNotification(title, body, 'pesa-lowstock-' + (fresh.length === 1 ? fresh[0].p.id : 'multi'));
+    // In-app message regardless of notification permission (after the
+    // "Sale recorded" message has had its turn on screen).
+    setTimeout(function(){ toast(title + ' (' + fresh.map(function(f){ return f.qty + ' left'; }).join(', ') + ')'); }, 2300);
+    try{
+      if(navigator.setAppBadge){
+        var qtyNow = {};
+        (changes||[]).forEach(function(c){ if(c.product) qtyNow[c.product.id] = c.newQty; });
+        var lowCount = State.products.filter(function(p){
+          var q = qtyNow[p.id] != null ? qtyNow[p.id] : p.stockQty;
+          return q != null && q <= lowThresholdOf(p);
+        }).length;
+        navigator.setAppBadge(lowCount).catch(function(){});
+      }
+    }catch(e){}
+  }catch(e){ /* alerts must never break a sale */ }
+}
+function notifyStatusCopy(){
+  var base = tr('Alerts show on this device while Pesa is open or was used recently: a product dropping to its low-stock level after a sale or wastage, and a short summary when the till is closed. They are not emails or SMS and are not sent to anyone else. Each staff phone switches this on for itself.');
+  if(notifySupported() && Notification.permission === 'denied'){
+    return tr('Notifications are blocked for Pesa in this browser’s site settings. Allow them there, then switch this on again.') + ' ' + base;
+  }
+  return base;
+}
+function notificationSettingsHtml(){
+  var html = '<div class="section-title">'+tr('Notifications')+'</div>';
+  if(!notifySupported()){
+    return html + '<div class="banner">'+tr('This browser can’t show device notifications, so the switch is hidden. Low-stock warnings still appear inside Pesa as messages and under Needs attention on the dashboard.')+'</div>';
+  }
+  var on = notifyActive();
+  return html +
+    '<div class="field"><label>'+tr('Low-stock and till alerts on this device')+'</label>' +
+      '<div class="segbtns" id="stNotifySeg">' +
+        '<button type="button" class="segbtn'+(on?'':' active')+'" data-notify="off">'+tr('Off')+'</button>' +
+        '<button type="button" class="segbtn'+(on?' active':'')+'" data-notify="on">'+tr('On')+'</button>' +
+      '</div></div>' +
+    '<div class="banner" id="stNotifyNote">'+esc(notifyStatusCopy())+'</div>';
+}
+function wireNotificationSettings(ov){
+  var seg = ov.querySelector('#stNotifySeg');
+  if(!seg) return;
+  function paint(){
+    var on = notifyActive();
+    seg.querySelectorAll('[data-notify]').forEach(function(b){ b.classList.toggle('active', (b.getAttribute('data-notify') === 'on') === on); });
+    var note = ov.querySelector('#stNotifyNote'); if(note) note.textContent = notifyStatusCopy();
+  }
+  seg.querySelectorAll('[data-notify]').forEach(function(b){
+    b.addEventListener('click', function(){
+      if(b.getAttribute('data-notify') === 'off'){ setNotifyPref(false); paint(); toast(tr('Device alerts off')); return; }
+      function granted(){
+        setNotifyPref(true); paint();
+        toast(tr('Device alerts on'));
+        showDeviceNotification('Pesa alerts are on', 'You will see low-stock and till alerts here on this device.', 'pesa-test');
+      }
+      if(Notification.permission === 'granted'){ granted(); return; }
+      if(Notification.permission === 'denied'){ setNotifyPref(false); paint(); toast(tr('Notifications are blocked in this browser’s settings')); return; }
+      var done = false;
+      function handle(perm){
+        if(done) return; done = true;
+        if(perm === 'granted') granted();
+        else { setNotifyPref(false); paint(); toast(tr('Notifications weren’t allowed, so alerts stay inside Pesa')); }
+      }
+      try{
+        var p = Notification.requestPermission(handle);
+        if(p && p.then) p.then(handle, function(){ handle('denied'); });
+      }catch(e){ handle('denied'); }
+    });
+  });
 }
 
 /* ============================== INVOICES ============================== */
@@ -3053,8 +3649,26 @@ function openInvoiceSheet(prefill){
       '<button class="btn btn-ghost" id="invReceiptBtn" type="button">'+tr('Receipt (PDF)')+'</button>' +
       '<button class="btn btn-accent" style="flex:2;" id="invGenerateBtn" type="button">'+tr('Download invoice (PDF)')+'</button>' +
     '</div>' +
+    '<div class="actions" style="margin-top:10px;"><button class="btn btn-primary btn-block" id="invSendBtn" type="button">'+tr('Send invoice')+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>' +
     '<div class="actions">' + bluetoothPrintButtonHtml('invBtPrintBtn') + '</div>';
   var ov = openSheet(html);
+  var prefillCustomerId = prefill && prefill.customerId || null;
+  // The invoice number is used up once, whether the invoice is downloaded,
+  // sent, or both, so the next invoice never repeats it.
+  var numberCommitted = false;
+  function commitNumberOnce(){ if(numberCommitted) return; numberCommitted = true; commitInvoiceNumber(); }
+  ov.querySelector('#invSendBtn').addEventListener('click', function(){
+    var draft = readDraft();
+    if(!draft) return;
+    openSendSheet(documentSendCtx(draft, 'invoice', { customerId: invoiceCustomerId(draft), onHandedOff: commitNumberOnce }));
+  });
+  // Default the recipient to the customer the invoice was started from, as
+  // long as the "Bill to" name still matches them (otherwise match by name).
+  function invoiceCustomerId(draft){
+    if(!prefillCustomerId) return null;
+    var c = State.customers.find(function(x){ return x.id===prefillCustomerId; });
+    return (c && (c.name||'').trim().toLowerCase() === (draft.billToName||'').trim().toLowerCase()) ? c.id : null;
+  }
   var btPrintBtn2 = ov.querySelector('#invBtPrintBtn');
   if(btPrintBtn2 && !btPrintBtn2.disabled) btPrintBtn2.addEventListener('click', function(){
     var draft = readDraft();
@@ -3094,11 +3708,9 @@ function openInvoiceSheet(prefill){
     saveGeneratedPdf(doc, 'invoice-'+draft.number+'.pdf').then(function(ok){
       btn.disabled = false; btn.textContent = 'Download invoice (PDF)';
       if(ok){
-        var nextNum = (State.settings.invoiceNextNumber||1) + 1;
-        State.settings = Object.assign({}, State.settings, { invoiceNextNumber: nextNum });
-        refs.settings.set(State.settings);
+        commitNumberOnce();
         toast('Invoice downloaded');
-        closeModal();
+        openInvoiceReadySheet(draft, invoiceCustomerId(draft));
       }
     });
   });
@@ -3261,7 +3873,7 @@ function renderCredit(){
       '<div class="avatar">'+esc(initials(c.name))+'</div>' +
       '<div class="main">' +
         '<div class="title">'+esc(c.name)+'</div>' +
-        '<div class="sub">'+esc(c.phone||'No phone number')+'</div>' +
+        '<div class="sub">'+esc([c.phone, c.email].filter(Boolean).join(' · ') || 'No phone number')+'</div>' +
       '</div>' +
       '<div class="trail">' +
         '<div class="amt num '+(bal>0?'owe':'ok')+'">'+fmtMoney(bal)+'</div>' +
@@ -3278,7 +3890,8 @@ function openCustomerSheet(customer){
   var html =
     '<div class="sheet-head"><h2>'+(isEdit?tr('Edit customer'):tr('Add customer'))+'</h2></div>' +
     '<div class="field"><label>'+tr('Name')+'</label><input id="cfName" placeholder="Full name" value="'+esc(customer?customer.name:'')+'"></div>' +
-    '<div class="field"><label>'+tr('Phone (optional)')+'</label><input id="cfPhone" placeholder="081 234 5678" value="'+esc(customer?customer.phone||'':'')+'"></div>' +
+    '<div class="field"><label>'+tr('Phone (optional)')+'</label><input id="cfPhone" type="tel" inputmode="tel" placeholder="081 234 5678" value="'+esc(customer?customer.phone||'':'')+'"></div>' +
+    '<div class="field"><label>'+tr('Email (optional)')+'</label><input id="cfEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com" value="'+esc(customer?customer.email||'':'')+'"></div>' +
     (isEdit ? '<div class="field"><label>'+tr('Balance owed')+'</label><input id="cfBalance" type="number" inputmode="decimal" step="0.01" value="'+(customer.balance||0)+'"></div>' : '') +
     '<div class="actions">' +
       (isEdit ? '<button class="btn btn-danger" id="cfDelete">'+tr('Delete')+'</button>' : '') +
@@ -3288,11 +3901,13 @@ function openCustomerSheet(customer){
   ov.querySelector('#cfSave').addEventListener('click', function(){
     var name = ov.querySelector('#cfName').value.trim();
     if(!name){ toast('Enter a name'); return; }
+    var email = ov.querySelector('#cfEmail').value.trim();
+    if(email && !looksLikeEmail(email)){ toast(tr('Enter a valid email address')); ov.querySelector('#cfEmail').focus(); return; }
     if(isEdit){
-      refs.customers.doc(customer.id).update({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), balance: parseFloat(ov.querySelector('#cfBalance').value)||0 });
+      refs.customers.doc(customer.id).update({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), email: email, balance: parseFloat(ov.querySelector('#cfBalance').value)||0 });
       toast('Customer updated');
     } else {
-      refs.customers.doc().set({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), balance:0, createdAt:new Date().toISOString() });
+      refs.customers.doc().set({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), email: email, balance:0, createdAt:new Date().toISOString() });
       toast('Customer added');
     }
     closeModal();
@@ -3314,15 +3929,22 @@ function openLedgerSheet(customer){
     '</div>' +
     '<div class="section-title" style="margin-top:0;">'+tr('Recent activity')+'</div>' +
     '<div id="ledgerList"><div class="empty" style="padding:20px 0;">Loading…</div></div>' +
-    '<div class="actions"><button class="btn btn-ghost" id="invoiceCustomerBtn">'+tr('Invoice')+'</button><button class="btn btn-accent" style="flex:2;" id="recordPaymentBtn">'+tr('Record payment')+'</button></div>';
+    '<div class="actions"><button class="btn btn-ghost" id="invoiceCustomerBtn">'+tr('Invoice')+'</button><button class="btn btn-accent" style="flex:2;" id="recordPaymentBtn">'+tr('Record payment')+'</button></div>' +
+    ((customer.balance||0) > 0 ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="sendReminderBtn" type="button">'+tr('Send reminder')+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>' : '');
   var ov = openSheet(html);
   ov.querySelector('#ledgerEditBtn').addEventListener('click', function(){ closeModal(); openCustomerSheet(customer); });
   ov.querySelector('#recordPaymentBtn').addEventListener('click', function(){ openPaymentSheet(customer); });
+  var reminderBtn = ov.querySelector('#sendReminderBtn');
+  if(reminderBtn) reminderBtn.addEventListener('click', function(){
+    var fresh = State.customers.find(function(c){ return c.id===customer.id; }) || customer;
+    openSendSheet(paymentReminderSendCtx(fresh));
+  });
   ov.querySelector('#invoiceCustomerBtn').addEventListener('click', function(){
     closeModal();
     openInvoiceSheet({
+      customerId: customer.id,
       billToName: customer.name,
-      billToContact: customer.phone || '',
+      billToContact: [customer.phone, customer.email].filter(Boolean).join('\n'),
       items: [{ desc:'Outstanding balance', qty:1, unitPrice: customer.balance||0 }]
     });
   });
@@ -3769,8 +4391,10 @@ function openCashierSettingsSheet(){
       }).join('') +
     '</select></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="stSaveLangOnly">'+tr('Save settings')+'</button></div>' +
+    notificationSettingsHtml() +
     settingsAboutFooterHtml();
   var ov = openSheet(html);
+  wireNotificationSettings(ov);
   ov.querySelector('#acctLogoutBtn').addEventListener('click', logout);
   ov.querySelector('#stSaveLangOnly').addEventListener('click', function(){
     State.settings = Object.assign({}, State.settings, { language: ov.querySelector('#stLang').value });
@@ -3868,6 +4492,8 @@ function openSettingsSheet(){
     '</div>' +
     '<button class="btn btn-ghost btn-block" id="stPreviewBtn" type="button" style="margin-top:10px;">Preview &amp; download sample invoice</button>' +
 
+    notificationSettingsHtml() +
+
     '<div class="section-title">Backup &amp; data safety</div>' +
     '<div class="banner">'+(Store.isCloud()?'Your data is stored in your own private Pesa cloud space and kept only for you — no one else can see it unless you export and share a file yourself.':'Your data is stored only on this device. Export a backup regularly and keep a copy somewhere safe — clearing your browser data would otherwise erase it.')+'</div>' +
     '<div class="actions">' +
@@ -3953,6 +4579,7 @@ function openSettingsSheet(){
   ov.querySelector('#openCompanyBtn').addEventListener('click', function(){ closeModal(); openCompanyDetailsSheet(); });
   ov.querySelector('#openTeamBtn').addEventListener('click', function(){ closeModal(); openTeamSheet(); });
   var branchSelect = ov.querySelector('#stBranchSelect'); if(branchSelect) branchSelect.addEventListener('change', function(){ setActiveBranch(branchSelect.value); });
+  wireNotificationSettings(ov);
   ov.querySelector('#stExportBtn').addEventListener('click', exportData);
   ov.querySelector('#stImportBtn').addEventListener('click', function(){
     ov.querySelector('#stImportInput').click();
@@ -4945,7 +5572,7 @@ function openSuppliersSheet(){
     if(State.suppliers.length === 0){ list.innerHTML = '<div class="empty" style="padding:16px 0;">No suppliers added yet. Add one to start placing orders.</div>'; return; }
     list.innerHTML = '<div class="rowlist">' + State.suppliers.map(function(s){
       return '<div class="row" data-sup="'+s.id+'"><div class="avatar">'+esc(initials(s.name))+'</div>' +
-        '<div class="main"><div class="title">'+esc(s.name)+'</div><div class="sub">'+esc(s.phone||s.contact||'No contact on file')+'</div></div></div>';
+        '<div class="main"><div class="title">'+esc(s.name)+'</div><div class="sub">'+esc([s.phone||s.contact, s.email].filter(Boolean).join(' · ')||'No contact on file')+'</div></div></div>';
     }).join('') + '</div>';
     list.querySelectorAll('[data-sup]').forEach(function(row){
       row.addEventListener('click', function(){
@@ -4962,7 +5589,8 @@ function openSupplierFormSheet(supplier, onDone){
   var html = '<div class="sheet-head"><h2>'+(isEdit?'Edit supplier':'Add supplier')+'</h2></div>' +
     '<div class="field"><label>Name</label><input id="supName" value="'+esc(supplier?supplier.name:'')+'"></div>' +
     '<div class="field"><label>Contact person (optional)</label><input id="supContact" value="'+esc(supplier?supplier.contact||'':'')+'"></div>' +
-    '<div class="field"><label>Phone (optional)</label><input id="supPhone" value="'+esc(supplier?supplier.phone||'':'')+'"></div>' +
+    '<div class="field"><label>Phone (optional)</label><input id="supPhone" type="tel" inputmode="tel" value="'+esc(supplier?supplier.phone||'':'')+'"></div>' +
+    '<div class="field"><label>'+tr('Email (optional)')+'</label><input id="supEmail" type="email" inputmode="email" autocomplete="off" placeholder="orders@supplier.com" value="'+esc(supplier?supplier.email||'':'')+'"></div>' +
     '<div class="field"><label>Notes (optional)</label><textarea id="supNotes" rows="2">'+esc(supplier?supplier.notes||'':'')+'</textarea></div>' +
     '<div class="actions">' + (isEdit?'<button class="btn btn-danger" id="supDelete">Delete</button>':'') +
       '<button class="btn btn-primary btn-block" id="supSave">'+(isEdit?'Save changes':'Add supplier')+'</button></div>';
@@ -4970,7 +5598,9 @@ function openSupplierFormSheet(supplier, onDone){
   ov.querySelector('#supSave').addEventListener('click', function(){
     var name = ov.querySelector('#supName').value.trim();
     if(!name){ toast('Enter a supplier name'); return; }
-    var data = { name:name, contact: ov.querySelector('#supContact').value.trim(), phone: ov.querySelector('#supPhone').value.trim(), notes: ov.querySelector('#supNotes').value.trim() };
+    var supEmail = ov.querySelector('#supEmail').value.trim();
+    if(supEmail && !looksLikeEmail(supEmail)){ toast(tr('Enter a valid email address')); ov.querySelector('#supEmail').focus(); return; }
+    var data = { name:name, contact: ov.querySelector('#supContact').value.trim(), phone: ov.querySelector('#supPhone').value.trim(), email: supEmail, notes: ov.querySelector('#supNotes').value.trim() };
     if(isEdit){ refs.suppliers.doc(supplier.id).update(data); logAudit('update','supplier',supplier.id,'Edited '+name); toast('Supplier updated'); }
     else { data.createdAt = new Date().toISOString(); refs.suppliers.doc().set(data); logAudit('create','supplier',null,'Added supplier '+name); toast('Supplier added'); }
     closeModal();
@@ -5073,11 +5703,13 @@ function openPODetailSheet(po, onDone){
       return '<div class="row" style="cursor:default;"><div class="main"><div class="title">'+esc(it.name)+'</div><div class="sub">'+it.qty+' x '+fmtMoney(it.cost)+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(it.qty*it.cost)+'</div></div></div>';
     }).join('') + '</div>' +
     '<div class="sumline total" style="margin-top:8px;"><span>Total</span><span class="num">'+fmtMoney(total)+'</span></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="poSendBtn" type="button">'+tr('Send to supplier')+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>' +
     '<div class="actions">' +
       (po.status==='draft' ? '<button class="btn btn-ghost btn-block" id="poMarkOrderedBtn">Mark as ordered</button>' : '') +
       (po.status!=='received' ? '<button class="btn btn-primary btn-block" id="poMarkReceivedBtn">Mark as received (adds to stock)</button>' : '<div class="banner" style="color:var(--success);">'+ICONS.check.replace(/width="24" height="24"/,'width="15" height="15"')+'<span>Received '+fmtDateTime(po.receivedAt)+'</span></div>') +
     '</div>';
   var ov = openSheet(html, {center:true});
+  ov.querySelector('#poSendBtn').addEventListener('click', function(){ openSendSheet(purchaseOrderSendCtx(po)); });
   var markOrdered = ov.querySelector('#poMarkOrderedBtn');
   if(markOrdered) markOrdered.addEventListener('click', function(){
     refs.purchaseOrders.doc(po.id).update({ status:'ordered' });
@@ -5204,7 +5836,9 @@ function openRecordWastageSheet(onDone){
     if(qty<=0){ toast('Enter a quantity greater than 0'); return; }
     var reason = ov.querySelector('#wReason').value;
     var notes = ov.querySelector('#wNotes').value.trim();
-    refs.products.doc(p.id).update({ stockQty: Math.max(0, (p.stockQty||0) - qty) });
+    var wNewQty = Math.max(0, (p.stockQty||0) - qty);
+    refs.products.doc(p.id).update({ stockQty: wNewQty });
+    checkLowStockAlerts([{ product:p, newQty:wNewQty }]);
     refs.wastage.doc().set({
       productId:p.id, productName:p.name, qty:qty, reason:reason, notes:notes,
       recordedBy: State.session?State.session.name:'', createdAt:new Date().toISOString()
