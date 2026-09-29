@@ -312,6 +312,35 @@
   .chip{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:600; padding:3px 8px; border-radius:999px; }
   .chip.low{ background:var(--danger-bg); color:var(--danger); }
 
+  /* invoice archive */
+  .inv-tools{ display:flex; gap:10px; align-items:flex-start; }
+  .inv-tools .searchbar{ flex:1; min-width:0; margin-bottom:0; }
+  .inv-tools .btn{ padding:11px 14px; font-size:13.5px; flex-shrink:0; }
+  .inv-filters{ margin:12px 0 6px; }
+  .inv-filters .segbtn{ padding:8px 6px; font-size:12.5px; }
+  .inv-filters select{ width:100%; margin-top:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:10px; padding:9px 10px; font-size:13px; font-family:inherit; }
+  .inv-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .inv-top{ display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer; }
+  .inv-top:active{ background:var(--surface-2); }
+  .inv-top .main{ flex:1; min-width:0; }
+  .inv-top .title{ font-size:14.5px; font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .inv-top .sub{ font-size:12px; color:var(--text-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .inv-top .amt{ font-size:16px; font-weight:600; text-align:right; flex-shrink:0; }
+  .chip.inv-type{ background:var(--surface-3); color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em; font-size:9.5px; padding:2px 7px; }
+  .inv-actions{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; border-top:1px solid var(--border); }
+  .inv-actions button{ appearance:none; border:none; background:transparent; color:var(--text); font-family:inherit; font-size:12px; font-weight:600; padding:11px 4px; min-height:42px; display:flex; align-items:center; justify-content:center; gap:5px; cursor:pointer; }
+  .inv-actions button + button{ border-left:1px solid var(--border); }
+  .inv-actions button:active{ background:var(--surface-2); }
+  .inv-actions button svg{ flex-shrink:0; }
+  .inv-actions button.danger{ color:var(--danger); }
+  .inv-items{ width:100%; border-collapse:collapse; font-size:13px; margin:4px 0 10px; }
+  .inv-items th{ text-align:left; font-size:10.5px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); padding:6px 0; border-bottom:1px solid var(--border); }
+  .inv-items th.r, .inv-items td.r{ text-align:right; }
+  .inv-items td{ padding:8px 0; border-bottom:1px solid var(--border); vertical-align:top; }
+  .inv-items td.r{ white-space:nowrap; padding-left:8px; }
+  .inv-meta{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin:2px 0 12px; font-size:13px; }
+  .inv-meta .l{ font-size:10.5px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.03em; }
+
   /* stat tiles */
   .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:13px 14px; }
@@ -862,6 +891,14 @@ Object.assign(LANGS.de.strings, {
   'Notifications are blocked in this browser’s settings':'Benachrichtigungen sind in den Einstellungen dieses Browsers blockiert','Notifications weren’t allowed, so alerts stay inside Pesa':'Benachrichtigungen wurden nicht erlaubt, daher bleiben Warnungen in Pesa'
 });
 
+// Invoice archive strings (Afrikaans and German only; other languages fall back to English).
+Object.assign(LANGS.af.strings, {
+  'Invoices':'Fakture','View in Invoices':'Kyk in Fakture','Share':'Deel','Download':'Laai af','Print':'Druk','All time':'Alle tye','Search invoices':'Soek fakture','No invoices stored yet':'Nog geen fakture gestoor nie','Invoices and receipts you create or send from now on are saved here, ready to share, download or print again. Ones made before this update were not saved, so they are not listed.':'Fakture en kwitansies wat jy van nou af skep of stuur, word hier gestoor, gereed om weer te deel, af te laai of te druk. Dié wat voor hierdie opdatering gemaak is, is nie gestoor nie en word dus nie gelys nie.','No client name':'Geen kliëntnaam','All clients':'Alle kliënte','Client':'Kliënt','Use your browser’s print option':'Gebruik jou blaaier se drukopsie','Couldn’t open the PDF. Download it and print from your files.':'Kon nie die PDF oopmaak nie. Laai dit af en druk dit vanaf jou lêers.','Print dialog opened':'Drukvenster oopgemaak','This removes the stored copy from the Invoices list only. It does not change your stock, sales, customer balances or the invoice numbers. Anything already sent stays with the client.':'Dit verwyder slegs die gestoorde kopie uit die Fakture-lys. Dit verander nie jou voorraad, verkope, kliëntesaldo’s of die faktuurnommers nie. Wat reeds gestuur is, bly by die kliënt.','Receipt':'Kwitansie','Due':'Betaalbaar','Qty':'Hoeveelheid','Saved':'Gestoor','Total':'Totaal'
+});
+Object.assign(LANGS.de.strings, {
+  'Invoices':'Rechnungen','View in Invoices':'In Rechnungen ansehen','Share':'Teilen','Download':'Herunterladen','Print':'Drucken','All time':'Gesamter Zeitraum','Search invoices':'Rechnungen suchen','No invoices stored yet':'Noch keine Rechnungen gespeichert','Invoices and receipts you create or send from now on are saved here, ready to share, download or print again. Ones made before this update were not saved, so they are not listed.':'Rechnungen und Belege, die Sie ab jetzt erstellen oder senden, werden hier gespeichert und können erneut geteilt, heruntergeladen oder gedruckt werden. Dokumente von vor diesem Update wurden nicht gespeichert und erscheinen daher nicht.','No client name':'Kein Kundenname','All clients':'Alle Kunden','Client':'Kunde','Use your browser’s print option':'Nutzen Sie die Druckfunktion Ihres Browsers','Couldn’t open the PDF. Download it and print from your files.':'Das PDF ließ sich nicht öffnen. Laden Sie es herunter und drucken Sie es aus Ihren Dateien.','Print dialog opened':'Druckdialog geöffnet','This removes the stored copy from the Invoices list only. It does not change your stock, sales, customer balances or the invoice numbers. Anything already sent stays with the client.':'Dies entfernt nur die gespeicherte Kopie aus der Rechnungsliste. Bestand, Verkäufe, Kundensalden und Rechnungsnummern bleiben unverändert. Bereits Gesendetes bleibt beim Kunden.','Receipt':'Beleg','Due':'Fällig','Qty':'Menge','Saved':'Gespeichert','Total':'Gesamt'
+});
+
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
   var code = currentLangCode();
@@ -1035,7 +1072,7 @@ var State = {
   cart: [], // {productId, name, unitPrice, cost, qty, unit}
   sellSearch: '',
   ready: { products:false, customers:false, sales:false, expenses:false, settings:false, company:false, users:false, tills:false,
-    branches:false, suppliers:false, purchaseOrders:false, wastage:false, auditLog:false },
+    branches:false, suppliers:false, purchaseOrders:false, wastage:false, auditLog:false, invoices:false },
   select: {
     stock: { active:false, ids:{} },
     credit: { active:false, ids:{} },
@@ -1049,6 +1086,8 @@ var State = {
   branches: [],        // {id, name, address, createdAt}
   suppliers: [],       // {id, name, contact, phone, notes}
   purchaseOrders: [],  // {id, supplierId, items:[{productId,name,qty,cost}], status, createdAt, receivedAt}
+  invoices: [],        // {id, type:'invoice'|'receipt', number, billToName, items, total, dateStr, customerId, branchId, createdBy, createdAt}
+  invFilter: { q:'', period:'all', client:'' },
   wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
   auditLog: [],        // {id, action, entityType, entityId, summary, userName, userId, createdAt}
   currentBranchId: null, // owner-selected branch filter ('all' = combined view)
@@ -1156,6 +1195,7 @@ function initRefs(){
   refs.purchaseOrders = Store.collection('purchaseOrders');
   refs.wastage = Store.collection('wastage');
   refs.auditLog = Store.collection('auditLog');
+  refs.invoices = Store.collection('invoices');
 }
 
 function subscribeAll(){
@@ -1221,6 +1261,11 @@ function subscribeAll(){
     State.ready.wastage = true;
     if(document.getElementById('app').style.display !== 'none') render();
   });
+  refs.invoices.onSnapshot(function(docs){
+    State.invoices = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt) || String(b.number).localeCompare(String(a.number)); });
+    State.ready.invoices = true;
+    if(document.getElementById('app').style.display !== 'none') render();
+  });
   refs.auditLog.onSnapshot(function(docs){
     State.auditLog = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
     State.ready.auditLog = true;
@@ -1243,7 +1288,7 @@ function logAudit(action, entityType, entityId, summary, whenDate, extra){
   try{
     refs.auditLog.add(Object.assign({}, extra || {}, {
       action: action, // 'create' | 'update' | 'delete' | 'other' | 'invoice_shared' | 'receipt_shared' | 'po_shared' | 'reminder_shared'
-      entityType: entityType, // 'product' | 'sale' | 'expense' | 'staff' | 'till' | 'purchaseOrder' | 'wastage' | 'branch' | 'supplier' | 'verification_stamp' | 'invoice' | 'receipt' | 'customer'
+      entityType: entityType, // 'product' | 'sale' | 'expense' | 'staff' | 'till' | 'purchaseOrder' | 'wastage' | 'branch' | 'supplier' | 'verification_stamp' | 'invoice' | 'receipt' | 'customer'; action also 'invoice_deleted'
       entityId: entityId || null,
       summary: summary || '',
       userId: State.session ? State.session.userId : null,
@@ -1290,7 +1335,7 @@ function sha256Hex(str){
 }
 function roleTabs(role){
   if(role === 'cashier') return ['sell','till'];
-  return ['dashboard','sell','stock','credit','expenses','till'];
+  return ['dashboard','sell','stock','credit','invoices','expenses','till'];
 }
 function isManagerOrOwner(){ return !!(State.session && (State.session.role==='owner' || State.session.role==='manager')); }
 function isOwner(){ return !!(State.session && State.session.role==='owner'); }
@@ -1892,6 +1937,7 @@ var ICONS = {
   clipboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"></path><path d="M6 4h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"></path><path d="M8 11h8M8 15h8"></path></svg>',
   branch: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2.5"></circle><circle cx="6" cy="19" r="2.5"></circle><circle cx="18" cy="12" r="2.5"></circle><path d="M6 7.5v9"></path><path d="M6 12c0 3 3 3 10 0"></path></svg>',
   percent: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5 5 19"></path><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg>',
+  invoice: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8M8 17h5"></path></svg>',
   trash: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6M14 11v6"></path></svg>',
   clock: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>',
   chartbar: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M10 20V4M17 20v-7"></path></svg>',
@@ -2212,7 +2258,7 @@ function offerSaleReceipt(sale, customer){
   ov.querySelector('#saleSendBtn').addEventListener('click', function(){
     openSendSheet(documentSendCtx(draft, sendKind, {
       customerId: customer ? customer.id : null,
-      onHandedOff: function(){ if(!saleNumberCommitted){ saleNumberCommitted = true; commitInvoiceNumber(); } }
+      onHandedOff: function(){ if(!saleNumberCommitted){ saleNumberCommitted = true; commitInvoiceNumber(draft, sendKind, customer ? customer.id : null); } }
     }));
   });
   var btPrintBtn = ov.querySelector('#saleBtPrintBtn');
@@ -3250,10 +3296,52 @@ function purchaseOrderSendCtx(po){
     audit: { action:'po_shared', entityType:'purchaseOrder', entityId: po.id, label: 'Purchase order ' + ref + (sup ? ' for ' + sup.name : ''), reference: ref }
   };
 }
-function commitInvoiceNumber(){
+/** Uses up the invoice number and, when a draft is given, stores the
+ * document in the Invoices archive at that same moment. kind is 'invoice'
+ * or 'receipt' (a post-sale receipt consumes a number just like an invoice). */
+function commitInvoiceNumber(draft, kind, customerId){
   var nextNum = (State.settings.invoiceNextNumber||1) + 1;
   State.settings = Object.assign({}, State.settings, { invoiceNextNumber: nextNum });
   refs.settings.set(State.settings);
+  if(draft) saveInvoiceRecord(draft, kind || 'invoice', customerId);
+}
+/* ============================== INVOICE ARCHIVE ==============================
+ * Every invoice/receipt that consumed a number is stored as plain data (not
+ * a PDF); the PDF is rebuilt on demand with buildInvoicePdf/buildReceiptPdf
+ * so it always looks exactly like a freshly generated one (with the shop's
+ * current branding). Documents made before this archive existed are not
+ * listed: nothing was stored for them. */
+var _invRecIds = {}; // type|number -> doc id created in this session, so a re-download updates instead of duplicating
+function saveInvoiceRecord(draft, kind, customerId){
+  try{
+    var key = kind + '|' + draft.number;
+    var contact = contactFromText(draft.billToContact);
+    var total = draftTotal(draft);
+    var data = {
+      type: kind,
+      number: draft.number,
+      billToName: draft.billToName || 'Customer',
+      billToContact: draft.billToContact || '',
+      billToEmail: contact.email,
+      billToPhone: contact.phone,
+      dateStr: draft.dateStr || todayKey(),
+      dueDateStr: draft.dueDateStr || '',
+      notes: draft.notes || '',
+      items: (draft.items||[]).map(function(it){ return { desc: it.desc||'', qty: Number(it.qty)||0, unitPrice: Number(it.unitPrice)||0 }; }),
+      subtotal: total,
+      total: total,
+      templateKey: State.settings.invoiceTemplate || 'classic',
+      customerId: customerId || null
+    };
+    if(_invRecIds[key]){ refs.invoices.doc(_invRecIds[key]).update(data); return; }
+    data.branchId = (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null;
+    data.createdById = State.session ? State.session.userId : null;
+    data.createdBy = State.session ? State.session.name : null;
+    data.createdAt = new Date().toISOString();
+    var d = refs.invoices.doc();
+    _invRecIds[key] = d.id;
+    d.set(data);
+  }catch(e){ /* archiving must never block the invoice itself */ }
 }
 /** Shown after an invoice PDF has been downloaded, so it can go straight out. */
 function openInvoiceReadySheet(draft, customerId){
@@ -3262,10 +3350,220 @@ function openInvoiceReadySheet(draft, customerId){
     '<div class="actions">' +
       '<button class="btn btn-ghost btn-block" id="irDone" type="button">'+tr('Done')+'</button>' +
       '<button class="btn btn-accent btn-block" id="irSend" type="button">'+tr('Send invoice')+'</button>' +
-    '</div>';
+    '</div>' +
+    (roleTabs(State.session ? State.session.role : 'owner').indexOf('invoices') !== -1 ?
+      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="irView" type="button">'+tr('View in Invoices')+'</button></div>' : '');
   var ov = openSheet(html, {center:true});
   ov.querySelector('#irDone').addEventListener('click', closeModal);
+  var irView = ov.querySelector('#irView');
+  if(irView) irView.addEventListener('click', function(){ closeModal(); State.invFilter = { q:'', period:'all', client:'' }; setTab('invoices'); });
   ov.querySelector('#irSend').addEventListener('click', function(){ openSendSheet(documentSendCtx(draft, 'invoice', { customerId: customerId })); });
+}
+
+/* ============================== INVOICES PAGE ============================== */
+var INV_ICO = {
+  share: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"></path><path d="M16 6l-4-4-4 4"></path><path d="M12 2v13"></path></svg>',
+  download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>',
+  print: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>',
+  trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>'
+};
+function invTypeLabel(rec){ return rec.type === 'receipt' ? tr('Receipt') : tr('Invoice'); }
+function invRecordDate(rec){ return rec.dateStr || (rec.createdAt ? todayKey(new Date(rec.createdAt)) : ''); }
+function invFilteredList(){
+  var f = State.invFilter || {};
+  var list = branchScoped(State.invoices);
+  var q = String(f.q||'').trim().toLowerCase();
+  var now = new Date();
+  var monthStart = todayKey(new Date(now.getFullYear(), now.getMonth(), 1));
+  var lastStart = todayKey(new Date(now.getFullYear(), now.getMonth()-1, 1));
+  return list.filter(function(r){
+    if(q && (String(r.number||'').toLowerCase().indexOf(q) === -1 && String(r.billToName||'').toLowerCase().indexOf(q) === -1)) return false;
+    var d = invRecordDate(r);
+    if(f.period === 'month' && d < monthStart) return false;
+    if(f.period === 'last' && (d < lastStart || d >= monthStart)) return false;
+    if(f.client && (r.billToName||'') !== f.client) return false;
+    return true;
+  });
+}
+function invListHtml(){
+  var list = invFilteredList();
+  if(list.length === 0){
+    return '<div class="empty">'+ICONS.search+'<div class="t">'+tr('No matches')+'</div><div class="s">'+tr('Try a different search.')+'</div></div>';
+  }
+  var canDelete = isManagerOrOwner();
+  return '<div class="rowlist">' + list.map(function(r){
+    var named = r.billToName && r.billToName !== 'Customer';
+    return '<div class="inv-card" data-inv="'+esc(r.id)+'">' +
+      '<div class="inv-top" data-inv-act="view" role="button" tabindex="0">' +
+        '<div class="main"><div class="title"><span class="num">'+esc(r.number)+'</span><span class="chip inv-type">'+esc(invTypeLabel(r))+'</span></div>' +
+        '<div class="sub">'+esc((named ? r.billToName : tr('No client name'))+' · '+fmtDateNice(invRecordDate(r)))+'</div></div>' +
+        '<div class="amt num">'+esc(fmtMoney(r.total||0))+'</div>' +
+      '</div>' +
+      '<div class="inv-actions">' +
+        '<button type="button" data-inv-act="share">'+INV_ICO.share+'<span>'+tr('Share')+'</span></button>' +
+        '<button type="button" data-inv-act="download">'+INV_ICO.download+'<span>'+tr('Download')+'</span></button>' +
+        '<button type="button" data-inv-act="print">'+INV_ICO.print+'<span>'+tr('Print')+'</span></button>' +
+        (canDelete ? '<button type="button" class="danger" data-inv-act="delete">'+INV_ICO.trash+'<span>'+tr('Delete')+'</span></button>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('') + '</div>';
+}
+function renderInvoicesPage(){
+  if(!State.ready.invoices) return '<div class="empty">Loading…</div>';
+  var f = State.invFilter || (State.invFilter = { q:'', period:'all', client:'' });
+  var all = branchScoped(State.invoices);
+  var html = (all.length === 0 ? '' : '<div class="inv-tools"><div class="searchbar">'+ICONS.search+'<input id="invSearchInput" placeholder="'+esc(tr('Search invoices'))+'" value="'+esc(f.q||'')+'"></div>' +
+    '<button class="btn btn-primary" id="invNewBtn" type="button">'+ICONS.plus.replace('width="22" height="22"','width="16" height="16"')+'<span>'+tr('New invoice')+'</span></button></div>');
+  if(all.length === 0){
+    html += '<div class="empty">'+ICONS.invoice+'<div class="t">'+tr('No invoices stored yet')+'</div>' +
+      '<div class="s">'+tr('Invoices and receipts you create or send from now on are saved here, ready to share, download or print again. Ones made before this update were not saved, so they are not listed.')+'</div>' +
+      '<div style="margin-top:16px;"><button class="btn btn-accent" id="invEmptyNewBtn" type="button">'+tr('Create an invoice')+'</button></div></div>';
+    return html;
+  }
+  var clients = [];
+  all.forEach(function(r){ var n = r.billToName; if(n && n !== 'Customer' && clients.indexOf(n) === -1) clients.push(n); });
+  clients.sort(function(a,b){ return a.localeCompare(b); });
+  html += '<div class="inv-filters"><div class="segbtns" id="invPeriodBtns">' +
+    [['all',tr('All time')],['month',tr('This month')],['last',tr('Last month')]].map(function(p){
+      return '<button type="button" class="segbtn'+((f.period||'all')===p[0]?' active':'')+'" data-period="'+p[0]+'">'+esc(p[1])+'</button>';
+    }).join('') + '</div>' +
+    (clients.length > 1 ? '<select id="invClientSel" aria-label="'+esc(tr('Client'))+'"><option value="">'+esc(tr('All clients'))+'</option>' +
+      clients.map(function(c){ return '<option value="'+esc(c)+'"'+(f.client===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('') + '</select>' : '') +
+    '</div><div id="invListWrap">' + invListHtml() + '</div>';
+  return html;
+}
+function wireInvoicesPage(content){
+  function newInv(){ openInvoiceSheet(null); }
+  var nb = content.querySelector('#invNewBtn'); if(nb) nb.addEventListener('click', newInv);
+  var eb = content.querySelector('#invEmptyNewBtn'); if(eb) eb.addEventListener('click', newInv);
+  var wrap = content.querySelector('#invListWrap');
+  function refreshList(){ if(wrap){ wrap.innerHTML = invListHtml(); wireInvList(wrap); } }
+  if(wrap) wireInvList(wrap);
+  var si = content.querySelector('#invSearchInput');
+  if(si) si.addEventListener('input', debounce(function(){ State.invFilter.q = si.value; refreshList(); }, 160));
+  var pb = content.querySelector('#invPeriodBtns');
+  if(pb) pb.querySelectorAll('.segbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      State.invFilter.period = b.getAttribute('data-period');
+      pb.querySelectorAll('.segbtn').forEach(function(x){ x.classList.toggle('active', x === b); });
+      refreshList();
+    });
+  });
+  var cs = content.querySelector('#invClientSel');
+  if(cs) cs.addEventListener('change', function(){ State.invFilter.client = cs.value; refreshList(); });
+}
+function wireInvList(wrap){
+  wrap.querySelectorAll('[data-inv-act]').forEach(function(el){
+    function go(e){
+      var card = el.closest('[data-inv]');
+      var rec = card && State.invoices.find(function(r){ return r.id === card.getAttribute('data-inv'); });
+      if(rec) invRunAction(el.getAttribute('data-inv-act'), rec);
+    }
+    el.addEventListener('click', go);
+    if(el.getAttribute('role') === 'button') el.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(e); } });
+  });
+}
+function invRunAction(act, rec){
+  if(act === 'view') openInvoiceDetailSheet(rec);
+  else if(act === 'share') openSendSheet(documentSendCtx(rec, rec.type === 'receipt' ? 'receipt' : 'invoice', { customerId: rec.customerId || null }));
+  else if(act === 'download') downloadInvoiceRecord(rec);
+  else if(act === 'print') printInvoiceRecord(rec);
+  else if(act === 'delete') deleteInvoiceRecord(rec);
+}
+async function invoiceRecordPdf(rec){
+  var ready = await ensureJsPDF();
+  var doc = ready ? (rec.type === 'receipt' ? buildReceiptPdf(rec) : buildInvoicePdf(rec)) : null;
+  if(!doc) toast('Couldn’t load the PDF engine — check your connection and try again');
+  return doc;
+}
+async function downloadInvoiceRecord(rec){
+  var doc = await invoiceRecordPdf(rec);
+  if(!doc) return;
+  var ok = await saveGeneratedPdf(doc, (rec.type === 'receipt' ? 'receipt-' : 'invoice-') + rec.number + '.pdf');
+  if(ok) toast(rec.type === 'receipt' ? 'Receipt downloaded' : 'Invoice downloaded');
+}
+/** Opens the browser's print dialog for the PDF via a hidden iframe. Where a
+ * browser cannot print from an iframe (many phones), the PDF opens in a new
+ * tab instead and the person prints from there. It only ever reports that the
+ * dialog opened, never that anything was printed. */
+async function printInvoiceRecord(rec){
+  var doc = await invoiceRecordPdf(rec);
+  if(!doc) return;
+  var blob = doc.output('blob');
+  if(!blob || blob.type !== 'application/pdf') blob = new Blob([blob], { type:'application/pdf' });
+  var url = URL.createObjectURL(blob);
+  var frame = null, settled = false, timer = null;
+  function cleanup(){ setTimeout(function(){ try{ if(frame && frame.parentNode) frame.parentNode.removeChild(frame); URL.revokeObjectURL(url); }catch(e){} }, 120000); }
+  function fallback(){
+    if(settled) return; settled = true; clearTimeout(timer);
+    var w = null;
+    try{ w = window.open(url, '_blank'); }catch(e){}
+    toast(w ? tr('Use your browser’s print option') : tr('Couldn’t open the PDF. Download it and print from your files.'));
+    cleanup();
+  }
+  try{
+    frame = document.createElement('iframe');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none;';
+    frame.onload = function(){
+      if(settled) return;
+      try{
+        var cw = frame.contentWindow;
+        cw.focus();
+        cw.print();
+        settled = true; clearTimeout(timer);
+        toast(tr('Print dialog opened'));
+        cleanup();
+      }catch(e){ fallback(); }
+    };
+    frame.src = url;
+    document.body.appendChild(frame);
+    timer = setTimeout(fallback, 5000);
+  }catch(e){ fallback(); }
+}
+function deleteInvoiceRecord(rec, after){
+  if(!isManagerOrOwner()){ toast('Only the owner or a manager can delete invoices'); return; }
+  var word = rec.type === 'receipt' ? 'receipt' : 'invoice';
+  confirmSheet(tr('Delete') + ' ' + rec.number + '?',
+    tr('This removes the stored copy from the Invoices list only. It does not change your stock, sales, customer balances or the invoice numbers. Anything already sent stays with the client.'),
+    tr('Delete'), function(){
+      refs.invoices.doc(rec.id).delete();
+      Object.keys(_invRecIds).forEach(function(k){ if(_invRecIds[k] === rec.id) delete _invRecIds[k]; });
+      logAudit('invoice_deleted', 'invoice', rec.number, 'Deleted ' + word + ' ' + rec.number + ' for ' + (rec.billToName || 'Customer') + ' (' + fmtMoney(rec.total||0) + ')');
+      toast(rec.type === 'receipt' ? 'Receipt deleted' : 'Invoice deleted');
+      if(after) after();
+    }, true);
+}
+function openInvoiceDetailSheet(rec){
+  var contact = String(rec.billToContact||'').split('\n').filter(Boolean).map(esc).join('<br>');
+  var canDelete = isManagerOrOwner();
+  var html = '<div class="sheet-head"><h2><span class="num">'+esc(rec.number)+'</span></h2><span class="chip inv-type">'+esc(invTypeLabel(rec))+'</span></div>' +
+    '<div class="inv-meta">' +
+      '<div><div class="l">'+tr('Bill to')+'</div><div>'+esc(rec.billToName||'Customer')+'</div>'+(contact?'<div style="color:var(--text-muted);font-size:12px;margin-top:2px;">'+contact+'</div>':'')+'</div>' +
+      '<div><div class="l">'+tr('Invoice date')+'</div><div>'+esc(fmtDateNice(invRecordDate(rec)))+'</div>'+(rec.dueDateStr?'<div style="color:var(--text-muted);font-size:12px;margin-top:2px;">'+esc(tr('Due'))+' '+esc(fmtDateNice(rec.dueDateStr))+'</div>':'')+'</div>' +
+    '</div>' +
+    '<table class="inv-items"><thead><tr><th>'+tr('Items')+'</th><th class="r">'+tr('Qty')+'</th><th class="r">'+tr('Amount')+'</th></tr></thead><tbody>' +
+      (rec.items||[]).map(function(it){
+        var q = Number(it.qty)||0, p = Number(it.unitPrice)||0;
+        return '<tr><td>'+esc(it.desc||'')+'<div style="color:var(--text-muted);font-size:11.5px;" class="num">'+esc(fmtMoney(p))+' each</div></td><td class="r num">'+q+'</td><td class="r num">'+esc(fmtMoney(q*p))+'</td></tr>';
+      }).join('') + '</tbody></table>' +
+    '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num">'+esc(fmtMoney(rec.total||0))+'</span></div>' +
+    (rec.notes ? '<div style="font-size:12.5px;color:var(--text-muted);margin-top:10px;white-space:pre-wrap;">'+esc(rec.notes)+'</div>' : '') +
+    '<div style="font-size:11.5px;color:var(--text-muted);margin-top:10px;">'+esc(tr('Saved'))+' '+esc(fmtDateTime(rec.createdAt))+(rec.createdBy ? ' · '+esc(rec.createdBy) : '')+'</div>' +
+    '<div class="inv-card" style="margin-top:14px;"><div class="inv-actions">' +
+      '<button type="button" data-d="share">'+INV_ICO.share+'<span>'+tr('Share')+'</span></button>' +
+      '<button type="button" data-d="download">'+INV_ICO.download+'<span>'+tr('Download')+'</span></button>' +
+      '<button type="button" data-d="print">'+INV_ICO.print+'<span>'+tr('Print')+'</span></button>' +
+      (canDelete ? '<button type="button" class="danger" data-d="delete">'+INV_ICO.trash+'<span>'+tr('Delete')+'</span></button>' : '') +
+    '</div></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-d]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var a = b.getAttribute('data-d');
+      if(a === 'delete') deleteInvoiceRecord(rec);
+      else invRunAction(a, rec);
+    });
+  });
 }
 
 /* ============================== ON-DEVICE ALERTS (Notification API) ==============================
@@ -3656,11 +3954,14 @@ function openInvoiceSheet(prefill){
   // The invoice number is used up once, whether the invoice is downloaded,
   // sent, or both, so the next invoice never repeats it.
   var numberCommitted = false;
-  function commitNumberOnce(){ if(numberCommitted) return; numberCommitted = true; commitInvoiceNumber(); }
+  function commitNumberOnce(draft){
+    if(!numberCommitted){ numberCommitted = true; commitInvoiceNumber(draft, 'invoice', invoiceCustomerId(draft)); }
+    else saveInvoiceRecord(draft, 'invoice', invoiceCustomerId(draft)); // edited and generated again under the same number
+  }
   ov.querySelector('#invSendBtn').addEventListener('click', function(){
     var draft = readDraft();
     if(!draft) return;
-    openSendSheet(documentSendCtx(draft, 'invoice', { customerId: invoiceCustomerId(draft), onHandedOff: commitNumberOnce }));
+    openSendSheet(documentSendCtx(draft, 'invoice', { customerId: invoiceCustomerId(draft), onHandedOff: function(){ commitNumberOnce(draft); } }));
   });
   // Default the recipient to the customer the invoice was started from, as
   // long as the "Bill to" name still matches them (otherwise match by name).
@@ -3708,7 +4009,7 @@ function openInvoiceSheet(prefill){
     saveGeneratedPdf(doc, 'invoice-'+draft.number+'.pdf').then(function(ok){
       btn.disabled = false; btn.textContent = 'Download invoice (PDF)';
       if(ok){
-        commitNumberOnce();
+        commitNumberOnce(draft);
         toast('Invoice downloaded');
         openInvoiceReadySheet(draft, invoiceCustomerId(draft));
       }
@@ -4222,7 +4523,8 @@ function exportData(){
     products: State.products,
     customers: State.customers,
     sales: State.sales,
-    expenses: State.expenses
+    expenses: State.expenses,
+    invoices: State.invoices
   };
   var json = JSON.stringify(payload, null, 2);
   var filename = 'pesa-export-'+todayKey()+'.json';
@@ -4278,13 +4580,14 @@ function accountSectionHtml(){
 // two surfaces can never drift out of sync. Tab rows are filtered by the
 // signed-in role the same way the old bottom nav used to (roleTabs()).
 function menuRowsHtml(){
-  var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','expenses','till'];
+  var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','invoices','expenses','till'];
   var rows = '';
   rows += '<div class="drawer-sub">Main menu</div>';
   if(allowedTabs.indexOf('dashboard')!==-1) rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
   if(allowedTabs.indexOf('sell')!==-1) rows += drawerRowHtml('tab-sell', ICONS.cart, 'Sell');
   if(allowedTabs.indexOf('stock')!==-1) rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
   if(allowedTabs.indexOf('credit')!==-1) rows += drawerRowHtml('tab-credit', ICONS.people, 'Credit');
+  if(allowedTabs.indexOf('invoices')!==-1) rows += drawerRowHtml('tab-invoices', ICONS.invoice, 'Invoices');
   if(allowedTabs.indexOf('expenses')!==-1) rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
   if(allowedTabs.indexOf('till')!==-1) rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
   if(!isCashier()){
@@ -4311,6 +4614,7 @@ function handleDrawerAction(key){
   else if(key==='tab-sell') setTab('sell');
   else if(key==='tab-stock') setTab('stock');
   else if(key==='tab-credit') setTab('credit');
+  else if(key==='tab-invoices') setTab('invoices');
   else if(key==='tab-expenses') setTab('expenses');
   else if(key==='tab-till') setTab('till');
   else if(key==='insights'){
@@ -4596,7 +4900,7 @@ function importDataFromFile(file){
   reader.onload = function(){
     var data;
     try{ data = JSON.parse(reader.result); }catch(e){ toast('That file isn’t a valid Pesa backup'); return; }
-    confirmSheet('Restore backup?', 'This replaces your shop settings, products, customers, sales and expenses with the contents of this file. This cannot be undone.', 'Restore', function(){
+    confirmSheet('Restore backup?', 'This replaces your shop settings, products, customers, sales, expenses and stored invoices with the contents of this file. This cannot be undone.', 'Restore', function(){
       (async function(){
         try{
           if(data.shop) { State.settings = Object.assign({}, State.settings, data.shop); refs.settings.set(State.settings); }
@@ -4612,6 +4916,7 @@ function importDataFromFile(file){
           await restoreCollection(refs.customers, data.customers);
           await restoreCollection(refs.sales, data.sales);
           await restoreCollection(refs.expenses, data.expenses);
+          await restoreCollection(refs.invoices, data.invoices); // older backups have no invoices: restoreCollection skips a missing list
           toast('Backup restored');
           closeModal();
         }catch(err){ toast('Restore failed — the backup file may be corrupted'); }
@@ -5072,6 +5377,7 @@ function render(){
   else if(State.tab === 'credit') html = renderCredit();
   else if(State.tab === 'expenses') html = renderExpenses();
   else if(State.tab === 'till') html = renderTill();
+  else if(State.tab === 'invoices') html = renderInvoicesPage();
   content.innerHTML = html;
   wireContent();
   renderCartBar();
@@ -5183,6 +5489,7 @@ function wireContent(){
   var insightsToggle = content.querySelector('#insightsToggle');
   if(insightsToggle) insightsToggle.addEventListener('click', function(){ _insightsOpen = !_insightsOpen; render(); });
 
+  if(State.tab === 'invoices') wireInvoicesPage(content);
   var createInvoiceBtn = content.querySelector('#createInvoiceBtn');
   if(createInvoiceBtn) createInvoiceBtn.addEventListener('click', function(){ openInvoiceSheet(null); });
 
@@ -6217,6 +6524,7 @@ var ABOUT_FEATURES = [
   'Sales and till management, including a fast checkout screen, a shopping cart, and printed or digital receipts',
   'Stock and inventory management, including barcode scanning to add or find products quickly',
   'Customer credit tracking, so a shop can sell on account and record repayments over time',
+  'An invoice archive that keeps every invoice and receipt, ready to share, download, or print again',
   'Expense tracking for everyday business costs',
   'Till and cash session management, including opening float counts, closing counts, and variance checks',
   'Supplier records and purchase order tracking',
