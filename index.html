@@ -517,32 +517,6 @@
 
   ::-webkit-scrollbar{ width:0; height:0; }
 
-  /* ---------- Pessa AI chat ---------- */
-  .ai-sheet{ display:flex; flex-direction:column; height:78vh; max-height:78vh; padding:0; }
-  .ai-head{ display:flex; align-items:center; gap:10px; padding:16px 16px 10px; flex-shrink:0; }
-  .ai-head .aiavatar{ width:34px; height:34px; border-radius:10px; background:linear-gradient(150deg, var(--primary), var(--primary-dim)); color:var(--primary-contrast); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ai-head h2{ font-size:16px; line-height:1.2; }
-  .ai-head .sub{ font-size:11.5px; color:var(--text-muted); }
-  .ai-messages{ flex:1; overflow-y:auto; padding:4px 16px 10px; display:flex; flex-direction:column; gap:10px; -webkit-overflow-scrolling:touch; }
-  .ai-msg{ max-width:86%; padding:10px 13px; border-radius:14px; font-size:14px; line-height:1.45; white-space:pre-wrap; word-wrap:break-word; }
-  .ai-msg.user{ align-self:flex-end; background:var(--primary); color:var(--primary-contrast); border-bottom-right-radius:4px; }
-  .ai-msg.assistant{ align-self:flex-start; background:var(--surface-2); color:var(--text); border-bottom-left-radius:4px; }
-  .ai-msg.system-note{ align-self:center; background:none; color:var(--text-muted); font-size:12px; text-align:center; max-width:100%; padding:2px 8px; }
-  .ai-msg.thinking{ align-self:flex-start; background:var(--surface-2); color:var(--text-muted); display:flex; align-items:center; gap:6px; }
-  .ai-dot{ width:6px; height:6px; border-radius:99px; background:var(--text-muted); display:inline-block; animation:aiDotPulse 1.1s ease-in-out infinite; }
-  .ai-dot:nth-child(2){ animation-delay:0.15s; } .ai-dot:nth-child(3){ animation-delay:0.3s; }
-  @keyframes aiDotPulse{ 0%,60%,100%{ opacity:0.3; transform:translateY(0); } 30%{ opacity:1; transform:translateY(-2px); } }
-  .ai-inputrow{ flex-shrink:0; display:flex; gap:8px; padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px)); border-top:1px solid var(--border); background:var(--surface); }
-  .ai-inputrow textarea{ flex:1; resize:none; max-height:90px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); border-radius:14px; padding:10px 13px; font-size:14px; font-family:inherit; line-height:1.4; outline:none; }
-  .ai-inputrow textarea:focus{ border-color:var(--primary); }
-  .ai-sendbtn{ width:42px; height:42px; border-radius:14px; border:none; background:var(--primary); color:var(--primary-contrast); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
-  .ai-sendbtn:disabled{ opacity:0.45; cursor:default; }
-  .ai-suggest-row{ display:flex; gap:6px; flex-wrap:wrap; padding:0 16px 10px; flex-shrink:0; }
-  .ai-suggest{ font-size:12px; font-weight:600; color:var(--primary-dim); background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:6px 12px; cursor:pointer; }
-  :root[data-theme="dark"] .ai-suggest{ color:var(--primary); }
-  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .ai-suggest{ color:var(--primary); } }
-  .sheet:has(.ai-sheet){ padding:0; max-height:82vh; }
-
   /* ---------- tablet: full-width single column, still an overlay drawer ---------- */
   @media (min-width:640px) and (max-width:1023px){
     body{ align-items:flex-start; }
@@ -728,9 +702,6 @@
         <div class="lbl">Today</div>
         <div class="val num" id="todayTotalEl">N$0.00</div>
       </div>
-      <button class="icon-btn" id="aiChatBtn" aria-label="Pessa AI Assistant" style="background:rgba(255,255,255,0.16);">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path><circle cx="12" cy="12" r="3.2"></circle></svg>
-      </button>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path></svg>
       </button>
@@ -810,7 +781,7 @@ var LANGS = {
     'Overview':'Oorsig','Quick actions':'Vinnige aksies','Recent sales':'Onlangse verkope','Invoicing':'Fakturering','Reports':'Verslae','Data':'Data',
     'Top sellers this month':'Topverkopers vanjaar','Recent activity':'Onlangse aktiwiteit','Items':'Items','Document template':'Dokumentsjabloon','Invoice branding':'Faktuur-handelsmerk','Needs attention':'Aandag nodig',
     'Settings':'Instellings','Cart':'Mandjie','New invoice':'Nuwe faktuur','Record payment':'Boek betaling','Sale recorded':'Verkoop opgeneem','Add stock in bulk':'Voeg voorraad in bulk by','Add product':'Voeg produk by','Edit product':'Wysig produk','Add customer':'Voeg kliënt by','Edit customer':'Wysig kliënt','Add expense':'Voeg uitgawe by','Edit expense':'Wysig uitgawe',
-    'Save settings':'Stoor instellings','Save payment':'Stoor betaling','Add products':'Voeg produkte by','Add in bulk':'Voeg in bulk by','Create an invoice':'Skep ’n faktuur','Download invoice (PDF)':'Laai faktuur af (PDF)','Download report (PDF)':'Laai verslag af (PDF)','Receipt (PDF)':'Kwitansie (PDF)','Export all data (.json)':'Voer alle data uit (.json)','Cancel':'Kanselleer','Delete':'Skrap','Confirm sale':'Bevestig verkoop','Invoice':'Faktuur','Not now':'Nie nou nie','This month':'Vandeesmaand','Last month':'Verlede maand','Custom':'Pasgemaak','Choose image':'Kies prent','CSV file':'CSV-lêer','Paste list':'Plak lys','Photo':'Foto','Go to Stock':'Gaan na Voorraad','Cash':'Kontant','Card':'Kaart','Mobile wallet':'Mobiele beursie',
+    'Save settings':'Stoor instellings','Save payment':'Stoor betaling','Add products':'Voeg produkte by','Add in bulk':'Voeg in bulk by','Create an invoice':'Skep ’n faktuur','Download invoice (PDF)':'Laai faktuur af (PDF)','Download report (PDF)':'Laai verslag af (PDF)','Receipt (PDF)':'Kwitansie (PDF)','Export all data (.json)':'Voer alle data uit (.json)','Cancel':'Kanselleer','Delete':'Skrap','Confirm sale':'Bevestig verkoop','Invoice':'Faktuur','Not now':'Nie nou nie','This month':'Vandeesmaand','Last month':'Verlede maand','Custom':'Pasgemaak','Choose image':'Kies prent','CSV file':'CSV-lêer','Paste list':'Plak lys','Go to Stock':'Gaan na Voorraad','Cash':'Kontant','Card':'Kaart','Mobile wallet':'Mobiele beursie',
     'No customers yet':'Nog geen kliënte nie','No expenses logged':'Nog geen uitgawes aangeteken nie','No matches':'Geen resultate nie','No products yet':'Nog geen produkte nie',
     'Add items one at a time, or all at once.':'Voeg items een-een by, of alles op slag.','Add regulars who buy on credit.':'Voeg gereelde kliënte by wat op krediet koop.','Add stock first, then come back to sell.':'Voeg eers voorraad by, kom dan terug om te verkoop.','Track what goes out to see your real profit.':'Hou dop wat uitgaan om jou ware wins te sien.','Try a different search.':'Probeer ’n ander soekterm.',
     'Shop name':'Winkelnaam','Default low-stock alert':'Verstek lae-voorraad-waarskuwing','Business details (shown on invoices)':'Besigheidsbesonderhede (op fakture)','Logo':'Logo','Letterhead banner (optional)':'Briefhoof-banier (opsioneel)','Slogan / tagline (optional)':'Slagspreuk (opsioneel)','Template name':'Sjabloonnaam','Primary colour':'Primêre kleur','Accent colour':'Aksentkleur','Default note / wording':'Verstek nota / bewoording','Bill to':'Faktureer aan','Customer contact (optional)':'Kliëntkontak (opsioneel)','Invoice date':'Faktuurdatum','Due date (optional)':'Vervaldatum (opsioneel)','Notes (optional)':'Notas (opsioneel)','Note (optional)':'Nota (opsioneel)','From':'Van','To':'Tot','Name':'Naam','Phone (optional)':'Foon (opsioneel)','Balance owed':'Uitstaande balans','Category':'Kategorie','Cost price':'Kosprys','Sell price':'Verkoopprys','Unit':'Eenheid','Starting stock':'Beginvoorraad','Current stock':'Huidige voorraad','Low stock alert at':'Lae-voorraad-waarskuwing by','Payment method':'Betaalmetode','Amount':'Bedrag','Amount received':'Bedrag ontvang','Cash received':'Kontant ontvang','Customer':'Kliënt','One product per line':'Een produk per reël'
@@ -820,7 +791,7 @@ var LANGS = {
     'Overview':'Übersicht','Quick actions':'Schnellzugriff','Recent sales':'Letzte Verkäufe','Invoicing':'Rechnungsstellung','Reports':'Berichte','Data':'Daten',
     'Top sellers this month':'Bestseller diesen Monat','Recent activity':'Letzte Aktivität','Items':'Artikel','Document template':'Dokumentvorlage','Invoice branding':'Rechnungs-Branding','Needs attention':'Erfordert Aufmerksamkeit',
     'Settings':'Einstellungen','Cart':'Warenkorb','New invoice':'Neue Rechnung','Record payment':'Zahlung erfassen','Sale recorded':'Verkauf erfasst','Add stock in bulk':'Lagerbestand im Bulk hinzufügen','Add product':'Produkt hinzufügen','Edit product':'Produkt bearbeiten','Add customer':'Kunde hinzufügen','Edit customer':'Kunde bearbeiten','Add expense':'Ausgabe hinzufügen','Edit expense':'Ausgabe bearbeiten',
-    'Save settings':'Einstellungen speichern','Save payment':'Zahlung speichern','Add products':'Produkte hinzufügen','Add in bulk':'Im Bulk hinzufügen','Create an invoice':'Rechnung erstellen','Download invoice (PDF)':'Rechnung herunterladen (PDF)','Download report (PDF)':'Bericht herunterladen (PDF)','Receipt (PDF)':'Beleg (PDF)','Export all data (.json)':'Alle Daten exportieren (.json)','Cancel':'Abbrechen','Delete':'Löschen','Confirm sale':'Verkauf bestätigen','Invoice':'Rechnung','Not now':'Jetzt nicht','This month':'Diesen Monat','Last month':'Letzten Monat','Custom':'Benutzerdefiniert','Choose image':'Bild auswählen','CSV file':'CSV-Datei','Paste list':'Liste einfügen','Photo':'Foto','Go to Stock':'Zum Lager','Cash':'Bar','Card':'Karte','Mobile wallet':'Mobiles Wallet',
+    'Save settings':'Einstellungen speichern','Save payment':'Zahlung speichern','Add products':'Produkte hinzufügen','Add in bulk':'Im Bulk hinzufügen','Create an invoice':'Rechnung erstellen','Download invoice (PDF)':'Rechnung herunterladen (PDF)','Download report (PDF)':'Bericht herunterladen (PDF)','Receipt (PDF)':'Beleg (PDF)','Export all data (.json)':'Alle Daten exportieren (.json)','Cancel':'Abbrechen','Delete':'Löschen','Confirm sale':'Verkauf bestätigen','Invoice':'Rechnung','Not now':'Jetzt nicht','This month':'Diesen Monat','Last month':'Letzten Monat','Custom':'Benutzerdefiniert','Choose image':'Bild auswählen','CSV file':'CSV-Datei','Paste list':'Liste einfügen','Go to Stock':'Zum Lager','Cash':'Bar','Card':'Karte','Mobile wallet':'Mobiles Wallet',
     'No customers yet':'Noch keine Kunden','No expenses logged':'Noch keine Ausgaben erfasst','No matches':'Keine Treffer','No products yet':'Noch keine Produkte',
     'Add items one at a time, or all at once.':'Fügen Sie Artikel einzeln oder alle auf einmal hinzu.','Add regulars who buy on credit.':'Fügen Sie Stammkunden hinzu, die auf Kredit kaufen.','Add stock first, then come back to sell.':'Fügen Sie zuerst Lagerbestand hinzu und kommen Sie dann zurück, um zu verkaufen.','Track what goes out to see your real profit.':'Verfolgen Sie den Warenausgang, um Ihren tatsächlichen Gewinn zu sehen.','Try a different search.':'Versuchen Sie einen anderen Suchbegriff.',
     'Shop name':'Geschäftsname','Default low-stock alert':'Standard-Warnung bei niedrigem Bestand','Business details (shown on invoices)':'Geschäftsangaben (auf Rechnungen)','Logo':'Logo','Letterhead banner (optional)':'Briefkopf-Banner (optional)','Slogan / tagline (optional)':'Slogan (optional)','Template name':'Vorlagenname','Primary colour':'Primärfarbe','Accent colour':'Akzentfarbe','Default note / wording':'Standardtext','Bill to':'Rechnung an','Customer contact (optional)':'Kundenkontakt (optional)','Invoice date':'Rechnungsdatum','Due date (optional)':'Fälligkeitsdatum (optional)','Notes (optional)':'Anmerkungen (optional)','Note (optional)':'Notiz (optional)','From':'Von','To':'Bis','Name':'Name','Phone (optional)':'Telefon (optional)','Balance owed':'Ausstehender Betrag','Category':'Kategorie','Cost price':'Einkaufspreis','Sell price':'Verkaufspreis','Unit':'Einheit','Starting stock':'Anfangsbestand','Current stock':'Aktueller Bestand','Low stock alert at':'Warnung bei niedrigem Bestand ab','Payment method':'Zahlungsart','Amount':'Betrag','Amount received':'Erhaltener Betrag','Cash received':'Bargeld erhalten','Customer':'Kunde','One product per line':'Ein Produkt pro Zeile'
@@ -830,7 +801,7 @@ var LANGS = {
     'Overview':'Etalelipo','Quick actions':'Iilonga yopokati','Recent sales':'Omalanditho gopopeepi','Invoicing':'Omafaktuura','Reports':'Omalopota','Data':'Odhata',
     'Top sellers this month':'Iinima ya landithwa unene omwedhi nguka','Recent activity':'Iilonga yopopeepi','Items':'Iinima','Document template':'Oshifano shedhokumende','Invoice branding':'Endhindhiliko lyefaktuura','Needs attention':'Otashi pumbwa elalakano',
     'Settings':'Omalongekido','Cart':'Oshikutu','New invoice':'Efaktuura epe','Record payment':'Nyola efuto','Sale recorded':'Elanditho lya nyolwa','Add stock in bulk':'Gwedha iinima jontumba','Add product':'Gwedha oshilikwa','Edit product':'Lundulula oshilikwa','Add customer':'Gwedha omulandi','Edit customer':'Lundulula omulandi','Add expense':'Gwedha ehepeko','Edit expense':'Lundulula ehepeko',
-    'Save settings':'Yandja omalongekido','Save payment':'Yandja efuto','Add products':'Gwedha iilikwa','Add in bulk':'Gwedha jontumba','Create an invoice':'Hangana efaktuura','Download invoice (PDF)':'Kufa efaktuura (PDF)','Download report (PDF)':'Kufa elopota (PDF)','Receipt (PDF)':'Ombapila yefuto (PDF)','Export all data (.json)':'Tuma odhata adhihe (.json)','Cancel':'Hulitha','Delete':'Fuutha po','Confirm sale':'Koleka elanditho','Invoice':'Efaktuura','Not now':'Kaku shi ngashingeyi','This month':'Omwedhi nguka','Last month':'Omwedhi gwa piti','Custom':'Hogolola mwene','Choose image':'Hogolola oshithithiya','CSV file':'Ofaili yeCSV','Paste list':'Nathangeka oshike','Photo':'Oshithithiya','Go to Stock':'Ya koVoorraad','Cash':'Iimaliwa','Card':'Okaadi','Mobile wallet':'Oshimaliwa shombapila',
+    'Save settings':'Yandja omalongekido','Save payment':'Yandja efuto','Add products':'Gwedha iilikwa','Add in bulk':'Gwedha jontumba','Create an invoice':'Hangana efaktuura','Download invoice (PDF)':'Kufa efaktuura (PDF)','Download report (PDF)':'Kufa elopota (PDF)','Receipt (PDF)':'Ombapila yefuto (PDF)','Export all data (.json)':'Tuma odhata adhihe (.json)','Cancel':'Hulitha','Delete':'Fuutha po','Confirm sale':'Koleka elanditho','Invoice':'Efaktuura','Not now':'Kaku shi ngashingeyi','This month':'Omwedhi nguka','Last month':'Omwedhi gwa piti','Custom':'Hogolola mwene','Choose image':'Hogolola oshithithiya','CSV file':'Ofaili yeCSV','Paste list':'Nathangeka oshike','Go to Stock':'Ya koVoorraad','Cash':'Iimaliwa','Card':'Okaadi','Mobile wallet':'Oshimaliwa shombapila',
     'No customers yet':'Kapu na omalandi ngashingeyi','No expenses logged':'Kapu na omahepeko ga nyolwa','No matches':'Kapu na sha sha adhika','No products yet':'Kapu na iilikwa ngashingeyi',
     'Add items one at a time, or all at once.':'Gwedha iinima yimwe kumwe, nenge adhihe pamwe.','Add regulars who buy on credit.':'Gwedha aalandi mboka haya landa nongunga.','Add stock first, then come back to sell.':'Gwedha oimaliwa tango, opo to galukile okulanditha.','Track what goes out to see your real profit.':'Kwatela nawa shoka tashi zi mo opo u mone uuwanawa woye washili.','Try a different search.':'Kambadhala okukonga lya lundulukilwa.',
     'Shop name':'Edhina lyoshitolo','Default low-stock alert':'Elondodho lyoimaliwa tayi hepa','Business details (shown on invoices)':'Uuyelele woilonga (u li kumona kefaktuura)','Logo':'Elogo','Letterhead banner (optional)':'Oshiholelwa shopombanda (kau shi lelela)','Slogan / tagline (optional)':'Oshitya oshipe (kau shi lelela)','Template name':'Edhina lyoshifano','Primary colour':'Onzalo onene','Accent colour':'Onzalo yekwatho','Default note / wording':'Oondjovo dhi lelwa','Bill to':'Efuto olyoka','Customer contact (optional)':'Omahokololo gomulandi (kau shi lelela)','Invoice date':'Esiku lyefaktuura','Due date (optional)':'Esiku lyokufuta (kau shi lelela)','Notes (optional)':'Oondjovo (kau shi lelela)','Note (optional)':'Ondjovo (kau shi lelela)','From':'Okuza','To':'Sigo','Name':'Edhina','Phone (optional)':'Ongodhi (kau shi lelela)','Balance owed':'Oshimaliwa tashi nangwa','Category':'Ombinga','Cost price':'Ondando yeliko','Sell price':'Ondando yokulanditha','Unit':'Oshitopolwa','Starting stock':'Iinima yotango','Current stock':'Iinima yongashingeyi','Low stock alert at':'Elondodho lyoimaliwa tayi hepa pu','Payment method':'Onkalo yefuto','Amount':'Ondando','Amount received':'Ondando ya taambwa','Cash received':'Iimaliwa ya taambwa','Customer':'Omulandi','One product per line':'Oshilikwa shimwe komulinga'
@@ -840,7 +811,7 @@ var LANGS = {
     'Overview':'Omahungi','Quick actions':'Oviungura vyongurova','Recent sales':'Omarandiso wozonganda','Invoicing':'Omariuriro','Reports':'Omeripura','Data':'Ozondjongarero',
     'Top sellers this month':'Oviungurise mbi randisiwa tjinene omueze mbwi','Recent activity':'Oviungura vyongurova','Items':'Oviungurise','Document template':'Otjihonge tjombapira','Invoice branding':'Otjihako tjeriuriro','Needs attention':'Matji hepa okutarwa',
     'Settings':'Omaano','Cart':'Otjari','New invoice':'Eriuriro epe','Record payment':'Tjanga ondjambi','Sale recorded':'Erandiso ratjangwa','Add stock in bulk':'Weza ovihuna tjinene','Add product':'Weza otjiungurise','Edit product':'Rundurura otjiungurise','Add customer':'Weza omuranduise','Edit customer':'Rundurura omuranduise','Add expense':'Weza ondjambi','Edit expense':'Rundurura ondjambi',
-    'Save settings':'Yama omaano','Save payment':'Yama ondjambi','Add products':'Weza oviungurise','Add in bulk':'Weza tjinene','Create an invoice':'Zeuparisa eriuriro','Download invoice (PDF)':'Kotora eriuriro (PDF)','Download report (PDF)':'Kotora eripura (PDF)','Receipt (PDF)':'Otjiyandjewa (PDF)','Export all data (.json)':'Tuma ozondjongarero azehe (.json)','Cancel':'Isa po','Delete':'Yandisa','Confirm sale':'Kondjatjisa erandiso','Invoice':'Eriuriro','Not now':'Kangara nambano','This month':'Omueze mbwi','Last month':'Omueze mbwa kapita','Custom':'Ritjindira','Choose image':'Toorora ombunikira','CSV file':'Otjipapa tjeCSV','Paste list':'Kapisa otjihongonone','Photo':'Ombunikira','Go to Stock':'Ya kOvihuna','Cash':'Oimariva','Card':'Okarata','Mobile wallet':'Otjari tjombeurita',
+    'Save settings':'Yama omaano','Save payment':'Yama ondjambi','Add products':'Weza oviungurise','Add in bulk':'Weza tjinene','Create an invoice':'Zeuparisa eriuriro','Download invoice (PDF)':'Kotora eriuriro (PDF)','Download report (PDF)':'Kotora eripura (PDF)','Receipt (PDF)':'Otjiyandjewa (PDF)','Export all data (.json)':'Tuma ozondjongarero azehe (.json)','Cancel':'Isa po','Delete':'Yandisa','Confirm sale':'Kondjatjisa erandiso','Invoice':'Eriuriro','Not now':'Kangara nambano','This month':'Omueze mbwi','Last month':'Omueze mbwa kapita','Custom':'Ritjindira','Choose image':'Toorora ombunikira','CSV file':'Otjipapa tjeCSV','Paste list':'Kapisa otjihongonone','Go to Stock':'Ya kOvihuna','Cash':'Oimariva','Card':'Okarata','Mobile wallet':'Otjari tjombeurita',
     'No customers yet':'Kape nomuranduise nambano','No expenses logged':'Kape nozondjambi za tjangwa','No matches':'Kape na tji ya hakaenene','No products yet':'Kape na oviungurise nambano',
     'Add items one at a time, or all at once.':'Weza oviungurise vimwe kombunda, poo avihe rumwe.','Add regulars who buy on credit.':'Weza omuranduise mbe randa nombanguriro.','Add stock first, then come back to sell.':'Weza ovihuna tja tenga, tji wa yaruka okurandisa.','Track what goes out to see your real profit.':'Tara ku tji tja za po kutja u mune ombune yoye ya tjiri.','Try a different search.':'Ndova okupaha rukwao.',
     'Shop name':'Ena rotjihuro','Default low-stock alert':'Ombeka yovihuna tji vi hepa','Business details (shown on invoices)':'Ozondjongarero zovirongo (mari raisiwa momariuriro)','Logo':'Ondanisiro','Letterhead banner (optional)':'Otjiruvano tjopombanda (hatji hepere)','Slogan / tagline (optional)':'Embo enene (hatji hepere)','Template name':'Ena rotjihonge','Primary colour':'Oruvara oruhoro','Accent colour':'Oruvara oruvyu','Default note / wording':'Ombuze onane','Bill to':'Ondjambi ku','Customer contact (optional)':'Ozondaya zomuranduise (hatji hepere)','Invoice date':'Eyuva reriuriro','Due date (optional)':'Eyuva rokusuta (hatji hepere)','Notes (optional)':'Ombuze (hatji hepere)','Note (optional)':'Ombuze (hatji hepere)','From':'Okuza','To':'Nga','Name':'Ena','Phone (optional)':'Ongoro (hatji hepere)','Balance owed':'Ondjambi ndji notjinanga','Category':'Orupa','Cost price':'Ondando yokuranda','Sell price':'Ondando yokurandisa','Unit':'Otjiuru','Starting stock':'Ovihuna vyokutenga','Current stock':'Ovihuna vyanambano','Low stock alert at':'Ombeka yovihuna tji vi hepa pu','Payment method':'Ondjira yondjambi','Amount':'Ombura','Amount received':'Ombura ndja pewa','Cash received':'Oimariva mbya pewa','Customer':'Omuranduise','One product per line':'Otjiungurise tjimwe komurongo'
@@ -1538,8 +1509,6 @@ function checkAuthAndRoute(){
   State.till.current = mine || null;
   var allowed = roleTabs(State.session.role);
   if(allowed.indexOf(State.tab) === -1) State.tab = allowed[0];
-  var aiBtn = document.getElementById('aiChatBtn');
-  if(aiBtn) aiBtn.style.display = isCashier() ? 'none' : '';
   render();
 }
 
@@ -2621,96 +2590,6 @@ function parseCsvText(text){
   return { rows:rows, skipped:skipped };
 }
 
-function photoErrorCopy(code){
-  switch(code){
-    case 'not_granted': case 'sampling_disabled': case 'not_declared': case 'capability_disabled': case 'capability_removed':
-      return 'Photo import isn’t available for you right now.';
-    case 'images_unavailable': return 'Photos aren’t supported in this view.';
-    case 'image_rejected': return 'That photo couldn’t be used — try a clearer photo or a smaller file.';
-    case 'rate_limited': return 'Too many requests right now — try again in a moment.';
-    case 'invalid_json': return 'Couldn’t read that photo clearly — try a clearer, well-lit photo.';
-    case 'refused': return 'That photo couldn’t be processed.';
-    case 'cancelled': return 'Cancelled.';
-    default: return 'Something went wrong reading that photo — try again.';
-  }
-}
-
-function smartParseErrorCopy(code){
-  switch(code){
-    case 'not_granted': case 'sampling_disabled': case 'not_declared': case 'capability_disabled': case 'capability_removed':
-      return 'Smart parsing isn’t available for you right now — try Quick parse instead.';
-    case 'rate_limited': return 'Too many requests right now — try again in a moment.';
-    case 'invalid_json': return 'Couldn’t make sense of that list — try Quick parse, or tidy it up a little.';
-    case 'refused': return 'That list couldn’t be processed.';
-    case 'cancelled': return 'Cancelled.';
-    case 'prompt_too_large': return 'That list is too long for one go — split it into smaller batches.';
-    default: return 'Something went wrong reading that list — try again.';
-  }
-}
-
-function handleSmartPasteImport(text, statusEl){
-  statusEl.innerHTML = '<div class="banner">'+ICONS.stack+'<span>Pessa AI is reading your list…</span></div>';
-  (async function(){
-    try{
-      if(!(window.claude && window.claude.use)){ statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Smart parsing isn’t available in this view. Try Quick parse instead.</span></div>'; return; }
-      var sample = await window.claude.use('sample');
-      if(!sample){ statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Smart parsing isn’t available in this view. Try Quick parse instead.</span></div>'; return; }
-      var prompt = "You are reading a messy, free-form list of shop stock — it might be a supplier price list, a WhatsApp message, or rough notes, in any layout or order, possibly with currency symbols, typos, or missing pieces. " +
-        "Pull out every distinct product you can find. Reply with ONLY a JSON array, no other text, of objects shaped exactly like " +
-        '{"name": string, "costPrice": number, "sellPrice": number, "stockQty": number, "category": string, "unit": string}. ' +
-        "Prices are Namibian dollars — return plain numbers, no currency symbols, commas or ranges (use the lower number of a range). " +
-        "If only one price is given for a line, use it for both costPrice and sellPrice. If quantity isn't given, use 0. If category or unit aren't given, use an empty string. " +
-        "Skip lines that clearly aren't products (headers, totals, dates, greetings).\n\nLIST:\n" + text.slice(0, 6000);
-      var data = await sample.json(prompt, { modelTier:'default' });
-      var arr = Array.isArray(data) ? data : [];
-      var mapped = arr.filter(function(x){ return x && x.name; }).map(function(x){
-        return { id:uid(), name:String(x.name).trim(), category:String(x.category||''), unit:String(x.unit||''), costPrice:Number(x.costPrice)||0, sellPrice:Number(x.sellPrice)||0, stockQty:Number(x.stockQty)||0, lowStock:null };
-      });
-      if(mapped.length === 0){
-        statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Couldn’t find any products in that text. Try Quick parse, or check the format.</span></div>';
-        return;
-      }
-      Bulk.rows = Bulk.rows.concat(mapped);
-      statusEl.innerHTML = '<div class="banner" style="color:var(--success);">'+ICONS.check.replace(/width="24" height="24"/,'width="15" height="15"')+'<span>Found '+mapped.length+' product'+(mapped.length===1?'':'s')+' and matched up name, price and quantity. Check the list below before adding.</span></div>';
-      renderBulkPreview();
-    } catch(e){
-      statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+smartParseErrorCopy(e && e.code)+'</span></div>';
-    }
-  })();
-}
-
-function handlePhotoImport(file, statusEl){
-  statusEl.innerHTML = '<div class="banner">'+ICONS.camera+'<span>Reading photo… this can take up to a minute.</span></div>';
-  (async function(){
-    try{
-      if(!(window.claude && window.claude.use)){ statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Photo import isn’t available in this view. Try Paste list or CSV instead.</span></div>'; return; }
-      var sample = await window.claude.use('sample');
-      if(!sample){ statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Photo import isn’t available in this view. Try Paste list or CSV instead.</span></div>'; return; }
-      var caps = await sample.limits().catch(function(){ return null; });
-      if(!caps || !caps.images){ statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Photo reading isn’t available in this view. Try Paste list or CSV instead.</span></div>'; return; }
-      var prompt = "You are reading a photo of a small shop's stock list, supplier price list, or invoice. " +
-        "Read every product line you can make out. Reply with ONLY a JSON array, no other text, of objects shaped exactly like " +
-        '{"name": string, "costPrice": number, "sellPrice": number, "stockQty": number}. ' +
-        "Prices are in Namibian dollars — return plain numbers, no currency symbols or commas. " +
-        "If a line shows only one price, use it for both costPrice and sellPrice. If quantity is not shown, use 0. Skip lines that are not products (headers, totals, dates).";
-      var data = await sample.json(prompt, { images: file, modelTier:'default' });
-      var arr = Array.isArray(data) ? data : [];
-      var mapped = arr.filter(function(x){ return x && x.name; }).map(function(x){
-        return { id:uid(), name:String(x.name), category:'', unit:'', costPrice:Number(x.costPrice)||0, sellPrice:Number(x.sellPrice)||0, stockQty:Number(x.stockQty)||0, lowStock:null };
-      });
-      if(mapped.length === 0){
-        statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>Couldn’t find any products in that photo. Try a clearer, well-lit shot.</span></div>';
-        return;
-      }
-      Bulk.rows = Bulk.rows.concat(mapped);
-      statusEl.innerHTML = '<div class="banner" style="color:var(--success);">'+ICONS.check.replace(/width="24" height="24"/,'width="15" height="15"')+'<span>Found '+mapped.length+' product'+(mapped.length===1?'':'s')+'. Check the list below before adding.</span></div>';
-      renderBulkPreview();
-    } catch(e){
-      statusEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+photoErrorCopy(e && e.code)+'</span></div>';
-    }
-  })();
-}
-
 function handleCsvImport(file, statusEl){
   statusEl.innerHTML = '<div class="banner">Reading file…</div>';
   var reader = new FileReader();
@@ -2809,7 +2688,6 @@ function openBulkAddSheet(){
     '<div class="sheet-head"><h2>'+tr('Add stock in bulk')+'</h2></div>' +
     '<div class="segbtns" id="bulkTabs">' +
       '<button class="segbtn active" data-btab="paste" type="button">'+tr('Paste list')+'</button>' +
-      '<button class="segbtn" data-btab="photo" type="button">'+tr('Photo')+'</button>' +
       '<button class="segbtn" data-btab="csv" type="button">'+tr('CSV file')+'</button>' +
     '</div>' +
     '<div id="bulkTabBody" style="margin-top:14px;"></div>' +
@@ -2819,22 +2697,15 @@ function openBulkAddSheet(){
 
   var pasteHtml =
     '<div class="field"><label>'+tr('One product per line')+'</label>' +
-      '<textarea id="bulkPasteText" placeholder="Bread loaf, 9, 13, 20\nOmaere 500ml, 8, 12, 24, Drinks, bottle\nCooking oil 750ml, 22, 29, 10\n\nOr just paste a messy supplier list or WhatsApp message — Pessa AI will sort it out."></textarea></div>' +
-    '<div class="banner">Paste straight from a note, message or supplier list — any rough format is fine. Pessa AI reads it and matches up name, price and quantity automatically; you still check the list before anything is added.</div>' +
-    '<button class="btn btn-accent btn-block" id="bulkSmartParseBtn" type="button">'+ICONS.stack+' Smart add with Pessa AI</button>' +
-    '<button class="btn btn-ghost btn-block" id="bulkParseBtn" type="button" style="margin-top:8px;">Quick parse (strict format)</button>' +
-    '<div id="bulkSmartStatus"></div>';
-
-  var photoHtml =
-    '<label class="btn btn-ghost btn-block" for="bulkPhotoInput" style="cursor:pointer;">'+ICONS.camera+' Take or choose a photo</label>' +
-    '<input type="file" id="bulkPhotoInput" accept="image/*" capture="environment" style="display:none;">' +
-    '<div class="banner">Photograph a supplier price list, invoice, or handwritten stock sheet. Pesa will try to read it into a list you can check before adding. This uses your own Claude usage.</div>' +
-    '<div id="bulkPhotoStatus"></div>';
+      '<textarea id="bulkPasteText" placeholder="Bread loaf, 9, 13, 20\nOmaere 500ml, 8, 12, 24, Drinks, bottle\nCooking oil 750ml, 22, 29, 10"></textarea></div>' +
+    '<div class="banner"><span>Type or paste one product per line, separated by commas: <b>Name, Cost price, Selling price, Stock, Category (optional), Unit (optional)</b>. For example: <i>Bread loaf, 9, 13, 20</i>. You can check and change the list before anything is added.</span></div>' +
+    '<button class="btn btn-primary btn-block" id="bulkParseBtn" type="button">Import list</button>';
 
   var csvHtml =
     '<label class="btn btn-ghost btn-block" for="bulkCsvInput" style="cursor:pointer;">'+ICONS.fileup+' Choose a .csv file</label>' +
     '<input type="file" id="bulkCsvInput" accept=".csv,text/csv" style="display:none;">' +
     '<div class="banner">Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock. A header row is optional.</div>' +
+    '<button class="btn btn-ghost btn-block" id="bulkCsvTemplateBtn" type="button" style="margin-bottom:10px;">'+INV_ICO.download+' Download CSV template</button>' +
     '<div id="bulkCsvStatus"></div>';
 
   function renderBulkTab(tab){
@@ -2850,18 +2721,15 @@ function openBulkAddSheet(){
         if(res.rows.length===0) toast('No products found — check the format');
         else if(res.skipped) toast(res.skipped + ' line(s) couldn’t be read and were skipped');
       });
-      body.querySelector('#bulkSmartParseBtn').addEventListener('click', function(){
-        var text = body.querySelector('#bulkPasteText').value;
-        if(!text || !text.trim()){ toast('Paste a list first'); return; }
-        handleSmartPasteImport(text, body.querySelector('#bulkSmartStatus'));
-      });
-    } else if(tab === 'photo'){
-      body.innerHTML = photoHtml;
-      body.querySelector('#bulkPhotoInput').addEventListener('change', function(e){
-        if(e.target.files && e.target.files[0]) handlePhotoImport(e.target.files[0], body.querySelector('#bulkPhotoStatus'));
-      });
     } else {
       body.innerHTML = csvHtml;
+      body.querySelector('#bulkCsvTemplateBtn').addEventListener('click', function(){
+        var csv = 'Name,Cost price,Selling price,Stock,Category,Unit\r\n' +
+          'Bread loaf,9,13,20,Bakery,loaf\r\n' +
+          'Cooking oil 750ml,22,29,10,Groceries,bottle\r\n';
+        if(browserDownload('pesa-stock-template.csv', new Blob([csv], {type:'text/csv'}))) toast('Template downloaded');
+        else toast('Couldn’t save the file — try again');
+      });
       body.querySelector('#bulkCsvInput').addEventListener('change', function(e){
         if(e.target.files && e.target.files[0]) handleCsvImport(e.target.files[0], body.querySelector('#bulkCsvStatus'));
       });
@@ -5698,385 +5566,6 @@ function removeBrandImage(kind){
   toast((kind==='logo'?'Logo':'Letterhead') + ' removed');
 }
 
-/* ============================== PESSA AI ASSISTANT ============================== */
-var AIChat = { turns: [], busy: false };
-
-function aiSystemPrompt(){
-  return "You are Pessa AI Assistant, the friendly built-in helper inside Pesa, a shop-management app used by small Namibian retail and spaza shop owners. " +
-    "Talk like a warm, capable colleague — plain, encouraging, conversational, never robotic or overly formal. Keep replies short (a few sentences) unless the shop owner asks for detail. " +
-    "You have real tools to actually perform tasks in the app: adding products, updating stock and prices, recording sales, expenses and customer payments, adding customers, looking up stock/sales/customer information, and switching screens. " +
-    "When the owner asks you to DO something (\"add 20 bags of maize meal at cost 30 sell 45\", \"sell 2 cooldrinks for cash\", \"someone paid N$50 off their account\", \"how much sugar do I have left\", \"add this list of stock: ...\"), actually call the matching tool rather than just describing what you would do. " +
-    "If a product or customer name doesn't clearly match anything, use the lookup tools first, and if it's still ambiguous or not found, ask one short clarifying question instead of guessing. " +
-    "All money is in Namibian Dollars (N$). After using a tool, confirm in plain language what actually happened, including the real numbers (new stock level, new balance, sale total). " +
-    "You cannot delete products or customers — if asked, explain the owner should do that themselves from the Stock or Credit screen, since that's a deliberate safety limit on what you can automate. " +
-    "Never invent data you haven't looked up or been told.";
-}
-
-function aiFindProducts(query){
-  var q = String(query||'').trim().toLowerCase();
-  if(!q) return State.products.slice(0,50);
-  var exact = State.products.filter(function(p){ return (p.name||'').toLowerCase() === q; });
-  if(exact.length) return exact;
-  return State.products.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q) > -1; }).slice(0,50);
-}
-function aiFindCustomers(query){
-  var q = String(query||'').trim().toLowerCase();
-  if(!q) return State.customers.slice().sort(function(a,b){ return (b.balance||0)-(a.balance||0); }).slice(0,50);
-  var exact = State.customers.filter(function(c){ return (c.name||'').toLowerCase() === q; });
-  if(exact.length) return exact;
-  return State.customers.filter(function(c){ return (c.name||'').toLowerCase().indexOf(q) > -1; }).slice(0,50);
-}
-
-function buildAITools(){
-  return [
-    {
-      name:'get_shop_summary',
-      description:'Get an overview of the shop right now: today\'s and this month\'s sales, estimated profit, low-stock products, total owed by customers, and counts. Use this for general "how is business" or "what needs attention" questions.',
-      execute:function(){
-        var now=new Date(), mo=startOfMonth(now);
-        var todaySales = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt))===todayKey(); });
-        var todayTotal = todaySales.reduce(function(s,x){return s+x.total;},0);
-        var monthSales = State.sales.filter(function(s){ return new Date(s.createdAt)>=mo; });
-        var monthRevenue = monthSales.reduce(function(s,x){return s+x.total;},0);
-        var monthExpenses = State.expenses.filter(function(e){ return new Date(e.createdAt)>=mo; }).reduce(function(s,e){return s+e.amount;},0);
-        var monthProfit = monthSales.reduce(function(s,x){return s+(x.profit!=null?x.profit:0);},0) - monthExpenses;
-        var lowStock = State.products.filter(function(p){ return p.stockQty!=null && p.stockQty<=(p.lowStock!=null?p.lowStock:State.settings.lowStockDefault); });
-        var totalOwed = State.customers.reduce(function(s,c){return s+(c.balance||0);},0);
-        return {
-          shopName: State.settings.shopName, todaySalesTotal: todayTotal, monthRevenue: monthRevenue, monthEstimatedProfit: monthProfit,
-          lowStockCount: lowStock.length, lowStockProducts: lowStock.slice(0,10).map(function(p){ return {name:p.name, stockQty:p.stockQty}; }),
-          totalOwedByCustomers: totalOwed, productCount: State.products.length, customerCount: State.customers.length
-        };
-      }
-    },
-    {
-      name:'find_products',
-      description:'Search the shop\'s product/stock list by name (case-insensitive, partial match). Leave query empty to list up to 50 products. Returns id, name, category, unit, costPrice, sellPrice, stockQty for each match.',
-      inputSchema:{ type:'object', properties:{ query:{type:'string'} } },
-      execute:function(input){
-        return aiFindProducts(input && input.query).map(function(p){
-          return { id:p.id, name:p.name, category:p.category||'', unit:p.unit||'', costPrice:p.costPrice||0, sellPrice:p.sellPrice||0, stockQty: p.stockQty==null?null:p.stockQty };
-        });
-      }
-    },
-    {
-      name:'add_product',
-      description:'Add a brand-new product to stock. Use only when it does not already exist (check with find_products first if unsure). Returns the created product.',
-      inputSchema:{ type:'object', properties:{
-        name:{type:'string'}, costPrice:{type:'number'}, sellPrice:{type:'number'}, stockQty:{type:'number'}, category:{type:'string'}, unit:{type:'string'}, lowStock:{type:'number'}
-      }, required:['name'] },
-      execute:function(input){
-        var name = String(input && input.name || '').trim();
-        if(!name) throw new Error('A product name is required.');
-        var data = {
-          name:name, category: input.category?String(input.category):'', unit: input.unit?String(input.unit):'',
-          costPrice: Number(input.costPrice)||0, sellPrice: Number(input.sellPrice)||0,
-          stockQty: input.stockQty!=null ? (parseInt(input.stockQty,10)||0) : 0,
-          lowStock: input.lowStock!=null ? (parseInt(input.lowStock,10)||null) : null,
-          createdAt: new Date().toISOString()
-        };
-        return refs.products.add(data).then(function(){ toast('Pessa AI added '+name); return Object.assign({status:'created'}, data); });
-      }
-    },
-    {
-      name:'update_product',
-      description:'Change an existing product\'s price, stock quantity or other details. Provide productId (from find_products) or name to identify it. Use adjustStockBy for a relative change (e.g. 10 or -3); use stockQty to set an absolute new quantity. Returns the updated product, or throws if it can\'t be found or the name matches more than one product.',
-      inputSchema:{ type:'object', properties:{
-        productId:{type:'string'}, name:{type:'string'}, costPrice:{type:'number'}, sellPrice:{type:'number'}, stockQty:{type:'number'}, adjustStockBy:{type:'number'}, category:{type:'string'}, unit:{type:'string'}, lowStock:{type:'number'}
-      } },
-      execute:function(input){
-        var product = null;
-        if(input.productId) product = State.products.find(function(p){ return p.id===input.productId; });
-        if(!product && input.name){
-          var matches = aiFindProducts(input.name);
-          if(matches.length===1) product = matches[0];
-          else if(matches.length>1) throw new Error('More than one product matches "'+input.name+'": '+matches.map(function(m){return m.name;}).join(', ')+'. Ask which one, or use productId.');
-        }
-        if(!product) throw new Error('No product found matching that name.');
-        var patch = {};
-        if(input.costPrice!=null) patch.costPrice = Number(input.costPrice)||0;
-        if(input.sellPrice!=null) patch.sellPrice = Number(input.sellPrice)||0;
-        if(input.category!=null) patch.category = String(input.category);
-        if(input.unit!=null) patch.unit = String(input.unit);
-        if(input.lowStock!=null) patch.lowStock = parseInt(input.lowStock,10)||null;
-        if(input.stockQty!=null) patch.stockQty = parseInt(input.stockQty,10)||0;
-        else if(input.adjustStockBy!=null) patch.stockQty = Math.max(0, (product.stockQty||0) + (parseInt(input.adjustStockBy,10)||0));
-        patch.updatedAt = new Date().toISOString();
-        return refs.products.doc(product.id).update(patch).then(function(){
-          toast('Pessa AI updated '+product.name);
-          return Object.assign({status:'updated', id:product.id, name:product.name}, patch);
-        });
-      }
-    },
-    {
-      name:'bulk_add_products',
-      description:'Add many new products to stock at once — use when the owner pastes or describes a whole list of products rather than one at a time. Each row needs at least a name; missing prices/quantity default to 0. Returns how many were added.',
-      inputSchema:{ type:'object', properties:{ rows:{ type:'array', items:{ type:'object', properties:{
-        name:{type:'string'}, costPrice:{type:'number'}, sellPrice:{type:'number'}, stockQty:{type:'number'}, category:{type:'string'}, unit:{type:'string'}
-      }, required:['name'] } } }, required:['rows'] },
-      execute:function(input){
-        var rows = Array.isArray(input.rows) ? input.rows.slice(0,200) : [];
-        var valid = rows.filter(function(r){ return r && r.name; });
-        if(valid.length===0) throw new Error('No valid rows with a name were given.');
-        var promises = valid.map(function(r){
-          return refs.products.add({
-            name:String(r.name).trim(), category:r.category?String(r.category):'', unit:r.unit?String(r.unit):'',
-            costPrice:Number(r.costPrice)||0, sellPrice:Number(r.sellPrice)||0, stockQty: r.stockQty!=null?(parseInt(r.stockQty,10)||0):0,
-            lowStock:null, createdAt:new Date().toISOString()
-          });
-        });
-        return Promise.all(promises).then(function(){
-          toast('Pessa AI added '+valid.length+' product'+(valid.length===1?'':'s'));
-          return { status:'created', count: valid.length, names: valid.map(function(r){ return r.name; }) };
-        });
-      }
-    },
-    {
-      name:'find_customers',
-      description:'Search customers by name (case-insensitive, partial match). Leave query empty to list customers sorted by balance owed, highest first. Returns id, name, phone, balance.',
-      inputSchema:{ type:'object', properties:{ query:{type:'string'} } },
-      execute:function(input){
-        return aiFindCustomers(input && input.query).map(function(c){ return { id:c.id, name:c.name, phone:c.phone||'', balance:c.balance||0 }; });
-      }
-    },
-    {
-      name:'add_customer',
-      description:'Add a new customer record. Returns the created customer.',
-      inputSchema:{ type:'object', properties:{ name:{type:'string'}, phone:{type:'string'} }, required:['name'] },
-      execute:function(input){
-        var name = String(input && input.name || '').trim();
-        if(!name) throw new Error('A customer name is required.');
-        var data = { name:name, phone: input.phone?String(input.phone):'', balance:0, createdAt:new Date().toISOString() };
-        return refs.customers.add(data).then(function(){ toast('Pessa AI added customer '+name); return Object.assign({status:'created'}, data); });
-      }
-    },
-    {
-      name:'record_payment',
-      description:'Record a payment received from a customer against their credit balance. Look the customer up with find_customers first if unsure of the exact name. Returns the customer\'s new balance.',
-      inputSchema:{ type:'object', properties:{ customerId:{type:'string'}, customerName:{type:'string'}, amount:{type:'number'}, note:{type:'string'} }, required:['amount'] },
-      execute:function(input){
-        var customer = null;
-        if(input.customerId) customer = State.customers.find(function(c){ return c.id===input.customerId; });
-        if(!customer && input.customerName){
-          var matches = aiFindCustomers(input.customerName);
-          if(matches.length===1) customer = matches[0];
-          else if(matches.length>1) throw new Error('More than one customer matches "'+input.customerName+'": '+matches.map(function(m){return m.name;}).join(', ')+'.');
-        }
-        if(!customer) throw new Error('No matching customer found. Use find_customers first.');
-        var amt = Number(input.amount);
-        if(!amt || amt<=0) throw new Error('Amount must be a positive number.');
-        var newBal = (customer.balance||0) - amt;
-        return refs.customers.doc(customer.id).update({ balance:newBal }).then(function(){
-          return refs.customers.doc(customer.id).collection('ledger').add({ type:'payment', amount:amt, note: input.note?String(input.note):'', createdAt:new Date().toISOString(), balanceAfter:newBal });
-        }).then(function(){
-          toast('Pessa AI recorded a payment from '+customer.name);
-          return { status:'recorded', customer:customer.name, amount:amt, newBalance:newBal };
-        });
-      }
-    },
-    {
-      name:'record_expense',
-      description:'Log a business expense (rent, stock purchase, transport, wages, etc). Returns the created expense.',
-      inputSchema:{ type:'object', properties:{ category:{type:'string'}, amount:{type:'number'}, note:{type:'string'} }, required:['category','amount'] },
-      execute:function(input){
-        var amt = Number(input.amount);
-        if(!amt || amt<=0) throw new Error('Amount must be a positive number.');
-        var data = { category: String(input.category||'Other'), amount:amt, note: input.note?String(input.note):'', createdAt:new Date().toISOString() };
-        return refs.expenses.add(data).then(function(){ toast('Pessa AI logged an expense'); return Object.assign({status:'recorded'}, data); });
-      }
-    },
-    {
-      name:'record_sale',
-      description:'Record a completed sale of one or more products. Look products up with find_products first if unsure of exact names — this matches names loosely but errors if a name is ambiguous, not found, or there is not enough stock. paymentMethod must be "cash", "card", "wallet" or "credit"; customerName is required when paymentMethod is "credit". Reduces stock automatically and returns the sale total.',
-      inputSchema:{ type:'object', properties:{
-        items:{ type:'array', items:{ type:'object', properties:{ productName:{type:'string'}, productId:{type:'string'}, qty:{type:'number'} }, required:['qty'] } },
-        paymentMethod:{ type:'string', enum:['cash','card','wallet','credit'] },
-        customerName:{ type:'string' }
-      }, required:['items','paymentMethod'] },
-      execute:function(input){
-        var pm = String(input.paymentMethod||'cash');
-        if(['cash','card','wallet','credit'].indexOf(pm)===-1) throw new Error('paymentMethod must be cash, card, wallet or credit.');
-        var items = Array.isArray(input.items) ? input.items : [];
-        if(items.length===0) throw new Error('At least one item is required.');
-        var resolved = [];
-        for(var i=0;i<items.length;i++){
-          var it = items[i];
-          var product = null;
-          if(it.productId) product = State.products.find(function(p){ return p.id===it.productId; });
-          if(!product && it.productName){
-            var matches = aiFindProducts(it.productName);
-            if(matches.length===1) product = matches[0];
-            else if(matches.length>1) throw new Error('More than one product matches "'+it.productName+'": '+matches.map(function(m){return m.name;}).join(', ')+'.');
-          }
-          if(!product) throw new Error('No product found for "'+(it.productName||it.productId)+'".');
-          var qty = Number(it.qty)||0;
-          if(qty<=0) throw new Error('Quantity for '+product.name+' must be greater than zero.');
-          if(product.stockQty!=null && qty > product.stockQty) throw new Error('Only '+product.stockQty+' '+(product.unit||'in stock')+' of '+product.name+' available.');
-          resolved.push({ product:product, qty:qty });
-        }
-        var customer = null;
-        if(pm === 'credit'){
-          if(!input.customerName) throw new Error('customerName is required for a credit sale.');
-          var cmatches = aiFindCustomers(input.customerName);
-          if(cmatches.length===1) customer = cmatches[0];
-          else if(cmatches.length>1) throw new Error('More than one customer matches "'+input.customerName+'": '+cmatches.map(function(m){return m.name;}).join(', ')+'.');
-          else throw new Error('No matching customer found for a credit sale. Add them first, or check the name with find_customers.');
-        }
-        var saleItems = resolved.map(function(r){ return { productId:r.product.id, name:r.product.name, qty:r.qty, unitPrice:r.product.sellPrice||0, cost:r.product.costPrice||0, lineTotal:(r.product.sellPrice||0)*r.qty }; });
-        var total = saleItems.reduce(function(s,x){return s+x.lineTotal;},0);
-        var costTotal = saleItems.reduce(function(s,x){return s+(x.cost*x.qty);},0);
-        var sale = { items:saleItems, total:total, cost:costTotal, profit:total-costTotal, paymentMethod:pm, customerId: customer?customer.id:null, customerName: customer?customer.name:null, createdAt:new Date().toISOString() };
-        return refs.sales.add(sale).then(function(){
-          resolved.forEach(function(r){
-            if(r.product.stockQty!=null) refs.products.doc(r.product.id).update({ stockQty: Math.max(0, r.product.stockQty - r.qty) });
-          });
-          if(pm==='credit' && customer){
-            var newBal = (customer.balance||0) + total;
-            refs.customers.doc(customer.id).update({ balance:newBal });
-            refs.customers.doc(customer.id).collection('ledger').add({ type:'charge', amount:total, note:'Sale on credit', createdAt:new Date().toISOString(), balanceAfter:newBal });
-          }
-          renderCartBar();
-          if(State.tab==='dashboard' || State.tab==='sell') render();
-          toast('Pessa AI recorded a sale — '+fmtMoney(total));
-          return { status:'recorded', total:total, items:saleItems.map(function(x){ return {name:x.name, qty:x.qty, unitPrice:x.unitPrice}; }) };
-        });
-      }
-    },
-    {
-      name:'navigate',
-      description:'Switch the app to a different screen so the owner can see it: dashboard, sell, stock, credit or expenses.',
-      inputSchema:{ type:'object', properties:{ tab:{type:'string', enum:['dashboard','sell','stock','credit','expenses']} }, required:['tab'] },
-      execute:function(input){
-        var tab = String(input.tab||'');
-        if(['dashboard','sell','stock','credit','expenses'].indexOf(tab)===-1) throw new Error('Unknown tab.');
-        setTab(tab);
-        return { status:'navigated', tab:tab };
-      }
-    }
-  ];
-}
-
-function aiChatErrorCopy(code){
-  switch(code){
-    case 'not_granted': case 'sampling_disabled': case 'not_declared': case 'capability_disabled': case 'capability_removed':
-      return 'I’m not available in this view right now — try opening Pesa directly rather than in a preview.';
-    case 'rate_limited': return 'Lots of requests right now — give it a moment and try again.';
-    case 'refused': return 'I can’t help with that one.';
-    case 'cancelled': return 'Stopped.';
-    case 'prompt_too_large': return 'That’s a lot for me to read at once — try asking in smaller pieces.';
-    case 'tools_unavailable': return null; // handled by caller with a plain-text fallback
-    default: return 'Something went wrong on my end — mind trying again?';
-  }
-}
-
-function aiRoleClass(role){ return role==='user' ? 'user' : 'assistant'; }
-
-function renderAIMessages(){
-  var el = document.getElementById('aiMessages');
-  if(!el) return;
-  var html = AIChat.turns.length===0 ?
-    '<div class="ai-msg system-note">Hi, I’m Pessa AI. Ask me things like "add 10 bags of rice at cost 40 sell 55" or "who owes me money?"</div>' :
-    AIChat.turns.map(function(t){ return '<div class="ai-msg '+aiRoleClass(t.role)+'">'+esc(t.content)+'</div>'; }).join('');
-  if(AIChat.busy) html += '<div class="ai-msg thinking"><span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span></div>';
-  el.innerHTML = html;
-  el.scrollTop = el.scrollHeight;
-}
-
-function renderAISuggestions(ov){
-  var row = ov.querySelector('#aiSuggestRow');
-  if(!row) return;
-  if(AIChat.turns.length>0){ row.innerHTML=''; return; }
-  var suggestions = ['How is business today?', 'Who owes me money?', 'What’s running low on stock?'];
-  row.innerHTML = suggestions.map(function(s){ return '<button type="button" class="ai-suggest" data-suggest="'+esc(s)+'">'+esc(s)+'</button>'; }).join('');
-  row.querySelectorAll('[data-suggest]').forEach(function(b){
-    b.addEventListener('click', function(){ sendAIMessage(b.getAttribute('data-suggest')); });
-  });
-}
-
-function disableAIInput(disabled){
-  var ov = document.querySelector('.overlay');
-  if(!ov) return;
-  var input = ov.querySelector('#aiInput'), btn = ov.querySelector('#aiSendBtn');
-  if(input) input.disabled = disabled;
-  if(btn) btn.disabled = disabled;
-}
-
-function sendAIMessage(text){
-  if(AIChat.busy || !text) return;
-  AIChat.turns.push({ role:'user', content:text });
-  AIChat.busy = true;
-  var ov = document.querySelector('.overlay');
-  if(ov) renderAISuggestions(ov);
-  renderAIMessages();
-  disableAIInput(true);
-
-  (async function(){
-    try{
-      if(!(window.claude && window.claude.use)) throw {code:'not_declared'};
-      var sample = await window.claude.use('sample');
-      if(!sample) throw {code:'not_granted'};
-      var caps = await sample.limits().catch(function(){ return null; });
-      var useTools = !!(caps && caps.tools);
-      var instructionsTurn = { role:'user', content: aiSystemPrompt() + "\n\n(That's how you should behave for this whole conversation — this message just sets the ground rules; respond to my messages below, not to this one.)" };
-      var history = AIChat.turns.map(function(t){ return { role:t.role, content:t.content }; });
-      if(history.length > 16) history = history.slice(-16);
-      var conversation = [instructionsTurn].concat(history);
-
-      var replyText;
-      if(useTools){
-        var result = await sample(conversation, { modelTier:'default', tools: buildAITools(), cache:false });
-        replyText = result.text;
-      } else {
-        var result2 = await sample(conversation, { modelTier:'default', cache:false });
-        replyText = result2.text + (AIChat.turns.length<=1 ? "\n\n(I can chat and answer questions here, but I can't make changes in this view.)" : '');
-      }
-      AIChat.turns.push({ role:'assistant', content: replyText || '…' });
-    } catch(e){
-      var msg = aiChatErrorCopy(e && e.code) || 'Something went wrong on my end — mind trying again?';
-      AIChat.turns.push({ role:'assistant', content: msg });
-    } finally {
-      AIChat.busy = false;
-      renderAIMessages();
-      disableAIInput(false);
-      var ovInput = document.querySelector('#aiInput');
-      if(ovInput) ovInput.focus();
-    }
-  })();
-}
-
-function wireAIChat(ov){
-  var input = ov.querySelector('#aiInput');
-  var sendBtn = ov.querySelector('#aiSendBtn');
-  function autoGrow(){ input.style.height='auto'; input.style.height = Math.min(90, input.scrollHeight)+'px'; }
-  input.addEventListener('input', autoGrow);
-  input.addEventListener('keydown', function(e){
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); doSend(); }
-  });
-  sendBtn.addEventListener('click', doSend);
-  function doSend(){
-    var text = input.value.trim();
-    if(!text || AIChat.busy) return;
-    input.value=''; autoGrow();
-    sendAIMessage(text);
-  }
-  renderAISuggestions(ov);
-  input.focus();
-}
-
-function openAIChatSheet(){
-  var sparkle = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path><circle cx="12" cy="12" r="3.2"></circle></svg>';
-  var send = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"></path><path d="M22 2 15 22l-4-9-9-4 20-7Z"></path></svg>';
-  var html = '<div class="ai-sheet">' +
-    '<div class="ai-head"><div class="aiavatar">'+sparkle+'</div><div><h2>Pessa AI Assistant</h2><div class="sub">Ask me to do things, or just ask a question</div></div></div>' +
-    '<div class="ai-messages" id="aiMessages"></div>' +
-    '<div class="ai-suggest-row" id="aiSuggestRow"></div>' +
-    '<div class="ai-inputrow"><textarea id="aiInput" rows="1" placeholder="Type a message…"></textarea><button class="ai-sendbtn" id="aiSendBtn" type="button">'+send+'</button></div>' +
-  '</div>';
-  var ov = openSheet(html);
-  renderAIMessages();
-  wireAIChat(ov);
-}
-
 /* ============================== main render / router ============================== */
 function applyStaticTranslations(){
   document.querySelectorAll('[data-i18n]').forEach(function(el){
@@ -7033,6 +6522,7 @@ var LESSONS = [
   ]},
   { id:'stock', title:'Managing stock', icon:'box', slides:[
     { title:'Adding a product', text:'Go to the Stock tab and tap the plus button to add a new product. Fill in the name, price, cost, and how many you have on hand.' },
+    { title:'Adding many products at once', text:'On the Stock tab, tap Add stock in bulk. In Paste list, type or paste one product per line as Name, Cost price, Selling price, Stock. Category and Unit are optional. Or use the CSV file tab to load a spreadsheet, and tap Download CSV template to get a ready to fill file. Check the list, then tap Add products.' },
     { title:'Scanning a barcode', text:'When adding or editing a product, tap the barcode icon to scan its barcode with your camera instead of typing a code by hand.' },
     { title:'Editing and low stock alerts', text:'Tap any product to edit its details or adjust the quantity after a delivery or a stock count. Set a low stock number so the app warns you before you run out.' }
   ]},
@@ -7482,7 +6972,6 @@ function generateAboutPdf(){
 
 /* ============================== boot ============================== */
 document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
-document.getElementById('aiChatBtn').addEventListener('click', openAIChatSheet);
 document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer);
 
 // Show a loading state behind the auth gate until we know whether a company
