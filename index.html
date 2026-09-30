@@ -487,6 +487,12 @@
   .lesson-steps li.speaking, .lesson-tip.speaking{ border-color:var(--primary); background:var(--surface); box-shadow:0 0 0 2px rgba(79,169,138,0.25); }
   .lesson-intro.speaking{ color:var(--text); }
   .sheet-head h2{ font-size:17px; flex:1; }
+  /* show / hide password eye */
+  .pwwrap{ position:relative; display:block; width:100%; }
+  .pwwrap > input{ padding-right:44px !important; }
+  .pwwrap .pweye{ position:absolute; right:4px; top:50%; transform:translateY(-50%); width:38px; height:38px; border:0; background:transparent; color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:10px; }
+  .pwwrap .pweye:hover{ color:var(--text); }
+  .pwwrap .pweye svg{ width:18px; height:18px; }
   .field{ margin-bottom:12px; }
   .field label{ display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:5px; }
   .field input, .field select, .field textarea{
@@ -1095,7 +1101,7 @@ var WS = (function(){
     setUsers: function(users){
       var r = read(), e = r.find(function(x){ return x.id === id; });
       if(!e) return;
-      var sum = users.filter(function(u){ return u.active !== false; }).map(function(u){ return { id:u.id, name:u.name, role:u.role }; });
+      var sum = users.filter(function(u){ return u.active !== false; }).map(function(u){ return { id:u.id, name:u.name, role:u.role, email:u.email || '' }; });
       if(JSON.stringify(e.users || []) !== JSON.stringify(sum)){ e.users = sum; write(r); }
     },
     // every account in the OTHER businesses on this device (with password check data when this device holds it)
@@ -1110,10 +1116,10 @@ var WS = (function(){
         var seen = {};
         Object.keys(local).forEach(function(uid){
           var u = local[uid]; if(!u || u.active === false) return;
-          seen[uid] = 1; out.push({ ws:w.id, wsName:w.name, id:uid, name:u.name, role:u.role, passHash:u.passHash });
+          seen[uid] = 1; out.push({ ws:w.id, wsName:w.name, id:uid, name:u.name, role:u.role, email:u.email || '', passHash:u.passHash });
         });
         (w.users || []).forEach(function(u){
-          if(!seen[u.id]) out.push({ ws:w.id, wsName:w.name, id:u.id, name:u.name, role:u.role, passHash:null });
+          if(!seen[u.id]) out.push({ ws:w.id, wsName:w.name, id:u.id, name:u.name, role:u.role, email:u.email || '', passHash:null });
         });
       });
       return out;
@@ -1612,6 +1618,273 @@ function playWelcomeSound(){
 }
 function resetWelcomeSound(){ welcomeSoundState.done = false; welcomeSoundState.timers.forEach(clearTimeout); welcomeSoundState.timers = []; }
 
+/* ---------- show / hide password ----------
+   Every password or PIN box gets an eye button, wherever it appears
+   (register, sign-in, sheets). Fields are added to the page dynamically, so a
+   MutationObserver adds the eye to each new one. */
+var EYE_ON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+var EYE_OFF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><path d="M1 1l22 22"></path></svg>';
+function addPasswordEye(input){
+  if(!input || input.getAttribute('data-eye') || !input.parentNode) return;
+  input.setAttribute('data-eye', '1');
+  var wrap = document.createElement('span');
+  wrap.className = 'pwwrap';
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  var btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'pweye'; btn.setAttribute('aria-label', 'Show password');
+  btn.innerHTML = EYE_ON;
+  btn.addEventListener('mousedown', function(e){ e.preventDefault(); }); // keep focus in the field
+  btn.addEventListener('click', function(){
+    var show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.innerHTML = show ? EYE_OFF : EYE_ON;
+    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    try{ input.focus(); }catch(e){}
+  });
+  wrap.appendChild(btn);
+}
+function scanPasswordFields(root){
+  (root || document).querySelectorAll('input[type="password"]:not([data-eye])').forEach(addPasswordEye);
+}
+(function watchPasswordFields(){
+  function start(){
+    scanPasswordFields(document);
+    try{
+      new MutationObserver(function(muts){
+        for(var i=0;i<muts.length;i++){ if(muts[i].addedNodes && muts[i].addedNodes.length){ scanPasswordFields(document); break; } }
+      }).observe(document.body, { childList:true, subtree:true });
+    }catch(e){}
+  }
+  if(document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+
+/* ============================== password reset by email ==============================
+   "Forgot password" sends a 6-digit code to the email address on the account
+   through EmailJS (a free service that sends email straight from the browser
+   — Pesa has no server of its own). The Owner pastes their EmailJS details in
+   Settings → Password reset email (or they are baked into EMAILJS_DEFAULTS).
+   Only a hash of the code is stored, and it expires after 15 minutes. */
+var EMAILJS_DEFAULTS = { service:'', template:'', key:'' };
+var EMAIL_CFG_KEY = 'pesa_emailjs_v1', RESET_KEY = 'pesa_reset_v1', RESET_MINUTES = 15;
+function emailCfg(){
+  var c = {};
+  try{ c = JSON.parse(localStorage.getItem(EMAIL_CFG_KEY) || '{}') || {}; }catch(e){}
+  var svc = c.service || EMAILJS_DEFAULTS.service, tpl = c.template || EMAILJS_DEFAULTS.template, key = c.key || EMAILJS_DEFAULTS.key;
+  return (svc && tpl && key) ? { service:svc, template:tpl, key:key } : null;
+}
+async function sendEmailJs(params){
+  var cfg = emailCfg();
+  if(!cfg) return { ok:false, reason:'not_configured' };
+  try{
+    var r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ service_id:cfg.service, template_id:cfg.template, user_id:cfg.key, template_params:params })
+    });
+    if(r.ok) return { ok:true };
+    var t = ''; try{ t = await r.text(); }catch(e){}
+    return { ok:false, reason:'failed', detail:t };
+  }catch(e){ return { ok:false, reason:'network' }; }
+}
+function isEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim()); }
+function randomCode6(){
+  try{ var a = new Uint32Array(1); crypto.getRandomValues(a); return String(a[0] % 1000000).padStart(6, '0'); }
+  catch(e){ return String(Math.floor(Math.random()*1000000)).padStart(6, '0'); }
+}
+function resetAccountsForEmail(email){
+  email = String(email||'').trim().toLowerCase();
+  if(!email) return [];
+  var out = [];
+  var wsName = State.company ? (State.company.tradingName || State.company.companyName || '') : '';
+  State.users.forEach(function(u){
+    if(u.active !== false && u.role !== 'cashier' && String(u.email||'').toLowerCase() === email) out.push({ ws:WS.id, wsName:wsName, id:u.id, name:u.name, role:u.role });
+  });
+  WS.accounts().forEach(function(a){
+    if(a.role !== 'cashier' && String(a.email||'').toLowerCase() === email) out.push(a);
+  });
+  return out;
+}
+
+function renderForgotHtml(){
+  return '<div class="authcard">' +
+    '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Forgot password')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Enter the email address on your account and we will send you a 6-digit reset code.')+'</p></div>' +
+    '<div class="authbox">' +
+      '<div id="fpStep1">' +
+        '<div class="field"><label>'+tr('Email address')+'</label><input id="fpEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>' +
+        '<div id="fpPick"></div>' +
+        '<div id="fpError1"></div>' +
+        '<div class="actions"><button class="btn btn-primary btn-block" id="fpSend" type="button">'+tr('Send reset code')+'</button></div>' +
+      '</div>' +
+      '<div id="fpStep2" style="display:none;">' +
+        '<div class="banner" id="fpSentNote"></div>' +
+        '<div class="field"><label>'+tr('6-digit reset code')+'</label><input id="fpCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"></div>' +
+        '<div class="field"><label>'+tr('New password')+'</label><input id="fpNew" type="password" autocomplete="new-password" placeholder="'+tr('At least 4 characters')+'"></div>' +
+        '<div class="field"><label>'+tr('Confirm new password')+'</label><input id="fpNew2" type="password" autocomplete="new-password" placeholder="'+tr('Repeat password')+'"></div>' +
+        '<div id="fpError2"></div>' +
+        '<div class="actions"><button class="btn btn-primary btn-block" id="fpChange" type="button">'+tr('Change password')+'</button></div>' +
+        '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="fpResend" type="button">'+tr('Resend code')+'</button></div>' +
+      '</div>' +
+      '<div class="actions" style="margin-top:12px;"><button class="btn btn-ghost btn-block" id="fpBack" type="button">'+tr('Back to sign in')+'</button></div>' +
+    '</div>' +
+  '</div>';
+}
+function wireForgot(root){
+  var $ = function(id){ return root.querySelector(id); };
+  function banner(el, msg){ el.innerHTML = msg ? '<div class="banner">'+ICONS.warn+'<span>'+esc(msg)+'</span></div>' : ''; }
+  var chosen = null, cooldownTimer = null;
+  $('#fpBack').addEventListener('click', function(){ showAuthScreen(State.company ? 'login' : 'register'); });
+
+  async function sendCode(){
+    var email = $('#fpEmail').value.trim().toLowerCase(), err = $('#fpError1');
+    banner(err, '');
+    if(!isEmail(email)) return banner(err, tr('Enter a valid email address'));
+    if(!emailCfg()) return banner(err, tr('Email sending is not set up on this device yet. Ask the Owner to set it up in Settings → Password reset email. Managers and Cashiers can ask the Owner or a Manager to reset their password in Settings → Team.'));
+    var accts = resetAccountsForEmail(email);
+    if(accts.length > 1 && chosen === null){
+      $('#fpPick').innerHTML = '<div class="field"><label>'+tr('Which account?')+'</label><select id="fpAcct">' +
+        accts.map(function(a, i){ return '<option value="'+i+'">'+esc(a.name)+' — '+esc(a.wsName)+'</option>'; }).join('') + '</select></div>';
+      chosen = -1; return banner(err, tr('More than one account uses this email. Choose yours, then tap Send reset code again.'));
+    }
+    var acct = accts.length > 1 ? accts[parseInt(($('#fpAcct')||{}).value || '0', 10)] : accts[0];
+    var btn = $('#fpSend'); btn.disabled = true; btn.textContent = tr('Sending…');
+    var sent = true;
+    if(acct){
+      var code = randomCode6();
+      var hash = await sha256Hex(code + ':' + acct.id);
+      var res = await sendEmailJs({ to_email:email, to_name:acct.name, code:code, shop_name:acct.wsName || 'Pesa', expires_minutes:String(RESET_MINUTES), app_name:'Pesa' });
+      if(res.ok){
+        try{ localStorage.setItem(RESET_KEY, JSON.stringify({ email:email, ws:acct.ws, userId:acct.id, hash:hash, exp:Date.now()+RESET_MINUTES*60000, tries:0 })); }catch(e){}
+      } else { sent = false; }
+    } else {
+      try{ localStorage.removeItem(RESET_KEY); }catch(e){}
+    }
+    btn.disabled = false; btn.textContent = tr('Send reset code');
+    if(!sent) return banner(err, tr('Couldn’t send the email. Check your internet connection and try again.'));
+    // same message whether or not the address is on an account
+    $('#fpSentNote').textContent = tr('If that email is on an account, a 6-digit code is on its way to')+' '+email+'. '+tr('It works for')+' '+RESET_MINUTES+' '+tr('minutes.');
+    $('#fpStep1').style.display = 'none'; $('#fpStep2').style.display = 'block';
+    startCooldown(); $('#fpCode').focus();
+  }
+  function startCooldown(){
+    var rb = $('#fpResend'), left = 30;
+    rb.disabled = true;
+    clearInterval(cooldownTimer);
+    cooldownTimer = setInterval(function(){
+      left--;
+      if(!document.body.contains(rb)){ clearInterval(cooldownTimer); return; }
+      if(left <= 0){ clearInterval(cooldownTimer); rb.disabled = false; rb.textContent = tr('Resend code'); }
+      else rb.textContent = tr('Resend code')+' ('+left+')';
+    }, 1000);
+    rb.textContent = tr('Resend code')+' (30)';
+  }
+  $('#fpSend').addEventListener('click', sendCode);
+  $('#fpEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') sendCode(); });
+  $('#fpResend').addEventListener('click', function(){ $('#fpStep2').style.display = 'none'; $('#fpStep1').style.display = 'block'; chosen = null; sendCode(); });
+
+  $('#fpChange').addEventListener('click', async function(){
+    var err = $('#fpError2'); banner(err, '');
+    var code = $('#fpCode').value.trim(), pw = $('#fpNew').value, pw2 = $('#fpNew2').value;
+    var r = null; try{ r = JSON.parse(localStorage.getItem(RESET_KEY) || 'null'); }catch(e){}
+    if(!/^\d{6}$/.test(code)) return banner(err, tr('Enter the 6-digit code from the email.'));
+    if(!r || Date.now() > r.exp) return banner(err, tr('That code has expired or was never sent. Tap Resend code to get a new one.'));
+    if(r.tries >= 5){ try{ localStorage.removeItem(RESET_KEY); }catch(e){} return banner(err, tr('Too many wrong attempts. Tap Resend code to get a new one.')); }
+    if(!pw || pw.length < 4) return banner(err, tr('Choose a password of at least 4 characters.'));
+    if(pw !== pw2) return banner(err, tr('Passwords don’t match.'));
+    r.tries++; try{ localStorage.setItem(RESET_KEY, JSON.stringify(r)); }catch(e){}
+    var hash = await sha256Hex(code + ':' + r.userId);
+    if(hash !== r.hash) return banner(err, tr('Incorrect code.'));
+    var newHash = await sha256Hex(pw);
+    try{ localStorage.removeItem(RESET_KEY); }catch(e){}
+    if(r.ws === WS.id){
+      await refs.users.doc(r.userId).update({ passHash:newHash });
+      toast(tr('Password changed — sign in with your new password.'));
+      showAuthScreen('login');
+    } else {
+      try{ sessionStorage.setItem('pesa_pwreset_apply', JSON.stringify({ ws:r.ws, userId:r.userId, hash:newHash })); }catch(e){}
+      switchBusiness(r.ws);
+    }
+  });
+}
+
+/* ---- Settings: change password / PIN (signed-in user) ---- */
+function openChangePasswordSheet(){
+  var me = State.users.find(function(x){ return x.id === (State.session||{}).userId; });
+  if(!me) return;
+  var isCash = me.role === 'cashier';
+  var html = '<div class="sheet-head"><h2>'+(isCash ? tr('Change PIN') : tr('Change password'))+'</h2></div>' +
+    '<div class="field"><label>'+(isCash ? tr('Current PIN') : tr('Current password'))+'</label><input id="cpOld" type="password" inputmode="'+(isCash?'numeric':'text')+'" '+(isCash?'maxlength="4"':'')+' autocomplete="current-password"></div>' +
+    '<div class="field"><label>'+(isCash ? tr('New 4-digit PIN') : tr('New password'))+'</label><input id="cpNew" type="password" inputmode="'+(isCash?'numeric':'text')+'" '+(isCash?'maxlength="4"':'')+' autocomplete="new-password"></div>' +
+    '<div class="field"><label>'+(isCash ? tr('Confirm new PIN') : tr('Confirm new password'))+'</label><input id="cpNew2" type="password" inputmode="'+(isCash?'numeric':'text')+'" '+(isCash?'maxlength="4"':'')+' autocomplete="new-password"></div>' +
+    (isCash ? '' : '<div class="field"><label>'+tr('Email for password reset')+' — '+tr('optional')+'</label><input id="cpEmail" type="email" placeholder="you@example.com" value="'+esc(isEmail(me.email) ? me.email : '')+'"><div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">'+tr('If you forget your password, the reset code is sent to this address.')+'</div></div>') +
+    '<div id="cpError"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="cpSave" type="button">'+tr('Save')+'</button></div>';
+  var ov = openSheet(html);
+  var err = ov.querySelector('#cpError');
+  function fail(m){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(m)+'</span></div>'; }
+  ov.querySelector('#cpSave').addEventListener('click', async function(){
+    var oldv = ov.querySelector('#cpOld').value, nv = ov.querySelector('#cpNew').value, nv2 = ov.querySelector('#cpNew2').value;
+    var emailEl = ov.querySelector('#cpEmail'), email = emailEl ? emailEl.value.trim().toLowerCase() : null;
+    err.innerHTML = '';
+    if(!oldv) return fail(isCash ? tr('Enter your current PIN.') : tr('Enter your current password.'));
+    if((await sha256Hex(oldv)) !== me.passHash) return fail(isCash ? tr('Current PIN is incorrect.') : tr('Current password is incorrect.'));
+    if(isCash ? !/^\d{4}$/.test(nv) : (!nv || nv.length < 4)) return fail(isCash ? tr('PIN must be exactly 4 digits.') : tr('Choose a password of at least 4 characters.'));
+    if(nv !== nv2) return fail(isCash ? tr('PINs don’t match.') : tr('Passwords don’t match.'));
+    if(email && !isEmail(email)) return fail(tr('Enter a valid email address'));
+    var patch = { passHash: await sha256Hex(nv) };
+    if(email !== null && email) patch.email = email;
+    await refs.users.doc(me.id).update(patch);
+    try{ logAudit('update', 'user', me.id, (isCash ? 'Changed own PIN' : 'Changed own password')); }catch(e){}
+    closeModal();
+    toast(isCash ? tr('PIN changed') : tr('Password changed'));
+  });
+}
+function wireAccountSection(ov){
+  var lo = ov.querySelector('#acctLogoutBtn'); if(lo) lo.addEventListener('click', logout);
+  var cp = ov.querySelector('#acctChangePwBtn'); if(cp) cp.addEventListener('click', function(){ closeModal(); openChangePasswordSheet(); });
+}
+
+/* ---- Settings (Owner): email service used for reset codes ---- */
+function emailServiceSettingsHtml(){
+  var c = {}; try{ c = JSON.parse(localStorage.getItem(EMAIL_CFG_KEY) || '{}') || {}; }catch(e){}
+  var on = !!emailCfg();
+  return '<div class="section-title">'+tr('Password reset email')+'</div>' +
+    '<div class="banner">'+(on ? ICONS.check : ICONS.warn)+'<span>'+(on ? tr('Email sending is set up on this device. “Forgot password” will send reset codes.') : tr('Not set up yet. To let people reset a forgotten password by email, connect a free EmailJS account below.'))+'</span></div>' +
+    '<div class="field"><label>EmailJS Service ID</label><input id="emSvc" placeholder="service_xxxxxxx" value="'+esc(c.service||'')+'"></div>' +
+    '<div class="field"><label>EmailJS Template ID</label><input id="emTpl" placeholder="template_xxxxxxx" value="'+esc(c.template||'')+'"></div>' +
+    '<div class="field"><label>EmailJS Public Key</label><input id="emKey" placeholder="Public key" value="'+esc(c.key||'')+'"></div>' +
+    '<div class="field"><label>'+tr('Send a test email to')+'</label><input id="emTo" type="email" placeholder="you@example.com"></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="emSave" type="button">'+tr('Save email settings')+'</button><button class="btn btn-ghost" id="emTest" type="button">'+tr('Send test email')+'</button></div>' +
+    '<details style="margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.6;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">'+tr('How to set this up (5 minutes, free)')+'</summary>' +
+      '<ol style="padding-left:18px;margin:8px 0;">' +
+        '<li>Create a free account at emailjs.com.</li>' +
+        '<li>Add an Email Service (for example Gmail) and copy its Service ID.</li>' +
+        '<li>Create an Email Template. Set “To email” to <b>{{to_email}}</b>. Subject: <b>Your {{app_name}} reset code</b>. Body: <b>Hi {{to_name}}, your {{shop_name}} reset code is {{code}}. It works for {{expires_minutes}} minutes.</b> Copy its Template ID.</li>' +
+        '<li>In Account, copy your Public Key.</li>' +
+        '<li>Paste the three values above, tap Save email settings, then Send test email.</li>' +
+      '</ol></details>' +
+    '<div id="emMsg"></div>';
+}
+function wireEmailServiceSettings(ov){
+  var save = ov.querySelector('#emSave'); if(!save) return;
+  var msg = ov.querySelector('#emMsg');
+  function say(t, ok){ msg.innerHTML = '<div class="banner">'+(ok?ICONS.check:ICONS.warn)+'<span>'+esc(t)+'</span></div>'; }
+  function persist(){
+    var cfg = { service:ov.querySelector('#emSvc').value.trim(), template:ov.querySelector('#emTpl').value.trim(), key:ov.querySelector('#emKey').value.trim() };
+    try{ localStorage.setItem(EMAIL_CFG_KEY, JSON.stringify(cfg)); }catch(e){}
+    return cfg;
+  }
+  save.addEventListener('click', function(){ var c = persist(); say(c.service && c.template && c.key ? tr('Email settings saved.') : tr('Saved, but all three values are needed before emails can be sent.'), !!(c.service && c.template && c.key)); });
+  ov.querySelector('#emTest').addEventListener('click', async function(){
+    persist();
+    var me = State.users.find(function(x){ return x.id === (State.session||{}).userId; }) || {};
+    var to = ov.querySelector('#emTo').value.trim() || (isEmail(me.email) ? me.email : '');
+    if(!isEmail(to)) return say(tr('Enter a valid email address'), false);
+    say(tr('Sending…'), true);
+    var res = await sendEmailJs({ to_email:to, to_name:me.name || 'there', code:'123456', shop_name:State.settings.shopName || 'Pesa', expires_minutes:String(RESET_MINUTES), app_name:'Pesa' });
+    say(res.ok ? tr('Test email sent to')+' '+to+'.' : (res.reason === 'not_configured' ? tr('Fill in all three values first.') : tr('The email could not be sent. Check the three values and your internet connection.') + (res.detail ? ' ('+String(res.detail).slice(0,120)+')' : '')), res.ok);
+  });
+}
+
 function splashHtml(title, subtitle){
   var name = title || 'Pesa';
   return '<div class="splash-wrap">' +
@@ -1681,6 +1954,14 @@ function checkAuthAndRoute(){
     }
   }
   if(!State.session){
+    try{
+      var pa = JSON.parse(sessionStorage.getItem('pesa_pwreset_apply') || 'null');
+      if(pa && pa.ws === WS.id){
+        sessionStorage.removeItem('pesa_pwreset_apply');
+        refs.users.doc(pa.userId).update({ passHash:pa.hash });
+        toast(tr('Password changed — sign in with your new password.'));
+      }
+    }catch(e){}
     // one-step sign-in from another business's register page (see wireRegisterCompany)
     var al = null;
     try{ al = JSON.parse(sessionStorage.getItem('pesa_autologin') || 'null'); sessionStorage.removeItem('pesa_autologin'); }catch(e){}
@@ -1729,6 +2010,11 @@ function showAuthScreen(view){
     wireSignedOut(authEl);
     return;
   }
+  if(view === 'forgot'){
+    authEl.innerHTML = renderForgotHtml();
+    wireForgot(authEl);
+    return;
+  }
   authEl.innerHTML = view === 'register' ? renderRegisterCompanyHtml() : renderLoginHtml();
   if(view === 'register') wireRegisterCompany(authEl); else wireLoginView(authEl);
 }
@@ -1741,6 +2027,7 @@ function renderSignedOutHtml(){
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
       '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soRegisterBtn" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
+      '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
     '</div>' +
   '</div>';
@@ -1786,6 +2073,7 @@ function wireBusinessSwitcher(root){
   root.querySelectorAll('[data-ws]').forEach(function(b){
     b.addEventListener('click', function(){ switchBusiness(b.getAttribute('data-ws')); });
   });
+  root.querySelectorAll('[data-forgot]').forEach(function(f){ f.addEventListener('click', function(){ showAuthScreen('forgot'); }); });
   var nb = root.querySelector('[data-newbiz]');
   if(nb) nb.addEventListener('click', startNewBusiness);
 }
@@ -1821,13 +2109,14 @@ function renderRegisterCompanyHtml(){
       '<div class="section-title">'+tr('Owner account')+'</div>' +
       '<div class="banner">'+tr('This creates your Owner login — you can add Managers and Cashiers afterwards from Settings → Team.')+'</div>' +
       '<div class="field"><label>'+tr('Owner full name')+' *</label><input id="rcOwnerName" placeholder="Full name"></div>' +
-      '<div class="field"><label>'+tr('Owner phone or email (used to log in)')+' — '+tr('optional')+'</label><input id="rcOwnerEmail" placeholder="081 234 5678 or you@example.com"></div>' +
+      '<div class="field"><label>'+tr('Owner email (needed to reset a forgotten password)')+' — '+tr('optional')+'</label><input id="rcOwnerEmail" placeholder="081 234 5678 or you@example.com"></div>' +
       '<div class="field-row">' +
         '<div class="field"><label>'+tr('Password')+' *</label><input id="rcOwnerPassword" type="password" placeholder="At least 4 characters"></div>' +
         '<div class="field"><label>'+tr('Confirm password')+' *</label><input id="rcOwnerPassword2" type="password" placeholder="Repeat password"></div>' +
       '</div>' +
       '<div id="rcError"></div>' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="rcSubmit">'+tr('Register &amp; continue')+'</button></div>' +
+      '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       accountPickerHtml() +
     '</div>' +
   '</div>';
@@ -1950,6 +2239,7 @@ function renderLoginHtml(){
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
       '<div id="loginUnlockBox"></div>' +
+      '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
     '</div>' +
     '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
@@ -5507,7 +5797,8 @@ function accountSectionHtml(){
       '<div class="avatar" style="width:34px;height:34px;border-radius:9px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--primary-dim);font-weight:700;font-size:12px;flex-shrink:0;">'+esc(initials(u.name||''))+'</div>' +
       '<div class="main"><div class="n">'+esc(u.name||'')+'</div><div class="e">'+esc(tr(ROLE_LABELS[u.role]||''))+'</div></div>' +
       '<button class="btn btn-ghost" id="acctLogoutBtn" type="button">'+tr('Log out')+'</button>' +
-    '</div>';
+    '</div>' +
+    '<div class="actions" style="margin:-6px 0 12px;"><button class="btn btn-ghost btn-block" id="acctChangePwBtn" type="button">'+tr('Change password / PIN')+'</button></div>';
 }
 
 /* ============================== DASHBOARD SIDE DRAWER ============================== */
@@ -5638,7 +5929,7 @@ function openCashierSettingsSheet(){
     settingsAboutFooterHtml();
   var ov = openSheet(html);
   wireNotificationSettings(ov);
-  ov.querySelector('#acctLogoutBtn').addEventListener('click', logout);
+  wireAccountSection(ov);
   ov.querySelector('#stSaveLangOnly').addEventListener('click', function(){
     State.settings = Object.assign({}, State.settings, { language: ov.querySelector('#stLang').value });
     refs.settings.set(State.settings);
@@ -5737,6 +6028,8 @@ function openSettingsSheet(){
 
     notificationSettingsHtml() +
 
+    (isOwner() ? emailServiceSettingsHtml() : '') +
+
     '<div class="section-title">Backup &amp; data safety</div>' +
     '<div class="banner">'+(Store.isCloud()?'Your data is stored in your own private Pesa cloud space and kept only for you — no one else can see it unless you export and share a file yourself.':'Your data is stored only on this device. Export a backup regularly and keep a copy somewhere safe — clearing your browser data would otherwise erase it.')+'</div>' +
     '<div class="actions">' +
@@ -5818,11 +6111,12 @@ function openSettingsSheet(){
   if(logoRemove) logoRemove.addEventListener('click', function(){ removeBrandImage('logo'); });
   var lhRemove = ov.querySelector('#stLetterheadRemove');
   if(lhRemove) lhRemove.addEventListener('click', function(){ removeBrandImage('letterhead'); });
-  ov.querySelector('#acctLogoutBtn').addEventListener('click', logout);
+  wireAccountSection(ov);
   ov.querySelector('#openCompanyBtn').addEventListener('click', function(){ closeModal(); openCompanyDetailsSheet(); });
   ov.querySelector('#openTeamBtn').addEventListener('click', function(){ closeModal(); openTeamSheet(); });
   var branchSelect = ov.querySelector('#stBranchSelect'); if(branchSelect) branchSelect.addEventListener('change', function(){ setActiveBranch(branchSelect.value); });
   wireNotificationSettings(ov);
+  wireEmailServiceSettings(ov);
   ov.querySelector('#stExportBtn').addEventListener('click', exportData);
   ov.querySelector('#stImportBtn').addEventListener('click', function(){
     ov.querySelector('#stImportInput').click();
