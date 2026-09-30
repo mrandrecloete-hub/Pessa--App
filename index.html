@@ -165,6 +165,9 @@
   }
   .topbar .shopmeta{ flex:1; min-width:0; }
   .topbar .shopname{ font-size:17px; font-weight:700; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .slogan{ font-size:11px; font-weight:600; font-style:italic; letter-spacing:0.01em; color:#F0C36A; line-height:1.2; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sidebar-head .slogan{ color:var(--accent); margin-top:2px; }
+  .authbrand .slogan{ font-size:11px; }
   .topbar .shopdate{ font-size:11.5px; opacity:0.78; margin-top:1px; }
   .todaypill{
     background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22);
@@ -685,6 +688,7 @@
       <div class="brandmark" aria-hidden="true"></div>
       <div class="shopmeta">
         <div class="shopname" id="shopNameEl">Pesa</div>
+        <div class="slogan" id="shopSloganEl">Your Mula, Your Pride</div>
         <div class="shopdate" id="shopDateEl"></div>
         <div id="syncBadgeSlot"></div>
       </div>
@@ -1531,7 +1535,7 @@ function complianceNoteHtml(){
 function renderRegisterCompanyHtml(){
   var regionOpts = NAMIBIA_REGIONS.map(function(r){ return '<option>'+esc(r)+'</option>'; }).join('');
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Register your business')+'</h1><p>'+tr('Set up Pesa for your business — this only takes a minute.')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Register your business')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Set up Pesa for your business — this only takes a minute.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="section-title">'+tr('Business details')+'</div>' +
       '<div class="banner">'+tr('Only your business name is required to get started. Add the rest — registration number, VAT, address — whenever you have it; you can always fill it in later from Settings.')+'</div>' +
@@ -1626,7 +1630,7 @@ function renderLoginHtml(){
     '</button>';
   }).join('');
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><p>'+tr('Sign in to continue')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Sign in to continue')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
@@ -5270,7 +5274,7 @@ function renderSidebar(){
   var el = document.getElementById('appSidebar');
   if(!el) return;
   el.innerHTML = '<div class="app-watermark" aria-hidden="true"></div>' +
-    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa"></div><h2>Pesa</h2></div>' +
+    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa"></div><div style="flex:1;min-width:0;"><h2 style="margin:0;">Pesa</h2><div class="slogan">Your Mula, Your Pride</div></div></div>' +
     menuRowsHtml();
   el.querySelectorAll('[data-drawer-row]').forEach(function(rowEl){
     var key = rowEl.getAttribute('data-drawer-row');
