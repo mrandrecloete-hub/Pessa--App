@@ -8366,41 +8366,81 @@ function drawWetStamp(doc, pageW, pageH, now){
 function generateAboutPdf(){
   var JsPDFCtor = getJsPDF();
   var doc = new JsPDFCtor({ unit:'mm', format:'a4' });
-  // Single canonical Date for this whole generation: the "Generated" line
-  // above the text, the live date drawn inside the stamp, and the
-  // verification record written to the audit log all read from this one
-  // value, so none of them can ever drift apart or go stale.
+  // One canonical Date for the whole document: the generated line, the
+  // stamp and the verification record all read this same value.
   var now = new Date();
   var head = drawDocHeader(doc);
   var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
   var t = head.t, primary=t.primary, muted=t.muted, dark=t.dark;
   var pageH = doc.internal.pageSize.getHeight();
+  var bottomLimit = pageH - 18;
+  function pad2(n){ return n<10 ? '0'+n : ''+n; }
+  var stampTime = pad2(now.getHours())+':'+pad2(now.getMinutes());
+
+  // Starts a continuation page with the same logo header when text would
+  // run past the bottom margin.
+  function need(h){
+    if(y + h <= bottomLimit) return;
+    doc.addPage();
+    var hd = drawDocHeader(doc);
+    y = hd.y;
+  }
 
   doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(primary[0],primary[1],primary[2]);
   doc.text('About Pesa', margin, y+5);
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
-  doc.text('Generated '+fmtDateNice(now), pageW-margin, y+5, {align:'right'});
+  doc.text('Generated '+fmtDateNice(now)+' at '+stampTime, pageW-margin, y+5, {align:'right'});
   y += 13;
   doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y += 7;
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
   ABOUT_PARAGRAPHS.forEach(function(p){
     var lines = doc.splitTextToSize(p, contentW);
+    need(lines.length*4.6 + 3);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text(lines, margin, y);
-    y += lines.length*4.4 + 3;
+    y += lines.length*4.6 + 3;
   });
 
-  doc.setFontSize(8.5);
-  ABOUT_FEATURES.forEach(function(f){
-    var lines = doc.splitTextToSize(f, contentW-5);
-    doc.setTextColor(primary[0],primary[1],primary[2]);
-    doc.text('•', margin, y);
-    doc.setTextColor(dark[0],dark[1],dark[2]);
-    doc.text(lines, margin+5, y);
-    y += lines.length*4.1 + 1.6;
+  function bulletList(items){
+    items.forEach(function(f){
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      var lines = doc.splitTextToSize(f, contentW-5);
+      need(lines.length*4.3 + 2);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      doc.setTextColor(primary[0],primary[1],primary[2]);
+      doc.text('•', margin, y);
+      doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text(lines, margin+5, y);
+      y += lines.length*4.3 + 1.8;
+    });
+  }
+  function heading(txt){
+    need(14);
+    y += 3;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text(txt, margin, y); y += 6;
+  }
+
+  bulletList(ABOUT_FEATURES);
+
+  heading('Working with and without internet');
+  ABOUT_INTERNET.forEach(function(sec){
+    need(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text(sec.h, margin, y); y += 5.5;
+    bulletList(sec.items);
+    y += 1.5;
   });
 
-  y += 4;
+  heading('Contact the developer');
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+  doc.text('Email: '+DEV_EMAIL, margin, y); y += 5;
+  doc.text('WhatsApp: '+DEV_WHATSAPP, margin, y); y += 7;
+
+  // Credit, copyright, stamp and verification: kept together on the last
+  // page. Room is made for the stamp so it never overlaps text.
+  need(pageH - 18 - (pageH - 92));
   doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y += 7;
   doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
   doc.text(DEV_CREDIT_LINE, margin, y); y += 5.5;
@@ -8409,24 +8449,23 @@ function generateAboutPdf(){
   doc.text(crLines, margin, y);
   y += crLines.length*3.7;
 
-  // The stamp is anchored to a fixed position near the bottom of this same
-  // first page (not derived from the flowing y above), so it always lands
-  // in the same spot regardless of exactly how many lines the text above
-  // wrapped to. If the stamp image cannot be embedded, drawWetStamp()
-  // throws, and this function is left to propagate that error up to the
-  // caller rather than returning a document that silently has no stamp.
+  // The stamp is anchored near the bottom right of the last page. If the
+  // stamp image cannot be embedded, drawWetStamp() throws and the error
+  // propagates, so a document without its stamp is never returned.
   drawWetStamp(doc, pageW, pageH, now);
 
   var verification = { id: genVerificationId(), status: 'VERIFIED', isoTimestamp: now.toISOString() };
-
-  // Small print verification line, placed low on the page and clear of the
-  // stamp graphic itself, so it reads as an intentional part of the layout
-  // rather than clutter. Its only hyphen is inside the ID itself
-  // ("PESA-XXXXXXXX"), which is the required literal ID format, not a
-  // stray dash.
   doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-  var vLine = 'Status: '+verification.status+'    Date: '+fmtStampDate(now)+'    Verification ID: '+verification.id;
+  var vLine = 'Status: '+verification.status+'    Date: '+fmtStampDate(now)+'    Time: '+stampTime+'    Verification ID: '+verification.id;
   doc.text(vLine, margin, pageH-10);
+
+  // Page numbers on every page.
+  var total = doc.internal.getNumberOfPages();
+  for(var p=1;p<=total;p++){
+    doc.setPage(p);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text('Page '+p+' of '+total, pageW-margin, pageH-10, {align:'right'});
+  }
 
   return { doc: doc, verification: verification };
 }
