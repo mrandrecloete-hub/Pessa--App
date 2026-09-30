@@ -3246,6 +3246,11 @@ function openChargeSheet(){
     } else if(pm === 'wallet'){
       var wp = ov.querySelector('#walletProv'), wr = ov.querySelector('#walletRef');
       finalizeSale(pm, null, { walletProvider: wp ? wp.value : '', payRef: wr ? wr.value.trim() : '' });
+    } else if(pm === 'cash'){
+      var cr = ov.querySelector('#cashRecv'), rv = cr ? parseFloat(cr.value) : NaN;
+      if(cr && cr.value !== '' && (isNaN(rv) || rv < total)){ toast('Cash received is less than the total'); return; }
+      var got = (cr && cr.value !== '') ? rv : total;
+      finalizeSale(pm, null, { cashReceived: got, changeGiven: Math.max(0, Math.round((got-total)*100)/100) });
     } else {
       finalizeSale(pm, null);
     }
@@ -3313,6 +3318,10 @@ function offerSaleReceipt(sale, customer){
     dateStr: todayKey(),
     dueDateStr: '',
     notes: '',
+    at: sale.createdAt,
+    payMethod: sale.paymentMethod,
+    walletProvider: sale.walletProvider || '',
+    received: sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : sale.total),
     items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice }; })
   };
   var sendKind = sale.paymentMethod === 'credit' ? 'invoice' : 'receipt';
@@ -3810,6 +3819,39 @@ function ensureJsPDFLib(maxWaitMs){
       if(waited >= maxWaitMs){ clearInterval(timer); resolve(false); }
     }, step);
   });
+}
+function pad2(n){ return (n<10?'0':'')+n; }
+function timeText(d){ d = new Date(d); return pad2(d.getHours())+':'+pad2(d.getMinutes()); }
+/** The moment a document belongs to: the saved time if it has one, otherwise
+ * the current time when the document's date is today. Null if unknown. */
+function draftAt(draft){
+  if(draft.at) return draft.at;
+  var ds = draft.dateStr || todayKey();
+  if(draft.createdAt && String(draft.createdAt).slice(0,10) === ds) return draft.createdAt;
+  if(ds === todayKey()) return new Date().toISOString();
+  return null;
+}
+function docStamp(draft){
+  var at = draftAt(draft);
+  var d = fmtDateNice(draft.dateStr || todayKey());
+  return at ? d+'  '+timeText(at) : d;
+}
+var PAY_LABELS = { cash:'Cash', card:'Card', wallet:'Mobile wallet', credit:'On credit' };
+/** Payment rows for a document: method, amount received, change or balance. */
+function payRows(draft, total){
+  var rows = [];
+  if(draft.payMethod){
+    var lbl = PAY_LABELS[draft.payMethod] || draft.payMethod;
+    if(draft.payMethod === 'wallet' && draft.walletProvider) lbl = draft.walletProvider;
+    rows.push(['Paid by', lbl]);
+  }
+  if(draft.received != null && draft.received !== '' && !isNaN(Number(draft.received))){
+    var rc = Number(draft.received);
+    rows.push(['Amount received', fmtMoney(rc)]);
+    if(rc >= total) rows.push(['Change given', fmtMoney(rc-total)]);
+    else rows.push(['Balance due', fmtMoney(total-rc)]);
+  }
+  return rows;
 }
 function fmtDateNice(d){ return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
 
@@ -4379,6 +4421,10 @@ function saveInvoiceRecord(draft, kind, customerId){
       dateStr: draft.dateStr || todayKey(),
       dueDateStr: draft.dueDateStr || '',
       notes: draft.notes || '',
+      at: draftAt(draft) || '',
+      payMethod: draft.payMethod || '',
+      walletProvider: draft.walletProvider || '',
+      received: (draft.received != null && draft.received !== '') ? Number(draft.received) : null,
       items: (draft.items||[]).map(function(it){ return { desc: it.desc||'', qty: Number(it.qty)||0, unitPrice: Number(it.unitPrice)||0 }; }),
       subtotal: total,
       total: total,
@@ -4849,7 +4895,7 @@ function buildInvoicePdf(draft){
   doc.text('INVOICE', pageW-margin, headerTop+8, {align:'right'});
   doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
   doc.text('No. '+draft.number, pageW-margin, headerTop+14, {align:'right'});
-  doc.text('Date: '+fmtDateNice(draft.dateStr), pageW-margin, headerTop+19, {align:'right'});
+  doc.text('Date: '+docStamp(draft), pageW-margin, headerTop+19, {align:'right'});
   if(draft.dueDateStr) doc.text('Due: '+fmtDateNice(draft.dueDateStr), pageW-margin, headerTop+24, {align:'right'});
 
   y = Math.max(y, headerTop+30);
@@ -4898,7 +4944,17 @@ function buildInvoicePdf(draft){
   doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
   doc.text(t.totalLabel, colPrice, y+1, {align:'right'});
   doc.text(fmtMoney(subtotal), colAmt, y+1, {align:'right'});
-  y += 16;
+  y += 10;
+  var pr = payRows(draft, subtotal);
+  if(pr.length){
+    pr.forEach(function(row){
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(row[0], colPrice, y, {align:'right'});
+      doc.setFont('helvetica','bold'); doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text(row[1], colAmt, y, {align:'right'}); y += 5.5;
+    });
+  }
+  y += 6;
 
   var noteText = draft.notes || t.defaultNote;
   if(noteText){
@@ -4970,7 +5026,7 @@ function buildReceiptPdf(draft){
       doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(dark[0],dark[1],dark[2]);
       var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*3;
     }
-    detail('Date', fmtDateNice(draft.dateStr));
+    detail('Date', docStamp(draft));
     if(draft.billToName && draft.billToName !== 'Customer') detail('Customer', draft.billToName);
     y += 1;
 
@@ -5006,7 +5062,14 @@ function buildReceiptPdf(draft){
     doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(255,255,255);
     doc.text('TOTAL', margin+2, y+3.4, { charSpace:0.3 });
     doc.setFontSize(7.5); doc.text(fmtMoney(subtotal), pageW-margin-2, y+3.5, { align:'right' });
-    y += 5 + 4.5;
+    y += 5 + 3;
+    payRows(draft, subtotal).forEach(function(row){
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(row[0], margin+2, y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text(row[1], pageW-margin-2, y, { align:'right' }); y += 3.6;
+    });
+    y += 2;
 
     // ---- footer: thank you
     doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineDashPattern([0.8,1], 0); doc.line(margin, y, pageW-margin, y); doc.setLineDashPattern([], 0);
@@ -5060,6 +5123,8 @@ function openInvoiceSheet(prefill){
     '<button class="btn btn-ghost btn-block" id="invAddItemBtn" type="button">+ Add line item</button>' +
     '<div class="field" style="margin-top:14px;"><label>'+tr('Notes (optional)')+'</label><textarea id="invNotes" rows="3" placeholder="Payment details, thank-you note, terms…">'+esc(prefill&&prefill.notes||getActiveTemplate().defaultNote||'')+'</textarea></div>' +
     '<div class="sumline total"><span>Total</span><span class="num" id="invTotalDisplay">N$0.00</span></div>' +
+    '<div class="field" style="margin-top:12px;"><label>'+tr('Amount received (optional)')+'</label><input id="invReceived" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
+    '<div id="invChangeNote" class="banner" style="display:none;"></div>' +
     '<div class="actions">' +
       '<button class="btn btn-ghost" id="invReceiptBtn" type="button">'+tr('Receipt (PDF)')+'</button>' +
       '<button class="btn btn-accent" style="flex:2;" id="invGenerateBtn" type="button">'+tr('Download invoice (PDF)')+'</button>' +
@@ -5093,6 +5158,16 @@ function openInvoiceSheet(prefill){
     if(draft) printReceiptViaBluetooth(draft, btPrintBtn2);
   });
   var itemsList = ov.querySelector('#invItemsList');
+  (function(){
+    var rin = ov.querySelector('#invReceived'), note = ov.querySelector('#invChangeNote');
+    function upd(){
+      var v = parseFloat(rin.value); var tot = InvoiceDraft.items.reduce(function(a,it){ return a + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
+      if(rin.value === '' || isNaN(v)){ note.style.display='none'; return; }
+      note.style.display='flex';
+      note.innerHTML = v >= tot ? '<span>Change to give: <strong class="num">'+fmtMoney(v-tot)+'</strong></span>' : '<span>Balance still due: <strong class="num">'+fmtMoney(tot-v)+'</strong></span>';
+    }
+    rin.addEventListener('input', upd); ov.addEventListener('input', upd);
+  })();
   invRenderItems(itemsList);
   invUpdateTotal();
   ov.querySelector('#invGather').addEventListener('click', function(){
@@ -5130,6 +5205,7 @@ function openInvoiceSheet(prefill){
       dateStr: ov.querySelector('#invDate').value || todayKey(),
       dueDateStr: ov.querySelector('#invDue').value || '',
       notes: ov.querySelector('#invNotes').value.trim(),
+      received: ov.querySelector('#invReceived').value === '' ? null : (parseFloat(ov.querySelector('#invReceived').value) || 0),
       items: items
     };
   }
@@ -7322,7 +7398,7 @@ function escposReceiptBytes(draft, shopName){
   lines.push(ESC + 'a' + '\x00'); // left
   lines.push('--------------------------------\n');
   lines.push('Receipt ' + (draft.number||'') + '\n');
-  lines.push((draft.dateStr||'') + '\n');
+  lines.push(docStamp(draft) + '\n');
   if(draft.billToName) lines.push('Customer: ' + draft.billToName + '\n');
   lines.push('--------------------------------\n');
   var total = 0;
@@ -7335,6 +7411,7 @@ function escposReceiptBytes(draft, shopName){
   });
   lines.push('--------------------------------\n');
   lines.push('TOTAL: ' + fmtMoney(total) + '\n');
+  payRows(draft, total).forEach(function(row){ lines.push(row[0] + ': ' + row[1] + '\n'); });
   lines.push('\n');
   lines.push('Thank you!\n');
   lines.push('\n\n\n');
