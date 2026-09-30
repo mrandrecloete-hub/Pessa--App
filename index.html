@@ -476,6 +476,16 @@
   .lesson-controls{ display:flex; align-items:center; gap:8px; margin-top:18px; }
   .lesson-controls .icon-btn{ width:42px; height:42px; border-radius:12px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
   .lesson-controls .navbig{ flex:1; }
+  .lesson-controls{ position:sticky; bottom:-16px; background:var(--surface); padding:12px 0 6px; z-index:3; margin-top:12px; }
+  .lesson-where{ display:inline-flex; align-items:center; gap:6px; margin:0 auto 10px; padding:5px 10px; border-radius:99px; background:var(--surface-2); color:var(--primary); font-size:12px; font-weight:700; }
+  .lesson-where svg{ width:14px; height:14px; }
+  .lesson-slide .lesson-intro{ margin-bottom:12px; }
+  .lesson-steps{ list-style:none; margin:0 0 12px; padding:0; text-align:left; display:flex; flex-direction:column; gap:8px; }
+  .lesson-steps li{ display:flex; gap:10px; align-items:flex-start; padding:9px 10px; border-radius:12px; background:var(--surface-2); border:1px solid transparent; font-size:14px; line-height:1.5; color:var(--text); cursor:pointer; transition:background .2s, border-color .2s; }
+  .lesson-steps .stepnum{ flex:none; width:24px; height:24px; border-radius:50%; background:var(--primary); color:var(--primary-contrast); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .lesson-tip{ text-align:left; font-size:13.5px; line-height:1.5; padding:9px 12px; border-radius:12px; background:rgba(240,195,106,0.16); color:var(--text); border:1px solid transparent; cursor:pointer; }
+  .lesson-steps li.speaking, .lesson-tip.speaking{ border-color:var(--primary); background:var(--surface); box-shadow:0 0 0 2px rgba(79,169,138,0.25); }
+  .lesson-intro.speaking{ color:var(--text); }
   .sheet-head h2{ font-size:17px; flex:1; }
   .field{ margin-bottom:12px; }
   .field label{ display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:5px; }
@@ -2321,6 +2331,7 @@ function toast(msg){
 
 /* ============================== modal helpers ============================== */
 function closeModal(){
+  try{ if(typeof stopNarration === 'function' && _trainState && (_trainState.playing || _trainState.autoTimer)) stopNarration(); }catch(e){}
   document.getElementById('modalRoot').innerHTML = '';
   var ar = document.getElementById('authModalRoot'); if(ar) ar.innerHTML = '';
 }
@@ -6825,75 +6836,284 @@ function openVatSummarySheet(){
 // Narration uses the browser's own window.speechSynthesis — no account, no
 // API key, and it works fully offline.
 var LESSONS = [
-  { id:'dashboard', title:'Dashboard overview', icon:'dashboard', slides:[
-    { title:'What the Dashboard shows', text:'The Dashboard is the first screen you see. It shows today’s total sales at the top, a quick sales trend, and shortcuts to the things you use most.' },
-    { title:'Low stock and alerts', text:'Scroll down on the Dashboard to see products running low on stock and any other alerts that need your attention today.' },
-    { title:'The menu button', text:'Tap the menu icon (the three lines) at the top left of any screen to open the sidebar. It lists every page in the app, including Sell, Stock, Credit, Expenses, Till and the pages in this Training section.' }
+  { id:'start', title:'Getting started', icon:'info', who:'all', slides:[
+    { title:'Welcome to Pesa', text:'Pesa is your shop in your pocket. It records every sale, keeps count of your stock, tracks who owes you money, and shows you your profit. This training walks you through every part of the app, one small step at a time.',
+      where:'Training → any lesson',
+      steps:['Pick a lesson from the list. Each lesson is a short slideshow.','Listen to the voice, or read the steps on the screen. Both say the same thing.','Use Previous and Next to move around, or Pause if you need a moment.','Come back any time. Training is always in the menu, under Help.'],
+      tip:'You do not need to finish everything today. Start with Making a sale, then come back for the rest.' },
+    { title:'Installing Pesa on your phone', text:'Pesa works in your browser, but you can also install it so it opens like a normal app, with its own icon, and keeps working when the internet is slow.',
+      where:'Your browser menu',
+      steps:['Open the Pesa link in Chrome on Android, or Safari on iPhone.','On Android, tap the three dots at the top right, then tap Install app or Add to Home screen.','On iPhone, tap the Share button, then tap Add to Home Screen.','Tap Add. The Pesa icon now appears with your other apps.','Open Pesa from that icon from now on.'],
+      tip:'Always open Pesa from the same place. Your shop information is saved on that device.' },
+    { title:'Registering your business', text:'The first time you open Pesa on a device, you register your business. This creates your shop and your Owner login. It only takes a minute.',
+      where:'First screen → Register your business',
+      steps:['Type your Business name. This is the only business detail you must fill in.','Optionally add a trading name, your BIPA registration number, your NamRA VAT number, address, town, region, phone and email. You can add these later in Settings.','Under Owner account, type your full name.','Choose a password of at least four characters, and type it again to confirm.','Tap Register and continue. You see a welcome screen, and then your Dashboard.'],
+      tip:'Write your password down somewhere safe. Only you, the owner, can reset staff passwords, so do not lose yours.' },
+    { title:'The menu and the top bar', text:'Pesa has no buttons along the bottom of the screen. Everything is reached from the menu button at the top left.',
+      where:'Top left → three lines',
+      steps:['Tap the three lines at the top left. The Menu opens.','Tap a row to go there: Dashboard, Sell, Stock, Credit, Invoices, Reports, Expenses and Till.','Further down are Operations pages such as Suppliers, Purchase orders and the NamRA VAT summary, and Help pages such as Training.','At the top you also see your shop name, today’s date and a small Today box with the total you have sold today.','The gear icon at the top right opens Settings.'],
+      tip:'On a computer or a wide tablet, the menu stays open on the left side all the time.' },
+    { title:'Owner, Manager and Cashier', text:'Pesa has three kinds of people, so each person only sees what they need.',
+      where:'Settings → Team',
+      steps:['The Owner sees and can do everything. The Owner is the only one who can add Managers, see Branches, and delete saved reports.','A Manager or Supervisor sees all the pages except the company’s legal details and Branches. A Manager can add Cashiers.','A Cashier only sees Sell and Till. A Cashier can sell and run their own till, nothing else.','Each person signs in with their own password. A Cashier uses a four digit PIN.'],
+      tip:'Give every staff member their own login. Then your activity log shows exactly who did what.' }
   ]},
-  { id:'sell', title:'Making a sale', icon:'cart', slides:[
-    { title:'Open the Sell tab', text:'Tap Sell in the bottom bar. Search for a product by name, or use the barcode scanner button next to the search box to scan an item quickly.' },
-    { title:'Build the cart', text:'Tap a product to add it to the cart. Tap it again, or adjust the quantity, to sell more than one. The cart total updates automatically as you add items.' },
-    { title:'Charge the customer', text:'When the cart is ready, tap Charge. Choose how the customer is paying, for example cash, card, or on credit for a customer with an account. Confirm the amount received.' },
-    { title:'Give the receipt', text:'After a sale is completed you can print a receipt on a connected Bluetooth printer, or share a digital copy. The sale is saved automatically, even if you are offline.' }
+  { id:'signin', title:'Signing in, logging out, other businesses', icon:'people', who:'all', slides:[
+    { title:'Signing in', text:'After you register, Pesa remembers who last used the device, so it opens straight to the app. After a log out you sign in again like this.',
+      where:'Sign-in screen',
+      steps:['Find your name on the Who’s working list and tap it.','Owners and Managers type their password. Cashiers type their four digit PIN.','Tap Unlock, or press Enter.','If it says incorrect, try again carefully. If you have forgotten it, ask the Owner or a Manager to reset it in Settings, Team.'],
+      tip:'Only active staff appear on the list. A person who has been deactivated cannot sign in.' },
+    { title:'Logging out', text:'Log out when you hand the phone to someone else, or when you finish for the day.',
+      where:'Settings → Account → Log out',
+      steps:['Tap the gear icon at the top right.','Under Account, tap Log out.','Tap Log out again to confirm.','You see the logged out screen with two choices: Log in again, and Sign up or register as new user.'],
+      tip:'Logging out does not delete anything. Your shop information stays safe on the device.' },
+    { title:'More than one business on one device', text:'One phone can hold several businesses. Each business is completely separate, with its own products, sales, customers and staff.',
+      where:'Logged out screen → Sign up / register as new user',
+      steps:['After logging out, tap Sign up or register as new user.','Register the new business the same way as the first one. Your old business is not touched.','To go back to another business, log out and choose it under Other businesses on this device.','On the register screen there is also a drop down called Already have an account on this device. Choose your account, type your password, and tap Log in to jump straight in.'],
+      tip:'Every business keeps its own Owner login, so remember which password belongs to which business.' }
   ]},
-  { id:'stock', title:'Managing stock', icon:'box', slides:[
-    { title:'Adding a product', text:'Go to the Stock tab and tap the plus button to add a new product. Fill in the name, price, cost, and how many you have on hand.' },
-    { title:'Adding many products at once', text:'On the Stock tab, tap Add stock in bulk. In Paste list, type or paste one product per line as Name, Cost price, Selling price, Stock. Category and Unit are optional. Or use the CSV file tab to load a spreadsheet, and tap Download CSV template to get a ready to fill file. Check the list, then tap Add products.' },
-    { title:'Scanning a barcode', text:'When adding or editing a product, tap the barcode icon to scan its barcode with your camera instead of typing a code by hand.' },
-    { title:'Editing and low stock alerts', text:'Tap any product to edit its details or adjust the quantity after a delivery or a stock count. Set a low stock number so the app warns you before you run out.' }
+  { id:'dashboard', title:'The Dashboard', icon:'dashboard', who:'manager', slides:[
+    { title:'Today at a glance', text:'The Dashboard is your control room. It is the first screen the Owner and Managers see.',
+      where:'Menu → Dashboard',
+      steps:['At the top, Today’s sales shows how much you have sold today, and how that compares with yesterday.','The small chart shows the last seven days.','Below it, four boxes split today’s sales by Cash, Card, Mobile wallet and Credit.','The Overview boxes show This week, This month, your estimated profit for the month, and how much customers owe you.'],
+      tip:'Estimated profit is sales profit minus the expenses you recorded this month. So record your expenses.' },
+    { title:'Quick actions', text:'Four big buttons take you straight to the jobs you do most.',
+      where:'Dashboard → Sell, Stock, Expenses, Customer',
+      steps:['Sell opens the Sell page.','Stock opens the form to add a new product.','Expenses opens the form to record an expense.','Customer opens the form to add a new customer.'],
+      tip:'These are shortcuts. The same forms are also on their own pages.' },
+    { title:'Needs attention and insights', text:'Scroll down to see what needs you today.',
+      where:'Dashboard → Needs attention',
+      steps:['Needs attention lists products that are running low or out of stock. Tap one to open it and update the stock.','It also lists customers who owe you money. Tap one to see their account.','Top sellers this month shows your five best products.','Tap Sales insights to open more detail: best and slowest sellers, sales by day of the week, and sales by hour.','Recent sales shows your last five sales.'],
+      tip:'Use the busiest hours in the insights to decide when you need extra staff.' }
   ]},
-  { id:'credit', title:'Credit and customers', icon:'people', slides:[
-    { title:'Selling on credit', text:'On the Credit tab you can add customers and let trusted customers buy now and pay later. Each customer has a running balance of what they owe.' },
-    { title:'Recording a repayment', text:'When a customer pays back some or all of what they owe, open their profile on the Credit tab and record the payment. Their balance updates immediately.' },
-    { title:'Keeping track', text:'The Credit tab shows every customer and their current balance at a glance, so you always know who owes money and how much.' }
+  { id:'sell', title:'Making a sale', icon:'cart', who:'all', slides:[
+    { title:'Opening the Sell page', text:'Selling is the heart of Pesa. Once your products are in Stock, a sale takes only a few taps.',
+      where:'Menu → Sell',
+      steps:['Tap the three lines at the top left.','Tap Sell.','You see all your products as cards. Each card shows the name, the price and how many are left.','A card that says Out is dimmed. You cannot sell what you do not have.'],
+      tip:'If you see No products yet, tap Go to Stock and add products first.' },
+    { title:'Finding a product', text:'Find the item the customer wants in one of two ways.',
+      where:'Sell → Search box',
+      steps:['Type part of the product name or its category in the Search products box. The list narrows as you type.','Or tap the scan button next to the search box, and point the camera at the barcode.','If your browser cannot scan, type the barcode number in the Barcode number box and tap Use. A hardware barcode scanner also works here.','If no product has that barcode, Pesa says so, and you can add the product in Stock.'],
+      tip:'When the phone asks for camera permission, tap Allow, or scanning will not work.' },
+    { title:'Building the cart', text:'The cart is the list of what the customer is buying right now.',
+      where:'Sell → tap products',
+      steps:['Tap a product card once to add one to the cart.','Tap it again to add another. You cannot add more than the stock you have.','At the bottom, a bar appears with the number of items, View cart, and the running total.','Tap that bar to open the Cart.','In the Cart, use the minus and plus buttons to change a quantity. Take the quantity to zero to remove that item.'],
+      tip:'Made a mistake? The small warning triangle at the top of the Cart clears everything, after asking you to confirm.' },
+    { title:'Charging a cash sale', text:'When the cart is right, you charge the customer.',
+      where:'Cart → Charge',
+      steps:['Tap the big Charge button in the Cart.','Payment method is set to Cash.','In Cash received, type the money the customer gave you. Pesa shows the Change due, so you know what to hand back.','Tap Confirm sale.','You see Sale recorded with the total. The cart is cleared and the stock is reduced for you.'],
+      tip:'Cash received is only a helper for working out change. You can leave it empty.' },
+    { title:'Card and mobile wallet sales', text:'Pesa does not take the payment itself. It records that the payment happened.',
+      where:'Charge → Card or Mobile wallet',
+      steps:['Tap Charge, then choose Card or Mobile wallet as the payment method.','Take the payment on your card machine, or on your phone for wallets such as Maris, Blue Wallet or eWallet.','Wait until the payment is approved.','Only then tap Confirm sale.'],
+      tip:'Never confirm the sale before the money has really arrived.' },
+    { title:'Selling on credit', text:'Some trusted customers buy now and pay later. That is a credit sale.',
+      where:'Charge → Credit',
+      steps:['The customer must already be on the Credit page. If not, add them first.','Tap Charge, then choose Credit.','In the Customer list, choose the customer. Each name shows how much they already owe.','Pesa warns you that the amount will be added to their balance.','Tap Confirm sale. Their balance goes up by the total.'],
+      tip:'Only give credit to people you know and trust, and check what they already owe before you agree.' },
+    { title:'After the sale: receipts', text:'When a sale is recorded, Pesa asks if you want to give the customer a receipt.',
+      where:'Sale recorded sheet',
+      steps:['Tap Not now if the customer does not need one.','Tap Print via Bluetooth to print on a Bluetooth receipt printer.','Tap Receipt PDF to save a receipt as a PDF file.','Tap Send receipt to share it by email, WhatsApp or SMS. Pick the customer or type a number, choose how to send, and Pesa opens your own app with the message ready. Check it, then tap Send there.'],
+      tip:'Pesa never sends messages by itself. You are always in control of what leaves your phone.' }
   ]},
-  { id:'expenses', title:'Expenses', icon:'receipt', slides:[
-    { title:'Recording an expense', text:'Use the Expenses tab to record money spent on the business, for example stock deliveries, rent, electricity, or supplies.' },
-    { title:'Why this matters', text:'Recording every expense keeps your real profit accurate and makes your VAT summary and end of month reporting correct.' }
+  { id:'till', title:'The till: opening and closing', icon:'till', who:'all', slides:[
+    { title:'Why use the till', text:'The till feature is a shift record. It counts the cash in the drawer at the start and the end, and shows you if any money is missing.',
+      where:'Menu → Till',
+      steps:['Each cashier opens their own till at the start of their shift.','All that cashier’s sales are counted against that till.','At the end of the shift the cashier counts the cash and closes the till.','Pesa compares what it expected with what was counted.'],
+      tip:'You can sell without opening a till, but then the sales are not tied to any shift.' },
+    { title:'Opening your till', text:'Do this before the first customer.',
+      where:'Till → Open till',
+      steps:['Open the Till page. It says Your till is closed.','Count the cash that is in the drawer right now.','Tap Open till.','Type that amount in Opening float, then tap Open till again.','The page now says Till open since, with the time.'],
+      tip:'It is fine to start with zero if the drawer is empty.' },
+    { title:'During the shift', text:'While your till is open, Pesa tracks everything for you.',
+      where:'Till → Sales this shift',
+      steps:['Sell as normal.','Open the Till page at any time to see Sales this shift.','It shows the opening float, and the totals for Cash, Card, Mobile wallet and Credit sales, and the total items sold.'],
+      tip:'Only cash sales change the cash in the drawer. Card, wallet and credit sales do not.' },
+    { title:'Closing the till', text:'At the end of your shift you count the money and close.',
+      where:'Till → Close till and count cash',
+      steps:['Tap Close till and count cash.','If you paid any money out of the drawer, for example for an expense, type it in Cash paid out during shift.','Count all the cash in the drawer and type it in Cash counted in drawer now.','Pesa shows Expected, Counted and the Variance.','Balanced means everything matches. Short means money is missing. Over means there is extra.','Tap Confirm cash-up.'],
+      tip:'Expected cash is the opening float, plus cash sales, minus cash paid out.' },
+    { title:'Cash-up history for managers', text:'Owners and Managers can see how every till went.',
+      where:'Till → Currently open and Cash-up history',
+      steps:['Open the Till page. Currently open lists every till that is running now.','Tap one to see it, and tap Close this till if a cashier forgot to close it.','Cash-up history lists closed tills with Balanced, Short or Over.','Tap one to see the full summary of that shift.'],
+      tip:'If a cashier is often short, look at their history and talk to them early.' }
   ]},
-  { id:'till', title:'Till, opening and closing', icon:'till', slides:[
-    { title:'Opening the till', text:'Before you start selling, open the Till tab and count the cash in the drawer. Enter that starting amount to open your register for the shift.' },
-    { title:'During the shift', text:'While the till is open, every cash sale and any cash paid out is tracked automatically against it.' },
-    { title:'Closing the till', text:'At the end of the shift, count the cash in the drawer again and enter it to close the till. The app compares what it expected against what you counted, and shows any difference.' }
+  { id:'stock', title:'Managing stock', icon:'box', who:'manager', slides:[
+    { title:'Adding one product', text:'Every product you sell must be in Stock first.',
+      where:'Menu → Stock → plus button',
+      steps:['Open Stock and tap the round plus button.','Type the Name, for example Omaere 500 ml. This is the only required field.','Fill in Category and Unit if you like, for example Drinks and bottle.','Type the Cost price, what you paid, and the Sell price, what the customer pays.','Type Starting stock, how many you have now.','Tap Add product.'],
+      tip:'Fill in the cost price. Without it Pesa cannot work out your profit.' },
+    { title:'Low stock alerts and barcodes', text:'Two more fields make selling faster and safer.',
+      where:'Add product → Low stock alert, Barcode',
+      steps:['In Low stock alert at, type the number at which you want a warning. If you leave it empty, Pesa uses your shop default.','In Barcode, type the number, or tap the scan icon to scan the barcode on the package.','Products that are low show a red chip on the Stock page, and on the Dashboard under Needs attention.'],
+      tip:'Set a higher low stock number for fast sellers, so you re-order before they run out.' },
+    { title:'Adding many products at once', text:'If you have lots of products, do not add them one by one.',
+      where:'Stock → Add stock in bulk',
+      steps:['Tap Add stock in bulk.','On the Paste list tab, write one product per line in this order: name, cost price, selling price, stock. Category and unit are optional. For example: Bread loaf, 9, 13, 20.','Tap Import list.','Check the Review list. You can fix a name, cost, price or quantity, or remove a row with the cross.','Tap Add products.'],
+      tip:'Lines Pesa cannot read are skipped, and Pesa tells you how many.' },
+    { title:'Adding products from a spreadsheet', text:'You can also load a spreadsheet saved as a CSV file.',
+      where:'Add stock in bulk → CSV file',
+      steps:['Tap the CSV file tab.','Tap Download CSV template to get a ready to fill file.','Fill it in on your computer or phone, then save it as a CSV.','Tap Choose a CSV file and pick it.','Review the list, then tap Add products.'],
+      tip:'The columns can be in any order, and the header row is optional.' },
+    { title:'Editing, deleting and counting stock', text:'Stock changes all the time. Keep the numbers honest.',
+      where:'Stock → tap a product',
+      steps:['Tap any product to open it.','Change the price, cost, category or barcode.','After a delivery or a stock count, type the real number in Current stock.','Tap Save changes.','To remove a product, tap the red Delete and confirm. Past sales are not affected.'],
+      tip:'Do a stock count regularly. Whatever is different from Pesa’s number is either a mistake or a loss.' },
+    { title:'Deleting several products', text:'To clear out products in one go, use Select.',
+      where:'Stock → Select',
+      steps:['Tap Select. Every row gets a tick box.','Tap the rows you want, or tap Select all.','Tap the red Delete at the bottom and confirm.','Delete all removes every product, so it asks you first.'],
+      tip:'This cannot be undone, so be sure. You can always export a backup first.' }
   ]},
-  { id:'suppliers', title:'Suppliers and purchase orders', icon:'truck', slides:[
-    { title:'Suppliers', text:'Open the sidebar and choose Suppliers to keep a list of the businesses you buy stock from, with their contact details.' },
-    { title:'Creating a purchase order', text:'From Purchase orders in the sidebar, create an order listing what you want to buy from a supplier and how much of each item.' },
-    { title:'Receiving stock', text:'When the order arrives, mark it as received. The quantities are added to your stock automatically, so you do not have to update each product by hand.' }
+  { id:'credit', title:'Customers and credit', icon:'people', who:'manager', slides:[
+    { title:'Adding a customer', text:'Customers who buy on credit need a record.',
+      where:'Menu → Credit → plus button',
+      steps:['Open Credit and tap the round plus button.','Type the customer’s Name. This is required.','Add their phone number and email if you have them. They are needed to send reminders.','Tap Add customer. Their balance starts at zero.'],
+      tip:'The Credit page shows Total owed to you at the top, in red.' },
+    { title:'The customer account', text:'Each customer has an account showing what they owe.',
+      where:'Credit → tap a customer',
+      steps:['Tap a customer to open their account.','Balance owed shows what they owe now. Red means they owe you. Green means settled.','Recent activity lists their last credit sales and payments, with dates.','A credit sale adds to the balance. A payment reduces it.'],
+      tip:'The pencil icon at the top lets you edit the customer’s details, or correct the balance by hand.' },
+    { title:'Recording a payment', text:'When a customer pays back, record it straight away.',
+      where:'Customer account → Record payment',
+      steps:['Open the customer’s account and tap Record payment.','In Amount received, type what they paid.','In Note, you may write how, for example cash or EFT.','Tap Save payment. Their balance drops immediately.'],
+      tip:'If they pay more than they owe, the balance goes below zero, meaning you owe them.' },
+    { title:'Reminders and invoices', text:'Two more buttons help you get paid.',
+      where:'Customer account',
+      steps:['When a customer owes money, tap Send reminder. Choose email, WhatsApp or SMS, and Pesa opens your app with a polite message ready. Check it and tap Send there.','Tap Invoice to create an invoice for the outstanding balance, already filled in with their details.'],
+      tip:'A friendly reminder on the day payment is due works better than waiting until the debt is old.' }
   ]},
-  { id:'branches', title:'Branches', icon:'branch', slides:[
-    { title:'Multiple branches', text:'If your business has more than one shop location, the owner can add each one as a branch from the sidebar.' },
-    { title:'Switching branches', text:'You can view one branch at a time or view all branches combined, and each branch keeps its own stock, sales and till sessions.' }
+  { id:'expenses', title:'Recording expenses', icon:'receipt', who:'manager', slides:[
+    { title:'Why record expenses', text:'Every dollar you spend on the business changes your profit. If you do not record it, your profit looks bigger than it is.',
+      where:'Menu → Expenses',
+      steps:['Open Expenses. At the top you see the total for Today and for This month.','Below is the list of your latest expenses.'],
+      tip:'Record expenses the same day, while you still remember them.' },
+    { title:'Adding an expense', text:'It takes a few seconds.',
+      where:'Expenses → plus button',
+      steps:['Tap the round plus button.','Choose the Category: Stock purchase, Rent, Electricity, Water, Transport, Wages, Airtime or Data, Maintenance, or Other.','Type the Amount.','Add a Note, such as what it was for.','Tap Add expense.'],
+      tip:'To fix a mistake, tap the expense, change it and tap Save, or tap Delete.' }
   ]},
-  { id:'wastage', title:'Wastage and shrinkage', icon:'trash', slides:[
-    { title:'Recording losses', text:'Open Wastage and shrinkage from the sidebar to record stock that was damaged, expired, or went missing, instead of just quietly adjusting the stock count.' },
-    { title:'Why record it', text:'This keeps your stock numbers honest and gives the owner a clear picture of how much stock is being lost and why.' }
+  { id:'invoices', title:'Invoices and receipts', icon:'invoice', who:'manager', slides:[
+    { title:'Creating an invoice', text:'Use an invoice when a business or a customer needs a proper document to pay from.',
+      where:'Menu → Invoices → New invoice',
+      steps:['Open Invoices and tap New invoice.','In Bill to, type the customer or business name.','Add their contact details if you want.','Set the Invoice date, and a Due date if there is one.','Under Items, type the item or service, the quantity and the price. Tap Add line item for more lines.','Add Notes if you like. The Total is worked out for you.'],
+      tip:'Pesa gives each invoice its own number, like INV 0001, counting up.' },
+    { title:'Saving and sending', text:'When the invoice is ready you have four choices.',
+      where:'New invoice → buttons',
+      steps:['Download invoice PDF saves the invoice, uses up its number, and opens the Invoice ready screen.','Receipt PDF makes a receipt instead, without using an invoice number.','Send invoice lets you email, WhatsApp or SMS it. Pesa opens your own app with everything filled in.','Print via Bluetooth prints it on a Bluetooth printer.'],
+      tip:'Your logo and business details from Settings appear on every invoice.' },
+    { title:'Finding old invoices', text:'Every saved invoice is kept in the Invoices list.',
+      where:'Invoices',
+      steps:['Use the search box to find an invoice by number or customer name.','Filter by All time, This month or Last month.','Tap an invoice to see all its details.','Each card has Share, Download, Print and Delete buttons.'],
+      tip:'Deleting an invoice here does not change your sales, stock or customer balances. It only removes the stored copy.' }
   ]},
-  { id:'vat', title:'NamRA VAT summary', icon:'percent', slides:[
-    { title:'What it is', text:'The NamRA VAT summary, found in the sidebar, adds up the VAT on your sales and on your expenses for a period you choose.' },
-    { title:'Using it', text:'Pick a start and end date, then download the summary as a PDF to help with filing VAT with NamRA. Always double check the figures against your own records before filing.' }
+  { id:'reports', title:'Reports and profit', icon:'chartbar', who:'manager', slides:[
+    { title:'Monthly reports', text:'Pesa builds a report for every finished month, so you always know how the shop did.',
+      where:'Menu → Reports',
+      steps:['Open Reports. Finished months are filed automatically when the Owner or a Manager opens Pesa.','Each card shows the month, sales, expenses and profit or loss.','Tap a report to see everything: sales revenue, cost of goods sold, gross profit, operating expenses, net profit, payment methods, VAT working figures, top products and more.','Use PDF, CSV, Print or Share to keep or send it.'],
+      tip:'A saved report never changes, even if you edit records later. It is a permanent copy of that month.' },
+    { title:'This month so far and past months', text:'You do not have to wait for the month to end.',
+      where:'Reports → top buttons',
+      steps:['Tap Generate this month so far to save an Interim report of the month up to today.','When the month ends, Pesa files the Final report and replaces the interim one.','If an older month has no report, tap File a past month, choose it, and tap File report.','Only the Owner can delete a report.'],
+      tip:'Check your interim report in the middle of the month. It is easier to fix problems early.' },
+    { title:'Quick reports from the Dashboard', text:'For a quick PDF of any period, the Dashboard has a Reports card.',
+      where:'Dashboard → Reports',
+      steps:['Choose This month, Last month or Custom.','For Custom, choose the From and To dates.','Tap Download report PDF.','Tap View report archive to go to the Reports page.'],
+      tip:'Export a report for your accountant at the end of every month.' }
   ]},
-  { id:'printing', title:'Bluetooth receipt printing', icon:'printer', slides:[
-    { title:'Connecting a printer', text:'Pesa can print receipts on a small Bluetooth receipt printer. Make sure the printer is switched on and paired with your device first.' },
-    { title:'Printing a receipt', text:'After completing a sale, choose the print option and select your printer from the list. If no printer is available, you can still share or save a digital copy of the receipt.' }
+  { id:'vat', title:'NamRA VAT summary', icon:'percent', who:'manager', slides:[
+    { title:'Working out your VAT', text:'The VAT summary adds up the VAT in your sales and in your expenses, to help with your NamRA return.',
+      where:'Menu → NamRA VAT summary',
+      steps:['Open the menu and tap NamRA VAT summary.','Check the VAT rate. It starts at 15 percent and is remembered.','Choose the From and To dates. They start as this month to date.','Pesa shows Total sales, Output VAT, Total expenses, Input VAT, and Net VAT payable or refundable.','Tap Download VAT summary PDF.'],
+      tip:'Pesa treats your prices as VAT inclusive. These are working figures, so always confirm them with NamRA or your accountant before you file.' }
   ]},
-  { id:'audit', title:'Activity log', icon:'clock', slides:[
-    { title:'What it tracks', text:'The Activity log, in the sidebar, keeps a record of important actions taken in the app, such as changes to stock, sales, and settings, along with who did them and when.' },
-    { title:'Why it helps', text:'This gives the owner and managers a clear, honest trail of what happened in the business, which is useful for accountability and for solving disagreements.' }
+  { id:'suppliers', title:'Suppliers and purchase orders', icon:'truck', who:'manager', slides:[
+    { title:'Adding a supplier', text:'Keep the businesses you buy from in one list.',
+      where:'Menu → Suppliers',
+      steps:['Open Suppliers and tap Add supplier.','Type the supplier’s Name. This is required.','Add the contact person, phone, email and notes if you like.','Tap Add supplier.'],
+      tip:'You need at least one supplier before you can make a purchase order.' },
+    { title:'Making a purchase order', text:'A purchase order is your shopping list for a supplier.',
+      where:'Menu → Purchase orders → New purchase order',
+      steps:['Choose the Supplier.','Choose a product in Add product, and type the Quantity.','Type the Cost each, or leave it empty to use the product’s cost.','Tap Add line item. Repeat for more products.','Tap Save as draft.'],
+      tip:'Use your low stock list to decide what to order.' },
+    { title:'Ordering and receiving stock', text:'A purchase order moves through three stages: Draft, Ordered and Received.',
+      where:'Purchase orders → tap an order',
+      steps:['Tap Send to supplier to email, WhatsApp or SMS the order.','Tap Mark as ordered once you have placed it.','When the goods arrive, tap Mark as received and confirm.','Pesa adds the quantities to your stock, and updates each product’s cost price.'],
+      tip:'Check the delivery against the order before you mark it received.' }
   ]},
-  { id:'language', title:'Changing language', icon:'globe', slides:[
-    { title:'Where to find it', text:'Open Settings from the gear icon at the top of the screen, then choose your preferred app language from the Language section.' },
-    { title:'A note on translations', text:'Some languages are still being completed. Any screen that is not yet fully translated will simply show in English until it is finished.' }
+  { id:'wastage', title:'Wastage and shrinkage', icon:'trash', who:'manager', slides:[
+    { title:'Recording losses', text:'Stock that is spoiled, stolen or damaged is a real cost. Record it so your numbers stay honest.',
+      where:'Menu → Wastage and shrinkage',
+      steps:['Open the menu and tap Wastage and shrinkage.','Tap Record wastage.','Choose the Product, and type the Quantity lost.','Choose the Reason: Spoilage, Theft, Damage or Other.','Add a note if you like, then save.','Pesa lowers your stock, and adds the loss to the total shown at the top, at cost.'],
+      tip:'If the same product is lost again and again, find out why.' }
+  ]},
+  { id:'team', title:'Adding your staff', icon:'people', who:'manager', slides:[
+    { title:'Adding a staff member', text:'Give every person their own login so you can trust the records.',
+      where:'Settings → Team → Add staff member',
+      steps:['Tap the gear icon, then Team, then Add staff member.','Type their Full name.','Choose their Role. The Owner can add Managers or Cashiers. A Manager can only add Cashiers.','For a Cashier, choose a four digit PIN. For a Manager, type a password of at least four characters.','Tap Add staff member.'],
+      tip:'Tell the person their PIN or password, and ask them to keep it private.' },
+    { title:'Resetting or deactivating', text:'People forget passwords, and people leave.',
+      where:'Team → tap the person',
+      steps:['Tap the person in the Team list.','To reset their login, type a new password or PIN in Reset password or PIN, and tap Save changes. A cashier’s PIN must be exactly four digits.','To stop someone signing in, tap Deactivate. Their old sales stay in the records.','You can Reactivate them later.'],
+      tip:'Deactivate a person on the day they leave.' }
+  ]},
+  { id:'settings', title:'Settings and your branding', icon:'edit', who:'manager', slides:[
+    { title:'Shop settings', text:'Settings is where you tell Pesa about your shop.',
+      where:'Gear icon → Settings',
+      steps:['Tap Company details to add your registration number, VAT number, address and contact details.','Change your Shop name. It appears at the top of the app.','Set the Default low stock alert. Products without their own number use it.','Tap Save settings at the bottom.'],
+      tip:'Fill in your details once, and they appear correctly on every invoice and report.' },
+    { title:'Logo, letterhead and templates', text:'Make your documents look like yours.',
+      where:'Settings → Invoice branding',
+      steps:['Type your Business details as you want them to appear on invoices.','Tap Choose image under Logo to add your logo.','Optionally add a Letterhead banner, which replaces the logo at the top of invoices.','Add a Slogan.','Choose a Document template, or choose Custom to pick your own colours.','Tap Preview and download sample invoice to see the result, then tap Save settings.'],
+      tip:'Put your bank details in the business details or notes, so customers know how to pay you.' }
+  ]},
+  { id:'backup', title:'Keeping your data safe', icon:'bolt', who:'manager', slides:[
+    { title:'Where your data lives', text:'On a normal website, Pesa saves your information on your own device only. That is private, but it also means you must protect it.',
+      where:'Settings → Backup and data safety',
+      steps:['Your shop data is stored only on this device, in the browser.','If you clear your browser data, or lose the phone, the data goes with it.','So export a backup regularly, and keep a copy somewhere safe, like your email or a computer.'],
+      tip:'A good habit: export a backup at the end of every week.' },
+    { title:'Exporting and restoring', text:'A backup is one file that holds your shop.',
+      where:'Settings → Backup and data safety',
+      steps:['Tap Export all data. A file called pesa export with today’s date is saved.','It contains your settings, products, customers, sales, expenses, invoices and reports.','To restore, tap Restore from backup, and choose the file.','Read the warning carefully, then tap Restore. This replaces what is in Pesa now.'],
+      tip:'The backup does not include staff logins, tills, suppliers or the activity log.' }
+  ]},
+  { id:'branches', title:'Branches', icon:'branch', who:'owner', slides:[
+    { title:'Working with more than one shop', text:'If you have more than one location, add each as a branch.',
+      where:'Menu → Branches',
+      steps:['The Owner opens the menu and taps Branches.','Tap Add branch, type the Branch name and address, and save.','Open Settings and use Viewing branch to choose one branch, or All branches combined.','New products and sales are tagged with the branch you are viewing.'],
+      tip:'Records made before you added branches show in every branch view.' }
+  ]},
+  { id:'audit', title:'The activity log', icon:'clock', who:'manager', slides:[
+    { title:'Who did what', text:'The activity log is an honest record of important actions in the app.',
+      where:'Menu → Activity log',
+      steps:['Open the menu and tap Activity log.','You see the latest actions, such as changes to stock, deleted items, invoices sent and reminders.','Each line says what happened, who did it and when.','You can only read the log. Nobody can edit it.'],
+      tip:'Use it to settle disagreements calmly, with facts.' }
+  ]},
+  { id:'printing', title:'Bluetooth receipt printing', icon:'printer', who:'all', slides:[
+    { title:'Printing a receipt', text:'Pesa can print on a small Bluetooth receipt printer, if your phone and browser support Bluetooth.',
+      where:'Sale recorded → Print via Bluetooth',
+      steps:['Switch the printer on and put paper in it.','Pair the printer with your phone in the phone’s Bluetooth settings.','Make a sale and tap Print via Bluetooth on the Sale recorded screen.','Choose your printer from the list.','If the button is greyed out, your browser does not support Bluetooth. Use Receipt PDF instead.'],
+      tip:'You can also print invoices the same way, from the New invoice screen.' }
+  ]},
+  { id:'language', title:'Language and alerts', icon:'globe', who:'all', slides:[
+    { title:'Changing the language', text:'Pesa can speak more than one language.',
+      where:'Settings → Language',
+      steps:['Tap the gear icon.','Find App language and choose your language.','Tap Save settings.','English, Afrikaans and German are checked. Other languages may be only partly translated, and unfinished screens show in English.'],
+      tip:'The training voice speaks English.' },
+    { title:'Alerts on this device', text:'Pesa can warn you about low stock and closed tills.',
+      where:'Settings → Notifications',
+      steps:['Open Settings and find Notifications.','Tap On. Your phone asks for permission. Tap Allow.','These alerts show on this device only. They are not emails or texts.','If you refuse, alerts stay inside Pesa.'],
+      tip:'Each phone decides for itself, so a cashier’s phone can have alerts off.' }
   ]}
 ];
 
-var _trainState = { lessonId:null, idx:0, playing:false, autoTimer:null };
+var _trainState = { lessonId:null, idx:0, playing:false, autoTimer:null, tok:0, chain:false };
 
 function speechSupported(){
   return typeof window!=='undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance!=='undefined';
 }
 
 function stopNarration(){
+  _trainState.tok = (_trainState.tok || 0) + 1;
   _trainState.playing = false;
   if(_trainState.autoTimer){ clearTimeout(_trainState.autoTimer); _trainState.autoTimer = null; }
   try{ if(speechSupported()) window.speechSynthesis.cancel(); }catch(e){}
@@ -6943,127 +7163,235 @@ function refreshNarrationVoice(){
   }catch(e){}
 })();
 
+var TRAIN_DONE_KEY = 'pesa_train_done_v1', TRAIN_RATE_KEY = 'pesa_train_rate_v1';
+function trainDoneMap(){ try{ return JSON.parse(localStorage.getItem(TRAIN_DONE_KEY) || '{}') || {}; }catch(e){ return {}; } }
+function markLessonDone(id){ try{ var m = trainDoneMap(); m[id] = 1; localStorage.setItem(TRAIN_DONE_KEY, JSON.stringify(m)); }catch(e){} }
+function trainRate(){ try{ var r = parseFloat(localStorage.getItem(TRAIN_RATE_KEY)); if(r>0.3 && r<2) return r; }catch(e){} return 0.82; }
+function setTrainRate(r){ try{ localStorage.setItem(TRAIN_RATE_KEY, String(r)); }catch(e){} }
+var TRAIN_RATES = [ {r:0.7, label:'Slow'}, {r:0.82, label:'Normal'}, {r:1.0, label:'Fast'} ];
+function trainRateLabel(){
+  var r = trainRate(), best = TRAIN_RATES[1];
+  TRAIN_RATES.forEach(function(x){ if(Math.abs(x.r-r) < Math.abs(best.r-r)) best = x; });
+  return best;
+}
+function lessonsForRole(){
+  return LESSONS.filter(function(l){
+    return l.who === 'all' || (l.who === 'manager' && isManagerOrOwner()) || (l.who === 'owner' && isOwner());
+  });
+}
+// Text as it should be SPOKEN (pronunciation tweaks; on-screen text is unchanged).
+function speakable(t){
+  return String(t)
+    .replace(/\bPesa\b/g, 'Pessa')
+    .replace(/N\$\s?([\d.,]+)/g, '$1 Namibia dollars')
+    .replace(/→/g, ', then ')
+    .replace(/&/g, ' and ')
+    .replace(/\bINV\b/g, 'invoice')
+    .replace(/\bCSV\b/g, 'C S V')
+    .replace(/\bPDF\b/g, 'P D F')
+    .replace(/\bSMS\b/g, 'S M S')
+    .replace(/\bVAT\b/g, 'V A T')
+    .replace(/\bNamRA\b/g, 'Nam R A')
+    .replace(/\bBIPA\b/g, 'Bipa')
+    .replace(/\bEFT\b/g, 'E F T')
+    .replace(/\bPIN\b/g, 'pin');
+}
+function slideParts(slide){
+  var parts = [{ kind:'intro', text: slide.title + '. ' + slide.text }];
+  (slide.steps || []).forEach(function(s, i){ parts.push({ kind:'step', i:i, text: 'Step ' + (i+1) + '. ' + s }); });
+  if(slide.tip) parts.push({ kind:'tip', text: 'Tip. ' + slide.tip });
+  return parts;
+}
+
 function openTrainingSheet(){
+  stopNarration();
+  _trainState.chain = false;
+  var list = lessonsForRole();
+  var done = trainDoneMap();
+  var totalSlides = list.reduce(function(n, l){ return n + l.slides.length; }, 0);
   var html = '<div class="sheet-head"><h2>'+ICONS.book+'<span style="margin-left:8px;">'+tr('Training')+'</span></h2></div>' +
-    '<div class="banner">'+tr('Short lessons on every part of the app, read aloud where your device supports it. Pick a topic to review, or work through them one by one.')+'</div>' +
-    '<div class="rowlist">' +
-    LESSONS.map(function(l){
-      return '<div class="row" data-lesson="'+l.id+'"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+ICONS[l.icon]+'</div>' +
-        '<div class="main"><div class="title">'+esc(tr(l.title))+'</div><div class="sub">'+l.slides.length+' '+tr('slides')+'</div></div></div>';
+    '<div class="banner">'+tr('Step by step lessons on every part of the app, with a voice that reads each step aloud. Pick a topic, or play them all in order.')+'</div>' +
+    (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPlayAll" type="button">'+ICONS.play+'<span style="margin-left:8px;">'+tr('Play all lessons')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
+    '<div class="rowlist" style="margin-top:12px;">' +
+    list.map(function(l, i){
+      var n = l.slides.length;
+      var badge = l.who === 'owner' ? tr('Owner') : (l.who === 'manager' ? tr('Owner / Manager') : '');
+      return '<div class="row" data-lesson="'+l.id+'"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(ICONS[l.icon]||ICONS.book)+'</div>' +
+        '<div class="main"><div class="title">'+(i+1)+'. '+esc(tr(l.title))+'</div><div class="sub">'+n+' '+tr('slides')+(badge ? ' · '+esc(badge) : '')+'</div></div>' +
+        (done[l.id] ? '<div class="trail" style="color:var(--success);">'+ICONS.check+'</div>' : '') + '</div>';
     }).join('') +
     '</div>';
   var ov = openSheet(html);
   ov.querySelectorAll('[data-lesson]').forEach(function(el){
     el.addEventListener('click', function(){ openLessonSlideshow(el.getAttribute('data-lesson')); });
   });
+  var pa = ov.querySelector('#trPlayAll');
+  if(pa) pa.addEventListener('click', function(){ openLessonSlideshow(list[0].id, { chain:true }); });
 }
 
-function openLessonSlideshow(lessonId){
-  var lesson = LESSONS.filter(function(l){ return l.id===lessonId; })[0];
+function openLessonSlideshow(lessonId, opts){
+  opts = opts || {};
+  var list = lessonsForRole();
+  var lesson = list.filter(function(l){ return l.id===lessonId; })[0] || LESSONS.filter(function(l){ return l.id===lessonId; })[0];
   if(!lesson) return;
   stopNarration();
   _trainState.lessonId = lessonId;
   _trainState.idx = 0;
+  _trainState.chain = !!opts.chain;
+  _trainState.tok = (_trainState.tok || 0) + 1;
   var supported = speechSupported();
+  // opening a lesson is a tap, so narration may start straight away
+  var wantPlay = supported && State.settings.soundEnabled !== false;
+  var partIdx = 0;
+
+  function body(){ return document.querySelector('#modalRoot .sheet #lsBody'); }
+  function speechOn(){ return supported && State.settings.soundEnabled !== false; }
+
+  function highlight(p){
+    var b = body(); if(!b) return;
+    b.querySelectorAll('.speaking').forEach(function(x){ x.classList.remove('speaking'); });
+    var el = b.querySelector('[data-part="'+p+'"]');
+    if(el){ el.classList.add('speaking'); try{ el.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(e){} }
+  }
 
   function renderSlide(){
-    var ov = document.querySelector('#modalRoot .sheet');
-    if(!ov) return;
-    var i = _trainState.idx, n = lesson.slides.length, slide = lesson.slides[i];
+    var b = body(); if(!b) return;
+    var i = _trainState.idx, n = lesson.slides.length;
+    if(i >= n){ renderComplete(); return; }
+    var slide = lesson.slides[i];
     var pct = Math.round(((i+1)/n)*100);
-    var muted = !(State.settings.soundEnabled!==false);
-    ov.querySelector('#lsBody').innerHTML =
+    var muted = State.settings.soundEnabled === false;
+    var rate = trainRateLabel();
+    var hasSteps = slide.steps && slide.steps.length;
+    b.innerHTML =
       '<div class="lesson-progress">'+tr('Slide')+' '+(i+1)+' '+tr('of')+' '+n+'</div>' +
       '<div class="lesson-progressbar"><div class="fill" style="width:'+pct+'%;"></div></div>' +
-      '<div class="lesson-slide"><div class="ico">'+ICONS[lesson.icon]+'</div>' +
+      '<div class="lesson-slide"><div class="ico">'+(ICONS[lesson.icon]||ICONS.book)+'</div>' +
         '<h3>'+esc(tr(slide.title))+'</h3>' +
-        '<p>'+esc(tr(slide.text))+'</p>' +
+        (slide.where ? '<div class="lesson-where">'+ICONS.search+'<span>'+esc(tr(slide.where))+'</span></div>' : '') +
+        '<p class="lesson-intro" data-part="0">'+esc(tr(slide.text))+'</p>' +
+        (hasSteps ? '<ol class="lesson-steps">' + slide.steps.map(function(s, k){
+          return '<li data-part="'+(k+1)+'"><span class="stepnum">'+(k+1)+'</span><span class="steptext">'+esc(tr(s))+'</span></li>';
+        }).join('') + '</ol>' : '') +
+        (slide.tip ? '<div class="lesson-tip" data-part="'+((slide.steps||[]).length+1)+'"><strong>'+tr('Tip')+':</strong> '+esc(tr(slide.tip))+'</div>' : '') +
       '</div>' +
-      (supported ?
-        '<div class="lesson-controls">' +
-          '<button class="icon-btn" id="lsPrev" type="button" aria-label="Previous" '+(i===0?'disabled style="opacity:.4;"':'')+'>'+ICONS.back+'</button>' +
-          '<button class="icon-btn" id="lsMute" type="button" aria-label="Mute">'+(muted?ICONS.soundOff:ICONS.soundOn)+'</button>' +
-          '<button class="btn btn-primary navbig" id="lsPlay" type="button">'+(_trainState.playing?tr('Pause'):tr('Play'))+'</button>' +
-          '<button class="icon-btn" id="lsNext" type="button" aria-label="Next" '+(i===n-1?'disabled style="opacity:.4;"':'')+'><span style="display:inline-block;transform:rotate(180deg);">'+ICONS.back+'</span></button>' +
-        '</div>'
-        :
-        '<div class="lesson-controls">' +
-          '<button class="btn btn-ghost navbig" id="lsPrev" type="button" '+(i===0?'disabled':'')+'>'+tr('Previous')+'</button>' +
-          '<button class="btn btn-primary navbig" id="lsNext" type="button" '+(i===n-1?'disabled':'')+'>'+tr('Next')+'</button>' +
-        '</div>'
-      );
-    wireSlideButtons();
-    if(supported && State.settings.soundEnabled!==false){ startNarration(); } else { _trainState.playing=false; }
+      '<div class="lesson-controls">' +
+        '<button class="icon-btn" id="lsPrev" type="button" aria-label="Previous" '+(i===0?'disabled style="opacity:.4;"':'')+'>'+ICONS.back+'</button>' +
+        (supported ? '<button class="icon-btn" id="lsMute" type="button" aria-label="Mute">'+(muted?ICONS.soundOff:ICONS.soundOn)+'</button>' : '') +
+        (speechOn() ? '<button class="btn btn-primary navbig" id="lsPlay" type="button">'+(_trainState.playing?ICONS.pause:ICONS.play)+'<span style="margin-left:6px;">'+(_trainState.playing?tr('Pause'):tr('Play'))+'</span></button>' : '<div class="navbig"></div>') +
+        '<button class="icon-btn" id="lsNext" type="button" aria-label="Next"><span style="display:inline-block;transform:rotate(180deg);">'+ICONS.back+'</span></button>' +
+      '</div>' +
+      (speechOn() ? '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" id="lsRate" type="button" style="padding:6px 12px;font-size:12px;">'+tr('Voice speed')+': '+tr(rate.label)+'</button></div>' : '');
+    wire();
+    if(wantPlay && speechOn()){ playPart(0); } else { _trainState.playing = false; updatePlayBtn(); }
+  }
+
+  function renderComplete(){
+    var b = body(); if(!b) return;
+    stopNarration();
+    markLessonDone(lesson.id);
+    var idxInList = list.map(function(l){ return l.id; }).indexOf(lesson.id);
+    var next = list[idxInList+1];
+    b.innerHTML =
+      '<div class="lesson-slide"><div class="ico" style="color:var(--success);">'+ICONS.check+'</div>' +
+        '<h3>'+tr('Lesson complete')+'</h3>' +
+        '<p style="text-align:center;">'+esc(tr(lesson.title))+' — '+tr('well done!')+'</p></div>' +
+      '<div class="actions" style="flex-direction:column;">' +
+        (next ? '<button class="btn btn-primary btn-block" id="lsNextLesson" type="button">'+tr('Next lesson')+': '+esc(tr(next.title))+'</button>' : '') +
+        '<button class="btn btn-ghost btn-block" id="lsAgain" type="button">'+tr('Watch this lesson again')+'</button>' +
+        '<button class="btn btn-ghost btn-block" id="lsAll" type="button">'+tr('All lessons')+'</button>' +
+      '</div>';
+    var nl = b.querySelector('#lsNextLesson'); if(nl) nl.addEventListener('click', function(){ openLessonSlideshow(next.id, { chain:_trainState.chain }); });
+    b.querySelector('#lsAgain').addEventListener('click', function(){ openLessonSlideshow(lesson.id, { chain:_trainState.chain }); });
+    b.querySelector('#lsAll').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
+    // "Play all": roll straight into the next lesson
+    if(_trainState.chain && next && wantPlay && speechOn()){
+      var tok = _trainState.tok;
+      _trainState.autoTimer = setTimeout(function(){ if(tok === _trainState.tok) openLessonSlideshow(next.id, { chain:true }); }, 2200);
+    }
+  }
+
+  function updatePlayBtn(){
+    var btn = document.getElementById('lsPlay'); if(!btn) return;
+    btn.innerHTML = (_trainState.playing ? ICONS.pause : ICONS.play) + '<span style="margin-left:6px;">'+(_trainState.playing ? tr('Pause') : tr('Play'))+'</span>';
+  }
+
+  function playPart(p){
+    var slide = lesson.slides[_trainState.idx]; if(!slide) return;
+    var parts = slideParts(slide);
+    if(p >= parts.length){ slideFinished(); return; }
+    partIdx = p;
+    try{ window.speechSynthesis.cancel(); }catch(e){}
+    var tok = ++_trainState.tok;
+    var u = new SpeechSynthesisUtterance(speakable(parts[p].text));
+    if(!_narrationVoice) refreshNarrationVoice();
+    if(_narrationVoice){ u.voice = _narrationVoice; u.lang = _narrationVoice.lang || 'en-US'; } else { u.lang = 'en-US'; }
+    u.rate = trainRate(); u.pitch = 1;
+    u.onstart = function(){ if(tok === _trainState.tok) highlight(p); };
+    u.onend = function(){
+      if(tok !== _trainState.tok) return;
+      _trainState.autoTimer = setTimeout(function(){ if(tok === _trainState.tok) playPart(p+1); }, 450);
+    };
+    u.onerror = function(){ if(tok === _trainState.tok){ _trainState.playing = false; updatePlayBtn(); } };
+    _trainState.playing = true; updatePlayBtn();
+    highlight(p);
+    try{ window.speechSynthesis.speak(u); }catch(e){ _trainState.playing = false; updatePlayBtn(); }
+  }
+
+  function slideFinished(){
+    var tok = _trainState.tok;
+    _trainState.playing = false; updatePlayBtn();
+    _trainState.autoTimer = setTimeout(function(){ if(tok === _trainState.tok) goTo(_trainState.idx + 1); }, 1400);
+  }
+
+  function pause(){
+    wantPlay = false;
+    stopNarration();
+    _trainState.tok++;
+    updatePlayBtn();
   }
 
   function goTo(newIdx){
     stopNarration();
-    _trainState.idx = Math.max(0, Math.min(lesson.slides.length-1, newIdx));
+    _trainState.tok++;
+    _trainState.idx = Math.max(0, Math.min(lesson.slides.length, newIdx));
     renderSlide();
   }
 
-  function startNarration(){
-    if(!supported || State.settings.soundEnabled===false) return;
-    try{ window.speechSynthesis.cancel(); }catch(e){}
-    var slide = lesson.slides[_trainState.idx];
-    var u = new SpeechSynthesisUtterance(slide.title + '. ' + slide.text);
-    if(!_narrationVoice) refreshNarrationVoice();
-    if(_narrationVoice){ u.voice = _narrationVoice; u.lang = _narrationVoice.lang || 'en-US'; }
-    else { u.lang = 'en-US'; }
-    u.rate = 0.82; // slower than the default 1.0, for clear, easy to follow speech
-    u.pitch = 1;
-    u.onend = function(){
-      _trainState.playing = false;
-      var btn = document.getElementById('lsPlay');
-      if(btn) btn.textContent = tr('Play');
-      // Auto-advance to the next slide once narration finishes, after a
-      // short, natural pause — but only if the user hasn't navigated away.
-      if(_trainState.idx < lesson.slides.length-1){
-        _trainState.autoTimer = setTimeout(function(){ goTo(_trainState.idx+1); }, 900);
-      }
-    };
-    u.onerror = function(){ _trainState.playing = false; };
-    _trainState.playing = true;
-    try{ window.speechSynthesis.speak(u); }catch(e){ _trainState.playing = false; }
-  }
-
-  function togglePlay(){
-    if(!supported) return;
-    if(_trainState.playing){
-      try{ window.speechSynthesis.pause(); }catch(e){}
-      _trainState.playing = false;
-      if(_trainState.autoTimer){ clearTimeout(_trainState.autoTimer); _trainState.autoTimer = null; }
-    } else {
-      try{
-        if(window.speechSynthesis.paused){ window.speechSynthesis.resume(); _trainState.playing = true; }
-        else { startNarration(); }
-      }catch(e){ startNarration(); }
-    }
-    var btn = document.getElementById('lsPlay');
-    if(btn) btn.textContent = _trainState.playing ? tr('Pause') : tr('Play');
-  }
-
-  function toggleMute(){
-    var next = (State.settings.soundEnabled===false); // currently muted -> unmute, and vice versa
-    State.settings = Object.assign({}, State.settings, { soundEnabled: next });
-    refs.settings.set(State.settings);
-    if(!next){ stopNarration(); } else { startNarration(); }
-    renderSlide();
-  }
-
-  function wireSlideButtons(){
-    var ov = document.querySelector('#modalRoot .sheet');
-    if(!ov) return;
-    var prev = ov.querySelector('#lsPrev'); if(prev) prev.addEventListener('click', function(){ if(_trainState.idx>0) goTo(_trainState.idx-1); });
-    var next = ov.querySelector('#lsNext'); if(next) next.addEventListener('click', function(){ if(_trainState.idx<lesson.slides.length-1) goTo(_trainState.idx+1); });
-    var play = ov.querySelector('#lsPlay'); if(play) play.addEventListener('click', togglePlay);
-    var mute = ov.querySelector('#lsMute'); if(mute) mute.addEventListener('click', toggleMute);
+  function wire(){
+    var b = body(); if(!b) return;
+    b.querySelector('#lsPrev').addEventListener('click', function(){ if(_trainState.idx>0) goTo(_trainState.idx-1); });
+    b.querySelector('#lsNext').addEventListener('click', function(){ goTo(_trainState.idx+1); });
+    var play = b.querySelector('#lsPlay');
+    if(play) play.addEventListener('click', function(){
+      if(_trainState.playing){ pause(); }
+      else { wantPlay = true; playPart(partIdx); }
+    });
+    var mute = b.querySelector('#lsMute');
+    if(mute) mute.addEventListener('click', function(){
+      var next = (State.settings.soundEnabled === false);
+      State.settings = Object.assign({}, State.settings, { soundEnabled: next });
+      refs.settings.set(State.settings);
+      if(!next){ pause(); } else { wantPlay = true; }
+      renderSlide();
+    });
+    var rate = b.querySelector('#lsRate');
+    if(rate) rate.addEventListener('click', function(){
+      var cur = trainRateLabel(), ix = TRAIN_RATES.indexOf(cur);
+      setTrainRate(TRAIN_RATES[(ix+1) % TRAIN_RATES.length].r);
+      rate.textContent = tr('Voice speed')+': '+tr(trainRateLabel().label);
+      if(_trainState.playing) playPart(partIdx);
+    });
+    // tap a step to hear it again
+    b.querySelectorAll('[data-part]').forEach(function(el){
+      el.addEventListener('click', function(){ if(speechOn()){ wantPlay = true; playPart(parseInt(el.getAttribute('data-part'), 10)); } });
+    });
   }
 
   var html = '<div class="sheet-head"><button class="drawer-close" id="lsBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+esc(tr(lesson.title))+'</h2></div>' +
     '<div id="lsBody"></div>';
   var ov = openSheet(html);
-  ov.querySelector('#lsBack').addEventListener('click', function(){ stopNarration(); closeModal(); openTrainingSheet(); });
+  ov.querySelector('#lsBack').addEventListener('click', function(){ stopNarration(); _trainState.tok++; closeModal(); openTrainingSheet(); });
   renderSlide();
 }
 
