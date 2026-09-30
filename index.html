@@ -1455,6 +1455,91 @@ var introSplashPlayed = false;
 var suppressAuthRoute = false;
 var SPLASH_MS = 2150;
 
+
+/* ---------- welcome sound: water splash + spoken "Welcome to Pesa" ----------
+   Synthesised with the Web Audio API (no audio files to load, works offline)
+   and the browser's built-in speech voice. Browsers only allow sound after
+   the person has touched the page, so if audio is still locked when the logo
+   appears, it plays on the first tap/key press during the splash. */
+function synthWaterSplash(ctx, dest, t0, strength){
+  strength = strength || 1;
+  var len = Math.floor(ctx.sampleRate * 1.2);
+  var buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for(var i=0;i<len;i++) d[i] = Math.random()*2-1;
+  // 1) the "whoosh" of water: filtered noise, sweeping down, quick decay
+  var src = ctx.createBufferSource(); src.buffer = buf;
+  var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.8;
+  bp.frequency.setValueAtTime(2600, t0); bp.frequency.exponentialRampToValueAtTime(700, t0+0.7);
+  var g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.5*strength, t0+0.04);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+0.9);
+  src.connect(bp); bp.connect(g); g.connect(dest); src.start(t0); src.stop(t0+1.1);
+  // 2) the low "plop" as the drop hits
+  var o = ctx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(320, t0); o.frequency.exponentialRampToValueAtTime(90, t0+0.16);
+  var og = ctx.createGain();
+  og.gain.setValueAtTime(0.0001, t0); og.gain.exponentialRampToValueAtTime(0.5*strength, t0+0.01);
+  og.gain.exponentialRampToValueAtTime(0.0001, t0+0.22);
+  o.connect(og); og.connect(dest); o.start(t0); o.stop(t0+0.25);
+  // 3) little droplets / bubbles: short rising sine chirps at random moments
+  var n = Math.round(7*strength);
+  for(var k=0;k<n;k++){
+    var bt = t0 + 0.05 + Math.random()*0.7, f = 500 + Math.random()*1100;
+    var b = ctx.createOscillator(); b.type = 'sine';
+    b.frequency.setValueAtTime(f, bt); b.frequency.exponentialRampToValueAtTime(f*1.9, bt+0.06);
+    var bg = ctx.createGain();
+    bg.gain.setValueAtTime(0.0001, bt); bg.gain.exponentialRampToValueAtTime(0.16*strength, bt+0.008);
+    bg.gain.exponentialRampToValueAtTime(0.0001, bt+0.09);
+    b.connect(bg); bg.connect(dest); b.start(bt); b.stop(bt+0.1);
+  }
+}
+window.synthWaterSplash = synthWaterSplash;
+var welcomeSoundState = { done:false, ctx:null, timers:[] };
+function speakWelcome(){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    var u = new SpeechSynthesisUtterance('Welcome to Pessa');
+    u.lang = 'en-ZA'; u.rate = 0.92; u.pitch = 1.05; u.volume = 1;
+    var voices = window.speechSynthesis.getVoices() || [];
+    var v = voices.find(function(x){ return /^en[-_]ZA/i.test(x.lang); }) ||
+            voices.find(function(x){ return /^en/i.test(x.lang) && /female|samantha|zira|susan|serena|google uk english female/i.test(x.name); }) ||
+            voices.find(function(x){ return /^en/i.test(x.lang); });
+    if(v) u.voice = v;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function playWelcomeSound(){
+  var st = welcomeSoundState;
+  if(st.done) return;
+  var AC = window.AudioContext || window.webkitAudioContext;
+  function go(){
+    if(st.done) return;
+    st.done = true;
+    try{
+      var ctx = st.ctx, now = ctx.currentTime + 0.05;
+      var master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+      synthWaterSplash(ctx, master, now + 0.1, 1);      // logo drops in
+      synthWaterSplash(ctx, master, now + 0.85, 0.6);   // second, softer splash on landing
+    }catch(e){}
+    st.timers.push(setTimeout(speakWelcome, 1050));       // voice as the title appears
+    removeGesture();
+  }
+  function onGesture(){ try{ if(st.ctx && st.ctx.state === 'suspended') st.ctx.resume().then(go); else go(); }catch(e){ go(); } }
+  function removeGesture(){ ['pointerdown','keydown','touchstart'].forEach(function(ev){ document.removeEventListener(ev, onGesture, true); }); }
+  try{
+    if(!AC){ st.timers.push(setTimeout(speakWelcome, 1050)); st.done = true; return; }
+    st.ctx = new AC();
+    if(st.ctx.state === 'running'){ go(); return; }
+    st.ctx.resume().then(function(){ if(st.ctx.state === 'running') go(); }).catch(function(){});
+    ['pointerdown','keydown','touchstart'].forEach(function(ev){ document.addEventListener(ev, onGesture, true); });
+    // stop waiting once the splash is over so it never plays later on the sign-in screen
+    st.timers.push(setTimeout(function(){ removeGesture(); st.done = true; }, SPLASH_MS));
+  }catch(e){}
+}
+function resetWelcomeSound(){ welcomeSoundState.done = false; welcomeSoundState.timers.forEach(clearTimeout); welcomeSoundState.timers = []; }
+
 function splashHtml(title, subtitle){
   var name = title || 'Pesa';
   return '<div class="splash-wrap">' +
@@ -1472,6 +1557,7 @@ function showWelcomeSplash(businessName, done){
   document.getElementById('app').style.display = 'none';
   authEl.style.display = 'flex';
   authEl.innerHTML = splashHtml(tr('Welcome, ')+businessName+'!', tr('Your business is set up and ready to go.'));
+  resetWelcomeSound(); playWelcomeSound();
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   setTimeout(function(){ if(done) done(); }, reduceMotion ? 400 : SPLASH_MS);
 }
@@ -1538,6 +1624,7 @@ function showAuthScreen(view){
     document.getElementById('app').style.display = 'none';
     authEl.style.display = 'flex';
     authEl.innerHTML = splashHtml(null, null);
+    resetWelcomeSound(); playWelcomeSound();
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setTimeout(function(){
       // company/session state may have changed while the splash played
