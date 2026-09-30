@@ -4912,74 +4912,113 @@ function buildReceiptPdf(draft){
   var t = getActiveTemplate();
   var primary=t.primary, accent=t.accent, muted=t.muted, dark=t.dark;
   var pageW = 80, margin = 5, contentW = pageW - margin*2;
-  var subtotal = draft.items.reduce(function(s,it){ return s + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
-  var lineEstimate = 40 + draft.items.length*8 + (draft.notes||t.defaultNote ? 16:0) + (State.settings.businessSlogan?6:0) + (State.settings.logoDataUrl?18:0);
-  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, Math.max(120, lineEstimate)] });
-  var y = margin;
+  var items = draft.items || [];
+  var subtotal = items.reduce(function(s,it){ return s + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
+  var vatNo = State.company && State.company.vatNumber ? State.company.vatNumber : '';
+  var vatRate = (State.settings.vatRate != null) ? Number(State.settings.vatRate) || 0 : 15;
+  var shopName = State.settings.shopName || (State.company && (State.company.tradingName || State.company.companyName)) || 'My Shop';
 
-  if(State.settings.logoDataUrl){
-    var lg = State.settings.logoImgMeta || {};
-    var boxH = 14, boxW = 14;
-    if(lg.w && lg.h){ if(lg.w>lg.h){ boxH = 14*lg.h/lg.w; } else { boxW = 14*lg.w/lg.h; } }
-    try{ doc.addImage(State.settings.logoDataUrl, 'JPEG', (pageW-boxW)/2, y, boxW, boxH); }catch(e){}
-    y += boxH + 3;
-  }
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(dark[0],dark[1],dark[2]);
-  doc.text(State.settings.shopName || 'My Shop', pageW/2, y+3, {align:'center'}); y += 6;
-  if(State.settings.businessSlogan){
-    doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-    doc.text(State.settings.businessSlogan, pageW/2, y, {align:'center'}); y += 5;
-  }
-  (State.settings.businessContact||'').split('\n').filter(Boolean).slice(0,2).forEach(function(line){
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-    doc.text(line, pageW/2, y, {align:'center'}); y += 3.6;
-  });
-  y += 2;
-  doc.setDrawColor(200,200,200); doc.setLineWidth(0.3); doc.line(margin,y,pageW-margin,y); y+=5;
+  // Everything is drawn by one function. It runs once on a tall scratch page to
+  // measure how long the receipt is, then again on a page cut to that length.
+  function draw(doc){
+    var y = margin;
+    // ---- header: shop details on the left, colour logo at the top right
+    var boxW = 16, boxH = 16, logoData = null, logoType = 'PNG';
+    if(State.settings.logoDataUrl){
+      logoData = State.settings.logoDataUrl; logoType = 'JPEG';
+      var lg = State.settings.logoImgMeta || {};
+      if(lg.w && lg.h){ if(lg.w > lg.h){ boxH = 16*lg.h/lg.w; } else { boxW = 16*lg.w/lg.h; } }
+    } else {
+      logoData = PESA_LOGO_DATA_URL; boxW = 16 / PESA_LOGO_ASPECT; boxH = 16; if(boxW > 16){ boxH = 16 / (boxW/16); boxW = 16; }
+    }
+    try{ doc.addImage(logoData, logoType, pageW - margin - boxW, y, boxW, boxH); }catch(e){}
+    var leftW = contentW - boxW - 3, ly = y + 4;
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
+    var nameLines = doc.splitTextToSize(shopName, leftW);
+    doc.text(nameLines, margin, ly); ly += nameLines.length*5.2;
+    if(State.settings.businessSlogan){
+      doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(accent[0],accent[1],accent[2]);
+      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, margin, ly); ly += sl.length*3.2 + 0.8;
+    }
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    (State.settings.businessContact||'').split('\n').filter(Boolean).slice(0,3).forEach(function(line){
+      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, margin, ly); ly += cl.length*3.1;
+    });
+    if(vatNo){ doc.text('VAT No. '+vatNo, margin, ly); ly += 3.1; }
+    y = Math.max(ly, y + boxH) + 2;
+    doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineWidth(0.7); doc.line(margin, y, pageW-margin, y);
+    doc.setLineWidth(0.3); y += 6;
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(primary[0],primary[1],primary[2]);
-  doc.text('RECEIPT', pageW/2, y, {align:'center'}); y += 5;
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-  doc.text('No. '+draft.number, margin, y);
-  doc.text(fmtDateNice(draft.dateStr), pageW-margin, y, {align:'right'}); y += 4;
-  if(draft.billToName && draft.billToName !== 'Customer'){
-    doc.text('Customer: '+draft.billToName, margin, y); y += 4;
-  }
-  y += 1;
-  doc.setDrawColor(220,220,220); doc.line(margin,y,pageW-margin,y); y += 4.5;
+    // ---- title and details
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text('RECEIPT', margin, y, { charSpace:0.8 });
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text('No. '+draft.number, pageW-margin, y, { align:'right' }); y += 5;
+    function detail(label, value){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]); doc.text(label, margin, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+      var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*3.6;
+    }
+    detail('Date', fmtDateNice(draft.dateStr));
+    if(draft.billToName && draft.billToName !== 'Customer') detail('Customer', draft.billToName);
+    y += 1.5;
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(dark[0],dark[1],dark[2]);
-  draft.items.forEach(function(it){
-    var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price;
-    var descLines = doc.splitTextToSize(it.desc||'', contentW);
-    doc.text(descLines, margin, y); y += descLines.length*3.6;
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-    doc.text(qty+' x '+fmtMoney(price), margin, y);
-    doc.setTextColor(dark[0],dark[1],dark[2]);
-    doc.text(fmtMoney(amt), pageW-margin, y, {align:'right'});
-    doc.setFontSize(8);
-    y += 4.6;
-  });
-  y += 1;
-  doc.setDrawColor(200,200,200); doc.line(margin,y,pageW-margin,y); y += 5;
+    // ---- items
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 5.4, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.6); doc.setTextColor(255,255,255);
+    doc.text('ITEM', margin+2, y+3.7, { charSpace:0.4 }); doc.text('AMOUNT', pageW-margin-2, y+3.7, { align:'right', charSpace:0.4 });
+    y += 5.4;
+    items.forEach(function(it, i){
+      var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price;
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      var lines = doc.splitTextToSize(it.desc || '', contentW - 4 - 22);
+      var h = lines.length*3.7 + 4.6;
+      if(i % 2 === 1){ doc.setFillColor(245,246,245); doc.rect(margin, y, contentW, h, 'F'); }
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text(lines, margin+2, y+3.6);
+      doc.setFont('helvetica','bold'); doc.text(fmtMoney(amt), pageW-margin-2, y+3.6, { align:'right' });
+      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(qty+' × '+fmtMoney(price), margin+2, y+3.6+lines.length*3.7 - 0.4);
+      y += h;
+    });
+    doc.setDrawColor(210,212,210); doc.line(margin, y, pageW-margin, y); y += 4.5;
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(dark[0],dark[1],dark[2]);
-  doc.text(t.totalLabel, margin, y);
-  doc.text(fmtMoney(subtotal), pageW-margin, y, {align:'right'}); y += 7;
+    // ---- totals
+    function sum(label, value){
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(label, margin+2, y); doc.setTextColor(dark[0],dark[1],dark[2]); doc.text(value, pageW-margin-2, y, { align:'right' }); y += 4.2;
+    }
+    sum('Items', String(items.reduce(function(a,it){ return a + (Number(it.qty)||0); }, 0)));
+    if(vatNo && vatRate > 0) sum('VAT ('+vatRate+'%) included', fmtMoney(subtotal*vatRate/(100+vatRate)));
+    y += 0.8;
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 9.5, 1.2, 1.2, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
+    doc.text('TOTAL', margin+3, y+6.1, { charSpace:0.6 });
+    doc.setFontSize(11); doc.text(fmtMoney(subtotal), pageW-margin-3, y+6.2, { align:'right' });
+    y += 9.5 + 7;
 
-  var noteText = draft.notes || t.defaultNote;
-  if(noteText){
+    // ---- footer: thank you
+    doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineDashPattern([0.8,1], 0); doc.line(margin, y, pageW-margin, y); doc.setLineDashPattern([], 0);
+    y += 6.5;
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
+    var ty = doc.splitTextToSize('Thank you for your business!', contentW);
+    doc.text(ty, pageW/2, y, { align:'center' }); y += ty.length*5.2;
     doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-    var noteLines = doc.splitTextToSize(noteText, contentW);
-    doc.text(noteLines, pageW/2, y, {align:'center'}); y += noteLines.length*3.4 + 3;
+    var sub = doc.splitTextToSize('We appreciate your support. Please keep this receipt for your records.', contentW - 6);
+    doc.text(sub, pageW/2, y, { align:'center' }); y += sub.length*3.3 + 1.5;
+    var custom = (draft.notes || '').trim();
+    if(custom && custom !== (t.defaultNote||'').trim()){
+      var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*3.3 + 1.5;
+    }
+    y += 2;
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.2); doc.setTextColor(150,150,150);
+    doc.text('Powered by Pesa', pageW/2, y, { align:'center' }); y += 4;
+    return y;
   }
-
-  y += 2;
-  var markH = 6, markW = markH / PESA_LOGO_ASPECT;
-  try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', (pageW-markW)/2, y, markW, markH); }catch(e){}
-  y += markH + 2;
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-  doc.text('Powered by Pesa', pageW/2, y, {align:'center'});
+  var probe = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, 1500] });
+  var total = draw(probe);
+  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, Math.max(110, Math.ceil(total + margin))] });
+  draw(doc);
   return doc;
 }
 
