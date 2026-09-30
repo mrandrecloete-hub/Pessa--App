@@ -91,7 +91,15 @@
   }
 
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  :root{ --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; }
+  @font-face{ font-family:'Pesa Inter'; font-weight:400; font-style:normal; font-display:swap; src:url(fonts/Inter-Regular.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Inter'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/Inter-Bold.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Inter'; font-weight:400; font-style:italic; font-display:swap; src:url(fonts/Inter-Italic.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Playfair'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/PlayfairDisplay-Bold.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Montserrat'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/Montserrat-Bold.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Lora'; font-weight:400; font-style:normal; font-display:swap; src:url(fonts/Lora-Regular.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Lora'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/Lora-Bold.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Lora'; font-weight:400; font-style:italic; font-display:swap; src:url(fonts/Lora-Italic.ttf) format('truetype'); }
+  :root{ --font-head: 'Pesa Playfair', Georgia, 'Times New Roman', serif; --font-sans: 'Pesa Inter', 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', system-ui, sans-serif; }
   body{
     margin:0; background:var(--bg); color:var(--text);
     font-family:var(--font-sans);
@@ -151,7 +159,7 @@
     background-image:var(--logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
     filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3));
   }
-  h1,h2,h3,.display{ font-family:var(--font-sans); font-weight:700; letter-spacing:-0.02em; text-wrap:balance; margin:0; }
+  h1,h2,h3,.display{ font-family:var(--font-head); font-weight:700; letter-spacing:0; text-wrap:balance; margin:0; }
   .num{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
   button{ font-family:inherit; }
   input,select,textarea{ font-family:inherit; }
@@ -3704,6 +3712,73 @@ function resizeImageFile(file, maxDim, quality){
 }
 
 /* ============================== PDF HELPERS ============================== */
+
+/* ============================== DOCUMENT AND APP FONTS ==============================
+   Three professional pairings. The chosen one styles the headings and text in
+   the app, and every PDF (invoices, receipts, reports, VAT summary, About). */
+var FONT_SETS = {
+  elegant:{ label:'Elegant: Playfair Display headings with Inter text', cssHead:"'Pesa Playfair', Georgia, serif", cssBody:"'Pesa Inter', 'Inter', system-ui, sans-serif",
+    head:'PlayfairDisplay-Bold', body:{ normal:'Inter-Regular', bold:'Inter-Bold', italic:'Inter-Italic' } },
+  modern:{ label:'Modern: Montserrat headings with Inter text', cssHead:"'Pesa Montserrat', 'Pesa Inter', system-ui, sans-serif", cssBody:"'Pesa Inter', 'Inter', system-ui, sans-serif",
+    head:'Montserrat-Bold', body:{ normal:'Inter-Regular', bold:'Inter-Bold', italic:'Inter-Italic' } },
+  classic:{ label:'Classic: Lora throughout', cssHead:"'Pesa Lora', Georgia, serif", cssBody:"'Pesa Lora', Georgia, serif",
+    head:'Lora-Bold', body:{ normal:'Lora-Regular', bold:'Lora-Bold', italic:'Lora-Italic' } }
+};
+function currentFontKey(){
+  var k = (State && State.settings && State.settings.docFont) || null;
+  if(!k){ try{ k = localStorage.getItem('pesa_docfont'); }catch(e){} }
+  return FONT_SETS[k] ? k : 'elegant';
+}
+function applyAppFont(){
+  var k = currentFontKey(), f = FONT_SETS[k], r = document.documentElement.style;
+  r.setProperty('--font-head', f.cssHead); r.setProperty('--font-sans', f.cssBody);
+  try{ localStorage.setItem('pesa_docfont', k); }catch(e){}
+}
+var PDF_FONT_CACHE = {}, PDF_FONT_FAIL = {};
+function bufToB64(buf){
+  var bytes = new Uint8Array(buf), s = '', CH = 0x8000;
+  for(var i=0;i<bytes.length;i+=CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i+CH));
+  return btoa(s);
+}
+function loadPdfFontFile(name){
+  if(PDF_FONT_CACHE[name]) return Promise.resolve(true);
+  if(PDF_FONT_FAIL[name] && Date.now() - PDF_FONT_FAIL[name] < 30000) return Promise.resolve(false);
+  return fetch('fonts/'+name+'.ttf').then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); })
+    .then(function(b){ PDF_FONT_CACHE[name] = bufToB64(b); return true; }, function(){ PDF_FONT_FAIL[name] = Date.now(); return false; });
+}
+// Loads the fonts for the chosen pairing (a few seconds at most). If they can
+// not be loaded, PDFs are drawn in the built in font instead.
+function loadPdfFonts(){
+  var f = FONT_SETS[currentFontKey()], names = [f.head, f.body.normal, f.body.bold, f.body.italic];
+  var job = Promise.all(names.map(loadPdfFontFile));
+  var timeout = new Promise(function(res){ setTimeout(function(){ res([]); }, 6000); });
+  return Promise.race([job, timeout]);
+}
+function applyPdfFonts(doc){
+  var f = FONT_SETS[currentFontKey()], all = [f.head, f.body.normal, f.body.bold, f.body.italic];
+  if(!all.every(function(n){ return PDF_FONT_CACHE[n]; })) return false;   // not loaded: keep built in font
+  all.forEach(function(n){ if(!doc.__pesaFont || !doc.__pesaFont[n]){ doc.addFileToVFS(n+'.ttf', PDF_FONT_CACHE[n]); doc.addFont(n+'.ttf', n, 'normal'); (doc.__pesaFont = doc.__pesaFont || {})[n] = 1; } });
+  var origFont = doc.setFont.bind(doc), origSize = doc.setFontSize.bind(doc), cur = { style:'normal', size:(doc.getFontSize ? doc.getFontSize() : 16) };
+  function eff(){
+    var name = (cur.style === 'bold' && cur.size >= 13) ? f.head : (f.body[cur.style] || f.body.normal);
+    origFont(name, 'normal');
+  }
+  doc.setFont = function(name, style){
+    if(String(name||'').toLowerCase() === 'helvetica'){
+      style = String(style||'normal');
+      cur.style = style.indexOf('bold') !== -1 ? 'bold' : (style.indexOf('italic') !== -1 ? 'italic' : 'normal');
+      eff(); return doc;
+    }
+    return origFont.apply(doc, arguments);
+  };
+  doc.setFontSize = function(sz){ cur.size = sz; origSize(sz); eff(); return doc; };
+  eff(); return true;
+}
+function newPdfDoc(Ctor, opts){
+  var d = new Ctor(opts);
+  try{ applyPdfFonts(d); }catch(e){}
+  return d;
+}
 function getJsPDF(){ return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null; }
 // The PDF library loads from an external CDN via a <script> tag; on a slow
 // connection or right after a cold app launch it may not have finished
@@ -3711,6 +3786,9 @@ function getJsPDF(){ return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.
 // of failing immediately, so a slow-but-working load isn't mistaken for a
 // broken one.
 function ensureJsPDF(maxWaitMs){
+  return ensureJsPDFLib(maxWaitMs).then(function(ok){ return ok ? loadPdfFonts().then(function(){ return true; }, function(){ return true; }) : false; });
+}
+function ensureJsPDFLib(maxWaitMs){
   if(getJsPDF()) return Promise.resolve(true);
   maxWaitMs = maxWaitMs || 6000;
   return new Promise(function(resolve){
@@ -4735,7 +4813,7 @@ function invUpdateTotal(){
 function buildInvoicePdf(draft){
   var jsPDFCtor = getJsPDF();
   if(!jsPDFCtor) return null;
-  var doc = new jsPDFCtor({ unit:'mm', format:'a4' });
+  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:'a4' });
   var head = drawDocHeader(doc);
   var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
   var t = head.t, primary=t.primary, accent=t.accent, muted=t.muted, dark=t.dark;
@@ -4836,7 +4914,7 @@ function buildReceiptPdf(draft){
   var pageW = 80, margin = 5, contentW = pageW - margin*2;
   var subtotal = draft.items.reduce(function(s,it){ return s + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
   var lineEstimate = 40 + draft.items.length*8 + (draft.notes||t.defaultNote ? 16:0) + (State.settings.businessSlogan?6:0) + (State.settings.logoDataUrl?18:0);
-  var doc = new jsPDFCtor({ unit:'mm', format:[pageW, Math.max(120, lineEstimate)] });
+  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, Math.max(120, lineEstimate)] });
   var y = margin;
 
   if(State.settings.logoDataUrl){
@@ -4922,6 +5000,11 @@ function openInvoiceSheet(prefill){
       '<div class="field"><label>'+tr('Invoice date')+'</label><input id="invDate" type="date" value="'+todayKey()+'"></div>' +
       '<div class="field"><label>'+tr('Due date (optional)')+'</label><input id="invDue" type="date"></div>' +
     '</div>' +
+    '<div class="section-title" style="margin-top:14px;">'+tr('Gather from sales')+'</div>' +
+    '<div class="banner" style="display:block;">'+tr('Pick a date, or a range of dates, and optionally a customer. Pesa collects the matching sales and fills in the items for you. The invoice date becomes the last date picked.')+'</div>' +
+    '<div class="field-row"><div class="field"><label>'+tr('Sales from')+'</label><input id="invGFrom" type="date" value="'+todayKey()+'"></div><div class="field"><label>'+tr('Sales to')+'</label><input id="invGTo" type="date" value="'+todayKey()+'"></div></div>' +
+    '<div class="field"><label>'+tr('Customer')+'</label><select id="invGCust"><option value="">'+tr('All sales')+'</option>'+State.customers.map(function(c){ return '<option value="'+esc(c.id)+'"'+((prefill&&prefill.customerId===c.id)?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select></div>' +
+    '<button class="btn btn-ghost btn-block" id="invGather" type="button">'+tr('Gather sales and fill items')+'</button><div id="invGMsg" style="margin-top:8px;"></div>' +
     '<div class="section-title" style="margin-top:14px;">'+tr('Items')+'</div>' +
     '<div id="invItemsList"></div>' +
     '<button class="btn btn-ghost btn-block" id="invAddItemBtn" type="button">+ Add line item</button>' +
@@ -4962,6 +5045,26 @@ function openInvoiceSheet(prefill){
   var itemsList = ov.querySelector('#invItemsList');
   invRenderItems(itemsList);
   invUpdateTotal();
+  ov.querySelector('#invGather').addEventListener('click', function(){
+    var from = ov.querySelector('#invGFrom').value, to = ov.querySelector('#invGTo').value, cid = ov.querySelector('#invGCust').value;
+    var msg = ov.querySelector('#invGMsg');
+    if(!from || !to || from > to){ msg.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Pick a start date that is not after the end date.')+'</span></div>'; return; }
+    var s0 = new Date(from+'T00:00:00'), e0 = new Date(to+'T00:00:00'); e0.setDate(e0.getDate()+1);
+    var sales = State.sales.filter(function(x){ var d = new Date(x.createdAt); return d >= s0 && d < e0 && (!cid || x.customerId === cid); });
+    if(!sales.length){ msg.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('No sales found for those dates.')+'</span></div>'; return; }
+    var agg = {}, order = [];
+    sales.forEach(function(x){ (x.items||[]).forEach(function(it){ var k = it.name+'|'+it.unitPrice; if(!agg[k]){ agg[k] = { desc:it.name, qty:0, unitPrice:it.unitPrice }; order.push(k); } agg[k].qty += it.qty||0; }); });
+    InvoiceDraft.items = [];
+    order.forEach(function(k){ invAddItem(agg[k].desc, agg[k].qty, agg[k].unitPrice); });
+    invRenderItems(itemsList); invUpdateTotal();
+    ov.querySelector('#invDate').value = to;
+    if(cid){
+      var c = State.customers.find(function(y){ return y.id === cid; });
+      if(c){ prefillCustomerId = c.id; ov.querySelector('#invBillName').value = c.name || ''; var ct = [c.phone, c.email, c.address].filter(Boolean).join('\n'); ov.querySelector('#invBillContact').value = ct; }
+    }
+    var total = sales.reduce(function(a,x){ return a + (x.total||0); }, 0);
+    msg.innerHTML = '<div class="banner" style="display:block;color:var(--success);">'+sales.length+' '+tr('sales gathered')+' · '+order.length+' '+tr('items')+' · '+fmtMoney(total)+'</div>';
+  });
   ov.querySelector('#invAddItemBtn').addEventListener('click', function(){
     invAddItem('', 1, 0);
     invRenderItems(itemsList);
@@ -5116,7 +5219,7 @@ function drawReportPdf(fig, monthLabel, meta){
   var gen = arch ? new Date(meta.generatedAt) : null;
   var genText = arch ? (fmtDateNice(gen) + ' ' + gen.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})) : '';
 
-  var doc = new jsPDFCtor({ unit:'mm', format:'a4' });
+  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:'a4' });
   var head = drawDocHeader(doc);
   var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
   var t = head.t, primary=t.primary, accent=t.accent, muted=t.muted, dark=t.dark;
@@ -5128,7 +5231,7 @@ function drawReportPdf(fig, monthLabel, meta){
   doc.text((arch ? meta.shopName : State.settings.shopName) || 'Pesa', margin, y+6);
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
   if(arch){
-    doc.text((meta.interim ? 'Interim monthly report (month still open)' : 'Archived monthly report')+' — '+monthLabel, margin, y+12);
+    doc.text((meta.custom ? 'Report for the chosen dates' : (meta.interim ? 'Interim monthly report (month still open)' : 'Archived monthly report'))+' — '+monthLabel, margin, y+12);
     doc.text('Generated '+genText, pageW-margin, y+6, {align:'right'});
   } else {
     doc.text('Monthly report — '+monthLabel, margin, y+12);
@@ -5195,7 +5298,7 @@ function drawReportPdf(fig, monthLabel, meta){
     if(fig.wastageValue != null || fig.tills){
       need(34);
       doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
-      doc.text('Other records for the month', margin, y); y+=7;
+      doc.text(meta && meta.custom ? 'Other records for the period' : 'Other records for the month', margin, y); y+=7;
       if(fig.wastageValue != null){ pdfSummaryLine(doc,margin,y,contentW,'Wastage recorded, at cost ('+(fig.wastageCount||0)+' entries)', fmtMoney(fig.wastageValue)); y+=6.5; }
       if(fig.tills){
         pdfSummaryLine(doc,margin,y,contentW,'Tills closed', String(fig.tills.closedCount)); y+=6.5;
@@ -5253,7 +5356,7 @@ function drawReportPdf(fig, monthLabel, meta){
     for(var pg=1; pg<=pages; pg++){
       doc.setPage(pg);
       doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(meta.interim ? 'Interim report. A snapshot of the month so far; the final report replaces it after month end.' : 'Archived monthly report. The saved figures do not change if records are edited later.', margin, 285);
+      doc.text(meta.custom ? 'Report for the dates chosen. Figures were gathered from the records in Pesa when this report was generated.' : meta.interim ? 'Interim report. A snapshot of the month so far; the final report replaces it after month end.' : 'Archived monthly report. The saved figures do not change if records are edited later.', margin, 285);
       doc.text('Generated by Pesa on '+genText+(meta.generatedBy ? ' by '+meta.generatedBy : ''), margin, 290);
       doc.text('Page '+pg+' of '+pages, pageW-margin, 290, {align:'right'});
     }
@@ -5287,6 +5390,85 @@ function buildReportPdfForRange(fromStr, toStr){
   var end = new Date(toStr+'T00:00:00'); end.setDate(end.getDate()+1); // make end exclusive, inclusive of the picked day
   var label = fmtDateNice(start) + ' – ' + fmtDateNice(new Date(toStr+'T00:00:00'));
   return buildReportPdf(start, end, label);
+}
+
+
+/* ============================== REPORT FOR ANY DATES ==============================
+   Pick any start and end date (or a shortcut). Pesa gathers the sales,
+   expenses, VAT, payments, wastage and tills for exactly those days, shows a
+   preview, and draws the same full report as the monthly archive. */
+function reportPresetRange(k){
+  var now = new Date(), y = now.getFullYear(), m = now.getMonth(), d = now.getDate(), from, to;
+  if(k === 'today'){ from = to = new Date(y,m,d); }
+  else if(k === 'yesterday'){ from = to = new Date(y,m,d-1); }
+  else if(k === 'week'){ var wd = (now.getDay()+6)%7; from = new Date(y,m,d-wd); to = new Date(y,m,d); }
+  else if(k === '7'){ from = new Date(y,m,d-6); to = new Date(y,m,d); }
+  else if(k === '30'){ from = new Date(y,m,d-29); to = new Date(y,m,d); }
+  else if(k === 'month'){ from = new Date(y,m,1); to = new Date(y,m,d); }
+  else if(k === 'lastmonth'){ from = new Date(y,m-1,1); to = new Date(y,m,0); }
+  else if(k === 'quarter'){ from = new Date(y, Math.floor(m/3)*3, 1); to = new Date(y,m,d); }
+  else if(k === 'year'){ from = new Date(y,0,1); to = new Date(y,m,d); }
+  else return null;
+  return { from:todayKey(from), to:todayKey(to) };
+}
+function customReportFigures(fromStr, toStr, scope){
+  var start = new Date(fromStr+'T00:00:00'), end = new Date(toStr+'T00:00:00'); end.setDate(end.getDate()+1);
+  return computeReportFigures(start, end, { scope:scope||'all', snapshot:true });
+}
+async function customReportPdf(fromStr, toStr, scope){
+  var ready = await ensureJsPDF();
+  if(!ready){ toast('Couldn’t load the PDF engine — check your connection and try again'); return null; }
+  var fig = customReportFigures(fromStr, toStr, scope);
+  var a = new Date(fromStr+'T00:00:00'), b = new Date(toStr+'T00:00:00');
+  var label = fromStr === toStr ? fmtDateNice(a) : fmtDateNice(a)+' to '+fmtDateNice(b);
+  var br = scope && scope !== 'all' ? State.branches.find(function(x){ return x.id === scope; }) : null;
+  return drawReportPdf(fig, label, {
+    archived:true, custom:true, interim:false, shopName:(State.company && (State.company.tradingName||State.company.companyName)) || State.settings.shopName || 'Pesa',
+    scopeLabel: br ? br.name : 'All branches', generatedAt:new Date().toISOString(), generatedBy: State.session ? State.session.name : '',
+    vatNumber: State.company ? State.company.vatNumber : '', periodText: label
+  });
+}
+function openCustomReportSheet(){
+  var init = reportPresetRange('month');
+  var presets = [['today','Today'],['yesterday','Yesterday'],['week','This week'],['7','Last 7 days'],['30','Last 30 days'],['month','This month'],['lastmonth','Last month'],['quarter','This quarter'],['year','This year']];
+  var html = '<div class="sheet-head"><h2>'+tr('Report for any dates')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Choose the dates. Pesa gathers everything that happened on those days and builds the report.')+'</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">' + presets.map(function(p){ return '<button class="segbtn" type="button" data-rp="'+p[0]+'" style="flex:0 0 auto;">'+tr(p[1])+'</button>'; }).join('') + '</div>' +
+    '<div class="field-row"><div class="field"><label>'+tr('From')+'</label><input id="crFrom" type="date" value="'+init.from+'"></div><div class="field"><label>'+tr('To')+'</label><input id="crTo" type="date" value="'+init.to+'"></div></div>' +
+    (State.branches.length ? '<div class="field"><label>'+tr('Branch')+'</label><select id="crScope"><option value="all">'+tr('All branches')+'</option>'+State.branches.map(function(b){ return '<option value="'+esc(b.id)+'">'+esc(b.name)+'</option>'; }).join('')+'</select></div>' : '') +
+    '<div id="crPreview"></div><div id="crErr"></div>' +
+    '<div class="actions"><button class="btn btn-primary" id="crDl" type="button">'+tr('Download report (PDF)')+'</button><button class="btn btn-ghost" id="crPrint" type="button">'+tr('Print')+'</button></div>';
+  var ov = openSheet(html);
+  function vals(){ var sc = ov.querySelector('#crScope'); return { from:ov.querySelector('#crFrom').value, to:ov.querySelector('#crTo').value, scope: sc ? sc.value : 'all' }; }
+  function valid(v){ if(!v.from || !v.to) return 'Pick a start and end date'; if(v.from > v.to) return 'The start date must be before the end date'; return ''; }
+  function paint(){
+    var v = vals(), e = valid(v), pv = ov.querySelector('#crPreview');
+    ov.querySelector('#crErr').innerHTML = e ? '<div class="banner">'+ICONS.warn+'<span>'+esc(tr(e))+'</span></div>' : '';
+    if(e){ pv.innerHTML = ''; return; }
+    var f = customReportFigures(v.from, v.to, v.scope);
+    pv.innerHTML = '<div class="rowlist">' +
+      '<div class="row"><div class="main"><div class="title">'+tr('Sales')+'</div><div class="sub">'+f.salesCount+' '+tr('sales')+'</div></div><div class="trail num">'+fmtMoney(f.revenue)+'</div></div>' +
+      '<div class="row"><div class="main"><div class="title">'+tr('Expenses')+'</div></div><div class="trail num">'+fmtMoney(f.expensesTotal)+'</div></div>' +
+      '<div class="row"><div class="main"><div class="title">'+tr('Profit after expenses')+'</div></div><div class="trail num"><b>'+fmtMoney(f.netProfit)+'</b></div></div>' +
+      (f.vat ? '<div class="row"><div class="main"><div class="title">'+tr('Net VAT')+' ('+f.vat.rate+'%)</div></div><div class="trail num">'+fmtMoney(f.vat.net)+'</div></div>' : '') + '</div>' +
+      (f.salesCount === 0 && f.expensesTotal === 0 ? '<div class="banner" style="display:block;margin-top:8px;">'+tr('Nothing was recorded on those dates.')+'</div>' : '');
+  }
+  ov.querySelectorAll('[data-rp]').forEach(function(b){ b.addEventListener('click', function(){ var r = reportPresetRange(b.getAttribute('data-rp')); ov.querySelector('#crFrom').value = r.from; ov.querySelector('#crTo').value = r.to; paint(); }); });
+  ov.querySelector('#crFrom').addEventListener('change', paint); ov.querySelector('#crTo').addEventListener('change', paint);
+  var sc = ov.querySelector('#crScope'); if(sc) sc.addEventListener('change', paint);
+  ov.querySelector('#crDl').addEventListener('click', async function(){
+    var v = vals(); if(valid(v)) return toast(tr(valid(v)));
+    var b = ov.querySelector('#crDl'); b.disabled = true; var old = b.textContent; b.textContent = 'Preparing…';
+    var doc = await customReportPdf(v.from, v.to, v.scope);
+    b.disabled = false; b.textContent = old; if(!doc) return;
+    var ok = await saveGeneratedPdf(doc, 'pesa-report-'+v.from+(v.from===v.to?'':'_to_'+v.to)+'.pdf');
+    if(ok){ logAudit('report_generated','report', null, 'Report for '+v.from+' to '+v.to+' downloaded'); toast(tr('Report downloaded')); }
+  });
+  ov.querySelector('#crPrint').addEventListener('click', async function(){
+    var v = vals(); if(valid(v)) return toast(tr(valid(v)));
+    var doc = await customReportPdf(v.from, v.to, v.scope); if(doc) printPdfDoc(doc);
+  });
+  paint();
 }
 
 /* ============================== MONTHLY REPORT ARCHIVE ==============================
@@ -5628,7 +5810,8 @@ function renderReportsPage(){
   var f = State.repFilter || (State.repFilter = { year:'all', scope:'any' });
   var all = State.reports;
   var html = '<div class="rep-tools"><button class="btn btn-primary" id="repGenBtn" type="button">'+tr('Generate this month so far')+'</button>' +
-    '<button class="btn btn-ghost" id="repFileBtn" type="button">'+tr('File a past month')+'</button></div>';
+    '<button class="btn btn-ghost" id="repFileBtn" type="button">'+tr('File a past month')+'</button>' +
+    '<button class="btn btn-accent" id="repCustomBtn" type="button">'+tr('Report for any dates')+'</button></div>';
   if(all.length === 0){
     html += '<div class="empty">'+ICONS.chartbar.replace('width="18" height="18"','width="26" height="26"')+'<div class="t">'+tr('No reports filed yet')+'</div>' +
       '<div class="s">'+tr('Monthly reports are saved here for your records, ready to download, print or share. The first ones are filed automatically once a month has finished and had sales or expenses.')+'</div></div>' + reportsHelpHtml();
@@ -5648,6 +5831,7 @@ function renderReportsPage(){
 function wireReportsPage(content){
   var g = content.querySelector('#repGenBtn'); if(g) g.addEventListener('click', generateInterimReports);
   var fb = content.querySelector('#repFileBtn'); if(fb) fb.addEventListener('click', openFileMonthSheet);
+  var cb = content.querySelector('#repCustomBtn'); if(cb) cb.addEventListener('click', openCustomReportSheet);
   var wrap = content.querySelector('#repListWrap');
   function wireList(){
     if(!wrap) return;
@@ -6492,6 +6676,12 @@ function openSettingsSheet(){
     '<div class="field"><label>'+tr('Default low-stock alert')+'</label><input id="stLow" type="number" inputmode="numeric" value="'+s.lowStockDefault+'"></div>' +
     '<div class="banner">Applies to products that don’t have their own low-stock number set.</div>' +
 
+    '<div class="section-title">'+tr('Document and app font')+'</div>' +
+    '<div class="field"><label>'+tr('Font style')+'</label><select id="stFont">' +
+      Object.keys(FONT_SETS).map(function(k){ return '<option value="'+k+'" '+(currentFontKey()===k?'selected':'')+'>'+esc(FONT_SETS[k].label)+'</option>'; }).join('') +
+    '</select></div>' +
+    '<div class="banner" style="display:block;"><div id="stFontHead" style="font-family:var(--font-head);font-size:20px;font-weight:700;">Invoice INV-0001</div><div style="margin-top:4px;">Your Mula, Your Pride. N$1,250.00 · 12 items · Windhoek, Namibia</div></div>' +
+    '<div class="banner" style="display:block;">'+tr('Used for the headings and text in Pesa and on every invoice, receipt and report you generate.')+'</div>' +
     '<div class="section-title">Language</div>' +
     '<div class="field"><label>App language</label><select id="stLang">' +
       Object.keys(LANGS).map(function(code){
@@ -6619,6 +6809,11 @@ function openSettingsSheet(){
     if(!sampleDoc){ toast('Couldn’t load the PDF engine — check your connection and try again'); return; }
     saveGeneratedPdf(sampleDoc, 'pesa-sample-invoice.pdf').then(function(ok){ if(ok) toast('Sample invoice downloaded'); });
   });
+  ov.querySelector('#stFont').addEventListener('change', function(){
+    // preview at once; saved with "Save settings"
+    var k = ov.querySelector('#stFont').value, f = FONT_SETS[k];
+    document.documentElement.style.setProperty('--font-head', f.cssHead); document.documentElement.style.setProperty('--font-sans', f.cssBody);
+  });
   ov.querySelector('#stSave').addEventListener('click', function(){
     var name = ov.querySelector('#stName').value.trim() || 'My Shop';
     var low = parseInt(ov.querySelector('#stLow').value,10) || 5;
@@ -6626,7 +6821,7 @@ function openSettingsSheet(){
     var slogan = ov.querySelector('#stSlogan').value.trim();
     var tplKey = selectedTemplateKey();
     var lang = ov.querySelector('#stLang').value;
-    var patch = { shopName:name, lowStockDefault:low, businessContact:contact, businessSlogan:slogan, invoiceTemplate:tplKey, language:lang };
+    var patch = { shopName:name, lowStockDefault:low, businessContact:contact, businessSlogan:slogan, invoiceTemplate:tplKey, language:lang, docFont:ov.querySelector('#stFont').value };
     if(tplKey==='custom') patch.customTemplate = readCustomTemplate();
     State.settings = Object.assign({}, State.settings, patch);
     refs.settings.set(State.settings);
@@ -6737,6 +6932,7 @@ function updateHeader(){
 }
 
 function render(){
+  applyAppFont();
   updateHeader();
   // The hamburger lives in the persistent app-shell topbar, so it opens the
   // sidebar drawer from every tab, not just Dashboard — the sidebar is now
@@ -7614,7 +7810,7 @@ function openVatSummarySheet(){
     // mm units (not pt) so this can share drawDocHeader() with the
     // invoice/receipt/report PDFs — that's what puts the shop's logo (or
     // the default Pesa mark) at the top of this document too.
-    var doc = new JsPDFCtor({ unit:'mm', format:'a4' });
+    var doc = newPdfDoc(JsPDFCtor, { unit:'mm', format:'a4' });
     var head = drawDocHeader(doc);
     var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
     var t = head.t, primary=t.primary, muted=t.muted, dark=t.dark;
@@ -8034,6 +8230,17 @@ function trainRateLabel(){
   TRAIN_RATES.forEach(function(x){ if(Math.abs(x.r-r) < Math.abs(best.r-r)) best = x; });
   return best;
 }
+(function addDateLessons(){
+  var rep = LESSONS.filter(function(l){ return l.id === 'reports'; })[0], inv = LESSONS.filter(function(l){ return l.id === 'invoices'; })[0];
+  if(rep) rep.slides.push({ title:'A report for any dates', text:'You are not limited to whole months. Pick any start and end date and Pesa gathers what happened on those days.',
+    where:'Reports → Report for any dates',
+    steps:['Open Reports and tap Report for any dates.','Tap a shortcut such as Today, This week or Last month, or type your own From and To dates.','Check the preview: sales, expenses, profit and VAT for those days.','Tap Download report, or Print.'],
+    tip:'The report is built from your records at that moment, so it always matches what is in Pesa.' });
+  if(inv) inv.slides.push({ title:'Invoices from your sales', text:'Instead of typing every line, let Pesa gather the sales for a date and fill the invoice for you.',
+    where:'Invoices → New invoice → Gather from sales',
+    steps:['Open a new invoice.','Under Gather from sales, choose the Sales from and Sales to dates. Pick a customer, or leave it on All sales.','Tap Gather sales and fill items. The items, the customer details and the invoice date are filled in.','Check the lines, change anything you need, then download or send the invoice.'],
+    tip:'The invoice date is set to the last date you picked, and you can change it.' });
+})();
 function lessonsForRole(){
   return LESSONS.filter(function(l){
     return l.who === 'all' || (l.who === 'manager' && isManagerOrOwner()) || (l.who === 'owner' && isOwner());
@@ -8653,7 +8860,7 @@ function openReconcileSheet(){
    open (owner or manager login), keeping the latest 7. They live in the
    browser's own database on this device only. Clearing the browser's data
    removes them, so download a copy now and then. */
-var APP_VERSION = '2026.09.30';
+var APP_VERSION = '2026.09.30b';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -8833,6 +9040,11 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.09.30b', items:[
+    'Reports for any dates: pick a start and end date, or a shortcut like this week, and Pesa gathers everything for those days',
+    'Invoices can gather sales for a chosen date, range and customer and fill in the items for you',
+    'Professional fonts on every invoice, receipt and report, and in the app. Choose the style in Settings'
+  ]},
   { v:'2026.09.30', items:[
     'Pesa Smart Tools: alert centre, reorder list, deeper insights, risk warnings, customer profiles with credit limits, end of day check',
     'Mobile money and bank transfer types on sales',
@@ -9214,6 +9426,7 @@ var ABOUT_FEATURES = [
   'Pesa Smart Tools: an alert centre, an automatic reorder list, deeper sales insights, risk warnings, customer profiles with credit limits, and an end of day check',
   'Mobile money and bank transfer payment types, with automatic daily backups, a data health check and voice search',
   'Nearby WiFi sync between two devices with no internet',
+  'Reports and invoices for any chosen dates, and professional document fonts',
   'A confidentiality and privacy agreement, and Advanced Pesa Connection settings for connecting all your devices'
 ];
 
@@ -9311,6 +9524,14 @@ var ABOUT_SMART = [
     'End of day check: compares what Pesa recorded for cash, card and each wallet with what you really hold, and keeps a record',
     'Data health check: storage, backup age, connection, offline readiness and alerts',
     'What is new: the latest changes after an update'
+  ]},
+  { h:'Reports and invoices for any date', items:[
+    'Reports page, Report for any dates: pick a start and end date or a shortcut such as today, this week or this quarter. Pesa gathers the sales, expenses, VAT, payments, wastage and tills for exactly those days, shows a preview, and builds the full report to download or print',
+    'New invoice, Gather from sales: pick a date or range and optionally a customer. Pesa collects the matching sales, fills in the items, and sets the invoice date to the last date picked. You can still change anything before you download or send it'
+  ]},
+  { h:'Fonts', items:[
+    'Invoices, receipts, reports and every other Pesa document are printed in a professional font, and the same style is used for the headings and text in the app',
+    'Choose Elegant, Modern or Classic in Settings, Document and app font. Your choice is used on all new documents'
   ]},
   { h:'Mobile money and bank transfers', items:[
     'When charging a sale with Mobile wallet, choose PayToday, Blue Wallet, e at syWallet, MTC Maris, Bank transfer or Other, and type an optional reference',
@@ -9481,7 +9702,7 @@ function drawWetStamp(doc, pageW, pageH, now){
 // fallback here, and this function never calls doc.addPage().
 function generateAboutPdf(){
   var JsPDFCtor = getJsPDF();
-  var doc = new JsPDFCtor({ unit:'mm', format:'a4' });
+  var doc = newPdfDoc(JsPDFCtor, { unit:'mm', format:'a4' });
   // One canonical Date for the whole document: the generated line, the
   // stamp and the verification record all read this same value.
   var now = new Date();

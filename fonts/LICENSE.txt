@@ -1,0 +1,3 @@
+These font files are subsets of Playfair Display, Inter, Montserrat and Lora.
+They are licensed under the SIL Open Font License 1.1 (https://openfontlicense.org).
+Playfair Display: Claus Eggers Sørensen. Inter: Rasmus Andersson. Montserrat: Julieta Ulanovsky and others. Lora: Cyreal.
