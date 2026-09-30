@@ -3626,6 +3626,8 @@ function commitBulkRows(){
   });
 }
 
+var SAMPLE_STOCK_TEXT = 'Maize Meal 10kg,68,89.99,40,Groceries,bag\nMaize Meal 2.5kg,22,29.99,60,Groceries,bag\nWhite Sugar 2kg,34,42.99,35,Groceries,bag\nCooking Oil 750ml,29,37.99,30,Groceries,bottle\nRice 2kg,38,49.99,25,Groceries,bag\nSpaghetti 500g,10,14.99,48,Groceries,pack\nSalt 1kg,7,10.99,40,Groceries,pack\nTinned Pilchards 400g,14,19.99,3,Groceries,tin\nBaked Beans 410g,9,13.99,60,Groceries,tin\nEggs Tray of 30,58,74.99,12,Groceries,tray\nWhite Bread,13,17.99,20,Groceries,loaf\nBrown Bread,14,18.99,2,Groceries,loaf\nFull Cream Milk 1L,16,21.99,24,Dairy,carton\nLong Life Milk 500ml,9,12.99,36,Dairy,carton\nMargarine 500g,22,28.99,15,Dairy,tub\nCoca-Cola 500ml,8,12,96,Drinks,bottle\nCoca-Cola 2L,19,27.99,30,Drinks,bottle\nFanta Orange 500ml,8,12,72,Drinks,bottle\nSparletta Cream Soda 2L,18,26.99,4,Drinks,bottle\nStill Water 500ml,4,7,120,Drinks,bottle\nRooibos Tea 40 bags,17,24.99,18,Drinks,box\nWindhoek Lager 340ml,13,19.99,72,Drinks,bottle\nTafel Lager 340ml,12,18.99,48,Drinks,bottle\nOmajowa Juice 1L,15,21.99,0,Drinks,carton\nSunlight Soap Bar,6,9.99,50,Household,bar\nOmo Washing Powder 1kg,32,42.99,14,Household,pack\nToilet Paper 9 pack,36,47.99,20,Household,pack\nCandles Pack of 6,12,18.99,25,Household,pack\nMatches Box,2,3.99,100,Household,box\nBlue Band Petroleum Jelly 250ml,15,22.99,10,Personal Care,jar\nColgate Toothpaste 100ml,15,21.99,22,Personal Care,tube\nRoll On Deodorant,18,26.99,16,Personal Care,bottle\nLucky Star Airtime Voucher N$10,9.4,10,100,Airtime,voucher\nMTC Airtime N$20,18.8,20,80,Airtime,voucher\nLoose Cigarettes,0.8,1.5,200,Other,each\nIce Block,1.5,3,40,Other,each\nCake Flour 2.5kg,25,19.99,15,Groceries,bag';
+
 function openBulkAddSheet(){
   Bulk.rows = [];
   var html =
@@ -3643,7 +3645,8 @@ function openBulkAddSheet(){
     '<div class="field"><label>'+tr('One product per line')+'</label>' +
       '<textarea id="bulkPasteText" placeholder="Bread loaf, 9, 13, 20\nOmaere 500ml, 8, 12, 24, Drinks, bottle\nCooking oil 750ml, 22, 29, 10"></textarea></div>' +
     '<div class="banner"><span>Type or paste one product per line, separated by commas: <b>Name, Cost price, Selling price, Stock, Category (optional), Unit (optional)</b>. For example: <i>Bread loaf, 9, 13, 20</i>. You can check and change the list before anything is added.</span></div>' +
-    '<button class="btn btn-primary btn-block" id="bulkParseBtn" type="button">Import list</button>';
+    '<button class="btn btn-primary btn-block" id="bulkParseBtn" type="button">Import list</button>' +
+    '<button class="btn btn-ghost btn-block" id="bulkSampleBtn" type="button" style="margin-top:8px;">Load sample test stock (37 items)</button>';
 
   var csvHtml =
     '<label class="btn btn-ghost btn-block" for="bulkCsvInput" style="cursor:pointer;">'+ICONS.fileup+' Choose a .csv file</label>' +
@@ -3657,6 +3660,14 @@ function openBulkAddSheet(){
     var body = ov.querySelector('#bulkTabBody');
     if(tab === 'paste'){
       body.innerHTML = pasteHtml;
+      body.querySelector('#bulkSampleBtn').addEventListener('click', function(){
+        var have = {}; State.products.forEach(function(p){ have[String(p.name||'').toLowerCase()] = 1; });
+        var res = parsePastedText(SAMPLE_STOCK_TEXT);
+        var fresh = res.rows.filter(function(r){ return !have[r.name.toLowerCase()]; });
+        Bulk.rows = Bulk.rows.concat(fresh);
+        renderBulkPreview();
+        toast(fresh.length ? fresh.length+' sample items ready. Tap Add to save them.' : 'Sample stock is already in your list');
+      });
       body.querySelector('#bulkParseBtn').addEventListener('click', function(){
         var text = body.querySelector('#bulkPasteText').value;
         var res = parsePastedText(text);
