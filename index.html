@@ -8202,6 +8202,8 @@ var ABOUT_FEATURES = [
   'A staff training section with narrated lessons covering every part of the app'
 ];
 
+var DEV_EMAIL = 'ecrypted5@gmail.com';
+var DEV_WHATSAPP = '0818211692';
 function openAboutSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('About Pesa')+'</h2></div>' +
     ABOUT_PARAGRAPHS.map(function(p){ return '<p style="font-size:14px;line-height:1.6;color:var(--text);margin:0 0 12px;">'+esc(tr(p))+'</p>'; }).join('') +
@@ -8209,6 +8211,12 @@ function openAboutSheet(){
       ABOUT_FEATURES.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') +
     '</ul>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="aboutPdfBtn" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download PDF')+'</span></button></div>' +
+    '<div style="margin-top:18px;border-top:1px solid var(--border,#e2e6df);padding-top:14px;">' +
+      '<div style="font-weight:700;font-size:14px;margin-bottom:8px;">'+tr('Contact the developer')+'</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<a class="btn btn-ghost" style="flex:1;min-width:140px;text-decoration:none;justify-content:center;" href="'+buildMailtoUrl(DEV_EMAIL, 'Pesa app', '')+'">'+tr('Email')+': '+esc(DEV_EMAIL)+'</a>' +
+        '<a class="btn btn-primary" style="flex:1;min-width:140px;text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+buildWhatsAppUrl(DEV_WHATSAPP, 'Hello, I am contacting you about the Pesa app.')+'">'+tr('WhatsApp')+': '+esc(DEV_WHATSAPP)+'</a>' +
+      '</div></div>' +
     '<div style="text-align:center;font-size:12px;color:var(--text-muted);line-height:1.7;margin-top:18px;">' +
       esc(DEV_CREDIT_LINE) + '<br>' + esc(copyrightLine()) +
     '</div>';
