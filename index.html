@@ -1081,6 +1081,33 @@ var WS = (function(){
       if(e && e.name !== name){ e.name = name; write(r); }
     },
     remove: function(rid){ write(read().filter(function(x){ return x.id !== rid; })); },
+    // remember who has an account in this business (names/roles only, no passwords)
+    setUsers: function(users){
+      var r = read(), e = r.find(function(x){ return x.id === id; });
+      if(!e) return;
+      var sum = users.filter(function(u){ return u.active !== false; }).map(function(u){ return { id:u.id, name:u.name, role:u.role }; });
+      if(JSON.stringify(e.users || []) !== JSON.stringify(sum)){ e.users = sum; write(r); }
+    },
+    // every account in the OTHER businesses on this device (with password check data when this device holds it)
+    accounts: function(){
+      var all = {};
+      try{ all = JSON.parse(localStorage.getItem('otengu_shop_local_v1') || '{}'); }catch(e){}
+      var out = [];
+      read().forEach(function(w){
+        if(w.id === id || !w.name) return;
+        var pre = w.id === 'default' ? '' : 'ws_' + w.id + '__';
+        var local = all[pre + 'users'] || {};
+        var seen = {};
+        Object.keys(local).forEach(function(uid){
+          var u = local[uid]; if(!u || u.active === false) return;
+          seen[uid] = 1; out.push({ ws:w.id, wsName:w.name, id:uid, name:u.name, role:u.role, passHash:u.passHash });
+        });
+        (w.users || []).forEach(function(u){
+          if(!seen[u.id]) out.push({ ws:w.id, wsName:w.name, id:u.id, name:u.name, role:u.role, passHash:null });
+        });
+      });
+      return out;
+    },
     add: function(rid){ var r = read(); r.push({ id:rid, name:'' }); write(r); },
     setActive: function(rid){ try{ localStorage.setItem(ACT_KEY, rid); }catch(e){} }
   };
@@ -1409,6 +1436,7 @@ function subscribeAll(){
   });
   refs.users.onSnapshot(function(docs){
     State.users = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+    WS.setUsers(State.users);
     State.ready.users = true;
     checkAuthAndRoute();
   });
@@ -1642,6 +1670,19 @@ function checkAuthAndRoute(){
       if(u) State.session = { userId:u.id, name:u.name, role:u.role };
     }
   }
+  if(!State.session){
+    // one-step sign-in from another business's register page (see wireRegisterCompany)
+    var al = null;
+    try{ al = JSON.parse(sessionStorage.getItem('pesa_autologin') || 'null'); sessionStorage.removeItem('pesa_autologin'); }catch(e){}
+    if(al && al.ws === WS.id){
+      var au = State.users.find(function(x){ return x.id === al.userId && x.active !== false; });
+      if(au && au.passHash === al.hash){
+        State.session = { userId:au.id, name:au.name, role:au.role };
+        saveSessionLocal(au.id);
+        toast(tr('Welcome back, ')+au.name+'!');
+      }
+    }
+  }
   if(!State.session){ showAuthScreen(signedOutPending ? 'signedout' : 'login'); return; }
   signedOutPending = false;
 
@@ -1777,12 +1818,63 @@ function renderRegisterCompanyHtml(){
       '</div>' +
       '<div id="rcError"></div>' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="rcSubmit">'+tr('Register &amp; continue')+'</button></div>' +
+      accountPickerHtml() +
     '</div>' +
   '</div>';
 }
 
+/* ---- register page: "I already have an account on this device" dropdown ---- */
+function accountPickerHtml(){
+  var accts = WS.accounts();
+  if(!accts.length) return '';
+  var opts = accts.map(function(a, i){
+    return '<option value="'+i+'">'+esc(a.name)+' — '+esc(a.wsName)+' ('+esc(tr(ROLE_LABELS[a.role]||a.role||''))+')</option>';
+  }).join('');
+  return '<div class="section-title" style="margin-top:22px;">'+tr('Already have an account on this device?')+'</div>' +
+    '<div class="field"><label>'+tr('Choose your account')+'</label>' +
+      '<select id="rcAcctSelect"><option value="">'+tr('Choose…')+'</option>'+opts+'</select></div>' +
+    '<div id="rcAcctBox"></div>';
+}
+function wireAccountPicker(root){
+  var sel = root.querySelector('#rcAcctSelect');
+  if(!sel) return;
+  var accts = WS.accounts();
+  sel.addEventListener('change', function(){
+    var box = root.querySelector('#rcAcctBox');
+    if(sel.value === ''){ box.innerHTML = ''; return; }
+    var a = accts[parseInt(sel.value, 10)];
+    var isCash = a.role === 'cashier';
+    box.innerHTML =
+      '<div class="field"><label>'+(isCash ? tr('4-digit PIN') : tr('Password'))+'</label>' +
+        '<input id="rcAcctPass" type="password" inputmode="'+(isCash?'numeric':'text')+'" '+(isCash?'maxlength="4"':'')+' placeholder="'+(isCash?'••••':tr('Enter your password'))+'"></div>' +
+      '<div id="rcAcctError"></div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="rcAcctLogin" type="button">'+tr('Log in')+'</button></div>';
+    var pass = box.querySelector('#rcAcctPass');
+    pass.focus();
+    function attempt(){
+      var val = pass.value; if(!val) return;
+      var btn = box.querySelector('#rcAcctLogin'), err = box.querySelector('#rcAcctError');
+      btn.disabled = true;
+      sha256Hex(val).then(function(hash){
+        // when this device holds that business's data we can check the password right here
+        if(a.passHash && a.passHash !== hash){
+          btn.disabled = false;
+          err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+(isCash?tr('Incorrect PIN.'):tr('Incorrect password.'))+'</span></div>';
+          pass.value = ''; pass.focus();
+          return;
+        }
+        try{ sessionStorage.setItem('pesa_autologin', JSON.stringify({ ws:a.ws, userId:a.id, hash:hash })); }catch(e){}
+        switchBusiness(a.ws);
+      });
+    }
+    box.querySelector('#rcAcctLogin').addEventListener('click', attempt);
+    pass.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); });
+  });
+}
+
 function wireRegisterCompany(root){
   wireBusinessSwitcher(root);
+  wireAccountPicker(root);
   root.querySelector('#rcSubmit').addEventListener('click', function(){
     var v = function(id){ return root.querySelector(id).value.trim(); };
     var companyName = v('#rcCompanyName'), regNumber = v('#rcRegNumber'), address = v('#rcAddress'),
