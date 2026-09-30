@@ -410,6 +410,25 @@
   }
   .overlay.center .sheet{ border-radius:18px; max-height:82vh; }
   @keyframes sheetup{ from{ transform:translateY(16px); opacity:0.6; } to{ transform:translateY(0); opacity:1; } }
+  /* Brand corner logo (top-right) + faint watermark inside every sheet/page
+     that opens over the app (Settings, Team, forms, invoices...). Content is
+     lifted above the watermark; the head reserves room so titles/buttons
+     never run under the logo. */
+  .sheet{ position:relative; }
+  .sheet::before{
+    content:""; position:absolute; left:50%; top:50%; width:min(70%,260px); aspect-ratio:1/1; transform:translate(-50%,-50%) rotate(-5deg);
+    background-image:var(--brand-logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
+    opacity:0.06; pointer-events:none; z-index:0;
+  }
+  .sheet::after{
+    content:""; position:absolute; top:12px; right:14px; width:30px; height:30px;
+    background-image:var(--brand-logo-img); background-repeat:no-repeat; background-size:contain; background-position:center;
+    pointer-events:none; z-index:2;
+  }
+  .sheet > *{ position:relative; z-index:1; }
+  .sheet .sheet-head{ padding-right:40px; }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .sheet::before{ opacity:0.1; } }
+  :root[data-theme="dark"] .sheet::before{ opacity:0.1; }
   .sheet-handle{ width:36px; height:4px; background:var(--surface-3); border-radius:99px; margin:0 auto 12px; }
   .sheet-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 
