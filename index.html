@@ -4820,10 +4820,18 @@ function invAddItem(desc, qty, unitPrice){
   InvoiceDraft.items.push({ id:uid(), desc: desc||'', qty: qty!=null?qty:1, unitPrice: unitPrice!=null?unitPrice:0 });
 }
 
+function invStockOptions(selId){
+  var list = State.products.slice().sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||'')); });
+  return '<option value="">'+tr('Choose from stock…')+'</option>' + list.map(function(p){
+    var st = p.stockQty!=null ? ' · '+p.stockQty+' '+tr('in stock') : '';
+    return '<option value="'+esc(p.id)+'"'+(selId===p.id?' selected':'')+'>'+esc(p.name)+' — '+fmtMoney(p.sellPrice||0)+st+'</option>';
+  }).join('');
+}
 function invRenderItems(container){
   container.innerHTML = InvoiceDraft.items.map(function(it){
     var amt = (Number(it.qty)||0) * (Number(it.unitPrice)||0);
     return '<div class="card pad" style="margin-bottom:8px;" data-invrow="'+it.id+'">' +
+      (State.products.length ? '<select data-ifstock style="width:100%;margin-bottom:8px;border:1px solid var(--border);background:var(--surface-2);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);">'+invStockOptions(it.productId)+'</select>' : '') +
       '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">' +
         '<input data-if="desc" placeholder="Item or service" value="'+esc(it.desc)+'" style="flex:1;border:1px solid var(--border);background:var(--surface-2);border-radius:8px;padding:8px 10px;font-size:13.5px;font-weight:600;color:var(--text);">' +
         '<button class="bulk-del" data-ivdel type="button">×</button>' +
@@ -4839,12 +4847,27 @@ function invRenderItems(container){
     var id = rowEl.getAttribute('data-invrow');
     var item = InvoiceDraft.items.find(function(r){ return r.id===id; });
     if(!item) return;
+    var stockSel = rowEl.querySelector('[data-ifstock]');
+    if(stockSel) stockSel.addEventListener('change', function(){
+      var p = State.products.find(function(x){ return x.id===stockSel.value; });
+      if(!p){ item.productId = null; return; }
+      item.productId = p.id; item.desc = p.name || ''; item.unitPrice = Number(p.sellPrice)||0;
+      if(!(Number(item.qty) > 0)) item.qty = 1;
+      rowEl.querySelector('[data-if="desc"]').value = item.desc;
+      rowEl.querySelector('[data-if="unitPrice"]').value = item.unitPrice;
+      rowEl.querySelector('[data-if="qty"]').value = item.qty;
+      var amtEl0 = rowEl.querySelector('[data-ivamt]');
+      if(amtEl0) amtEl0.textContent = fmtMoney((Number(item.qty)||0)*(Number(item.unitPrice)||0));
+      invUpdateTotal();
+      if(p.stockQty!=null && item.qty > p.stockQty) toast('Only '+p.stockQty+' of '+p.name+' in stock');
+    });
     rowEl.querySelectorAll('[data-if]').forEach(function(inp){
       inp.addEventListener('input', function(){
         var f = inp.getAttribute('data-if');
         if(f==='qty'){ item.qty = parseFloat(inp.value)||0; }
         else if(f==='unitPrice'){ item.unitPrice = parseFloat(inp.value)||0; }
         else { item.desc = inp.value; }
+        if(f==='desc' && stockSel && item.productId){ item.productId = null; stockSel.value = ''; }
         var amt = (Number(item.qty)||0) * (Number(item.unitPrice)||0);
         var amtEl = rowEl.querySelector('[data-ivamt]');
         if(amtEl) amtEl.textContent = fmtMoney(amt);
