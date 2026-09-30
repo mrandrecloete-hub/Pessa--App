@@ -2269,6 +2269,7 @@ function checkAuthAndRoute(){
   }
   if(!State.session){ showAuthScreen(signedOutPending ? 'signedout' : 'login'); return; }
   signedOutPending = false;
+  if(!getConsent(State.session.userId)){ showConsentScreen(); return; }
 
   authEl.style.display = 'none';
   appEl.style.display = '';
@@ -6260,6 +6261,7 @@ function copyrightLine(){
 function settingsAboutFooterHtml(){
   return '<div class="section-title">'+tr('About')+'</div>' +
     '<button class="btn btn-ghost btn-block" id="stAboutBtn" type="button">'+ICONS.info+'<span style="margin-left:6px;">'+tr('About Pesa')+'</span></button>' +
+    '<button class="btn btn-ghost btn-block" id="stPrivacyBtn" type="button" style="margin-top:8px;">'+ICONS.info+'<span style="margin-left:6px;">'+tr('Confidentiality and privacy')+'</span></button>' +
     '<div style="text-align:center;font-size:11.5px;color:var(--text-muted);line-height:1.6;margin:12px 4px 4px;">' +
       esc(DEV_CREDIT_LINE) + '<br>' + esc(copyrightLine()) +
     '</div>';
@@ -6413,6 +6415,7 @@ function openCashierSettingsSheet(){
     toast(tr('Settings saved'));
   });
   ov.querySelector('#stAboutBtn').addEventListener('click', function(){ closeModal(); openAboutSheet(); });
+  var pvb = ov.querySelector('#stPrivacyBtn'); if(pvb) pvb.addEventListener('click', function(){ closeModal(); openPrivacySheet(); });
 }
 
 function openSettingsSheet(){
@@ -6605,6 +6608,7 @@ function openSettingsSheet(){
     if(file) importDataFromFile(file);
   });
   ov.querySelector('#stAboutBtn').addEventListener('click', function(){ closeModal(); openAboutSheet(); });
+  var pvb = ov.querySelector('#stPrivacyBtn'); if(pvb) pvb.addEventListener('click', function(){ closeModal(); openPrivacySheet(); });
 }
 
 function importDataFromFile(file){
@@ -8172,6 +8176,99 @@ function openLessonSlideshow(lessonId, opts){
   renderSlide();
 }
 
+
+/* ============================== PRIVACY AND CONFIDENTIALITY ============================== */
+// Plain language agreement every user accepts after registering or signing
+// in for the first time on a device. No hyphen or dash characters in the text.
+var PRIVACY_VERSION = '1.0';
+var PRIVACY_INTRO = 'Pesa respects your business. This agreement explains, in plain words, how your information is kept confidential and safe. It is between you and Pesa, developed by Björn Van Rensburg.';
+var PRIVACY_SECTIONS = [
+  { h:'1. Your business information belongs to you', items:[
+    'Your sales, stock, customers, credit records, expenses, staff, reports and every other financial record belong to your business only',
+    'Pesa does not sell, rent or share your information with anyone'
+  ]},
+  { h:'2. The developer cannot see your financial records', items:[
+    'In the installed app, your records are stored on your own device. If you switch on the Advanced Pesa Connection, they are also stored in your own private online project that you create and control',
+    'The developer has no server, no account and no automatic copy of your records, and has no way to open or read them',
+    'The app does not send usage reports, tracking or analytics to the developer',
+    'The only exception is the Claude preview copy of Pesa, which keeps its data in Claude storage. Use the installed app at its own web address for your real business'
+  ]},
+  { h:'3. Access only with your consent', items:[
+    'The developer can only look at business records if your business clearly agrees, for example when you choose to send a backup file or share your screen so a problem can be fixed',
+    'If you agree, access is limited to what is needed for that fix, is used for nothing else, and any copy is deleted once the fix is complete',
+    'You can say no at any time, and the app will still work'
+  ]},
+  { h:'4. What the developer does keep track of', items:[
+    'Only the maintenance, operation and working capability of the app itself, such as version numbers, features, and fixing faults in the app',
+    'Fixes and updates are new versions of the app. Installing an update changes the app only, and does not read, copy or send your business records'
+  ]},
+  { h:'5. Passwords and access', items:[
+    'Passwords and PINs are stored in a scrambled form, so nobody, including the developer, can read them',
+    'Keep your password, sync code and connection details private. Anyone who has them can reach your data',
+    'Owners decide which staff can use the app and what each role can see'
+  ]},
+  { h:'6. Other services you choose to use', items:[
+    'Password reset emails are sent through an email service that you set up. It receives only the email address and the reset code',
+    'When you share an invoice or report through WhatsApp or email, that app receives what you choose to share',
+    'Your online project for the Advanced Pesa Connection is held by you, under that provider’s own terms'
+  ]},
+  { h:'7. Confidentiality for everyone who uses the app', items:[
+    'Owners, managers and staff agree to keep business and customer information they see in Pesa confidential and to use it only for the business',
+    'Owners are responsible for handling their customers’ personal details, such as names, phone numbers and credit records, lawfully and with care',
+    'Back up your data from Settings regularly, because it is stored on your devices first'
+  ]},
+  { h:'8. Changes and questions', items:[
+    'If this agreement changes, you will be asked to read and accept the new version',
+    'For questions or concerns about privacy, contact the developer by email at '+'ecrypted5@gmail.com'+' or on WhatsApp at 0818211692'
+  ]}
+];
+
+function consentKey(userId){ return 'pesa_consent_' + (WS.id === 'default' ? 'default' : WS.id) + '_' + userId; }
+function getConsent(userId){
+  try{ var c = JSON.parse(localStorage.getItem(consentKey(userId)) || 'null'); return c && c.v === PRIVACY_VERSION ? c : null; }catch(e){ return null; }
+}
+function privacyAgreementHtml(){
+  return '<p style="font-size:13.5px;line-height:1.6;margin:0 0 12px;">'+esc(tr(PRIVACY_INTRO))+'</p>' +
+    PRIVACY_SECTIONS.map(function(sec){
+      return '<div style="font-weight:700;font-size:14px;margin:10px 0 6px;">'+esc(tr(sec.h))+'</div>' +
+        '<ul style="margin:0 0 8px;padding-left:20px;font-size:13.5px;line-height:1.65;color:var(--text-muted);">' +
+        sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
+    }).join('');
+}
+function showConsentScreen(){
+  var authEl = document.getElementById('authScreen'), appEl = document.getElementById('app');
+  appEl.style.display = 'none'; authEl.style.display = 'flex';
+  var company = State.company || {};
+  authEl.innerHTML = '<div class="authcard">' +
+    '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><p>'+tr('Confidentiality and privacy agreement')+'</p></div>' +
+    '<div class="authbox">' +
+      '<div style="max-height:46vh;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--surface);">'+privacyAgreementHtml()+'</div>' +
+      '<label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.5;margin-bottom:12px;"><input type="checkbox" id="cnAgree" style="margin-top:3px;width:18px;height:18px;"><span>'+tr('I have read and agree to the Pesa confidentiality and privacy agreement.')+'</span></label>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="cnAccept" type="button" disabled>'+tr('Accept and continue')+'</button></div>' +
+      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="cnDecline" type="button">'+tr('Decline and log out')+'</button></div>' +
+    '</div></div>';
+  var chk = authEl.querySelector('#cnAgree'), ok = authEl.querySelector('#cnAccept');
+  chk.addEventListener('change', function(){ ok.disabled = !chk.checked; });
+  ok.addEventListener('click', function(){
+    var uid = State.session && State.session.userId; if(!uid) return;
+    var now = new Date();
+    try{ localStorage.setItem(consentKey(uid), JSON.stringify({ v:PRIVACY_VERSION, at:now.toISOString() })); }catch(e){}
+    logAudit('other','consent', uid, 'Accepted the confidentiality and privacy agreement, version '+PRIVACY_VERSION, now);
+    checkAuthAndRoute();
+  });
+  authEl.querySelector('#cnDecline').addEventListener('click', function(){
+    signedOutPending = true; State.session = null; State.till.current = null; State.tab = 'dashboard';
+    clearSessionLocal(); checkAuthAndRoute();
+  });
+}
+function openPrivacySheet(){
+  var c = State.session ? getConsent(State.session.userId) : null;
+  var html = '<div class="sheet-head"><h2>'+tr('Confidentiality and privacy')+'</h2></div>' +
+    (c ? '<div class="banner" style="display:block;">'+tr('You accepted this agreement on')+' '+esc(fmtDateNice(c.at))+' · '+tr('version')+' '+esc(c.v)+'</div>' : '') +
+    privacyAgreementHtml();
+  openSheet(html);
+}
+
 /* ============================== ABOUT PESA ============================== */
 // Written without any hyphen or dash character, in app and in the PDF, as
 // requested — see the sentences below and generateAboutPdf(); everyday
@@ -8279,6 +8376,8 @@ function openAboutSheet(){
     '<ul style="margin:0 0 16px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
       ABOUT_FEATURES.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') +
     '</ul>' +
+    '<div style="font-weight:800;font-size:15px;margin:10px 0 6px;color:var(--primary);">'+esc(tr('Your privacy and confidentiality'))+'</div>' +
+    privacyAgreementHtml() +
     ABOUT_INTERNET.map(function(sec){
       return '<div style="font-weight:700;font-size:14px;margin:4px 0 6px;">'+esc(tr(sec.h))+'</div>' +
         '<ul style="margin:0 0 14px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
@@ -8474,6 +8573,18 @@ function generateAboutPdf(){
 
   heading('Working with and without internet');
   ABOUT_INTERNET.forEach(function(sec){
+    need(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text(sec.h, margin, y); y += 5.5;
+    bulletList(sec.items);
+    y += 1.5;
+  });
+
+  heading('Your privacy and confidentiality');
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
+  var pi = doc.splitTextToSize(PRIVACY_INTRO, contentW); need(pi.length*4.3+3);
+  doc.text(pi, margin, y); y += pi.length*4.3 + 3;
+  PRIVACY_SECTIONS.forEach(function(sec){
     need(14);
     doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text(sec.h, margin, y); y += 5.5;
