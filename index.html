@@ -1055,6 +1055,37 @@ function langConfidenceLabel(code){
   return ' — not yet translated, shows in English';
 }
 
+/* ============================== businesses on this device ==============================
+   One device can hold several businesses. Each business keeps its own data
+   under a prefix on every collection name ('' for the original business so
+   existing data is untouched). The list of businesses and the active one are
+   remembered on this device; switching reloads the app into the chosen one. */
+var WS = (function(){
+  var REG_KEY = 'pesa_workspaces_v1', ACT_KEY = 'pesa_active_ws_v1';
+  function read(){
+    try{ var r = JSON.parse(localStorage.getItem(REG_KEY) || 'null'); if(Array.isArray(r) && r.length) return r; }catch(e){}
+    return [{ id:'default', name:'' }];
+  }
+  function write(r){ try{ localStorage.setItem(REG_KEY, JSON.stringify(r)); }catch(e){} }
+  var id = 'default';
+  try{ id = localStorage.getItem(ACT_KEY) || 'default'; }catch(e){}
+  var l0 = read();
+  if(!l0.some(function(x){ return x.id === id; })){ l0.push({ id:id, name:'' }); write(l0); }
+  return {
+    id: id,
+    prefix: id === 'default' ? '' : 'ws_' + id + '__',
+    list: read,
+    others: function(){ return read().filter(function(x){ return x.id !== id && x.name; }); },
+    rename: function(name){
+      var r = read(), e = r.find(function(x){ return x.id === id; });
+      if(e && e.name !== name){ e.name = name; write(r); }
+    },
+    remove: function(rid){ write(read().filter(function(x){ return x.id !== rid; })); },
+    add: function(rid){ var r = read(); r.push({ id:rid, name:'' }); write(r); },
+    setActive: function(rid){ try{ localStorage.setItem(ACT_KEY, rid); }catch(e){} }
+  };
+})();
+
 /* ============================== store (db capability, with local fallback) ============================== */
 var Store = (function(){
   var mode = 'pending'; // 'db' | 'local'
@@ -1173,6 +1204,7 @@ var Store = (function(){
   }
 
   function collection(path){
+    path = WS.prefix + path;
     if(mode === 'db') return wrapDbCollection(dbNs.collection(path));
     return localCollection(path);
   }
@@ -1371,6 +1403,7 @@ function subscribeAll(){
   });
   refs.company.onSnapshot(function(data){
     State.company = data || null;
+    if(State.company) WS.rename(State.company.tradingName || State.company.companyName || '');
     State.ready.company = true;
     checkAuthAndRoute();
   });
@@ -1449,7 +1482,7 @@ function logAudit(action, entityType, entityId, summary, whenDate, extra){
 }
 
 /* ============================== company / staff accounts / login / roles ============================== */
-var SESSION_KEY = 'pesa_session_v2';
+var SESSION_KEY = 'pesa_session_v2' + (WS.id === 'default' ? '' : '_' + WS.id);
 var NAMIBIA_REGIONS = ['Erongo','Hardap','ǁKaras','Kavango East','Kavango West','Khomas','Kunene','Ohangwena','Omaheke','Omusati','Oshana','Oshikoto','Otjozondjupa','Zambezi'];
 var ROLE_LABELS = { owner:'Owner', manager:'Manager / Supervisor', cashier:'Cashier' };
 var introSplashPlayed = false;
@@ -1656,7 +1689,8 @@ function renderSignedOutHtml(){
     '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
-      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soRegisterBtn">'+tr('Sign up / register as new user')+'</button></div>' +
+      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soRegisterBtn" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
+      otherBusinessesHtml(tr('Other businesses on this device')) +
     '</div>' +
   '</div>';
 }
@@ -1665,74 +1699,44 @@ function wireSignedOut(root){
     signedOutPending = false;
     showAuthScreen('login');
   });
-  root.querySelector('#soRegisterBtn').addEventListener('click', openNewRegistrationSheet);
+  wireBusinessSwitcher(root);
 }
 
-/* Registering a NEW business on a device that already has one replaces that
-   device's data, so it is guarded: the person must confirm with an Owner's
-   password (cashiers can reach this screen after a log-out), and is offered a
-   backup download first. */
-function openNewRegistrationSheet(){
-  var company = State.company || {};
-  var html = '<div class="sheet-head"><h2>'+tr('Register as new user')+'</h2></div>' +
-    '<div class="banner">'+ICONS.warn+'<span>'+tr('Registering a new business replaces everything currently on this device')+(company.companyName ? ' ('+esc(company.tradingName||company.companyName)+')' : '')+': '+tr('products, sales, customers, staff and settings. This cannot be undone. If you only want to work in the existing business, go back and choose “Log in again”.')+'</span></div>' +
-    '<div class="actions"><button class="btn btn-ghost btn-block" id="nrBackupBtn" type="button">'+tr('Download a backup first')+'</button></div>' +
-    '<div class="field" style="margin-top:12px;"><label>'+tr('Owner password (to confirm)')+'</label><input id="nrPass" type="password" placeholder="'+tr('Owner password')+'"></div>' +
-    '<div id="nrError"></div>' +
-    '<div class="actions"><button class="btn btn-danger btn-block" id="nrConfirmBtn">'+tr('Erase and register new business')+'</button>' +
-    '<button class="btn btn-ghost btn-block" id="nrCancelBtn" type="button" style="margin-top:8px;">'+tr('Cancel')+'</button></div>';
-  var ov = openSheet(html);
-  ov.querySelector('#nrBackupBtn').addEventListener('click', function(){ try{ exportData(); }catch(e){} });
-  ov.querySelector('#nrCancelBtn').addEventListener('click', closeModal);
-  var pass = ov.querySelector('#nrPass'), errEl = ov.querySelector('#nrError'), btn = ov.querySelector('#nrConfirmBtn');
-  function attempt(){
-    var val = pass.value;
-    if(!val) return;
-    btn.disabled = true;
-    var owners = State.users.filter(function(u){ return u.role==='owner' && u.active!==false; });
-    sha256Hex(val).then(function(hash){
-      var ok = !State.company || owners.length===0 || owners.some(function(u){ return u.passHash === hash; });
-      if(!ok){
-        btn.disabled = false;
-        errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Incorrect owner password.')+'</span></div>';
-        pass.value=''; pass.focus();
-        return;
-      }
-      btn.textContent = tr('Erasing…');
-      eraseAllShopData().then(function(){
-        closeModal();
-        signedOutPending = false;
-        State.session = null; clearSessionLocal();
-        showAuthScreen('register');
-      }).catch(function(){
-        btn.disabled = false; btn.textContent = tr('Erase and register new business');
-        errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Something went wrong — please try again.')+'</span></div>';
-      });
-    });
-  }
-  btn.addEventListener('click', attempt);
-  pass.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); });
+/* Register another business on this device WITHOUT touching the existing one:
+   a fresh, empty business space is created and the app reloads into it. The
+   old business stays in the list and can be opened again from the sign-in
+   screen. */
+function startNewBusiness(){
+  var cur = WS.id;
+  if(!State.company && cur !== 'default') WS.remove(cur); // never leave empty spaces behind
+  var nid = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+  WS.add(nid);
+  WS.setActive(nid);
+  try{ clearSessionLocal(); }catch(e){}
+  location.reload();
 }
-async function eraseAllShopData(){
-  suppressAuthRoute = true;
-  try{
-    var groups = [
-      [refs.products, State.products], [refs.customers, State.customers], [refs.sales, State.sales],
-      [refs.expenses, State.expenses], [refs.tills, State.tillSessions], [refs.branches, State.branches],
-      [refs.suppliers, State.suppliers], [refs.purchaseOrders, State.purchaseOrders], [refs.wastage, State.wastage],
-      [refs.auditLog, State.auditLog], [refs.invoices, State.invoices], [refs.reports, State.reports],
-      [refs.users, State.users]
-    ];
-    for(var g=0; g<groups.length; g++){
-      var list = (groups[g][1] || []).slice();
-      for(var i=0; i<list.length; i++){ await groups[g][0].doc(list[i].id).delete(); }
-    }
-    await refs.settings.delete();
-    State.settings = { shopName:'Pesa', lowStockDefault:5, soundEnabled:true };
-    State.tillSessions = []; State.till.current = null;
-    await refs.company.delete();
-    State.company = null;
-  } finally { suppressAuthRoute = false; }
+function switchBusiness(id){
+  if(!State.company && WS.id !== 'default') WS.remove(WS.id);
+  WS.setActive(id);
+  location.reload();
+}
+function otherBusinessesHtml(title){
+  var others = WS.others();
+  if(!others.length) return '';
+  return '<div class="section-title" style="margin-top:14px;">'+esc(title)+'</div>' +
+    others.map(function(w){
+      return '<button type="button" class="stafftile" data-ws="'+esc(w.id)+'">' +
+        '<div class="avatar">'+esc(initials(w.name))+'</div>' +
+        '<div class="main"><div class="n">'+esc(w.name)+'</div><div class="r">'+tr('Open this business')+'</div></div>' +
+      '</button>';
+    }).join('');
+}
+function wireBusinessSwitcher(root){
+  root.querySelectorAll('[data-ws]').forEach(function(b){
+    b.addEventListener('click', function(){ switchBusiness(b.getAttribute('data-ws')); });
+  });
+  var nb = root.querySelector('[data-newbiz]');
+  if(nb) nb.addEventListener('click', startNewBusiness);
 }
 
 function complianceNoteHtml(){
@@ -1744,6 +1748,7 @@ function renderRegisterCompanyHtml(){
   return '<div class="authcard">' +
     '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Register your business')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Set up Pesa for your business — this only takes a minute.')+'</p></div>' +
     '<div class="authbox">' +
+      otherBusinessesHtml(tr('Already registered on this device? Open it instead')) +
       '<div class="section-title">'+tr('Business details')+'</div>' +
       '<div class="banner">'+tr('Only your business name is required to get started. Add the rest — registration number, VAT, address — whenever you have it; you can always fill it in later from Settings.')+'</div>' +
       '<div class="field"><label>'+tr('Business name')+' *</label><input id="rcCompanyName" placeholder="e.g. Nangolo General Dealer"></div>' +
@@ -1777,6 +1782,7 @@ function renderRegisterCompanyHtml(){
 }
 
 function wireRegisterCompany(root){
+  wireBusinessSwitcher(root);
   root.querySelector('#rcSubmit').addEventListener('click', function(){
     var v = function(id){ return root.querySelector(id).value.trim(); };
     var companyName = v('#rcCompanyName'), regNumber = v('#rcRegNumber'), address = v('#rcAddress'),
@@ -1842,14 +1848,15 @@ function renderLoginHtml(){
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
       '<div id="loginUnlockBox"></div>' +
+      otherBusinessesHtml(tr('Other businesses on this device')) +
     '</div>' +
-    '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button">'+tr('Sign up / register as new user')+'</button></div>' +
+    '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
   '</div>';
 }
 
 function wireLoginView(root){
   var selectedId = null;
-  var regBtn = root.querySelector('#loginRegisterBtn'); if(regBtn) regBtn.addEventListener('click', openNewRegistrationSheet);
+  wireBusinessSwitcher(root);
   root.querySelectorAll('[data-staff]').forEach(function(tile){
     tile.addEventListener('click', function(){
       root.querySelectorAll('[data-staff]').forEach(function(t){ t.classList.remove('active'); });
