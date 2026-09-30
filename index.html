@@ -429,6 +429,7 @@
   .sheet .sheet-head{ padding-right:40px; }
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .sheet::before{ opacity:0.1; } }
   :root[data-theme="dark"] .sheet::before{ opacity:0.1; }
+  #authModalRoot .overlay{ z-index:500; }
   .sheet-handle{ width:36px; height:4px; background:var(--surface-3); border-radius:99px; margin:0 auto 12px; }
   .sheet-head{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 
@@ -1578,8 +1579,10 @@ function isCashier(){ return !!(State.session && State.session.role==='cashier')
 function saveSessionLocal(userId){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({userId:userId})); }catch(e){} }
 function clearSessionLocal(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 
+var signedOutPending = false;
 function logout(){
   confirmSheet(tr('Log out?'), tr('You can log back in anytime with your password or PIN.'), tr('Log out'), function(){
+    signedOutPending = true;
     State.session = null;
     State.till.current = null;
     State.tab = 'dashboard';
@@ -1606,7 +1609,8 @@ function checkAuthAndRoute(){
       if(u) State.session = { userId:u.id, name:u.name, role:u.role };
     }
   }
-  if(!State.session){ showAuthScreen('login'); return; }
+  if(!State.session){ showAuthScreen(signedOutPending ? 'signedout' : 'login'); return; }
+  signedOutPending = false;
 
   authEl.style.display = 'none';
   appEl.style.display = '';
@@ -1636,8 +1640,99 @@ function showAuthScreen(view){
   }
   document.getElementById('app').style.display = 'none';
   authEl.style.display = 'flex';
+  if(view === 'signedout'){
+    authEl.innerHTML = renderSignedOutHtml();
+    wireSignedOut(authEl);
+    return;
+  }
   authEl.innerHTML = view === 'register' ? renderRegisterCompanyHtml() : renderLoginHtml();
   if(view === 'register') wireRegisterCompany(authEl); else wireLoginView(authEl);
+}
+
+/* ---- signed-out screen: log in again, or register as a new user/business ---- */
+function renderSignedOutHtml(){
+  var company = State.company || {};
+  return '<div class="authcard">' +
+    '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
+    '<div class="authbox">' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
+      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soRegisterBtn">'+tr('Sign up / register as new user')+'</button></div>' +
+    '</div>' +
+  '</div>';
+}
+function wireSignedOut(root){
+  root.querySelector('#soLoginBtn').addEventListener('click', function(){
+    signedOutPending = false;
+    showAuthScreen('login');
+  });
+  root.querySelector('#soRegisterBtn').addEventListener('click', openNewRegistrationSheet);
+}
+
+/* Registering a NEW business on a device that already has one replaces that
+   device's data, so it is guarded: the person must confirm with an Owner's
+   password (cashiers can reach this screen after a log-out), and is offered a
+   backup download first. */
+function openNewRegistrationSheet(){
+  var company = State.company || {};
+  var html = '<div class="sheet-head"><h2>'+tr('Register as new user')+'</h2></div>' +
+    '<div class="banner">'+ICONS.warn+'<span>'+tr('Registering a new business replaces everything currently on this device')+(company.companyName ? ' ('+esc(company.tradingName||company.companyName)+')' : '')+': '+tr('products, sales, customers, staff and settings. This cannot be undone. If you only want to work in the existing business, go back and choose “Log in again”.')+'</span></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="nrBackupBtn" type="button">'+tr('Download a backup first')+'</button></div>' +
+    '<div class="field" style="margin-top:12px;"><label>'+tr('Owner password (to confirm)')+'</label><input id="nrPass" type="password" placeholder="'+tr('Owner password')+'"></div>' +
+    '<div id="nrError"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="nrConfirmBtn">'+tr('Erase and register new business')+'</button>' +
+    '<button class="btn btn-ghost btn-block" id="nrCancelBtn" type="button" style="margin-top:8px;">'+tr('Cancel')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#nrBackupBtn').addEventListener('click', function(){ try{ exportData(); }catch(e){} });
+  ov.querySelector('#nrCancelBtn').addEventListener('click', closeModal);
+  var pass = ov.querySelector('#nrPass'), errEl = ov.querySelector('#nrError'), btn = ov.querySelector('#nrConfirmBtn');
+  function attempt(){
+    var val = pass.value;
+    if(!val) return;
+    btn.disabled = true;
+    var owners = State.users.filter(function(u){ return u.role==='owner' && u.active!==false; });
+    sha256Hex(val).then(function(hash){
+      var ok = !State.company || owners.length===0 || owners.some(function(u){ return u.passHash === hash; });
+      if(!ok){
+        btn.disabled = false;
+        errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Incorrect owner password.')+'</span></div>';
+        pass.value=''; pass.focus();
+        return;
+      }
+      btn.textContent = tr('Erasing…');
+      eraseAllShopData().then(function(){
+        closeModal();
+        signedOutPending = false;
+        State.session = null; clearSessionLocal();
+        showAuthScreen('register');
+      }).catch(function(){
+        btn.disabled = false; btn.textContent = tr('Erase and register new business');
+        errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Something went wrong — please try again.')+'</span></div>';
+      });
+    });
+  }
+  btn.addEventListener('click', attempt);
+  pass.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); });
+}
+async function eraseAllShopData(){
+  suppressAuthRoute = true;
+  try{
+    var groups = [
+      [refs.products, State.products], [refs.customers, State.customers], [refs.sales, State.sales],
+      [refs.expenses, State.expenses], [refs.tills, State.tillSessions], [refs.branches, State.branches],
+      [refs.suppliers, State.suppliers], [refs.purchaseOrders, State.purchaseOrders], [refs.wastage, State.wastage],
+      [refs.auditLog, State.auditLog], [refs.invoices, State.invoices], [refs.reports, State.reports],
+      [refs.users, State.users]
+    ];
+    for(var g=0; g<groups.length; g++){
+      var list = (groups[g][1] || []).slice();
+      for(var i=0; i<list.length; i++){ await groups[g][0].doc(list[i].id).delete(); }
+    }
+    await refs.settings.delete();
+    State.settings = { shopName:'Pesa', lowStockDefault:5, soundEnabled:true };
+    State.tillSessions = []; State.till.current = null;
+    await refs.company.delete();
+    State.company = null;
+  } finally { suppressAuthRoute = false; }
 }
 
 function complianceNoteHtml(){
@@ -1748,11 +1843,13 @@ function renderLoginHtml(){
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
       '<div id="loginUnlockBox"></div>' +
     '</div>' +
+    '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button">'+tr('Sign up / register as new user')+'</button></div>' +
   '</div>';
 }
 
 function wireLoginView(root){
   var selectedId = null;
+  var regBtn = root.querySelector('#loginRegisterBtn'); if(regBtn) regBtn.addEventListener('click', openNewRegistrationSheet);
   root.querySelectorAll('[data-staff]').forEach(function(tile){
     tile.addEventListener('click', function(){
       root.querySelectorAll('[data-staff]').forEach(function(t){ t.classList.remove('active'); });
@@ -2124,10 +2221,24 @@ function toast(msg){
 }
 
 /* ============================== modal helpers ============================== */
-function closeModal(){ document.getElementById('modalRoot').innerHTML = ''; }
+function closeModal(){
+  document.getElementById('modalRoot').innerHTML = '';
+  var ar = document.getElementById('authModalRoot'); if(ar) ar.innerHTML = '';
+}
+// Sign-in / register screens hide the app shell (which holds #modalRoot), so
+// sheets opened from them are mounted straight on <body> instead.
+function sheetRoot(){
+  var app = document.getElementById('app');
+  if(app && app.style.display === 'none'){
+    var ar = document.getElementById('authModalRoot');
+    if(!ar){ ar = document.createElement('div'); ar.id = 'authModalRoot'; document.body.appendChild(ar); }
+    return ar;
+  }
+  return document.getElementById('modalRoot');
+}
 function openSheet(innerHtml, opts){
   opts = opts || {};
-  var root = document.getElementById('modalRoot');
+  var root = sheetRoot();
   var overlay = document.createElement('div');
   overlay.className = 'overlay' + (opts.center ? ' center' : '');
   overlay.innerHTML = '<div class="sheet">' + (opts.center ? '' : '<div class="sheet-handle"></div>') + innerHtml + '</div>';
