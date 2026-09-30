@@ -4975,10 +4975,10 @@ function buildReceiptPdf(draft){
     y += 1;
 
     // ---- items
-    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 4.4, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(5.6); doc.setTextColor(255,255,255);
-    doc.text('ITEM', margin+2, y+3.1, { charSpace:0.3 }); doc.text('AMOUNT', pageW-margin-2, y+3.1, { align:'right', charSpace:0.3 });
-    y += 4.4;
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 3.4, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(4.8); doc.setTextColor(255,255,255);
+    doc.text('ITEM', margin+2, y+2.4, { charSpace:0.25 }); doc.text('AMOUNT', pageW-margin-2, y+2.4, { align:'right', charSpace:0.25 });
+    y += 3.4;
     items.forEach(function(it, i){
       var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price;
       doc.setFont('helvetica','bold'); doc.setFontSize(6.8);
@@ -5002,11 +5002,11 @@ function buildReceiptPdf(draft){
     sum('Items', String(items.reduce(function(a,it){ return a + (Number(it.qty)||0); }, 0)));
     if(vatNo && vatRate > 0) sum('VAT ('+vatRate+'%) included', fmtMoney(subtotal*vatRate/(100+vatRate)));
     y += 0.6;
-    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 7, 1, 1, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
-    doc.text('TOTAL', margin+2.5, y+4.6, { charSpace:0.4 });
-    doc.setFontSize(9); doc.text(fmtMoney(subtotal), pageW-margin-2.5, y+4.7, { align:'right' });
-    y += 7 + 5;
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 5, 0.8, 0.8, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(255,255,255);
+    doc.text('TOTAL', margin+2, y+3.4, { charSpace:0.3 });
+    doc.setFontSize(7.5); doc.text(fmtMoney(subtotal), pageW-margin-2, y+3.5, { align:'right' });
+    y += 5 + 4.5;
 
     // ---- footer: thank you
     doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineDashPattern([0.8,1], 0); doc.line(margin, y, pageW-margin, y); doc.setLineDashPattern([], 0);
