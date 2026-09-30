@@ -4988,8 +4988,6 @@ function buildInvoicePdf(draft){
     doc.text(noteLines, margin, y);
   }
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-  doc.text('Generated with Pesa · '+fmtDateNice(new Date()), margin, 290);
   return doc;
 }
 
@@ -5107,9 +5105,7 @@ function buildReceiptPdf(draft){
     if(custom && custom !== (t.defaultNote||'').trim()){
       var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*2.7 + 1.2;
     }
-    y += 1.5;
-    doc.setFont('helvetica','normal'); doc.setFontSize(5.4); doc.setTextColor(150,150,150);
-    doc.text('Powered by Pesa', pageW/2, y, { align:'center' }); y += 3;
+    y += 1;
     return y;
   }
   var probe = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, 1500] });
@@ -5510,8 +5506,6 @@ function drawReportPdf(fig, monthLabel, meta){
       doc.text('Page '+pg+' of '+pages, pageW-margin, 290, {align:'right'});
     }
   } else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-    doc.text('Generated with Pesa', margin, 290);
   }
   return doc;
 }
