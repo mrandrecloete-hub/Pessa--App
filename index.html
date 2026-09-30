@@ -94,6 +94,7 @@
   @font-face{ font-family:'Pesa Inter'; font-weight:400; font-style:normal; font-display:swap; src:url(fonts/Inter-Regular.ttf) format('truetype'); }
   @font-face{ font-family:'Pesa Inter'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/Inter-Bold.ttf) format('truetype'); }
   @font-face{ font-family:'Pesa Inter'; font-weight:400; font-style:italic; font-display:swap; src:url(fonts/Inter-Italic.ttf) format('truetype'); }
+  @font-face{ font-family:'Pesa Graffiti'; font-weight:400; font-style:normal; font-display:swap; src:url(fonts/PermanentMarker.woff2) format('woff2'); }
   @font-face{ font-family:'Pesa Playfair'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/PlayfairDisplay-Bold.ttf) format('truetype'); }
   @font-face{ font-family:'Pesa Montserrat'; font-weight:700; font-style:normal; font-display:swap; src:url(fonts/Montserrat-Bold.ttf) format('truetype'); }
   @font-face{ font-family:'Pesa Lora'; font-weight:400; font-style:normal; font-display:swap; src:url(fonts/Lora-Regular.ttf) format('truetype'); }
@@ -649,6 +650,16 @@
     animation: pesaSplash 2.1s cubic-bezier(.34,1.4,.64,1) forwards;
   }
   .splash-title{ font-size:22px; font-weight:800; letter-spacing:-0.02em; opacity:0; animation: pesaFadeUp 0.5s ease-out 1.35s forwards; }
+  .splash-title.graffiti{
+    font-family:'Pesa Graffiti','Permanent Marker','Marker Felt','Comic Sans MS',cursive; font-weight:400; font-size:64px; line-height:1; letter-spacing:0.02em; text-transform:uppercase;
+    transform:rotate(-4deg); padding:6px 14px; margin-top:34px; font-size:72px;
+    background:linear-gradient(100deg,#1fae7a 0%,#0f7a5a 38%,#f2b53a 72%,#e8871e 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
+    -webkit-text-stroke:1.5px rgba(10,40,30,.55);
+    filter:drop-shadow(3px 4px 0 rgba(0,0,0,.28)) drop-shadow(0 0 14px rgba(242,181,58,.35));
+    animation: pesaTag 0.7s cubic-bezier(.3,1.5,.5,1) 1.25s both;
+  }
+  @keyframes pesaTag{ 0%{ opacity:0; transform:rotate(-12deg) scale(.4); } 100%{ opacity:1; transform:rotate(-4deg) scale(1); } }
   .splash-sub{ font-size:13.5px; color:var(--text-muted); opacity:0; animation: pesaFadeUp 0.5s ease-out 1.55s forwards; }
   @keyframes pesaSplash{
     0%   { transform:translateY(0) rotate(0deg) scale(0.7); opacity:0; }
@@ -672,6 +683,7 @@
     .splash-logo, .splash-reflection .splash-reflection-img{ animation:none; opacity:1; }
     .splash-glow{ animation:none; opacity:0.25; }
     .splash-title, .splash-sub{ animation:none; opacity:1; }
+    .splash-title.graffiti{ animation:none; opacity:1; transform:rotate(-4deg); }
   }
 
   .authbrand{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:22px; text-align:center; }
@@ -2195,7 +2207,7 @@ function splashHtml(title, subtitle){
       '<div class="splash-reflection"><div class="splash-reflection-img"></div></div>' +
       '<div class="splash-logo"></div>' +
     '</div>' +
-    '<div class="splash-title">'+esc(name)+'</div>' +
+    '<div class="splash-title'+(title ? '' : ' graffiti')+'">'+esc(name)+'</div>' +
     (subtitle ? '<div class="splash-sub">'+esc(subtitle)+'</div>' : '') +
   '</div>';
 }

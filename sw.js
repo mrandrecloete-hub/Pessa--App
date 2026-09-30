@@ -5,10 +5,10 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v6';
+var CACHE = 'pesa-shell-v7';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
-  './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf'];
+  './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
 // The page itself is updated often during testing — always prefer a fresh
 // copy over whatever's cached, and only fall back to cache when offline.
 // Third party files the app needs for PDFs and fonts. They are fetched once
