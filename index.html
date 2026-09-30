@@ -3809,6 +3809,10 @@ function applyPdfFonts(doc){
 function newPdfDoc(Ctor, opts){
   var d = new Ctor(opts);
   try{ applyPdfFonts(d); }catch(e){}
+  ['output','save'].forEach(function(fn){
+    var orig = d[fn].bind(d);
+    d[fn] = function(){ try{ drawLetterheadFooter(d); }catch(e){} return orig.apply(d, arguments); };
+  });
   return d;
 }
 function getJsPDF(){ return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null; }
@@ -3902,35 +3906,67 @@ function getActiveTemplate(){
   return DOC_TEMPLATES[key] || DOC_TEMPLATES.classic;
 }
 
-/** Shared header for invoices and reports: small Pesa mark top-left, the
- * shop's own logo (or letterhead) and slogan top-right, then a divider. */
-function drawDocHeader(doc){
+/* ---- letterhead: a full width banner printed at the very top (header) or the
+ * very bottom (footer, every page) of the paper, like real letterhead. */
+function lhPosition(){ return State.settings.letterheadPosition === 'bottom' ? 'bottom' : 'top'; }
+function lhBox(areaW, maxH){
+  var m = State.settings.letterheadImgMeta || {}, w = areaW, h = (m.w && m.h) ? areaW*m.h/m.w : areaW*0.2;
+  if(h > maxH){ h = maxH; w = (m.w && m.h) ? h*m.w/m.h : h*5; }
+  return { w:w, h:h, x:(areaW-w)/2 };
+}
+function lhFooterHeight(doc){
+  if(!State.settings.letterheadDataUrl || lhPosition() !== 'bottom' || (doc && doc.__plainHeader)) return 0;
+  return lhBox(doc.internal.pageSize.getWidth(), 45).h + 4;
+}
+function drawLetterheadFooter(doc){
+  if(!doc.__lhFooter || doc.__lhDrawn) return;
+  doc.__lhDrawn = true;
+  var pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), bx = lhBox(pw, 45), n = doc.getNumberOfPages();
+  for(var i=1;i<=n;i++){
+    doc.setPage(i);
+    try{ doc.addImage(State.settings.letterheadDataUrl, 'JPEG', bx.x, ph-bx.h, bx.w, bx.h); }catch(e){}
+  }
+}
+
+/** Shared header for invoices and reports: the shop's own logo at the top left
+ * with its slogan opposite, a full width letterhead banner (top of the page
+ * when the letterhead is set as a header), then a divider. */
+function drawDocHeader(doc, opts){
+  opts = opts || {};
   var t = getActiveTemplate();
   var pageW = doc.internal.pageSize.getWidth();
   var margin = 14, contentW = pageW-margin*2, y = margin;
-  var markH = 7, markW = markH / PESA_LOGO_ASPECT;
+  var hasLh = !!State.settings.letterheadDataUrl && !opts.plain;
+  if(opts.plain) doc.__plainHeader = true;
+  if(hasLh && lhPosition() === 'top'){
+    var bx = lhBox(pageW, 45);
+    try{ doc.addImage(State.settings.letterheadDataUrl, 'JPEG', bx.x, 0, bx.w, bx.h); }catch(e){}
+    y = bx.h + 6;
+  }
+  if(hasLh && lhPosition() === 'bottom') doc.__lhFooter = true;
 
-  try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', margin, y, markW, markH); }catch(e){}
-  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(150,150,150);
-  doc.text('Pesa', margin+markW+2, y+markH-2.5);
-
-  var rightBottom = y + markH;
+  var rowBottom;
   if(State.settings.logoDataUrl){
-    var lg = State.settings.logoImgMeta || {};
-    var boxH = 9, boxW = 9;
-    if(lg.w && lg.h){ if(lg.w>lg.h){ boxH = 9*lg.h/lg.w; } else { boxW = 9*lg.w/lg.h; } }
-    try{ doc.addImage(State.settings.logoDataUrl, 'JPEG', pageW-margin-boxW, y, boxW, boxH); }catch(e){}
-    rightBottom = Math.max(rightBottom, y+boxH);
+    var lg = State.settings.logoImgMeta || {}, boxH = 14, boxW = 14;
+    if(lg.w && lg.h){ boxW = 14*lg.w/lg.h; boxH = 14; if(boxW > 42){ boxW = 42; boxH = 42*lg.h/lg.w; } }
+    try{ doc.addImage(State.settings.logoDataUrl, 'JPEG', margin, y, boxW, boxH); }catch(e){}
+    rowBottom = y + boxH;
+  } else {
+    var markH = 8, markW = markH / PESA_LOGO_ASPECT;
+    try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', margin, y, markW, markH); }catch(e){}
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(150,150,150);
+    doc.text('Pesa', margin+markW+2, y+markH-2.5);
+    rowBottom = y + markH;
   }
   if(State.settings.businessSlogan){
     doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(t.muted[0],t.muted[1],t.muted[2]);
-    doc.text(State.settings.businessSlogan, pageW-margin, rightBottom+4, {align:'right'});
-    rightBottom += 6;
+    doc.text(State.settings.businessSlogan, pageW-margin, rowBottom-1, {align:'right'});
   }
-  y = Math.max(y+markH+5, rightBottom+3);
+  y = rowBottom + 5;
   doc.setDrawColor(215,215,215); doc.setLineWidth(0.3); doc.line(margin,y,pageW-margin,y);
   y += 7;
-  return { y:y, t:t, margin:margin, contentW:contentW, pageW:pageW };
+  var fh = lhFooterHeight(doc);
+  return { y:y, t:t, margin:margin, contentW:contentW, pageW:pageW, limit: 275 - fh, footerH: fh };
 }
 
 function pdfSummaryLine(doc, x, y, width, label, value, opts){
@@ -4912,11 +4948,7 @@ function buildInvoicePdf(draft){
   var headerTop = y;
 
   if(State.settings.letterheadDataUrl){
-    var lh = State.settings.letterheadImgMeta || {};
-    var w = contentW, h = 16;
-    if(lh.w && lh.h){ h = Math.min(16, w*lh.h/lh.w); w = h*lh.w/lh.h; if(w>contentW){ w=contentW; h=w*lh.h/lh.w; } }
-    try{ doc.addImage(State.settings.letterheadDataUrl, 'JPEG', margin, y, w, h); }catch(e){}
-    y += h + 8;
+    y += 2;   // the letterhead already carries the shop name and contact details
   } else {
     doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text(State.settings.shopName || 'My Shop', margin, y+7);
@@ -4957,7 +4989,7 @@ function buildInvoicePdf(draft){
   var subtotal = 0;
   draft.items.forEach(function(it, idx){
     var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price; subtotal += amt;
-    if(y > 260){ doc.addPage(); y = margin; }
+    if(y > head.limit - 20){ doc.addPage(); y = margin; }
     if(idx % 2 === 1){ doc.setFillColor(244,246,243); doc.rect(margin, y, contentW, 7.5, 'F'); }
     var descLines = doc.splitTextToSize(it.desc || '', colQty-colDesc-4);
     doc.text(descLines, colDesc, y+5.2);
@@ -5022,7 +5054,9 @@ function buildReceiptPdf(draft){
   // measure how long the receipt is, then again on a page cut to that length.
   function draw(doc){
     var y = margin;
-    // ---- header: shop details on the left, colour logo at the top right
+    var hasLh = !!State.settings.letterheadDataUrl, lhTop = hasLh && lhPosition() === 'top';
+    if(lhTop){ var lb = lhBox(pageW, 30); try{ doc.addImage(State.settings.letterheadDataUrl, 'JPEG', lb.x, 0, lb.w, lb.h); }catch(e){} y = lb.h + 3; }
+    // ---- header: colour logo at the top left, shop details beside it
     var LOGO = 10, boxW = 10, boxH = 10, logoData = null, logoType = 'PNG';
     if(State.settings.logoDataUrl){
       logoData = State.settings.logoDataUrl; logoType = 'JPEG';
@@ -5031,20 +5065,20 @@ function buildReceiptPdf(draft){
     } else {
       logoData = PESA_LOGO_DATA_URL; boxW = LOGO / PESA_LOGO_ASPECT; boxH = LOGO; if(boxW > LOGO){ boxH = LOGO / (boxW/LOGO); boxW = LOGO; }
     }
-    try{ doc.addImage(logoData, logoType, pageW - margin - boxW, y, boxW, boxH); }catch(e){}
-    var leftW = contentW - boxW - 3, ly = y + 3;
+    try{ doc.addImage(logoData, logoType, margin, y, boxW, boxH); }catch(e){}
+    var tx = margin + boxW + 3, leftW = contentW - boxW - 3, ly = y + 3;
     doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(primary[0],primary[1],primary[2]);
     var nameLines = doc.splitTextToSize(shopName, leftW);
-    doc.text(nameLines, margin, ly); ly += nameLines.length*4;
+    doc.text(nameLines, tx, ly); ly += nameLines.length*4;
     if(State.settings.businessSlogan){
       doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(accent[0],accent[1],accent[2]);
-      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, margin, ly); ly += sl.length*2.7 + 0.6;
+      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, tx, ly); ly += sl.length*2.7 + 0.6;
     }
     doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
     (State.settings.businessContact||'').split('\n').filter(Boolean).slice(0,3).forEach(function(line){
-      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, margin, ly); ly += cl.length*2.6;
+      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, tx, ly); ly += cl.length*2.6;
     });
-    if(vatNo){ doc.text('VAT No. '+vatNo, margin, ly); ly += 2.6; }
+    if(vatNo){ doc.text('VAT No. '+vatNo, tx, ly); ly += 2.6; }
     y = Math.max(ly, y + boxH) + 1.5;
     doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineWidth(0.4); doc.line(margin, y, pageW-margin, y);
     doc.setLineWidth(0.2); y += 4.5;
@@ -5118,6 +5152,7 @@ function buildReceiptPdf(draft){
       var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*2.7 + 1.2;
     }
     y += 1;
+    if(hasLh && lhPosition() === 'bottom'){ var fb = lhBox(pageW, 30); try{ doc.addImage(State.settings.letterheadDataUrl, 'JPEG', fb.x, y, fb.w, fb.h); }catch(e){} y += fb.h; }
     return y;
   }
   var probe = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, 1500] });
@@ -5380,7 +5415,7 @@ function drawReportPdf(fig, monthLabel, meta){
   var head = drawDocHeader(doc);
   var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
   var t = head.t, primary=t.primary, accent=t.accent, muted=t.muted, dark=t.dark;
-  function need(h){ if(y+h>275){ doc.addPage(); y=margin; } }
+  function need(h){ if(y+h>head.limit){ doc.addPage(); y=margin; } }
   // the live report keeps its original minus sign; saved reports use a plain hyphen, which every PDF font draws correctly
   var MINUS = arch ? '-' : '−';
 
@@ -5478,7 +5513,7 @@ function drawReportPdf(fig, monthLabel, meta){
   }
 
   if(fig.productRows.length){
-    if(y>230){ doc.addPage(); y=margin; }
+    if(y>230-head.footerH){ doc.addPage(); y=margin; }
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text('Product performance', margin, y); y+=5;
     y = pdfTable(doc, { x:margin, y:y, width:contentW, zebra:true,
@@ -5513,9 +5548,9 @@ function drawReportPdf(fig, monthLabel, meta){
     for(var pg=1; pg<=pages; pg++){
       doc.setPage(pg);
       doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(meta.custom ? 'Report for the dates chosen. Figures were gathered from the records in Pesa when this report was generated.' : meta.interim ? 'Interim report. A snapshot of the month so far; the final report replaces it after month end.' : 'Archived monthly report. The saved figures do not change if records are edited later.', margin, 285);
-      doc.text('Generated by Pesa on '+genText+(meta.generatedBy ? ' by '+meta.generatedBy : ''), margin, 290);
-      doc.text('Page '+pg+' of '+pages, pageW-margin, 290, {align:'right'});
+      doc.text(meta.custom ? 'Report for the dates chosen. Figures were gathered from the records in Pesa when this report was generated.' : meta.interim ? 'Interim report. A snapshot of the month so far; the final report replaces it after month end.' : 'Archived monthly report. The saved figures do not change if records are edited later.', margin, 285-head.footerH);
+      doc.text('Generated by Pesa on '+genText+(meta.generatedBy ? ' by '+meta.generatedBy : ''), margin, 290-head.footerH);
+      doc.text('Page '+pg+' of '+pages, pageW-margin, 290-head.footerH, {align:'right'});
     }
   } else {
   }
@@ -6865,10 +6900,11 @@ function openSettingsSheet(){
         (s.letterheadDataUrl ? '<button class="bulk-del" id="stLetterheadRemove" type="button">×</button>' : '') +
       '</div>' +
       '<input type="file" id="stLetterheadInput" accept="image/*" style="display:none;">' +
-      '<div class="banner">A letterhead banner replaces the logo at the top of invoices. Both are optional.</div>' +
+      '<div class="field" style="margin-top:8px;"><label>'+tr('Letterhead position')+'</label><select id="stLhPos"><option value="top"'+(s.letterheadPosition!=='bottom'?' selected':'')+'>'+tr('Header, at the top of the page')+'</option><option value="bottom"'+(s.letterheadPosition==='bottom'?' selected':'')+'>'+tr('Footer, at the bottom of every page')+'</option></select></div>' +
+      '<div class="banner">The letterhead is printed across the full width of invoices, receipts and reports, as a header or a footer. Your logo stays at the top left. Both are optional.</div>' +
     '</div>' +
     '<div class="field"><label>'+tr('Slogan / tagline (optional)')+'</label><input id="stSlogan" placeholder="e.g. Quality you can trust" value="'+esc(s.businessSlogan||'')+'"></div>' +
-    '<div class="banner">Your logo appears on the right of every invoice and report, with your slogan beneath it. The small Pesa mark stays on the left.</div>' +
+    '<div class="banner">Your logo appears at the top left of every invoice, receipt and report, with your slogan opposite it. Without a logo, the small Pesa mark is used.</div>' +
 
     '<div class="section-title">'+tr('Document template')+'</div>' +
     '<div id="tplGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
@@ -6976,7 +7012,7 @@ function openSettingsSheet(){
     var slogan = ov.querySelector('#stSlogan').value.trim();
     var tplKey = selectedTemplateKey();
     var lang = ov.querySelector('#stLang').value;
-    var patch = { shopName:name, lowStockDefault:low, businessContact:contact, businessSlogan:slogan, invoiceTemplate:tplKey, language:lang, docFont:ov.querySelector('#stFont').value };
+    var patch = { shopName:name, lowStockDefault:low, businessContact:contact, businessSlogan:slogan, invoiceTemplate:tplKey, language:lang, docFont:ov.querySelector('#stFont').value, letterheadPosition: ov.querySelector('#stLhPos') ? ov.querySelector('#stLhPos').value : 'top' };
     if(tplKey==='custom') patch.customTemplate = readCustomTemplate();
     State.settings = Object.assign({}, State.settings, patch);
     refs.settings.set(State.settings);
@@ -9862,7 +9898,7 @@ function generateAboutPdf(){
   // One canonical Date for the whole document: the generated line, the
   // stamp and the verification record all read this same value.
   var now = new Date();
-  var head = drawDocHeader(doc);
+  var head = drawDocHeader(doc, {plain:true});
   var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
   var t = head.t, primary=t.primary, muted=t.muted, dark=t.dark;
   var pageH = doc.internal.pageSize.getHeight();
@@ -9875,7 +9911,7 @@ function generateAboutPdf(){
   function need(h){
     if(y + h <= bottomLimit) return;
     doc.addPage();
-    var hd = drawDocHeader(doc);
+    var hd = drawDocHeader(doc, {plain:true});
     y = hd.y;
   }
 
