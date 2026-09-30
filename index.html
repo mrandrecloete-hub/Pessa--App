@@ -2068,7 +2068,7 @@ function wireEmailServiceSettings(ov){
 
 /* ---- Cloud sync: Settings section (Owner) and "connect this device" sheet ---- */
 function syncHelpHtml(){
-  return '<details style="margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.6;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">'+tr('How to set up cloud sync (one time, free)')+'</summary>' +
+  return '<details style="margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.6;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">'+tr('How the connection works and how to set it up (one time, free)')+'</summary>' +
     '<ol style="padding-left:18px;margin:8px 0;">' +
       '<li>Create a free project at supabase.com.</li>' +
       '<li>Open <b>SQL Editor</b>, paste the setup script below, and run it.</li>' +
@@ -2098,10 +2098,10 @@ function syncSettingsHtml(){
   if(Store.mode() !== 'local') return '';
   var c = Sync.cfg(), on = c.on && c.url && c.key && c.code;
   var baked = !!(SYNC_DEFAULTS.url && SYNC_DEFAULTS.key);
-  return '<div class="section-title">'+tr('Cloud sync (all your devices)')+'</div>' +
+  return '<div class="section-title">'+tr('Advanced Pesa Connection settings')+'</div>' +
     '<div class="banner" style="display:block;">'+(on
       ? tr('Sync is ON. Every change is saved on this device first, then sent to the cloud automatically. Your other devices receive it within seconds.')
-      : tr('Turn this on so your shop’s data is the same on every phone and computer, and safe in the cloud. It works automatically and also while you are offline — changes send when the internet returns.'))+
+      : tr('This connects your devices. Turn it on so your shop’s data is the same on every phone and computer, and safe in the cloud. It works automatically and also while you are offline — changes send when the internet returns.'))+
       '<div id="syncStatusLine" style="margin-top:8px;">'+syncStatusLineHtml()+'</div></div>' +
     (on
       ? '<div class="field"><label>'+tr('Your sync code (keep it private)')+'</label><input id="syCodeShow" readonly value="'+esc(c.code)+'" style="font-family:monospace;letter-spacing:0.5px;"></div>' +
@@ -2152,7 +2152,7 @@ function joinSyncHtml(){
 function openJoinSyncSheet(){
   var baked = !!(SYNC_DEFAULTS.url && SYNC_DEFAULTS.key), c = Sync.cfg();
   var html = '<div class="sheet-head"><h2>'+tr('Connect to an existing business')+'</h2></div>' +
-    '<div class="banner">'+tr('Enter the cloud details and the sync code from the Owner’s phone (Settings → Cloud sync). This device will download the business, then you sign in with your own password or PIN.')+'</div>' +
+    '<div class="banner">'+tr('Enter the cloud details and the sync code from the Owner’s phone (Settings → Advanced Pesa Connection settings). This device will download the business, then you sign in with your own password or PIN.')+'</div>' +
     (baked ? '' : '<div class="field"><label>Supabase Project URL</label><input id="jsUrl" placeholder="https://xxxx.supabase.co" value="'+esc(c.url)+'"></div><div class="field"><label>Supabase anon public key</label><input id="jsKey" placeholder="eyJ…" value="'+esc(c.key)+'"></div>') +
     '<div class="field"><label>'+tr('Sync code')+'</label><input id="jsCode" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" style="font-family:monospace;"></div>' +
     '<div id="jsMsg"></div>' +
@@ -8231,6 +8231,48 @@ var ABOUT_INTERNET = [
     'To get the latest version, open Pesa once with internet and let it finish loading, then close and open it again'
   ]}
 ];
+
+// Plain language guide to the connection between devices. Shown on the
+// About page and in the About PDF. No hyphen or dash characters.
+var ABOUT_CONNECTION_TITLE = 'Advanced Pesa Connection settings';
+var ABOUT_CONNECTION = [
+  { h:'What it does', items:[
+    'It connects your phones, tablets and computers to one business, so every device shows the same sales, stock, customers and credit',
+    'Everything is saved on the device first, so Pesa keeps working with no internet. When internet is available, changes are sent to a private online store and picked up by your other devices automatically',
+    'You find it in Settings, under Advanced Pesa Connection settings. Only the Owner sees it'
+  ]},
+  { h:'How it works', items:[
+    'Step 1: You save something, for example a sale. It is stored on your device straight away',
+    'Step 2: Pesa places the change in a waiting line on the device',
+    'Step 3: When internet is available, the waiting line is sent to your private online store, about every 15 seconds and whenever the internet returns',
+    'Step 4: Your other connected devices collect the change and update themselves',
+    'If two devices change the same record at the same moment, the newest change is kept'
+  ]},
+  { h:'Setting it up on the main device (once, free)', items:[
+    'Step 1: Create a free project at supabase.com. This is your own private online store',
+    'Step 2: In the project, open SQL Editor, paste the setup script from Pesa (tap Copy setup script) and run it',
+    'Step 3: Open Project Settings, then API. Copy the Project URL and the anon public key',
+    'Step 4: In Pesa, open Settings, Advanced Pesa Connection settings. Paste the URL and key, tap Generate code, then tap Test connection',
+    'Step 5: Tap Turn on sync. The status shows Sync is ON, and the sync code appears. Keep this code private'
+  ]},
+  { h:'Connecting another device', items:[
+    'Step 1: Open Pesa on the other device. On the Register page, tap Connect to an existing business',
+    'Step 2: Enter the same URL, key and sync code, then tap Connect and download',
+    'Step 3: The device downloads the business. Then sign in with your own password or PIN',
+    'Each new business or device needs internet for this step only'
+  ]},
+  { h:'Buttons and status', items:[
+    'Copy code: copies your sync code so you can send it to your staff safely',
+    'Sync now: sends and collects changes immediately',
+    'Turn off sync: stops sending and collecting on this device. Your data stays on the device',
+    'Status colours: green means up to date, orange means waiting or working, red means offline or an error, with the reason shown below'
+  ]},
+  { h:'Keep in mind', items:[
+    'Anyone who has the URL, key and sync code can read the business data, so share them only with people you trust',
+    'Sync needs internet on each device at some point, but not at the same time. Without internet the app keeps working and catches up later',
+    'This connection does not work inside the Claude preview copy of Pesa, which already saves to Claude by itself. Use the installed app at its own web address'
+  ]}
+];
 function openAboutSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('About Pesa')+'</h2></div>' +
     ABOUT_PARAGRAPHS.map(function(p){ return '<p style="font-size:14px;line-height:1.6;color:var(--text);margin:0 0 12px;">'+esc(tr(p))+'</p>'; }).join('') +
@@ -8238,6 +8280,12 @@ function openAboutSheet(){
       ABOUT_FEATURES.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') +
     '</ul>' +
     ABOUT_INTERNET.map(function(sec){
+      return '<div style="font-weight:700;font-size:14px;margin:4px 0 6px;">'+esc(tr(sec.h))+'</div>' +
+        '<ul style="margin:0 0 14px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
+        sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
+    }).join('') +
+    '<div style="font-weight:800;font-size:15px;margin:10px 0 6px;color:var(--primary);">'+esc(tr(ABOUT_CONNECTION_TITLE))+'</div>' +
+    ABOUT_CONNECTION.map(function(sec){
       return '<div style="font-weight:700;font-size:14px;margin:4px 0 6px;">'+esc(tr(sec.h))+'</div>' +
         '<ul style="margin:0 0 14px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
         sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
@@ -8426,6 +8474,15 @@ function generateAboutPdf(){
 
   heading('Working with and without internet');
   ABOUT_INTERNET.forEach(function(sec){
+    need(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text(sec.h, margin, y); y += 5.5;
+    bulletList(sec.items);
+    y += 1.5;
+  });
+
+  heading(ABOUT_CONNECTION_TITLE);
+  ABOUT_CONNECTION.forEach(function(sec){
     need(14);
     doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text(sec.h, margin, y); y += 5.5;
