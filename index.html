@@ -2147,7 +2147,8 @@ function wireSyncSettings(ov){
 function joinSyncHtml(){
   if(Store.mode() !== 'local') return '';
   return '<div class="section-title" style="margin-top:22px;">'+tr('Already use Pesa on another device?')+'</div>' +
-    '<div class="actions"><button class="btn btn-ghost btn-block" type="button" data-joinsync="1">'+tr('Connect to an existing business')+'</button></div>';
+    '<div class="actions"><button class="btn btn-ghost btn-block" type="button" data-joinsync="1">'+tr('Connect to an existing business')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" type="button" data-joinnearby="1">'+tr('Connect with nearby Wi-Fi (no internet)')+'</button></div>';
 }
 function openJoinSyncSheet(){
   var baked = !!(SYNC_DEFAULTS.url && SYNC_DEFAULTS.key), c = Sync.cfg();
@@ -2472,6 +2473,7 @@ function wireRegisterCompany(root){
   wireBusinessSwitcher(root);
   wireAccountPicker(root);
   var js = root.querySelector('[data-joinsync]'); if(js) js.addEventListener('click', openJoinSyncSheet);
+  var jn = root.querySelector('[data-joinnearby]'); if(jn) jn.addEventListener('click', openNearbySheet);
   root.querySelector('#rcSubmit').addEventListener('click', function(){
     var v = function(id){ return root.querySelector(id).value.trim(); };
     var companyName = v('#rcCompanyName'), regNumber = v('#rcRegNumber'), address = v('#rcAddress'),
@@ -7912,6 +7914,40 @@ var LESSONS = [
       steps:['Open the menu and tap Activity log.','You see the latest actions, such as changes to stock, deleted items, invoices sent and reminders.','Each line says what happened, who did it and when.','You can only read the log. Nobody can edit it.'],
       tip:'Use it to settle disagreements calmly, with facts.' }
   ]},
+  { id:'smart', title:'Pesa Smart Tools', icon:'bolt', who:'manager', slides:[
+    { title:'What Smart Tools do', text:'Pesa Smart Tools watch your shop records for you. They work everything out on your own device, and nothing is sent to anyone.',
+      where:'Menu → Pesa Smart Tools',
+      steps:['Tap the three lines at the top left, then tap Pesa Smart Tools.','The number beside it shows how many things need your attention.','Tap any tool to open it. Every tool has a Back button to return here.'],
+      tip:'Owners and Managers can use Smart Tools. Cashiers cannot.' },
+    { title:'Alerts and the reorder list', text:'The Alert centre lists low stock, customers who are late paying, customers over their credit limit, a till left open, and an old backup. The reorder list turns low stock into an order.',
+      where:'Smart Tools → Alert centre, Reorder list',
+      steps:['Open Alert centre to see what needs attention today.','Open Reorder list to see the products to restock, with a suggested quantity worked out from how fast each one sells.','Change any quantity, and untick products you do not want.','Choose a supplier, then tap Create purchase order to save a draft, or Send by WhatsApp to message the supplier.'],
+      tip:'Pesa checks every half hour while it is open. Serious alerts also appear as a device notification if you switched notifications on in Settings.' },
+    { title:'Insights and risk warnings', text:'Deeper insights show your best sellers, most profitable products, slow stock that ties up your money, your busiest hours, and a forecast for the next seven days. Risk warnings point out things worth checking.',
+      where:'Smart Tools → Deeper insights, Risk warnings',
+      steps:['Open Deeper insights and scroll to see each section.','The forecast uses the same weekdays over the last four weeks. It is a guide, not a promise.','Open Risk warnings to see till shortages, items sold below cost, many deletions, heavy wastage and late payers.','Remember these are signs to check, not proof that someone did something wrong.'],
+      tip:'Check the Risk warnings once a week. Small problems are easy to fix early.' },
+    { title:'Customer profiles and credit limits', text:'Each customer can have a credit limit. Pesa warns you before a sale takes them over it, and shows how long they have gone without paying.',
+      where:'Smart Tools → Customer profiles',
+      steps:['Open Customer profiles and tap a customer.','See how much they owe, how much they have bought on credit, and when they last paid.','Type a Credit limit and tap Save limit. Leave it at zero for no limit.','Tap WhatsApp reminder to send a friendly message asking for payment.'],
+      tip:'When a sale would go over the limit, Pesa asks you to confirm. You stay in control.' },
+    { title:'Mobile money and the end of day check', text:'When a customer pays with a mobile wallet or a bank transfer, you record which one and an optional reference. At the end of the day you compare Pesa with what you really hold.',
+      where:'Sell → Charge → Mobile wallet, and Smart Tools → End of day check',
+      steps:['When charging a sale, tap Mobile wallet and choose PayToday, Blue Wallet, e at syWallet, MTC Maris, Bank transfer or Other.','Type the transaction reference if you have one.','At the end of the day open End of day check.','Type what you actually have for cash, card and each wallet. Pesa shows whether it matches, or how much it is short or over.','Tap Save this check to keep a record.'],
+      tip:'Pesa only records these payments. It does not send or receive the money.' },
+    { title:'Automatic backups and the health check', text:'Pesa saves a backup on your device about once a day, and keeps the latest seven. The health check tells you if anything needs attention.',
+      where:'Smart Tools → Automatic backups, Data health check',
+      steps:['Open Automatic backups to see your saved backups, or tap Back up now.','Tap Download to keep a copy on your phone or send it somewhere safe.','Tap Restore to put a backup back.','Open Data health check to see storage, backup age, connection and alerts, and tap Protect if it offers to protect your data.'],
+      tip:'Backups stay on the same device. Download a copy now and then, in case the phone is lost.' },
+    { title:'Nearby Wi-Fi sync with no internet', text:'Two devices on the same Wi-Fi can swap their newest changes directly, with no internet. Both need Pesa open.',
+      where:'Smart Tools → Nearby Wi-Fi sync',
+      steps:['Connect both devices to the same Wi-Fi. A router with no internet is fine, or one phone can share its hotspot.','On the first device tap 1, Start on this device. A code and a QR code appear.','On the second device tap 2, Join, then scan the QR code or paste the code, and tap Continue.','The second device shows a reply code. On the first device, scan it or paste it, then tap Connect.','Wait for Done. Both devices now have the newest changes.'],
+      tip:'A brand new device can join from the register page with Connect with nearby Wi-Fi.' },
+    { title:'Voice search', text:'On the Sell page you can say a product name instead of typing it.',
+      where:'Sell → microphone button',
+      steps:['Open Sell and tap the microphone button next to the search box.','Allow the microphone if your phone asks.','Say the product name clearly.','The results appear. Tap a product to add it to the cart.'],
+      tip:'Voice search needs the microphone, and on most phones it also needs internet. If it is not available, the button is hidden.' }
+  ]},
   { id:'printing', title:'Bluetooth receipt printing', icon:'printer', who:'all', slides:[
     { title:'Printing a receipt', text:'Pesa can print on a small Bluetooth receipt printer, if your phone and browser support Bluetooth.',
       where:'Sale recorded → Print via Bluetooth',
@@ -8319,8 +8355,8 @@ function smartTick(){
   }catch(e){}
 }
 
-function smartBackBtn(){ return '<div class="actions"><button class="btn btn-ghost btn-block" id="smBack" type="button">'+tr('Back to Smart Tools')+'</button></div>'; }
-function wireSmartBack(ov){ var b = ov.querySelector('#smBack'); if(b) b.addEventListener('click', function(){ closeModal(); openSmartToolsSheet(); }); }
+function smartBackBtn(){ return '<div class="actions"><button class="btn btn-ghost btn-block" id="smBack" type="button">'+tr(State.session ? 'Back to Smart Tools' : 'Close')+'</button></div>'; }
+function wireSmartBack(ov){ var b = ov.querySelector('#smBack'); if(b) b.addEventListener('click', function(){ closeModal(); if(State.session) openSmartToolsSheet(); }); }
 function smartBar(pct, color){ return '<div style="height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden;"><div style="height:100%;width:'+Math.max(2,Math.min(100,pct))+'%;background:'+(color||'var(--primary)')+';"></div></div>'; }
 
 /* ---- hub ---- */
@@ -8894,7 +8930,9 @@ function nbQrSvg(text){
   try{ var q = qrcode(0, 'L'); q.addData(text, 'Byte'); q.make(); return q.createSvgTag({ cellSize:3, margin:3, scalable:true }); }catch(e){ return ''; }
 }
 /* ---- connection ---- */
-var NB = { pc:null, dc:null, role:'', onState:null };
+var NB = { pc:null, dc:null, role:'', onState:null, inbox:[], handler:null };
+// Messages can arrive before the sync screen is ready, so keep them until it is.
+function nbAttachInbox(dc){ NB.inbox = []; NB.handler = null; dc.onmessage = function(e){ if(NB.handler) NB.handler(e); else NB.inbox.push(e); }; }
 function nbClose(){ try{ NB.dc && NB.dc.close(); }catch(e){} try{ NB.pc && NB.pc.close(); }catch(e){} NB.pc = NB.dc = null; }
 function nbNewPeer(){
   nbClose();
@@ -8912,7 +8950,7 @@ function nbGather(pc){
 }
 async function nbHostCode(){
   var pc = nbNewPeer(); NB.role = 'host';
-  NB.dc = pc.createDataChannel('pesa', { ordered:true });
+  NB.dc = pc.createDataChannel('pesa', { ordered:true }); nbAttachInbox(NB.dc);
   var offer = await pc.createOffer(); await pc.setLocalDescription(offer); await nbGather(pc);
   return nbEncode({ ws:WS.id === 'default' ? '' : WS.id, s:pc.localDescription.sdp, y:'o' });
 }
@@ -8923,7 +8961,7 @@ async function nbAcceptAnswer(code){
 async function nbJoinCode(code){
   var o = await nbDecode(code); if(o.y !== 'o') throw new Error('That is not a start code. Use the code shown on the first device.');
   var pc = nbNewPeer(); NB.role = 'join';
-  pc.ondatachannel = function(e){ NB.dc = e.channel; if(NB.onChannel) NB.onChannel(); };
+  pc.ondatachannel = function(e){ NB.dc = e.channel; nbAttachInbox(NB.dc); if(NB.onChannel) NB.onChannel(); };
   await pc.setRemoteDescription({ type:'offer', sdp:o.s });
   var ans = await pc.createAnswer(); await pc.setLocalDescription(ans); await nbGather(pc);
   return nbEncode({ s:pc.localDescription.sdp, y:'a' });
@@ -8931,11 +8969,14 @@ async function nbJoinCode(code){
 /* ---- message protocol (chunked so large data fits) ---- */
 function nbMessenger(dc, onMsg){
   var bufs = {}, seq = 0;
-  dc.onmessage = function(e){
+  function handle(e){
     var m = JSON.parse(e.data), b = bufs[m.m] || (bufs[m.m] = { n:m.n, got:0, parts:[] });
     b.parts[m.i] = m.p; b.got++;
     if(b.got === b.n){ delete bufs[m.m]; onMsg(JSON.parse(b.parts.join(''))); }
-  };
+  }
+  NB.handler = handle;
+  var queued = NB.inbox; NB.inbox = [];
+  setTimeout(function(){ queued.forEach(handle); }, 0);   // after the caller has its send function
   return async function send(obj){
     var s = JSON.stringify(obj), size = 14000, n = Math.ceil(s.length/size) || 1, id = ++seq;
     for(var i=0;i<n;i++){
@@ -9169,7 +9210,11 @@ var ABOUT_FEATURES = [
   'Support for multiple languages',
   'Offline capable operation that syncs data automatically once a connection is available',
   'An activity and audit log that records important actions taken in the app, for accountability',
-  'A staff training section with narrated lessons covering every part of the app'
+  'A staff training section with narrated lessons covering every part of the app',
+  'Pesa Smart Tools: an alert centre, an automatic reorder list, deeper sales insights, risk warnings, customer profiles with credit limits, and an end of day check',
+  'Mobile money and bank transfer payment types, with automatic daily backups, a data health check and voice search',
+  'Nearby WiFi sync between two devices with no internet',
+  'A confidentiality and privacy agreement, and Advanced Pesa Connection settings for connecting all your devices'
 ];
 
 var DEV_EMAIL = 'ecrypted5@gmail.com';
@@ -9185,7 +9230,9 @@ var ABOUT_INTERNET = [
     'Opening and closing till sessions, wastage records, purchase orders and branches',
     'Viewing reports, insights, invoices, the audit log and the Training lessons',
     'Logging in, logging out, switching between businesses on the same device, and changing your password',
-    'Opening the app itself, once it has been opened online at least one time on that device'
+    'Opening the app itself, once it has been opened online at least one time on that device',
+    'Smart Tools, automatic backups, the health check and the end of day check',
+    'Nearby WiFi sync between two devices on the same WiFi, even if that WiFi has no internet'
   ]},
   { h:'Needs internet', items:[
     'The first time the app is opened or installed on a device, so it can save itself for offline use',
@@ -9193,6 +9240,7 @@ var ABOUT_INTERNET = [
     'Cloud sync between devices, and connecting a new device to an existing business. Changes made offline wait safely on the device and upload by themselves once internet is back',
     'Sending a password reset code by email. Resetting a password by code cannot be done offline, but changing a password you already know works offline',
     'Sharing an invoice or report through WhatsApp or email, which opens those apps and needs their own connection',
+    'Voice search on most phones, because the phone\u2019s speech service works online',
     'Downloading PDFs or seeing the Inter font on a device that has never loaded them online. After one online visit they are kept for offline use'
   ]},
   { h:'Good to know', items:[
@@ -9243,6 +9291,48 @@ var ABOUT_CONNECTION = [
     'This connection does not work inside the Claude preview copy of Pesa, which already saves to Claude by itself. Use the installed app at its own web address'
   ]}
 ];
+
+// Smart Tools and automatic features, for the About page and PDF. No hyphen or dash characters.
+var ABOUT_SMART_TITLE = 'Pesa Smart Tools and automatic features';
+var ABOUT_SMART = [
+  { h:'What runs by itself', items:[
+    'Automatic backups: about once a day while Pesa is open, a backup is saved on the device and the latest seven are kept',
+    'Alert checks: every half hour while Pesa is open, Pesa checks stock, late payments, credit limits, open tills and backups. Serious alerts show as a device notification if you switched notifications on',
+    'Monthly reports: every finished month is filed automatically, including the VAT figures',
+    'Updates: the app checks for a new version whenever it is opened with internet',
+    'Data is merged automatically when the Advanced Pesa Connection or Nearby WiFi sync is used, with the newest change winning'
+  ]},
+  { h:'Pesa Smart Tools (Owner and Manager, from the menu)', items:[
+    'Alert centre: one list of everything that needs attention today',
+    'Reorder list: suggests what to restock and how much, from stock levels and how fast each product sold in the last 30 days. It creates a draft purchase order or a WhatsApp message to the supplier',
+    'Deeper insights: best sellers, most profit, slow stock and the money tied up in it, busiest hours, and a seven day forecast built from the same weekdays over the last four weeks',
+    'Risk warnings: repeated till shortages, sales below cost, many deletions, heavy wastage and late payers. These are signs to check, not proof of wrongdoing',
+    'Customer profiles: what each customer owes and has bought on credit, when they last paid, a credit limit that warns before a sale goes over it, and a WhatsApp payment reminder',
+    'End of day check: compares what Pesa recorded for cash, card and each wallet with what you really hold, and keeps a record',
+    'Data health check: storage, backup age, connection, offline readiness and alerts',
+    'What is new: the latest changes after an update'
+  ]},
+  { h:'Mobile money and bank transfers', items:[
+    'When charging a sale with Mobile wallet, choose PayToday, Blue Wallet, e at syWallet, MTC Maris, Bank transfer or Other, and type an optional reference',
+    'Pesa records these payments and includes them in the end of day check. It does not send or receive the money'
+  ]},
+  { h:'Nearby WiFi sync with no internet', items:[
+    'Two devices on the same WiFi connect directly to each other, encrypted, and swap their newest changes. A router with no internet works, and so does one phone’s hotspot',
+    'Step 1: On the first device open Pesa Smart Tools, then Nearby WiFi sync, and tap Start on this device. A code and QR code appear',
+    'Step 2: On the second device tap Join, scan the QR code or paste the code, and tap Continue. A reply code appears',
+    'Step 3: On the first device scan or paste the reply code and tap Connect',
+    'Step 4: Wait for Done. Both devices now have the newest changes. A brand new device can join from the register page',
+    'Both devices must have Pesa open during the sync. It is a button you tap, not a background service, and the pairing is repeated each time. Some guest WiFi networks block devices from seeing each other'
+  ]},
+  { h:'Voice search', items:[
+    'On the Sell page, tap the microphone and say a product name. It needs microphone permission, and on most phones an internet connection'
+  ]},
+  { h:'Honest limits', items:[
+    'Alerts and checks run only while Pesa is open or was used recently. A browser cannot run a web app in the background the way a phone’s own apps can',
+    'Forecasts and suggestions are guides based on past sales, not promises',
+    'Backups are stored on the same device, so download a copy now and then'
+  ]}
+];
 function openAboutSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('About Pesa')+'</h2></div>' +
     ABOUT_PARAGRAPHS.map(function(p){ return '<p style="font-size:14px;line-height:1.6;color:var(--text);margin:0 0 12px;">'+esc(tr(p))+'</p>'; }).join('') +
@@ -9251,6 +9341,12 @@ function openAboutSheet(){
     '</ul>' +
     '<div style="font-weight:800;font-size:15px;margin:10px 0 6px;color:var(--primary);">'+esc(tr('Your privacy and confidentiality'))+'</div>' +
     privacyAgreementHtml() +
+    '<div style="font-weight:800;font-size:15px;margin:10px 0 6px;color:var(--primary);">'+esc(tr(ABOUT_SMART_TITLE))+'</div>' +
+    ABOUT_SMART.map(function(sec){
+      return '<div style="font-weight:700;font-size:14px;margin:4px 0 6px;">'+esc(tr(sec.h))+'</div>' +
+        '<ul style="margin:0 0 14px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
+        sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
+    }).join('') +
     ABOUT_INTERNET.map(function(sec){
       return '<div style="font-weight:700;font-size:14px;margin:4px 0 6px;">'+esc(tr(sec.h))+'</div>' +
         '<ul style="margin:0 0 14px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
@@ -9443,6 +9539,15 @@ function generateAboutPdf(){
   }
 
   bulletList(ABOUT_FEATURES);
+
+  heading(ABOUT_SMART_TITLE);
+  ABOUT_SMART.forEach(function(sec){
+    need(14);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text(sec.h, margin, y); y += 5.5;
+    bulletList(sec.items);
+    y += 1.5;
+  });
 
   heading('Working with and without internet');
   ABOUT_INTERNET.forEach(function(sec){
