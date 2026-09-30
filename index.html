@@ -536,6 +536,13 @@
   }
   :root[data-theme="dark"] .toast{ background:var(--surface-3); color:var(--text); }
 
+  .cs-line{ border:1px solid var(--border); border-radius:14px; padding:10px 10px 4px; margin-bottom:10px; background:var(--surface-2); position:relative; }
+  .cs-line .cs-x{ position:absolute; top:6px; right:8px; width:26px; height:26px; border-radius:8px; border:0; background:transparent; color:var(--text-muted); font-size:20px; line-height:1; cursor:pointer; }
+  .cs-line .cs-tot{ text-align:right; font-weight:800; font-size:14px; padding:0 2px 8px; }
+  .cs-sum{ border:1px solid var(--border); border-radius:14px; padding:12px; margin:6px 0 12px; background:var(--surface); }
+  .cs-sum .r{ display:flex; justify-content:space-between; font-size:13.5px; padding:3px 0; }
+  .cs-sum .r.big{ font-size:16px; font-weight:800; border-top:1px solid var(--border); margin-top:6px; padding-top:8px; }
+  .ledgeritem .lt-items{ display:block; font-size:11.5px; color:var(--text-muted); margin-top:3px; line-height:1.45; }
   .ledgeritem{ display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid var(--border); }
   .ledgeritem:last-child{ border-bottom:none; }
   .ledgeritem .lt-l{ font-size:13px; }
@@ -5384,7 +5391,8 @@ function openReportDetailSheet(rec){
 function renderCredit(){
   if(!State.ready.customers) return '<div class="empty">Loading…</div>';
   var totalOwed = State.customers.reduce(function(s,c){ return s+(c.balance||0); }, 0);
-  var html = '<div class="stats" style="margin-bottom:14px;"><div class="stat wide"><div class="lbl">Total owed to you</div><div class="v num" style="color:var(--danger)">'+fmtMoney(totalOwed)+'</div></div></div>';
+  var html = '<div class="stats" style="margin-bottom:14px;"><div class="stat wide"><div class="lbl">Total owed to you</div><div class="v num" style="color:var(--danger)">'+fmtMoney(totalOwed)+'</div></div></div>' +
+    '<div class="actions" style="margin-bottom:14px;"><button class="btn btn-primary btn-block" id="newCreditSaleBtn" type="button">+ '+tr('New credit sale')+' · '+tr('products and amount owed')+'</button></div>';
   if(State.customers.length === 0){
     html += '<div class="empty">'+ICONS.people+'<div class="t">'+tr('No customers yet')+'</div><div class="s">'+tr('Add regulars who buy on credit.')+'</div></div>';
     return html;
@@ -5411,6 +5419,178 @@ function renderCredit(){
   return html;
 }
 
+/* ============================== CREDIT SALE (products + customer details) ==============================
+   One form to record everything about a credit sale: who the customer is
+   (existing or new, with full details), what they took (picked from Stock —
+   price and total are filled in automatically — or typed in for items that
+   aren't in Stock), any older balance they already owed, and any part paid
+   now. It updates stock, records the sale, and writes the customer ledger. */
+function openCreditSaleSheet(preCustomer){
+  var lines = [{ productId:'', name:'', qty:1, price:0 }];
+  var customers = State.customers.slice();
+  var startNew = !preCustomer && customers.length === 0;
+  function prodOptions(sel){
+    return '<option value="">'+tr('Choose product from stock…')+'</option>' +
+      State.products.map(function(p){
+        var left = p.stockQty == null ? '' : ' · '+p.stockQty+' '+tr('left');
+        return '<option value="'+esc(p.id)+'" '+(sel===p.id?'selected':'')+'>'+esc(p.name)+' — '+fmtMoney(p.sellPrice||0)+esc(left)+'</option>';
+      }).join('') +
+      '<option value="custom" '+(sel==='custom'?'selected':'')+'>'+tr('Other item (type name and price)')+'</option>';
+  }
+  var html = '<div class="sheet-head"><h2>'+tr('New credit sale')+'</h2></div>' +
+    '<div class="section-title" style="margin-top:0;">'+tr('Customer')+'</div>' +
+    '<div class="field"><select id="csCust">' +
+      customers.map(function(c){ return '<option value="'+esc(c.id)+'" '+((preCustomer&&preCustomer.id===c.id)?'selected':'')+'>'+esc(c.name)+' — '+tr('owes')+' '+fmtMoney(c.balance||0)+'</option>'; }).join('') +
+      '<option value="__new__" '+(startNew?'selected':'')+'>+ '+tr('New customer')+'</option>' +
+    '</select></div>' +
+    '<div id="csNewBox" style="display:'+(startNew?'block':'none')+';">' +
+      '<div class="field"><label>'+tr('Name')+' *</label><input id="csName" placeholder="Full name"></div>' +
+      '<div class="field-row"><div class="field"><label>'+tr('Phone (optional)')+'</label><input id="csPhone" type="tel" inputmode="tel" placeholder="081 234 5678"></div>' +
+      '<div class="field"><label>'+tr('Email (optional)')+'</label><input id="csEmail" type="email" placeholder="name@example.com"></div></div>' +
+      '<div class="field"><label>'+tr('Address (optional)')+'</label><input id="csAddress" placeholder="Street, suburb, town"></div>' +
+      '<div class="field"><label>'+tr('ID number / reference (optional)')+'</label><input id="csIdNo" placeholder="e.g. ID number or employer"></div>' +
+    '</div>' +
+    '<div class="section-title">'+tr('Products taken')+'</div>' +
+    '<div id="csLines"></div>' +
+    '<button class="btn btn-ghost btn-block" id="csAddLine" type="button">+ '+tr('Add another item')+'</button>' +
+    '<div class="section-title">'+tr('Amounts')+'</div>' +
+    '<div class="field-row">' +
+      '<div class="field"><label>'+tr('Older balance already owed (optional)')+'</label><input id="csOlder" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
+      '<div class="field"><label>'+tr('Paid now (optional)')+'</label><input id="csPaid" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
+    '</div>' +
+    '<div class="field"><label>'+tr('Note (optional)')+'</label><input id="csNote" placeholder="e.g. Pay on the 25th"></div>' +
+    '<div class="cs-sum" id="csSum"></div>' +
+    '<div id="csError"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="csSave" type="button">'+tr('Save credit sale')+'</button></div>';
+  var ov = openSheet(html);
+  var $ = function(q){ return ov.querySelector(q); };
+
+  function lineTotal(l){ return (parseFloat(l.qty)||0) * (parseFloat(l.price)||0); }
+  function itemsTotal(){ return lines.reduce(function(s,l){ return s + lineTotal(l); }, 0); }
+  function currentCustomer(){ var v = $('#csCust').value; return v === '__new__' ? null : (State.customers.find(function(c){ return c.id === v; }) || null); }
+  function updateSummary(){
+    var items = itemsTotal(), older = parseFloat($('#csOlder').value)||0, paid = parseFloat($('#csPaid').value)||0;
+    var c = currentCustomer(), before = c ? (c.balance||0) : 0;
+    var after = before + items + older - paid;
+    $('#csSum').innerHTML =
+      '<div class="r"><span>'+tr('Products total')+'</span><span class="num">'+fmtMoney(items)+'</span></div>' +
+      (older ? '<div class="r"><span>'+tr('Older balance')+'</span><span class="num">'+fmtMoney(older)+'</span></div>' : '') +
+      (paid ? '<div class="r"><span>'+tr('Paid now')+'</span><span class="num">−'+fmtMoney(paid)+'</span></div>' : '') +
+      (before ? '<div class="r"><span>'+tr('Already owed before')+'</span><span class="num">'+fmtMoney(before)+'</span></div>' : '') +
+      '<div class="r big"><span>'+tr('Total they owe you')+'</span><span class="num" style="color:'+(after>0?'var(--danger)':'var(--success)')+'">'+fmtMoney(after)+'</span></div>';
+    lines.forEach(function(l, i){ var el = ov.querySelector('[data-tot="'+i+'"]'); if(el) el.textContent = fmtMoney(lineTotal(l)); });
+  }
+  function renderLines(){
+    $('#csLines').innerHTML = lines.map(function(l, i){
+      var custom = l.productId === 'custom';
+      return '<div class="cs-line" data-i="'+i+'">' +
+        (lines.length > 1 ? '<button class="cs-x" type="button" data-rm="'+i+'" aria-label="Remove">×</button>' : '') +
+        '<div class="field"><label>'+tr('Product')+'</label><select data-prod="'+i+'">'+prodOptions(l.productId)+'</select></div>' +
+        (custom ? '<div class="field"><label>'+tr('Item name')+'</label><input data-name="'+i+'" placeholder="e.g. Airtime" value="'+esc(l.name)+'"></div>' : '') +
+        '<div class="field-row">' +
+          '<div class="field"><label>'+tr('Quantity')+'</label><input data-qty="'+i+'" type="number" inputmode="decimal" min="0" step="any" value="'+esc(l.qty)+'"></div>' +
+          '<div class="field"><label>'+tr('Price each')+'</label><input data-price="'+i+'" type="number" inputmode="decimal" min="0" step="0.01" value="'+esc(l.price)+'"></div>' +
+        '</div>' +
+        '<div class="cs-tot num" data-tot="'+i+'">'+fmtMoney(lineTotal(l))+'</div>' +
+      '</div>';
+    }).join('');
+    ov.querySelectorAll('[data-prod]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var i = +sel.getAttribute('data-prod'), v = sel.value, l = lines[i];
+        l.productId = v;
+        if(v && v !== 'custom'){
+          var p = State.products.find(function(x){ return x.id === v; });
+          if(p){ l.name = p.name; l.price = p.sellPrice || 0; if(!(parseFloat(l.qty) > 0)) l.qty = 1; }   // price filled in automatically from Stock
+        } else if(v === 'custom'){ l.name = ''; l.price = 0; }
+        renderLines(); updateSummary();
+      });
+    });
+    ov.querySelectorAll('[data-qty]').forEach(function(el){ el.addEventListener('input', function(){ lines[+el.getAttribute('data-qty')].qty = el.value; updateSummary(); }); });
+    ov.querySelectorAll('[data-price]').forEach(function(el){ el.addEventListener('input', function(){ lines[+el.getAttribute('data-price')].price = el.value; updateSummary(); }); });
+    ov.querySelectorAll('[data-name]').forEach(function(el){ el.addEventListener('input', function(){ lines[+el.getAttribute('data-name')].name = el.value; }); });
+    ov.querySelectorAll('[data-rm]').forEach(function(el){ el.addEventListener('click', function(){ lines.splice(+el.getAttribute('data-rm'), 1); renderLines(); updateSummary(); }); });
+  }
+  renderLines(); updateSummary();
+  $('#csAddLine').addEventListener('click', function(){ lines.push({ productId:'', name:'', qty:1, price:0 }); renderLines(); updateSummary(); });
+  $('#csCust').addEventListener('change', function(){ $('#csNewBox').style.display = $('#csCust').value === '__new__' ? 'block' : 'none'; updateSummary(); });
+  $('#csOlder').addEventListener('input', updateSummary);
+  $('#csPaid').addEventListener('input', updateSummary);
+
+  $('#csSave').addEventListener('click', function(){
+    var err = $('#csError');
+    function fail(m){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(m)+'</span></div>'; }
+    err.innerHTML = '';
+    var isNew = $('#csCust').value === '__new__';
+    var cust = currentCustomer();
+    var custData = null;
+    if(isNew){
+      var name = $('#csName').value.trim(), email = $('#csEmail').value.trim();
+      if(!name) return fail(tr('Enter the customer’s name.'));
+      if(email && !looksLikeEmail(email)) return fail(tr('Enter a valid email address'));
+      custData = { name:name, phone:$('#csPhone').value.trim(), email:email, address:$('#csAddress').value.trim(), idNumber:$('#csIdNo').value.trim(), balance:0, createdAt:new Date().toISOString() };
+    } else if(!cust){ return fail(tr('Choose a customer.')); }
+    // validate + collect the product lines
+    var items = [], older = parseFloat($('#csOlder').value)||0, paid = parseFloat($('#csPaid').value)||0;
+    for(var i=0;i<lines.length;i++){
+      var l = lines[i];
+      var untouched = !l.productId && !(parseFloat(l.price) > 0) && !l.name;
+      if(untouched) continue;
+      if(!l.productId) return fail(tr('Choose a product for every line, or remove the empty line.'));
+      var qty = parseFloat(l.qty)||0, price = parseFloat(l.price)||0;
+      if(qty <= 0) return fail(tr('Enter a quantity for every product.'));
+      if(l.productId === 'custom'){
+        if(!String(l.name).trim()) return fail(tr('Type a name for the “Other item”.'));
+        items.push({ productId:null, name:String(l.name).trim(), qty:qty, unitPrice:price, cost:0, lineTotal:qty*price });
+      } else {
+        var p = State.products.find(function(x){ return x.id === l.productId; });
+        if(!p) return fail(tr('That product is no longer in Stock.'));
+        if(p.stockQty != null && qty > p.stockQty) return fail(tr('Only')+' '+p.stockQty+' '+tr('of')+' '+p.name+' '+tr('in stock.'));
+        items.push({ productId:p.id, name:p.name, qty:qty, unitPrice:price, cost:p.costPrice||0, lineTotal:qty*price });
+      }
+    }
+    var total = items.reduce(function(s,it){ return s + it.lineTotal; }, 0);
+    if(!items.length && !(older > 0)) return fail(tr('Add at least one product, or enter an older balance.'));
+    if(paid < 0 || older < 0) return fail(tr('Amounts cannot be negative.'));
+    var note = $('#csNote').value.trim();
+    var now = new Date().toISOString();
+
+    // 1) the customer (create if new)
+    var custRef, balance;
+    if(isNew){ custRef = refs.customers.doc(); balance = 0; }
+    else { custRef = refs.customers.doc(cust.id); balance = cust.balance || 0; }
+    var custName = isNew ? custData.name : cust.name;
+    var saved = isNew ? Object.assign({ id:custRef.id }, custData) : cust;
+    // 2) the sale (so Dashboard, Reports and Till include it)
+    var sale = null;
+    if(items.length){
+      var cost = items.reduce(function(s,it){ return s + (it.cost||0)*it.qty; }, 0);
+      sale = { items:items, total:total, cost:cost, profit:total-cost, paymentMethod:'credit', customerId:custRef.id, customerName:custName,
+        tillId: State.till.current ? State.till.current.id : null, cashierName: State.session ? State.session.name : null,
+        branchId: (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null, createdAt:now };
+      refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, 'Credit sale to '+custName+', '+items.length+' item(s), '+fmtMoney(total)); });
+      var stockChanges = [];
+      items.forEach(function(it){
+        if(!it.productId) return;
+        var p = State.products.find(function(x){ return x.id === it.productId; });
+        if(p && p.stockQty != null){ var nq = Math.max(0, p.stockQty - it.qty); refs.products.doc(p.id).update({ stockQty:nq }); stockChanges.push({ product:p, newQty:nq }); }
+      });
+      checkLowStockAlerts(stockChanges);
+    }
+    // 3) the customer's balance and ledger
+    var led = custRef.collection('ledger');
+    if(items.length){ balance += total; led.add({ type:'charge', amount:total, note:note || 'Sale on credit', items:items.map(function(it){ return { name:it.name, qty:it.qty, unitPrice:it.unitPrice, lineTotal:it.lineTotal }; }), createdAt:now, balanceAfter:balance }); }
+    if(older > 0){ balance += older; led.add({ type:'charge', amount:older, note:'Previous balance', createdAt:new Date(Date.now()+1).toISOString(), balanceAfter:balance }); }
+    if(paid > 0){ balance -= paid; led.add({ type:'payment', amount:paid, note:'Paid at time of sale', createdAt:new Date(Date.now()+2).toISOString(), balanceAfter:balance }); }
+    if(isNew) custRef.set(Object.assign({}, custData, { balance:balance }));
+    else custRef.update({ balance:balance });
+    saved = Object.assign({}, saved, { balance:balance });
+    try{ logAudit('create','credit', custRef.id, custName+' owes '+fmtMoney(balance)); }catch(e){}
+    closeModal();
+    toast(tr('Credit sale saved')+' — '+custName+' '+tr('owes')+' '+fmtMoney(balance));
+    if(sale) offerSaleReceipt(sale, saved);
+  });
+}
+
 function openCustomerSheet(customer){
   var isEdit = !!customer;
   var html =
@@ -5418,6 +5598,9 @@ function openCustomerSheet(customer){
     '<div class="field"><label>'+tr('Name')+'</label><input id="cfName" placeholder="Full name" value="'+esc(customer?customer.name:'')+'"></div>' +
     '<div class="field"><label>'+tr('Phone (optional)')+'</label><input id="cfPhone" type="tel" inputmode="tel" placeholder="081 234 5678" value="'+esc(customer?customer.phone||'':'')+'"></div>' +
     '<div class="field"><label>'+tr('Email (optional)')+'</label><input id="cfEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com" value="'+esc(customer?customer.email||'':'')+'"></div>' +
+    '<div class="field"><label>'+tr('Address (optional)')+'</label><input id="cfAddress" placeholder="Street, suburb, town" value="'+esc(customer?customer.address||'':'')+'"></div>' +
+    '<div class="field"><label>'+tr('ID number / reference (optional)')+'</label><input id="cfIdNo" placeholder="e.g. ID number or employer" value="'+esc(customer?customer.idNumber||'':'')+'"></div>' +
+    '<div class="field"><label>'+tr('Notes (optional)')+'</label><input id="cfNotes" placeholder="Anything worth remembering" value="'+esc(customer?customer.notes||'':'')+'"></div>' +
     (isEdit ? '<div class="field"><label>'+tr('Balance owed')+'</label><input id="cfBalance" type="number" inputmode="decimal" step="0.01" value="'+(customer.balance||0)+'"></div>' : '') +
     '<div class="actions">' +
       (isEdit ? '<button class="btn btn-danger" id="cfDelete">'+tr('Delete')+'</button>' : '') +
@@ -5430,10 +5613,10 @@ function openCustomerSheet(customer){
     var email = ov.querySelector('#cfEmail').value.trim();
     if(email && !looksLikeEmail(email)){ toast(tr('Enter a valid email address')); ov.querySelector('#cfEmail').focus(); return; }
     if(isEdit){
-      refs.customers.doc(customer.id).update({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), email: email, balance: parseFloat(ov.querySelector('#cfBalance').value)||0 });
+      refs.customers.doc(customer.id).update({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), email: email, address: ov.querySelector('#cfAddress').value.trim(), idNumber: ov.querySelector('#cfIdNo').value.trim(), notes: ov.querySelector('#cfNotes').value.trim(), balance: parseFloat(ov.querySelector('#cfBalance').value)||0 });
       toast('Customer updated');
     } else {
-      refs.customers.doc().set({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), email: email, balance:0, createdAt:new Date().toISOString() });
+      refs.customers.doc().set({ name:name, phone: ov.querySelector('#cfPhone').value.trim(), email: email, address: ov.querySelector('#cfAddress').value.trim(), idNumber: ov.querySelector('#cfIdNo').value.trim(), notes: ov.querySelector('#cfNotes').value.trim(), balance:0, createdAt:new Date().toISOString() });
       toast('Customer added');
     }
     closeModal();
@@ -5453,6 +5636,8 @@ function openLedgerSheet(customer){
     '<div class="stats" style="margin-bottom:14px;">' +
       '<div class="stat wide"><div class="lbl">'+tr('Balance owed')+'</div><div class="v num" style="color:'+((customer.balance||0)>0?'var(--danger)':'var(--success)')+'">'+fmtMoney(customer.balance||0)+'</div></div>' +
     '</div>' +
+    ((customer.phone||customer.email||customer.address||customer.idNumber||customer.notes) ? '<div class="banner" style="display:block;line-height:1.6;">' + [customer.phone, customer.email, customer.address, customer.idNumber ? tr('ID / ref')+': '+customer.idNumber : '', customer.notes].filter(Boolean).map(esc).join('<br>') + '</div>' : '') +
+    '<div class="actions" style="margin:0 0 12px;"><button class="btn btn-primary btn-block" id="ledgerCreditSaleBtn" type="button">+ '+tr('New credit sale')+'</button></div>' +
     '<div class="section-title" style="margin-top:0;">'+tr('Recent activity')+'</div>' +
     '<div id="ledgerList"><div class="empty" style="padding:20px 0;">Loading…</div></div>' +
     '<div class="actions"><button class="btn btn-ghost" id="invoiceCustomerBtn">'+tr('Invoice')+'</button><button class="btn btn-accent" style="flex:2;" id="recordPaymentBtn">'+tr('Record payment')+'</button></div>' +
@@ -5460,6 +5645,7 @@ function openLedgerSheet(customer){
   var ov = openSheet(html);
   ov.querySelector('#ledgerEditBtn').addEventListener('click', function(){ closeModal(); openCustomerSheet(customer); });
   ov.querySelector('#recordPaymentBtn').addEventListener('click', function(){ openPaymentSheet(customer); });
+  ov.querySelector('#ledgerCreditSaleBtn').addEventListener('click', function(){ var fresh = State.customers.find(function(c){ return c.id===customer.id; }) || customer; closeModal(); openCreditSaleSheet(fresh); });
   var reminderBtn = ov.querySelector('#sendReminderBtn');
   if(reminderBtn) reminderBtn.addEventListener('click', function(){
     var fresh = State.customers.find(function(c){ return c.id===customer.id; }) || customer;
@@ -5482,7 +5668,9 @@ function openLedgerSheet(customer){
     if(list.length === 0){ body.innerHTML = '<div class="empty" style="padding:16px 0;">No transactions on this account yet.</div>'; return; }
     body.innerHTML = list.slice(0,30).map(function(t){
       var isCharge = t.type === 'charge';
-      return '<div class="ledgeritem"><div class="lt-l">'+(isCharge?'Sale on credit':'Payment received')+'<span class="d">'+fmtDateTime(t.createdAt)+'</span></div>' +
+      var itemsHtml = (t.items && t.items.length) ? '<span class="lt-items">'+t.items.map(function(it){ return esc(it.qty)+' × '+esc(it.name)+' @ '+fmtMoney(it.unitPrice)+' = '+fmtMoney(it.lineTotal); }).join('<br>')+'</span>' : '';
+      var label = isCharge ? (t.note && t.note !== 'Sale on credit' && /^Previous balance$/.test(t.note) ? 'Previous balance' : 'Sale on credit') : 'Payment received';
+      return '<div class="ledgeritem"><div class="lt-l">'+label+'<span class="d">'+fmtDateTime(t.createdAt)+(t.note && !/^(Sale on credit|Previous balance)$/.test(t.note) ? ' · '+esc(t.note) : '')+'</span>'+itemsHtml+'</div>' +
         '<div class="lt-v num" style="color:'+(isCharge?'var(--danger)':'var(--success)')+'">'+(isCharge?'+':'−')+fmtMoney(t.amount)+'</div></div>';
     }).join('');
   });
@@ -6324,6 +6512,7 @@ function wireContent(){
       if(c) openLedgerSheet(c);
     });
   });
+  var ncs = content.querySelector('#newCreditSaleBtn'); if(ncs) ncs.addEventListener('click', function(){ openCreditSaleSheet(null); });
   content.querySelectorAll('[data-expense]').forEach(function(el){
     el.addEventListener('click', function(){
       if(selState('expenses').active){ toggleSelectId('expenses', el.getAttribute('data-select-id')); return; }
