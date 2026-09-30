@@ -1143,6 +1143,8 @@ var Store = (function(){
   var localColls = ['products','customers','sales','expenses'];
   var LKEY = 'otengu_shop_local_v1';
   var subs = {}; // path -> {cb, list}
+  var writeHook = null; // set by the Sync engine: called after every local write
+  function fireWrite(collPath, id, data){ if(writeHook){ try{ writeHook(collPath, id, data); }catch(e){} } }
 
   function localReadAll(){
     try { return JSON.parse(localStorage.getItem(LKEY) || '{}'); } catch(e){ return {}; }
@@ -1196,6 +1198,7 @@ var Store = (function(){
             all[collPath][id] = Object.assign({}, data);
             localWriteAll(all);
             localNotify(collPath); localNotifyDoc(path);
+            fireWrite(collPath, id, all[collPath][id]);
             return Promise.resolve();
           },
           update: function(patch){
@@ -1204,6 +1207,7 @@ var Store = (function(){
             all[collPath][id] = Object.assign({}, all[collPath][id]||{}, patch);
             localWriteAll(all);
             localNotify(collPath); localNotifyDoc(path);
+            fireWrite(collPath, id, all[collPath][id]);
             return Promise.resolve();
           },
           delete: function(){
@@ -1211,6 +1215,7 @@ var Store = (function(){
             if(all[collPath]) delete all[collPath][id];
             localWriteAll(all);
             localNotify(collPath); localNotifyDoc(path);
+            fireWrite(collPath, id, null);
             return Promise.resolve();
           },
           collection: function(sub){ return localCollection(collPath+'/'+id+'/'+sub); },
@@ -1281,9 +1286,178 @@ var Store = (function(){
       mode = 'local';
     })(),
     collection: function(path){ return collection(path); },
-    isCloud: function(){ return mode === 'db'; }
+    isCloud: function(){ return mode === 'db'; },
+    // used by the Sync engine
+    mode: function(){ return mode; },
+    setWriteHook: function(fn){ writeHook = fn; },
+    raw: { read: localReadAll, write: localWriteAll, notify: localNotify, notifyDoc: localNotifyDoc }
   };
 })();
+
+/* ============================== automated cloud sync ==============================
+   Local-first: every change is saved on the device instantly (so Pesa works
+   offline), then pushed to a small cloud table (Supabase) and other devices
+   pull it. Everything is automatic: after each change, every 15 seconds while
+   the app is open, when the phone comes back online, and when you return to
+   the app. Devices share one business through a private SYNC CODE.
+   Conflicts: the most recent save wins (per record). */
+var SYNC_DEFAULTS = { url:'', key:'' };   // paste your Supabase URL + anon key here to bake them into the app
+var Sync = (function(){
+  var CFG_KEY = 'pesa_sync_cfg_v1', OUT_KEY = 'pesa_sync_out_v1', PUSH_CHUNK = 200, PULL_PAGE = 500, OVERLAP_MS = 10000;
+  var st = { syncing:false, lastOk:0, error:'', timer:null, debounce:null, started:false, again:false };
+  function readJson(k){ try{ return JSON.parse(localStorage.getItem(k) || '{}') || {}; }catch(e){ return {}; } }
+  function writeJson(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function cfg(){
+    var c = readJson(CFG_KEY)[WS.id] || {};
+    return { url:String(c.url || SYNC_DEFAULTS.url || '').replace(/\/+$/, ''), key:c.key || SYNC_DEFAULTS.key || '', code:c.code || '', on:!!c.on, last:c.last || '' };
+  }
+  function saveCfg(patch){ var all = readJson(CFG_KEY); all[WS.id] = Object.assign({}, all[WS.id], patch); writeJson(CFG_KEY, all); }
+  function outbox(){ return readJson(OUT_KEY)[WS.id] || {}; }
+  function saveOutbox(o){ var all = readJson(OUT_KEY); all[WS.id] = o; writeJson(OUT_KEY, all); }
+  function pendingCount(){ return Object.keys(outbox()).length; }
+  function usable(){ var c = cfg(); return !!(c.on && c.url && c.key && c.code) && Store.mode() === 'local'; }
+  function toColl(collPath){ return collPath.indexOf(WS.prefix) === 0 ? collPath.slice(WS.prefix.length) : collPath; }
+  function headers(c){ return { 'apikey':c.key, 'Authorization':'Bearer '+c.key, 'Content-Type':'application/json', 'x-pesa-code':c.code }; }
+  function status(){
+    var c = cfg();
+    if(Store.mode() !== 'local') return { state:'cloud', label:'' };
+    if(!(c.on && c.url && c.key && c.code)) return { state:'off', label:'' };
+    if(!navigator.onLine) return { state:'offline', label:'Offline — '+pendingCount()+' pending' };
+    if(st.syncing) return { state:'syncing', label:'Syncing…' };
+    if(st.error) return { state:'error', label:'Sync problem — will retry' };
+    if(pendingCount()) return { state:'pending', label:pendingCount()+' waiting to sync' };
+    return { state:'ok', label: st.lastOk ? 'Synced '+new Date(st.lastOk).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : 'Synced' };
+  }
+  function refresh(){ try{ updateSyncBadge(); }catch(e){} try{ if(typeof syncSettingsRefresh === 'function') syncSettingsRefresh(); }catch(e){} }
+
+  function queue(collPath, id, data){
+    if(!usable()) return;
+    var o = outbox(), c = toColl(collPath);
+    o[c+'|'+id] = { c:c, i:id, d:(data === null ? null : data), t:Date.now() };
+    saveOutbox(o);
+    clearTimeout(st.debounce);
+    st.debounce = setTimeout(syncNow, 1500);
+    refresh();
+  }
+  function fetchJson(url, opts){
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var to = setTimeout(function(){ try{ ctl && ctl.abort(); }catch(e){} }, 20000);
+    return fetch(url, Object.assign({}, opts, ctl ? { signal:ctl.signal } : {})).then(function(r){
+      clearTimeout(to);
+      if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+String(t).slice(0,140)); });
+      return r.status === 204 ? null : r.text().then(function(t){ return t ? JSON.parse(t) : null; });
+    }, function(e){ clearTimeout(to); throw e; });
+  }
+  async function push(){
+    var c = cfg(), o = outbox(), keys = Object.keys(o);
+    for(var i=0; i<keys.length; i+=PUSH_CHUNK){
+      var chunk = keys.slice(i, i+PUSH_CHUNK);
+      var rows = chunk.map(function(k){ var e = o[k]; return { ws:c.code, coll:e.c, id:e.i, data:e.d, deleted:e.d === null }; });
+      await fetchJson(c.url+'/rest/v1/pesa_docs?on_conflict=ws,coll,id', { method:'POST', headers:Object.assign(headers(c), { 'Prefer':'resolution=merge-duplicates,return=minimal' }), body:JSON.stringify(rows) });
+      // clear what we sent, unless the record changed again meanwhile
+      var now = outbox();
+      chunk.forEach(function(k){ if(now[k] && now[k].t === o[k].t) delete now[k]; });
+      saveOutbox(now);
+    }
+  }
+  function applyRemote(rows){
+    if(!rows.length) return 0;
+    var all = Store.raw.read(), pend = outbox(), touchedColl = {}, touchedDoc = [], n = 0;
+    rows.forEach(function(r){
+      if(pend[r.coll+'|'+r.id]) return;                 // we have a newer unsent local change — ours wins and will be pushed
+      var cp = WS.prefix + r.coll;
+      all[cp] = all[cp] || {};
+      if(r.deleted){
+        if(!(r.id in all[cp])) return;
+        delete all[cp][r.id];
+      } else {
+        var cur = all[cp][r.id];
+        if(cur && JSON.stringify(cur) === JSON.stringify(r.data)) return;   // already identical (e.g. our own push coming back)
+        all[cp][r.id] = r.data;
+      }
+      touchedColl[cp] = 1; touchedDoc.push(cp+'/'+r.id); n++;
+    });
+    if(!n) return 0;
+    Store.raw.write(all);
+    Object.keys(touchedColl).forEach(function(cp){ Store.raw.notify(cp); });
+    touchedDoc.forEach(function(p){ Store.raw.notifyDoc(p); });
+    return n;
+  }
+  async function pull(){
+    var c = cfg(), cursor = c.last || '', maxSeen = cursor, total = 0;
+    for(;;){
+      var q = c.url+'/rest/v1/pesa_docs?select=coll,id,data,deleted,updated_at&ws=eq.'+encodeURIComponent(c.code)+(cursor ? '&updated_at=gt.'+encodeURIComponent(cursor) : '')+'&order=updated_at.asc&limit='+PULL_PAGE;
+      var rows = await fetchJson(q, { method:'GET', headers:headers(c) }) || [];
+      total += applyRemote(rows);
+      if(rows.length){ maxSeen = rows[rows.length-1].updated_at; cursor = maxSeen; }
+      if(rows.length < PULL_PAGE) break;
+    }
+    if(maxSeen && maxSeen !== c.last){
+      var t = Date.parse(maxSeen);
+      saveCfg({ last: isNaN(t) ? maxSeen : new Date(t - OVERLAP_MS).toISOString() });
+    }
+    return total;
+  }
+  async function syncNow(){
+    if(!usable()) return refresh();
+    if(!navigator.onLine){ return refresh(); }
+    if(st.syncing){ st.again = true; return; }
+    st.syncing = true; st.error = ''; refresh();
+    try{
+      await push();
+      await pull();
+      st.lastOk = Date.now();
+    }catch(e){ st.error = String(e && e.message || e); }
+    st.syncing = false; refresh();
+    if(st.again){ st.again = false; setTimeout(syncNow, 300); }
+  }
+  function queueEverything(){
+    var all = Store.raw.read(), o = outbox(), t = Date.now();
+    Object.keys(all).forEach(function(cp){
+      if(WS.prefix ? cp.indexOf(WS.prefix) !== 0 : cp.indexOf('ws_') === 0) return;   // only THIS business's collections
+      var coll = toColl(cp);
+      Object.keys(all[cp] || {}).forEach(function(id){ o[coll+'|'+id] = { c:coll, i:id, d:all[cp][id], t:t }; });
+    });
+    saveOutbox(o);
+  }
+  function genCode(){
+    var A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', out = '';
+    try{ var b = new Uint8Array(20); crypto.getRandomValues(b); for(var i=0;i<20;i++) out += A[b[i] % A.length]; }
+    catch(e){ for(var j=0;j<20;j++) out += A[Math.floor(Math.random()*A.length)]; }
+    return out.replace(/(.{4})(?=.)/g, '$1-');
+  }
+  function normCode(v){ return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/(.{4})(?=.)/g, '$1-'); }
+  function start(){
+    if(st.started) return; st.started = true;
+    Store.setWriteHook(queue);
+    window.addEventListener('online', function(){ refresh(); syncNow(); });
+    window.addEventListener('offline', refresh);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) syncNow(); });
+    st.timer = setInterval(function(){ if(!document.hidden) syncNow(); }, 15000);
+    syncNow();
+  }
+  return {
+    start:start, syncNow:syncNow, status:status, cfg:cfg, saveCfg:saveCfg, pendingCount:pendingCount, genCode:genCode, normCode:normCode, usable:usable,
+    lastError:function(){ return st.error; },
+    // Owner: turn sync on for this business (uploads everything already here)
+    enable:function(url, key, code){
+      saveCfg({ url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:normCode(code), on:true, last:'' });
+      queueEverything(); st.error = ''; refresh(); return syncNow();
+    },
+    // New device: join an existing business (nothing to upload, just download)
+    join:function(url, key, code){
+      saveCfg({ url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:normCode(code), on:true, last:'' });
+      st.error = ''; refresh(); return syncNow();
+    },
+    disable:function(){ saveCfg({ on:false }); refresh(); },
+    test:function(url, key, code){
+      var c = { url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:normCode(code) };
+      return fetchJson(c.url+'/rest/v1/pesa_docs?select=id&ws=eq.'+encodeURIComponent(c.code)+'&limit=1', { method:'GET', headers:headers(c) });
+    }
+  };
+})();
+
+const SYNC_SQL = "create table if not exists pesa_docs (\n  ws text not null, coll text not null, id text not null,\n  data jsonb, deleted boolean not null default false,\n  updated_at timestamptz not null default now(),\n  primary key (ws, coll, id)\n);\ncreate index if not exists pesa_docs_pull on pesa_docs (ws, updated_at);\ncreate or replace function pesa_touch() returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end $$;\ndrop trigger if exists pesa_touch_trg on pesa_docs;\ncreate trigger pesa_touch_trg before insert or update on pesa_docs for each row execute function pesa_touch();\nalter table pesa_docs enable row level security;\ndrop policy if exists pesa_all on pesa_docs;\ncreate policy pesa_all on pesa_docs for all to anon\n  using (ws = coalesce(current_setting('request.headers', true)::json->>'x-pesa-code',''))\n  with check (ws = coalesce(current_setting('request.headers', true)::json->>'x-pesa-code',''));\n";
 
 /* ============================== state ============================== */
 var State = {
@@ -1892,6 +2066,118 @@ function wireEmailServiceSettings(ov){
   });
 }
 
+/* ---- Cloud sync: Settings section (Owner) and "connect this device" sheet ---- */
+function syncHelpHtml(){
+  return '<details style="margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.6;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">'+tr('How to set up cloud sync (one time, free)')+'</summary>' +
+    '<ol style="padding-left:18px;margin:8px 0;">' +
+      '<li>Create a free project at supabase.com.</li>' +
+      '<li>Open <b>SQL Editor</b>, paste the setup script below, and run it.</li>' +
+      '<li>Open <b>Project Settings → API</b>. Copy the <b>Project URL</b> and the <b>anon public</b> key.</li>' +
+      '<li>Paste them here, tap <b>Generate code</b>, then <b>Turn on sync</b>.</li>' +
+      '<li>On your other phones: open Pesa, and on the Register page tap <b>Connect to an existing business</b>. Enter the same URL, key and sync code.</li>' +
+    '</ol>' +
+    '<button class="btn btn-ghost" type="button" data-copysql="1">'+tr('Copy setup script')+'</button>' +
+    '<pre style="white-space:pre-wrap;word-break:break-all;background:var(--surface-2);padding:8px;border-radius:8px;font-size:10.5px;max-height:160px;overflow:auto;margin-top:8px;">'+esc(SYNC_SQL)+'</pre></details>';
+}
+function copyText(text, okMsg){
+  function fallback(){ try{ var ta = document.createElement('textarea'); ta.value = text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast(okMsg); }catch(e){ toast(tr('Couldn’t copy — select and copy it by hand')); } }
+  try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){ toast(okMsg); }, fallback); return; } }catch(e){}
+  fallback();
+}
+function syncStatusLineHtml(){
+  var ss = Sync.status(), err = Sync.lastError();
+  var map = { ok:'var(--success)', syncing:'var(--warn, #d98e2b)', pending:'var(--warn, #d98e2b)', offline:'var(--danger)', error:'var(--danger)', off:'var(--text-muted)' };
+  var label = ss.state === 'off' ? tr('Sync is off') : ss.label;
+  return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(map[ss.state]||'var(--text-muted)')+';margin-right:6px;"></span><b>'+esc(label)+'</b>' +
+    (err && ss.state === 'error' ? '<div style="font-size:11.5px;color:var(--danger);margin-top:4px;word-break:break-word;">'+esc(err)+'</div>' : '');
+}
+function syncSettingsRefresh(){
+  var el = document.getElementById('syncStatusLine'); if(el) el.innerHTML = syncStatusLineHtml();
+}
+function syncSettingsHtml(){
+  if(Store.mode() !== 'local') return '';
+  var c = Sync.cfg(), on = c.on && c.url && c.key && c.code;
+  var baked = !!(SYNC_DEFAULTS.url && SYNC_DEFAULTS.key);
+  return '<div class="section-title">'+tr('Cloud sync (all your devices)')+'</div>' +
+    '<div class="banner" style="display:block;">'+(on
+      ? tr('Sync is ON. Every change is saved on this device first, then sent to the cloud automatically. Your other devices receive it within seconds.')
+      : tr('Turn this on so your shop’s data is the same on every phone and computer, and safe in the cloud. It works automatically and also while you are offline — changes send when the internet returns.'))+
+      '<div id="syncStatusLine" style="margin-top:8px;">'+syncStatusLineHtml()+'</div></div>' +
+    (on
+      ? '<div class="field"><label>'+tr('Your sync code (keep it private)')+'</label><input id="syCodeShow" readonly value="'+esc(c.code)+'" style="font-family:monospace;letter-spacing:0.5px;"></div>' +
+        '<div class="actions"><button class="btn btn-ghost" id="syCopy" type="button">'+tr('Copy code')+'</button><button class="btn btn-ghost" id="syNow" type="button">'+tr('Sync now')+'</button><button class="btn btn-danger" id="syOff" type="button">'+tr('Turn off sync')+'</button></div>'
+      : (baked ? '' : '<div class="field"><label>Supabase Project URL</label><input id="syUrl" placeholder="https://xxxx.supabase.co" value="'+esc(c.url)+'"></div>' +
+                      '<div class="field"><label>Supabase anon public key</label><input id="syKey" placeholder="eyJ…" value="'+esc(c.key)+'"></div>') +
+        '<div class="field"><label>'+tr('Sync code')+'</label><div style="display:flex;gap:8px;"><input id="syCode" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" value="'+esc(c.code)+'" style="font-family:monospace;flex:1;"><button class="btn btn-ghost" id="syGen" type="button">'+tr('Generate code')+'</button></div></div>' +
+        '<div class="actions"><button class="btn btn-ghost" id="syTest" type="button">'+tr('Test connection')+'</button><button class="btn btn-primary" id="syOn" type="button">'+tr('Turn on sync')+'</button></div>') +
+    '<div id="syMsg"></div>' + syncHelpHtml() +
+    '<div class="banner" style="margin-top:10px;">'+tr('Newest save wins if two devices change the same record at the same moment. Anyone with the sync code, URL and key can read this business’s data, so keep them private.')+'</div>';
+}
+function wireSyncSettings(ov){
+  var root = ov; if(!root) return;
+  var msg = root.querySelector('#syMsg');
+  function say(t, ok){ if(msg) msg.innerHTML = '<div class="banner">'+(ok?ICONS.check:ICONS.warn)+'<span>'+esc(t)+'</span></div>'; }
+  var cp = root.querySelector('[data-copysql]'); if(cp) cp.addEventListener('click', function(){ copyText(SYNC_SQL, tr('Setup script copied')); });
+  function vals(){
+    var u = root.querySelector('#syUrl'), k = root.querySelector('#syKey');
+    return { url: u ? u.value.trim() : SYNC_DEFAULTS.url, key: k ? k.value.trim() : SYNC_DEFAULTS.key, code: Sync.normCode(root.querySelector('#syCode').value) };
+  }
+  var gen = root.querySelector('#syGen'); if(gen) gen.addEventListener('click', function(){ root.querySelector('#syCode').value = Sync.genCode(); });
+  var test = root.querySelector('#syTest');
+  if(test) test.addEventListener('click', function(){
+    var v = vals(); if(!v.url || !v.key || !v.code) return say(tr('Fill in the URL, key and sync code first.'), false);
+    say(tr('Testing…'), true);
+    Sync.test(v.url, v.key, v.code).then(function(){ say(tr('Connected! The cloud table is ready.'), true); }, function(e){ say(tr('Could not connect')+': '+String(e.message||e).slice(0,160), false); });
+  });
+  var on = root.querySelector('#syOn');
+  if(on) on.addEventListener('click', function(){
+    var v = vals(); if(!v.url || !v.key || !v.code) return say(tr('Fill in the URL, key and sync code first.'), false);
+    if(v.code.replace(/-/g,'').length < 12) return say(tr('The sync code must be at least 12 letters or digits. Tap Generate code.'), false);
+    Sync.test(v.url, v.key, v.code).then(function(){
+      Sync.enable(v.url, v.key, v.code);
+      closeModal(); toast(tr('Cloud sync is on')); openSettingsSheet();
+    }, function(e){ say(tr('Could not connect')+': '+String(e.message||e).slice(0,160), false); });
+  });
+  var cc = root.querySelector('#syCopy'); if(cc) cc.addEventListener('click', function(){ copyText(Sync.cfg().code, tr('Sync code copied')); });
+  var sn = root.querySelector('#syNow'); if(sn) sn.addEventListener('click', function(){ Sync.syncNow(); });
+  var off = root.querySelector('#syOff'); if(off) off.addEventListener('click', function(){
+    confirmSheet(tr('Turn off sync?'), tr('This device will stop sending and receiving changes. Your data stays on this device and in the cloud.'), tr('Turn off'), function(){ Sync.disable(); closeModal(); openSettingsSheet(); }, true);
+  });
+}
+function joinSyncHtml(){
+  if(Store.mode() !== 'local') return '';
+  return '<div class="section-title" style="margin-top:22px;">'+tr('Already use Pesa on another device?')+'</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" type="button" data-joinsync="1">'+tr('Connect to an existing business')+'</button></div>';
+}
+function openJoinSyncSheet(){
+  var baked = !!(SYNC_DEFAULTS.url && SYNC_DEFAULTS.key), c = Sync.cfg();
+  var html = '<div class="sheet-head"><h2>'+tr('Connect to an existing business')+'</h2></div>' +
+    '<div class="banner">'+tr('Enter the cloud details and the sync code from the Owner’s phone (Settings → Cloud sync). This device will download the business, then you sign in with your own password or PIN.')+'</div>' +
+    (baked ? '' : '<div class="field"><label>Supabase Project URL</label><input id="jsUrl" placeholder="https://xxxx.supabase.co" value="'+esc(c.url)+'"></div><div class="field"><label>Supabase anon public key</label><input id="jsKey" placeholder="eyJ…" value="'+esc(c.key)+'"></div>') +
+    '<div class="field"><label>'+tr('Sync code')+'</label><input id="jsCode" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" style="font-family:monospace;"></div>' +
+    '<div id="jsMsg"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="jsGo" type="button">'+tr('Connect and download')+'</button></div>';
+  var ov = openSheet(html);
+  var msg = ov.querySelector('#jsMsg');
+  function say(t, ok){ msg.innerHTML = '<div class="banner">'+(ok?ICONS.check:ICONS.warn)+'<span>'+esc(t)+'</span></div>'; }
+  ov.querySelector('#jsGo').addEventListener('click', function(){
+    var u = ov.querySelector('#jsUrl'), k = ov.querySelector('#jsKey');
+    var url = u ? u.value.trim() : SYNC_DEFAULTS.url, key = k ? k.value.trim() : SYNC_DEFAULTS.key, code = Sync.normCode(ov.querySelector('#jsCode').value);
+    if(!url || !key || !code) return say(tr('Fill in the URL, key and sync code first.'), false);
+    var btn = ov.querySelector('#jsGo'); btn.disabled = true; say(tr('Connecting…'), true);
+    Sync.test(url, key, code).then(function(){
+      say(tr('Downloading your business…'), true);
+      return Sync.join(url, key, code);
+    }).then(function(){
+      // the company record arrives with the first download and the app then shows the sign-in screen by itself
+      setTimeout(function(){
+        if(!State.company){ btn.disabled = false; say(Sync.lastError() ? tr('Could not download')+': '+Sync.lastError().slice(0,140) : tr('Connected, but nothing was found for that sync code. Check the code and try again.'), false); }
+        else { closeModal(); }
+      }, 800);
+    }, function(e){ btn.disabled = false; say(tr('Could not connect')+': '+String(e.message||e).slice(0,160), false); });
+  });
+}
+
 function splashHtml(title, subtitle){
   var name = title || 'Pesa';
   return '<div class="splash-wrap">' +
@@ -2125,6 +2411,7 @@ function renderRegisterCompanyHtml(){
       '<div class="actions"><button class="btn btn-primary btn-block" id="rcSubmit">'+tr('Register &amp; continue')+'</button></div>' +
       '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       accountPickerHtml() +
+      joinSyncHtml() +
     '</div>' +
   '</div>';
 }
@@ -2181,6 +2468,7 @@ function wireAccountPicker(root){
 function wireRegisterCompany(root){
   wireBusinessSwitcher(root);
   wireAccountPicker(root);
+  var js = root.querySelector('[data-joinsync]'); if(js) js.addEventListener('click', openJoinSyncSheet);
   root.querySelector('#rcSubmit').addEventListener('click', function(){
     var v = function(id){ return root.querySelector(id).value.trim(); };
     var companyName = v('#rcCompanyName'), regNumber = v('#rcRegNumber'), address = v('#rcAddress'),
@@ -6216,6 +6504,8 @@ function openSettingsSheet(){
 
     notificationSettingsHtml() +
 
+    (isOwner() ? syncSettingsHtml() : '') +
+
     (isOwner() ? emailServiceSettingsHtml() : '') +
 
     '<div class="section-title">Backup &amp; data safety</div>' +
@@ -6305,6 +6595,7 @@ function openSettingsSheet(){
   var branchSelect = ov.querySelector('#stBranchSelect'); if(branchSelect) branchSelect.addEventListener('change', function(){ setActiveBranch(branchSelect.value); });
   wireNotificationSettings(ov);
   wireEmailServiceSettings(ov);
+  wireSyncSettings(ov);
   ov.querySelector('#stExportBtn').addEventListener('click', exportData);
   ov.querySelector('#stImportBtn').addEventListener('click', function(){
     ov.querySelector('#stImportInput').click();
@@ -6846,8 +7137,11 @@ function dashboardInsightsHtml(){
 
 /* ============================== SYNC STATUS ============================== */
 function syncStatusHtml(){
-  var dot, label;
-  if(Store.isCloud()){
+  var dot, label, ss = Sync.status();
+  if(ss.state !== 'cloud' && ss.state !== 'off'){
+    dot = ({ ok:'var(--success)', syncing:'var(--warn, #d98e2b)', pending:'var(--warn, #d98e2b)', offline:'var(--danger)', error:'var(--danger)' })[ss.state];
+    label = ss.label;
+  } else if(Store.isCloud()){
     dot = State.online ? 'var(--success)' : 'var(--danger)';
     label = State.online ? 'Synced' : 'Offline';
   } else if(window.claude && window.claude.use){
@@ -8110,6 +8404,7 @@ document.getElementById('authScreen').innerHTML = '<div class="authcard"><div cl
 Store.ready.then(function(){
   initRefs();
   subscribeAll();
+  Sync.start();
   updateSyncBadge();
   if(!Store.isCloud()) attemptCloudReconnect();
 });
