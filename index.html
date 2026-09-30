@@ -8204,12 +8204,44 @@ var ABOUT_FEATURES = [
 
 var DEV_EMAIL = 'ecrypted5@gmail.com';
 var DEV_WHATSAPP = '0818211692';
+
+// "Working with and without internet" section shown on the About page.
+// Same rule as the rest of this page: no hyphen or dash characters.
+var ABOUT_INTERNET = [
+  { h:'Works fully without internet', items:[
+    'Making sales, using the till, printing or sharing receipts to a paired printer',
+    'Adding and editing stock, prices, customers, suppliers and expenses',
+    'Recording credit sales and repayments, and viewing customer ledgers',
+    'Opening and closing till sessions, wastage records, purchase orders and branches',
+    'Viewing reports, insights, invoices, the audit log and the Training lessons',
+    'Logging in, logging out, switching between businesses on the same device, and changing your password',
+    'Opening the app itself, once it has been opened online at least one time on that device'
+  ]},
+  { h:'Needs internet', items:[
+    'The first time the app is opened or installed on a device, so it can save itself for offline use',
+    'Getting fixes and updates from the developer. The app checks for a new version each time it is opened with internet, then reloads itself. Without internet the device simply keeps running the version it already has, and nothing is lost',
+    'Cloud sync between devices, and connecting a new device to an existing business. Changes made offline wait safely on the device and upload by themselves once internet is back',
+    'Sending a password reset code by email. Resetting a password by code cannot be done offline, but changing a password you already know works offline',
+    'Sharing an invoice or report through WhatsApp or email, which opens those apps and needs their own connection',
+    'Downloading PDFs or seeing the Inter font on a device that has never loaded them online. After one online visit they are kept for offline use'
+  ]},
+  { h:'Good to know', items:[
+    'Data lives on the device first. Clearing the browser data or uninstalling the app on a device that never synced or backed up will erase that device’s records, so back up from Settings regularly',
+    'If two devices change the same record while offline, the most recent change wins once they sync',
+    'To get the latest version, open Pesa once with internet and let it finish loading, then close and open it again'
+  ]}
+];
 function openAboutSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('About Pesa')+'</h2></div>' +
     ABOUT_PARAGRAPHS.map(function(p){ return '<p style="font-size:14px;line-height:1.6;color:var(--text);margin:0 0 12px;">'+esc(tr(p))+'</p>'; }).join('') +
     '<ul style="margin:0 0 16px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
       ABOUT_FEATURES.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') +
     '</ul>' +
+    ABOUT_INTERNET.map(function(sec){
+      return '<div style="font-weight:700;font-size:14px;margin:4px 0 6px;">'+esc(tr(sec.h))+'</div>' +
+        '<ul style="margin:0 0 14px;padding-left:20px;font-size:13.5px;line-height:1.7;color:var(--text-muted);">' +
+        sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
+    }).join('') +
     '<div class="actions"><button class="btn btn-primary btn-block" id="aboutPdfBtn" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download PDF')+'</span></button></div>' +
     '<div style="margin-top:18px;border-top:1px solid var(--border,#e2e6df);padding-top:14px;">' +
       '<div style="font-weight:700;font-size:14px;margin-bottom:8px;">'+tr('Contact the developer')+'</div>' +

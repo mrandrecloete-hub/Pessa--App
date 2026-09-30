@@ -5,19 +5,30 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v4';
+var CACHE = 'pesa-shell-v5';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 // The page itself is updated often during testing — always prefer a fresh
 // copy over whatever's cached, and only fall back to cache when offline.
+// Third party files the app needs for PDFs and fonts. They are fetched once
+// (no-cors, so the copies are opaque) and kept, so PDFs and fonts still work
+// with no internet after the first online visit.
+var EXTERNAL = [
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap'
+];
 var NETWORK_FIRST = ['index.html', 'manifest.json'];
 
 self.addEventListener('install', function(evt){
   self.skipWaiting();
   evt.waitUntil(
     caches.open(CACHE).then(function(cache){
-      return Promise.all(SHELL.map(function(u){
+      var jobs = SHELL.map(function(u){
         return cache.add(u).catch(function(){ /* ignore individual failures */ });
-      }));
+      });
+      EXTERNAL.forEach(function(u){
+        jobs.push(fetch(new Request(u, {mode:'no-cors'})).then(function(res){ return cache.put(u, res); }).catch(function(){}));
+      });
+      return Promise.all(jobs);
     })
   );
 });
@@ -57,7 +68,7 @@ self.addEventListener('fetch', function(evt){
   evt.respondWith(
     caches.match(evt.request).then(function(cached){
       var network = fetch(evt.request).then(function(res){
-        if(res && res.ok){
+        if(res && (res.ok || res.type === 'opaque')){
           var copy = res.clone();
           caches.open(CACHE).then(function(cache){ cache.put(evt.request, copy); });
         }
