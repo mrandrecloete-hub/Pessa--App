@@ -3771,7 +3771,7 @@ function applyPdfFonts(doc){
   all.forEach(function(n){ if(!doc.__pesaFont || !doc.__pesaFont[n]){ doc.addFileToVFS(n+'.ttf', PDF_FONT_CACHE[n]); doc.addFont(n+'.ttf', n, 'normal'); (doc.__pesaFont = doc.__pesaFont || {})[n] = 1; } });
   var origFont = doc.setFont.bind(doc), origSize = doc.setFontSize.bind(doc), cur = { style:'normal', size:(doc.getFontSize ? doc.getFontSize() : 16) };
   function eff(){
-    var name = (cur.style === 'bold' && cur.size >= 13) ? f.head : (f.body[cur.style] || f.body.normal);
+    var name = (cur.style === 'bold' && cur.size >= 9.5) ? f.head : (f.body[cur.style] || f.body.normal);
     origFont(name, 'normal');
   }
   doc.setFont = function(name, style){
@@ -3853,8 +3853,8 @@ function getActiveTemplate(){
 function drawDocHeader(doc){
   var t = getActiveTemplate();
   var pageW = doc.internal.pageSize.getWidth();
-  var margin = 16, contentW = pageW-margin*2, y = margin;
-  var markH = 9, markW = markH / PESA_LOGO_ASPECT;
+  var margin = 14, contentW = pageW-margin*2, y = margin;
+  var markH = 7, markW = markH / PESA_LOGO_ASPECT;
 
   try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', margin, y, markW, markH); }catch(e){}
   doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(150,150,150);
@@ -3863,8 +3863,8 @@ function drawDocHeader(doc){
   var rightBottom = y + markH;
   if(State.settings.logoDataUrl){
     var lg = State.settings.logoImgMeta || {};
-    var boxH = 12, boxW = 12;
-    if(lg.w && lg.h){ if(lg.w>lg.h){ boxH = 12*lg.h/lg.w; } else { boxW = 12*lg.w/lg.h; } }
+    var boxH = 9, boxW = 9;
+    if(lg.w && lg.h){ if(lg.w>lg.h){ boxH = 9*lg.h/lg.w; } else { boxW = 9*lg.w/lg.h; } }
     try{ doc.addImage(State.settings.logoDataUrl, 'JPEG', pageW-margin-boxW, y, boxW, boxH); }catch(e){}
     rightBottom = Math.max(rightBottom, y+boxH);
   }
@@ -4832,22 +4832,22 @@ function buildInvoicePdf(draft){
 
   if(State.settings.letterheadDataUrl){
     var lh = State.settings.letterheadImgMeta || {};
-    var w = contentW, h = 24;
-    if(lh.w && lh.h){ h = Math.min(24, w*lh.h/lh.w); w = h*lh.w/lh.h; if(w>contentW){ w=contentW; h=w*lh.h/lh.w; } }
+    var w = contentW, h = 16;
+    if(lh.w && lh.h){ h = Math.min(16, w*lh.h/lh.w); w = h*lh.w/lh.h; if(w>contentW){ w=contentW; h=w*lh.h/lh.w; } }
     try{ doc.addImage(State.settings.letterheadDataUrl, 'JPEG', margin, y, w, h); }catch(e){}
     y += h + 8;
   } else {
-    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.setTextColor(dark[0],dark[1],dark[2]);
     doc.text(State.settings.shopName || 'My Shop', margin, y+7);
-    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
     var cy = y+13;
     (State.settings.businessContact||'').split('\n').filter(Boolean).forEach(function(line){ doc.text(line, margin, cy); cy+=4.2; });
     y = Math.max(y+18, cy+2);
   }
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(primary[0],primary[1],primary[2]);
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(primary[0],primary[1],primary[2]);
   doc.text('INVOICE', pageW-margin, headerTop+8, {align:'right'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
   doc.text('No. '+draft.number, pageW-margin, headerTop+14, {align:'right'});
   doc.text('Date: '+fmtDateNice(draft.dateStr), pageW-margin, headerTop+19, {align:'right'});
   if(draft.dueDateStr) doc.text('Due: '+fmtDateNice(draft.dueDateStr), pageW-margin, headerTop+24, {align:'right'});
@@ -4855,24 +4855,24 @@ function buildInvoicePdf(draft){
   y = Math.max(y, headerTop+30);
   doc.setDrawColor(220,224,218); doc.setLineWidth(0.4); doc.line(margin,y,pageW-margin,y); y+=8;
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
   doc.text('BILL TO', margin, y); y+=5.5;
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(dark[0],dark[1],dark[2]);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
   doc.text(draft.billToName || 'Customer', margin, y); y+=6;
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
   (draft.billToContact||'').split('\n').filter(Boolean).forEach(function(line){ doc.text(line, margin, y); y+=4.5; });
   y += 6;
 
   var colDesc = margin+3, colQty = margin+contentW-70, colPrice = margin+contentW-46, colAmt = margin+contentW-3;
   doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 8, 'F');
-  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8);
   doc.text('DESCRIPTION', colDesc, y+5.5);
   doc.text('QTY', colQty, y+5.5, {align:'right'});
   doc.text('PRICE', colPrice, y+5.5, {align:'right'});
   doc.text('AMOUNT', colAmt, y+5.5, {align:'right'});
   y += 8;
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(dark[0],dark[1],dark[2]);
   var subtotal = 0;
   draft.items.forEach(function(it, idx){
     var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price; subtotal += amt;
@@ -4888,23 +4888,23 @@ function buildInvoicePdf(draft){
 
   y += 4;
   doc.setDrawColor(220,224,218); doc.line(margin, y, pageW-margin, y); y+=7;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
   doc.text('Subtotal', colPrice, y, {align:'right'});
   doc.setTextColor(dark[0],dark[1],dark[2]);
   doc.text(fmtMoney(subtotal), colAmt, y, {align:'right'});
   y += 9;
   doc.setFillColor(accent[0],accent[1],accent[2]);
   doc.rect(colPrice-32, y-5.5, contentW-(colPrice-32-margin), 10, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
   doc.text(t.totalLabel, colPrice, y+1, {align:'right'});
   doc.text(fmtMoney(subtotal), colAmt, y+1, {align:'right'});
   y += 16;
 
   var noteText = draft.notes || t.defaultNote;
   if(noteText){
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
     doc.text('NOTES', margin, y); y+=5;
-    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(dark[0],dark[1],dark[2]);
     var noteLines = doc.splitTextToSize(noteText, contentW);
     doc.text(noteLines, margin, y);
   }
@@ -4922,7 +4922,7 @@ function buildReceiptPdf(draft){
   if(!jsPDFCtor) return null;
   var t = getActiveTemplate();
   var primary=t.primary, accent=t.accent, muted=t.muted, dark=t.dark;
-  var pageW = 80, margin = 5, contentW = pageW - margin*2;
+  var pageW = 72, margin = 4, contentW = pageW - margin*2;
   var items = draft.items || [];
   var subtotal = items.reduce(function(s,it){ return s + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
   var vatNo = State.company && State.company.vatNumber ? State.company.vatNumber : '';
@@ -4934,101 +4934,101 @@ function buildReceiptPdf(draft){
   function draw(doc){
     var y = margin;
     // ---- header: shop details on the left, colour logo at the top right
-    var boxW = 16, boxH = 16, logoData = null, logoType = 'PNG';
+    var LOGO = 10, boxW = 10, boxH = 10, logoData = null, logoType = 'PNG';
     if(State.settings.logoDataUrl){
       logoData = State.settings.logoDataUrl; logoType = 'JPEG';
       var lg = State.settings.logoImgMeta || {};
-      if(lg.w && lg.h){ if(lg.w > lg.h){ boxH = 16*lg.h/lg.w; } else { boxW = 16*lg.w/lg.h; } }
+      if(lg.w && lg.h){ if(lg.w > lg.h){ boxH = LOGO*lg.h/lg.w; } else { boxW = LOGO*lg.w/lg.h; } }
     } else {
-      logoData = PESA_LOGO_DATA_URL; boxW = 16 / PESA_LOGO_ASPECT; boxH = 16; if(boxW > 16){ boxH = 16 / (boxW/16); boxW = 16; }
+      logoData = PESA_LOGO_DATA_URL; boxW = LOGO / PESA_LOGO_ASPECT; boxH = LOGO; if(boxW > LOGO){ boxH = LOGO / (boxW/LOGO); boxW = LOGO; }
     }
     try{ doc.addImage(logoData, logoType, pageW - margin - boxW, y, boxW, boxH); }catch(e){}
-    var leftW = contentW - boxW - 3, ly = y + 4;
-    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
+    var leftW = contentW - boxW - 3, ly = y + 3;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(primary[0],primary[1],primary[2]);
     var nameLines = doc.splitTextToSize(shopName, leftW);
-    doc.text(nameLines, margin, ly); ly += nameLines.length*5.2;
+    doc.text(nameLines, margin, ly); ly += nameLines.length*4;
     if(State.settings.businessSlogan){
-      doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(accent[0],accent[1],accent[2]);
-      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, margin, ly); ly += sl.length*3.2 + 0.8;
+      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(accent[0],accent[1],accent[2]);
+      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, margin, ly); ly += sl.length*2.7 + 0.6;
     }
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
     (State.settings.businessContact||'').split('\n').filter(Boolean).slice(0,3).forEach(function(line){
-      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, margin, ly); ly += cl.length*3.1;
+      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, margin, ly); ly += cl.length*2.6;
     });
-    if(vatNo){ doc.text('VAT No. '+vatNo, margin, ly); ly += 3.1; }
-    y = Math.max(ly, y + boxH) + 2;
-    doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineWidth(0.7); doc.line(margin, y, pageW-margin, y);
-    doc.setLineWidth(0.3); y += 6;
+    if(vatNo){ doc.text('VAT No. '+vatNo, margin, ly); ly += 2.6; }
+    y = Math.max(ly, y + boxH) + 1.5;
+    doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineWidth(0.4); doc.line(margin, y, pageW-margin, y);
+    doc.setLineWidth(0.2); y += 4.5;
 
     // ---- title and details
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(primary[0],primary[1],primary[2]);
     doc.text('RECEIPT', margin, y, { charSpace:0.8 });
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(dark[0],dark[1],dark[2]);
-    doc.text('No. '+draft.number, pageW-margin, y, { align:'right' }); y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text('No. '+draft.number, pageW-margin, y, { align:'right' }); y += 4;
     function detail(label, value){
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]); doc.text(label, margin, y);
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(dark[0],dark[1],dark[2]);
-      var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*3.6;
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(muted[0],muted[1],muted[2]); doc.text(label, margin, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+      var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*3;
     }
     detail('Date', fmtDateNice(draft.dateStr));
     if(draft.billToName && draft.billToName !== 'Customer') detail('Customer', draft.billToName);
-    y += 1.5;
+    y += 1;
 
     // ---- items
-    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 5.4, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.6); doc.setTextColor(255,255,255);
-    doc.text('ITEM', margin+2, y+3.7, { charSpace:0.4 }); doc.text('AMOUNT', pageW-margin-2, y+3.7, { align:'right', charSpace:0.4 });
-    y += 5.4;
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 4.4, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.6); doc.setTextColor(255,255,255);
+    doc.text('ITEM', margin+2, y+3.1, { charSpace:0.3 }); doc.text('AMOUNT', pageW-margin-2, y+3.1, { align:'right', charSpace:0.3 });
+    y += 4.4;
     items.forEach(function(it, i){
       var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price;
-      doc.setFont('helvetica','bold'); doc.setFontSize(8);
-      var lines = doc.splitTextToSize(it.desc || '', contentW - 4 - 22);
-      var h = lines.length*3.7 + 4.6;
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.8);
+      var lines = doc.splitTextToSize(it.desc || '', contentW - 4 - 18);
+      var h = lines.length*3 + 3.6;
       if(i % 2 === 1){ doc.setFillColor(245,246,245); doc.rect(margin, y, contentW, h, 'F'); }
-      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(dark[0],dark[1],dark[2]);
-      doc.text(lines, margin+2, y+3.6);
-      doc.setFont('helvetica','bold'); doc.text(fmtMoney(amt), pageW-margin-2, y+3.6, { align:'right' });
-      doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(qty+' × '+fmtMoney(price), margin+2, y+3.6+lines.length*3.7 - 0.4);
+      doc.setFont('helvetica','bold'); doc.setFontSize(6.8); doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text(lines, margin+2, y+2.9);
+      doc.setFont('helvetica','bold'); doc.text(fmtMoney(amt), pageW-margin-2, y+2.9, { align:'right' });
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(qty+' × '+fmtMoney(price), margin+2, y+2.9+lines.length*3 - 0.3);
       y += h;
     });
-    doc.setDrawColor(210,212,210); doc.line(margin, y, pageW-margin, y); y += 4.5;
+    doc.setDrawColor(210,212,210); doc.line(margin, y, pageW-margin, y); y += 3.5;
 
     // ---- totals
     function sum(label, value){
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(label, margin+2, y); doc.setTextColor(dark[0],dark[1],dark[2]); doc.text(value, pageW-margin-2, y, { align:'right' }); y += 4.2;
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(label, margin+2, y); doc.setTextColor(dark[0],dark[1],dark[2]); doc.text(value, pageW-margin-2, y, { align:'right' }); y += 3.4;
     }
     sum('Items', String(items.reduce(function(a,it){ return a + (Number(it.qty)||0); }, 0)));
     if(vatNo && vatRate > 0) sum('VAT ('+vatRate+'%) included', fmtMoney(subtotal*vatRate/(100+vatRate)));
-    y += 0.8;
-    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 9.5, 1.2, 1.2, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
-    doc.text('TOTAL', margin+3, y+6.1, { charSpace:0.6 });
-    doc.setFontSize(11); doc.text(fmtMoney(subtotal), pageW-margin-3, y+6.2, { align:'right' });
-    y += 9.5 + 7;
+    y += 0.6;
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 7, 1, 1, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(255,255,255);
+    doc.text('TOTAL', margin+2.5, y+4.6, { charSpace:0.4 });
+    doc.setFontSize(9); doc.text(fmtMoney(subtotal), pageW-margin-2.5, y+4.7, { align:'right' });
+    y += 7 + 5;
 
     // ---- footer: thank you
     doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineDashPattern([0.8,1], 0); doc.line(margin, y, pageW-margin, y); doc.setLineDashPattern([], 0);
-    y += 6.5;
-    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
+    y += 5;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(primary[0],primary[1],primary[2]);
     var ty = doc.splitTextToSize('Thank you for your business!', contentW);
-    doc.text(ty, pageW/2, y, { align:'center' }); y += ty.length*5.2;
-    doc.setFont('helvetica','italic'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text(ty, pageW/2, y, { align:'center' }); y += ty.length*4;
+    doc.setFont('helvetica','italic'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
     var sub = doc.splitTextToSize('We appreciate your support. Please keep this receipt for your records.', contentW - 6);
-    doc.text(sub, pageW/2, y, { align:'center' }); y += sub.length*3.3 + 1.5;
+    doc.text(sub, pageW/2, y, { align:'center' }); y += sub.length*2.7 + 1.2;
     var custom = (draft.notes || '').trim();
     if(custom && custom !== (t.defaultNote||'').trim()){
-      var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*3.3 + 1.5;
+      var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*2.7 + 1.2;
     }
-    y += 2;
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.2); doc.setTextColor(150,150,150);
-    doc.text('Powered by Pesa', pageW/2, y, { align:'center' }); y += 4;
+    y += 1.5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.4); doc.setTextColor(150,150,150);
+    doc.text('Powered by Pesa', pageW/2, y, { align:'center' }); y += 3;
     return y;
   }
   var probe = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, 1500] });
   var total = draw(probe);
-  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, Math.max(110, Math.ceil(total + margin))] });
+  var doc = newPdfDoc(jsPDFCtor, { unit:'mm', format:[pageW, Math.max(70, Math.ceil(total + margin))] });
   draw(doc);
   return doc;
 }
@@ -5277,7 +5277,7 @@ function drawReportPdf(fig, monthLabel, meta){
   // the live report keeps its original minus sign; saved reports use a plain hyphen, which every PDF font draws correctly
   var MINUS = arch ? '-' : '−';
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(primary[0],primary[1],primary[2]);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(primary[0],primary[1],primary[2]);
   doc.text((arch ? meta.shopName : State.settings.shopName) || 'Pesa', margin, y+6);
   doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
   if(arch){
