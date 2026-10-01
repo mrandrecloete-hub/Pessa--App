@@ -1131,6 +1131,8 @@ Object.assign(LANGS.af.strings, {"seconds":"sekondes"});
 Object.assign(LANGS.de.strings, {"seconds":"Sekunden"});
 Object.assign(LANGS.af.strings, {"Paid by (name, optional)": "Betaal deur (naam, opsioneel)", "Who is paying?": "Wie betaal?", "Employees on this terminal": "Werknemers op hierdie terminaal", "Card customer": "Kaartkliënt", "Wallet customer": "Beursie-kliënt", "Cash customer": "Kontantkliënt", "Approval": "Goedkeuring", "owes now": "skuld nou", "Change": "Kleingeld", "No point of sale records yet": "Nog geen verkooppuntrekords nie", "Sales made on this terminal appear here, sorted by how they were paid.": "Verkope op hierdie terminaal verskyn hier, gesorteer volgens hoe dit betaal is.", "None": "Geen", "Date and time": "Datum en tyd", "Terminal": "Terminaal", "Card number": "Kaartnommer", "How the card was used": "Hoe die kaart gebruik is", "Approval code": "Goedkeuringskode", "Limit override approved by": "Limietoorskryding goedgekeur deur", "Reference": "Verwysing", "Status": "Status", "Records": "Rekords"});
 Object.assign(LANGS.de.strings, {"Paid by (name, optional)": "Bezahlt von (Name, optional)", "Who is paying?": "Wer zahlt?", "Employees on this terminal": "Mitarbeiter an diesem Terminal", "Card customer": "Kartenkunde", "Wallet customer": "Wallet-Kunde", "Cash customer": "Barkunde", "Approval": "Genehmigung", "owes now": "schuldet jetzt", "Change": "Wechselgeld", "No point of sale records yet": "Noch keine Kassenaufzeichnungen", "Sales made on this terminal appear here, sorted by how they were paid.": "Verkäufe an diesem Terminal erscheinen hier, sortiert nach Zahlungsart.", "None": "Keine", "Date and time": "Datum und Uhrzeit", "Terminal": "Terminal", "Card number": "Kartennummer", "How the card was used": "Wie die Karte verwendet wurde", "Approval code": "Genehmigungscode", "Limit override approved by": "Limitüberschreitung genehmigt von", "Reference": "Referenz", "Status": "Status", "Records": "Aufzeichnungen"});
+Object.assign(LANGS.af.strings, {"Cash back given to the customer (N$, optional)": "Kontant terug aan die kliënt gegee (N$, opsioneel)", "Charge the card": "Debiteer die kaart", "give the customer": "gee die kliënt", "in cash": "in kontant", "Cash back": "Kontant terug", "Charged to card": "Aan kaart gehef", "Cash back paid out": "Kontant terug uitbetaal", "Till drawer opened": "Kassalaai oop", "Open the till drawer by hand. Connect a Bluetooth receipt printer with a cash drawer in Settings to open it automatically.": "Maak die kassalaai met die hand oop. Koppel 'n Bluetooth-kwitansiedrukker met 'n kontantlaai in Instellings om dit outomaties oop te maak.", "Cash drawer": "Kontantlaai", "Open the till drawer when a customer pays cash or takes cash back": "Maak die kassalaai oop wanneer 'n kliënt kontant betaal of kontant terug neem", "Connect printer and test the drawer": "Koppel drukker en toets die laai", "The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.": "Die laai word aan 'n Bluetooth-kwitansiedrukker gekoppel, wat die oopmaaksein stuur. Dit werk in Chrome op Android. Sonder 'n drukker sê Pesa jou om die laai met die hand oop te maak."});
+Object.assign(LANGS.de.strings, {"Cash back given to the customer (N$, optional)": "Dem Kunden ausgezahltes Bargeld (N$, optional)", "Charge the card": "Karte belasten mit", "give the customer": "dem Kunden geben", "in cash": "in bar", "Cash back": "Bargeldauszahlung", "Charged to card": "Der Karte belastet", "Cash back paid out": "Bargeldauszahlung ausgezahlt", "Till drawer opened": "Kassenschublade geöffnet", "Open the till drawer by hand. Connect a Bluetooth receipt printer with a cash drawer in Settings to open it automatically.": "Öffnen Sie die Kassenschublade von Hand. Verbinden Sie in den Einstellungen einen Bluetooth-Belegdrucker mit Kassenschublade, damit sie automatisch aufgeht.", "Cash drawer": "Kassenschublade", "Open the till drawer when a customer pays cash or takes cash back": "Kassenschublade öffnen, wenn ein Kunde bar zahlt oder Bargeld abhebt", "Connect printer and test the drawer": "Drucker verbinden und Schublade testen", "The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.": "Die Schublade wird an einen Bluetooth-Belegdrucker angeschlossen, der das Öffnungssignal sendet. Das funktioniert in Chrome auf Android. Ohne Drucker sagt Pesa Ihnen, die Schublade von Hand zu öffnen."});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -2909,15 +2911,17 @@ function openStaffSheet(user){
 function tillTotals(tillId){
   var sales = State.sales.filter(function(s){ return s.tillId === tillId; });
   var totals = {cash:0, card:0, wallet:0, credit:0};
+  var cashBack = 0;
   var items = {cash:0, card:0, wallet:0, credit:0};
   sales.forEach(function(s){
     var m = s.paymentMethod || 'cash';
     totals[m] = (totals[m]||0) + s.total;
+    cashBack += s.cashBack || 0;
     var qty = (s.items||[]).reduce(function(a,it){ return a+it.qty; }, 0);
     items[m] = (items[m]||0) + qty;
   });
   var itemTotal = items.cash+items.card+items.wallet+items.credit;
-  return { totals:totals, items:items, saleCount:sales.length, itemTotal:itemTotal };
+  return { totals:totals, items:items, saleCount:sales.length, itemTotal:itemTotal, cashBack:cashBack };
 }
 
 function renderTill(){
@@ -2943,6 +2947,7 @@ function tillSummaryCardHtml(session, t){
     '<div class="section-title" style="margin-top:0;">'+tr('Sales this shift')+'</div>' +
     '<div class="tillrow"><span class="l">'+tr('Opening float')+'</span><span class="v num">'+fmtMoney(session.openingFloat||0)+'</span></div>' +
     '<div class="tillrow"><span class="l">'+tr('Cash sales')+'</span><span class="v num">'+fmtMoney(t.totals.cash)+' ('+t.items.cash+' '+(t.items.cash===1?tr('item'):tr('items'))+')</span></div>' +
+    (t.cashBack > 0 ? '<div class="tillrow"><span class="l">'+tr('Cash back paid out')+'</span><span class="v num">−'+fmtMoney(t.cashBack)+'</span></div>' : '') +
     '<div class="tillrow"><span class="l">'+tr('Card sales')+'</span><span class="v num">'+fmtMoney(t.totals.card)+' ('+t.items.card+' '+(t.items.card===1?tr('item'):tr('items'))+')</span></div>' +
     '<div class="tillrow"><span class="l">'+tr('Mobile wallet sales')+'</span><span class="v num">'+fmtMoney(t.totals.wallet)+' ('+t.items.wallet+' '+(t.items.wallet===1?tr('item'):tr('items'))+')</span></div>' +
     '<div class="tillrow"><span class="l">'+tr('Credit sales')+'</span><span class="v num">'+fmtMoney(t.totals.credit)+' ('+t.items.credit+' '+(t.items.credit===1?tr('item'):tr('items'))+')</span></div>' +
@@ -2958,7 +2963,7 @@ function renderTillOverviewView(){
     html += '<div class="section-title" style="margin-top:0;">'+tr('Currently open')+' ('+openOnes.length+')</div>';
     html += '<div class="rowlist">' + openOnes.map(function(t){
       var tt = tillTotals(t.id);
-      var cashExpected = (t.openingFloat||0) + tt.totals.cash;
+      var cashExpected = (t.openingFloat||0) + tt.totals.cash - (tt.cashBack||0);
       return '<div class="row" data-till="'+t.id+'">' +
         '<div class="avatar">'+esc(initials(t.cashierName))+'</div>' +
         '<div class="main"><div class="title">'+esc(t.cashierName)+'</div><div class="sub">'+tr('Open since')+' '+fmtDateTime(t.openedAt)+'</div></div>' +
@@ -3008,7 +3013,7 @@ function openStartTillSheet(){
 
 function openCloseTillSheet(session){
   var t = tillTotals(session.id);
-  var expectedFloat = (session.openingFloat||0) + t.totals.cash;
+  var expectedFloat = (session.openingFloat||0) + t.totals.cash - (t.cashBack||0);
   var html = '<div class="sheet-head"><h2>'+tr('Close till')+'</h2></div>' +
     tillSummaryCardHtml(session, t) +
     '<div class="field"><label>'+tr('Cash paid out during shift (expenses paid from the drawer, if any)')+'</label><input id="tcPayout" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
@@ -3383,11 +3388,13 @@ function openChargeSheet(){
       });
     } else if(pm === 'card'){
       if(State.posDevices.length){
-        extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>' + '<div class="field"><label>'+tr('Paid by (name, optional)')+'</label><input id="payerName" placeholder="'+tr('Who is paying?')+'"></div>' + posCardHtml(total, cardSt);
+        extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>' + '<div class="field"><label>'+tr('Paid by (name, optional)')+'</label><input id="payerName" placeholder="'+tr('Who is paying?')+'"></div>' + '<div class="field"><label>'+tr('Cash back given to the customer (N$, optional)')+'</label><input id="cashBack" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div><div id="cbInfo" style="font-size:12.5px;color:var(--text-muted);margin:-6px 2px 10px;"></div>' + posCardHtml(total, cardSt);
         posCardWire(ov, total, cardSt);
       } else {
-        extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>' + '<div class="field"><label>'+tr('Paid by (name, optional)')+'</label><input id="payerName" placeholder="'+tr('Who is paying?')+'"></div>';
+        extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>' + '<div class="field"><label>'+tr('Paid by (name, optional)')+'</label><input id="payerName" placeholder="'+tr('Who is paying?')+'"></div>' + '<div class="field"><label>'+tr('Cash back given to the customer (N$, optional)')+'</label><input id="cashBack" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div><div id="cbInfo" style="font-size:12.5px;color:var(--text-muted);margin:-6px 2px 10px;"></div>';
       }
+      var cbIn = extra.querySelector('#cashBack');
+      if(cbIn) cbIn.addEventListener('input', function(){ var v = Math.max(0, parseFloat(cbIn.value)||0); extra.querySelector('#cbInfo').textContent = v > 0 ? tr('Charge the card')+' '+fmtMoney(total+v)+' · '+tr('give the customer')+' '+fmtMoney(v)+' '+tr('in cash') : ''; });
     } else if(pm === 'wallet'){
       extra.innerHTML = '<div class="field"><label>'+tr('Wallet or transfer type')+'</label><select id="walletProv">' +
         WALLET_PROVIDERS.map(function(w){ return '<option value="'+esc(w)+'">'+esc(w)+'</option>'; }).join('') + '</select></div>' +
@@ -3429,7 +3436,7 @@ function openChargeSheet(){
       var got = (cr && cr.value !== '') ? rv : total;
       finalizeSale(pm, null, { cashReceived: got, changeGiven: Math.max(0, Math.round((got-total)*100)/100) });
     } else if(pm === 'card'){
-      posCardSubmit(ov, total, cardSt).then(function(ex){ if(ex){ var pn = ov.querySelector('#payerName'); ex.payerName = pn ? pn.value.trim() : ''; finalizeSale('card', null, ex); } });
+      posCardSubmit(ov, total, cardSt).then(function(ex){ if(ex){ var pn = ov.querySelector('#payerName'); ex.payerName = pn ? pn.value.trim() : ''; var cbi = ov.querySelector('#cashBack'), cbq = cbi ? Math.round((parseFloat(cbi.value)||0)*100)/100 : 0; if(cbq > 0){ ex.cashBack = cbq; ex.cardCharged = Math.round((total+cbq)*100)/100; } finalizeSale('card', null, ex); } });
     } else {
       finalizeSale(pm, null);
     }
@@ -3482,6 +3489,7 @@ function finalizeSale(method, customer, extra){
     refs.customers.doc(customer.id).update({ balance: newBal });
     refs.customers.doc(customer.id).collection('ledger').add({ type:'charge', amount: total, note:'Sale on credit', createdAt:new Date().toISOString(), balanceAfter:newBal });
   }
+  if(method === 'cash' || sale.cashBack > 0) openCashDrawer(false);
   State.cart = [];
   closeModal();
   renderCartBar();
@@ -3502,6 +3510,7 @@ function offerSaleReceipt(sale, customer){
     at: sale.createdAt,
     payMethod: sale.paymentMethod,
     walletProvider: sale.walletProvider || '',
+    cashBack: sale.cashBack || 0,
     received: sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : sale.total),
     items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice }; })
   };
@@ -3562,7 +3571,7 @@ function posDevice(){
   if(!d.linkedAt && Date.now() - (b.at||0) > 15000) return null;
   return d;
 }
-function posSum(list){ return list.reduce(function(s,x){ return s + (x.total||0); }, 0); }
+function posSum(list){ return list.reduce(function(s,x){ return s + (x.total||0) + (x.cashBack||0); }, 0); }
 function posStats(dev){
   var now = Date.now(), tk = todayKey();
   var sales = State.sales.filter(function(s){ return s.paymentMethod === 'card' && s.posDeviceId === dev.id; });
@@ -3620,10 +3629,12 @@ function posCardHtml(total, st){
     '<div id="posLimitInfo"></div><div id="posOverrideBox"></div>';
 }
 function posCardWire(ov, total, st){
+  var baseTotal = total;
+  function amt(){ var cb = ov.querySelector('#cashBack'); return baseTotal + (cb ? Math.max(0, parseFloat(cb.value)||0) : 0); }
   function dev(){ return State.posDevices.find(function(d){ return d.id === st.devId; }); }
   function refresh(){
     var d = dev(); if(!d) return;
-    var chk = posLimitCheck(d, total, st.mode);
+    var chk = posLimitCheck(d, amt(), st.mode);
     var box = ov.querySelector('#posLimitInfo'), h = '';
     var lbl = ov.querySelector('#posAuthLbl');
     if(lbl) lbl.textContent = d.requireAuthCode ? tr('Approval code from the terminal (required)') : tr('Approval code from the terminal (optional)');
@@ -3638,6 +3649,7 @@ function posCardWire(ov, total, st){
     st.override = null; ov.querySelector('#posOverrideBox').innerHTML = '';
   }
   ov.querySelector('#posDev').addEventListener('change', function(e){ st.devId = e.target.value; refresh(); });
+  var cbEl = ov.querySelector('#cashBack'); if(cbEl) cbEl.addEventListener('input', refresh);
   ov.querySelectorAll('[data-pmode]').forEach(function(b){
     b.addEventListener('click', function(){
       ov.querySelectorAll('[data-pmode]').forEach(function(x){ x.classList.remove('active'); });
@@ -3655,7 +3667,8 @@ async function posCardSubmit(ov, total, st){
   if(last4 && !/^\d{4}$/.test(last4)){ toast(tr('Last 4 digits must be 4 numbers')); return null; }
   var auth = ov.querySelector('#posAuth').value.trim();
   if(d.requireAuthCode && !auth){ toast(tr('Enter the approval code from the terminal')); return null; }
-  var chk = posLimitCheck(d, total, st.mode);
+  var cbv = ov.querySelector('#cashBack'); var cashBackAmt = cbv ? Math.max(0, parseFloat(cbv.value)||0) : 0;
+  var chk = posLimitCheck(d, total + cashBackAmt, st.mode);
   var extra = { posDeviceId:d.id, posDeviceName:d.name, terminalId:d.terminalId || '', cardBrand:ov.querySelector('#posBrand').value, cardLast4:last4, authCode:auth, entryMode:st.mode };
   if(chk.blocked){ toast(tr('This terminal is blocked.')); return null; }
   if(chk.issues.length){
@@ -4087,7 +4100,7 @@ function posSaleWho(s){
 }
 function posSaleDetailLine(s){
   var m = s.paymentMethod;
-  if(m === 'card') return [s.cardBrand, s.cardLast4 ? '····'+s.cardLast4 : '', s.entryMode ? tr(s.entryMode) : '', s.authCode ? tr('Approval')+' '+s.authCode : '', s.posDeviceName].filter(Boolean).join(' · ');
+  if(m === 'card') return [s.cardBrand, s.cashBack ? tr('Cash back')+' '+fmtMoney(s.cashBack) : '', s.cardLast4 ? '····'+s.cardLast4 : '', s.entryMode ? tr(s.entryMode) : '', s.authCode ? tr('Approval')+' '+s.authCode : '', s.posDeviceName].filter(Boolean).join(' · ');
   if(m === 'wallet') return [s.walletProvider, s.payRef].filter(Boolean).join(' · ');
   if(m === 'credit'){ var c = State.customers.find(function(x){ return x.id === s.customerId; }); return tr('On credit')+(c ? ' · '+tr('owes now')+' '+fmtMoney(c.balance||0) : ''); }
   return s.cashReceived != null ? tr('Received')+' '+fmtMoney(s.cashReceived)+' · '+tr('Change')+' '+fmtMoney(s.changeGiven||0) : '';
@@ -4121,7 +4134,7 @@ function openPosSaleDetail(id){
   var m = s.paymentMethod || 'cash';
   var html = '<div class="sheet-head"><h2>'+tr(m==='wallet'?'Mobile wallet':m.charAt(0).toUpperCase()+m.slice(1))+' · '+fmtMoney(s.total)+'</h2></div>' +
     line(tr(m==='credit'?'Customer':'Paid by'), posSaleWho(s)) + line(tr('Date and time'), fmtDateTime(s.createdAt)) + line(tr('Cashier'), s.cashierName||'') +
-    (m==='card' ? line(tr('Terminal'), (s.posDeviceName||'')+(s.terminalId?' · '+s.terminalId:'')) + line(tr('Card type'), s.cardBrand) + line(tr('Card number'), s.cardLast4 ? '···· ···· ···· '+s.cardLast4 : '') + line(tr('How the card was used'), s.entryMode ? tr(s.entryMode) : '') + line(tr('Approval code'), s.authCode) + (s.overrideBy ? line(tr('Limit override approved by'), s.overrideBy) : '') : '') +
+    (m==='card' ? line(tr('Terminal'), (s.posDeviceName||'')+(s.terminalId?' · '+s.terminalId:'')) + line(tr('Card type'), s.cardBrand) + line(tr('Card number'), s.cardLast4 ? '···· ···· ···· '+s.cardLast4 : '') + line(tr('How the card was used'), s.entryMode ? tr(s.entryMode) : '') + line(tr('Approval code'), s.authCode) + (s.cashBack ? line(tr('Cash back'), fmtMoney(s.cashBack)) + line(tr('Charged to card'), fmtMoney(s.total+s.cashBack)) : '') + (s.overrideBy ? line(tr('Limit override approved by'), s.overrideBy) : '') : '') +
     (m==='wallet' ? line(tr('Wallet or transfer type'), s.walletProvider) + line(tr('Reference'), s.payRef) : '') +
     (m==='cash' && s.cashReceived != null ? line(tr('Cash received'), fmtMoney(s.cashReceived)) + line(tr('Change given'), fmtMoney(s.changeGiven||0)) : '') +
     (m==='credit' ? line(tr('Status'), posSaleDetailLine(s)) : '') +
@@ -4646,6 +4659,7 @@ function payRows(draft, total){
     if(draft.payMethod === 'wallet' && draft.walletProvider) lbl = draft.walletProvider;
     rows.push(['Paid by', lbl]);
   }
+  if(draft.cashBack > 0){ rows.push(['Cash back', fmtMoney(draft.cashBack)]); rows.push(['Charged to card', fmtMoney(total + Number(draft.cashBack))]); }
   if(draft.received != null && draft.received !== '' && !isNaN(Number(draft.received))){
     var rc = Number(draft.received);
     rows.push(['Amount received', fmtMoney(rc)]);
@@ -7732,6 +7746,10 @@ function openSettingsSheet(){
 
     (isOwner() ? emailServiceSettingsHtml() : '') +
 
+    '<div class="section-title">'+tr('Cash drawer')+'</div>' +
+    '<div class="field"><label><input type="checkbox" id="stDrawer"'+(State.settings.drawerKick===false?'':' checked')+' style="width:auto;margin-right:8px;">'+tr('Open the till drawer when a customer pays cash or takes cash back')+'</label></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="stDrawerTest" type="button">'+tr('Connect printer and test the drawer')+'</button></div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin:6px 2px 14px;">'+tr('The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.')+'</div>' +
     '<div class="section-title">Backup &amp; data safety</div>' +
     '<div class="banner">'+(Store.isCloud()?'Your data is stored in your own private Pesa cloud space and kept only for you — no one else can see it unless you export and share a file yourself.':'Your data is stored only on this device. Export a backup regularly and keep a copy somewhere safe — clearing your browser data would otherwise erase it.')+'</div>' +
     '<div class="actions">' +
@@ -7793,6 +7811,7 @@ function openSettingsSheet(){
     var k = ov.querySelector('#stFont').value, f = FONT_SETS[k];
     document.documentElement.style.setProperty('--font-head', f.cssHead); document.documentElement.style.setProperty('--font-sans', f.cssBody);
   });
+  ov.querySelector('#stDrawerTest').addEventListener('click', function(){ openCashDrawer(true); });
   ov.querySelector('#stSave').addEventListener('click', function(){
     var name = ov.querySelector('#stName').value.trim() || 'My Shop';
     var low = parseInt(ov.querySelector('#stLow').value,10) || 5;
@@ -7800,7 +7819,7 @@ function openSettingsSheet(){
     var slogan = ov.querySelector('#stSlogan').value.trim();
     var tplKey = selectedTemplateKey();
     var lang = ov.querySelector('#stLang').value;
-    var patch = { shopName:name, lowStockDefault:low, businessContact:contact, businessSlogan:slogan, invoiceTemplate:tplKey, language:lang, docFont:ov.querySelector('#stFont').value, letterheadPosition: ov.querySelector('#stLhPos') ? ov.querySelector('#stLhPos').value : 'top' };
+    var patch = { shopName:name, lowStockDefault:low, businessContact:contact, businessSlogan:slogan, invoiceTemplate:tplKey, language:lang, drawerKick: ov.querySelector('#stDrawer').checked, docFont:ov.querySelector('#stFont').value, letterheadPosition: ov.querySelector('#stLhPos') ? ov.querySelector('#stLhPos').value : 'top' };
     if(tplKey==='custom') patch.customTemplate = readCustomTemplate();
     State.settings = Object.assign({}, State.settings, patch);
     refs.settings.set(State.settings);
@@ -8301,6 +8320,29 @@ async function printReceiptViaBluetooth(draft, btn){
     blePrinterDevice = null; blePrinterChar = null;
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = oldLabel || 'Print via Bluetooth'; }
+  }
+}
+
+
+/* ---- cash drawer: opens through the Bluetooth receipt printer (ESC/POS drawer kick) ---- */
+var DRAWER_KICK = new Uint8Array([0x1b, 0x70, 0x00, 0x19, 0xfa]);
+var _drawerAsked = false;
+async function openCashDrawer(manual){
+  if(!manual && State.settings.drawerKick === false) return false;
+  try{
+    if(!bluetoothSupported()) throw new Error('unsupported');
+    if(!blePrinterChar){
+      if(manual || (State.settings.drawerPrinter === true && !_drawerAsked)){ _drawerAsked = true; await connectBluetoothPrinter(); }
+      else throw new Error('no-printer');
+    }
+    try{ await writeBleInChunks(blePrinterChar, DRAWER_KICK); }
+    catch(e){ blePrinterChar = null; await connectBluetoothPrinter(); await writeBleInChunks(blePrinterChar, DRAWER_KICK); }
+    if(State.settings.drawerPrinter !== true){ State.settings = Object.assign({}, State.settings, { drawerPrinter:true }); refs.settings.set(State.settings); }
+    toast(tr('Till drawer opened'));
+    return true;
+  }catch(e){
+    toast(tr('Open the till drawer by hand. Connect a Bluetooth receipt printer with a cash drawer in Settings to open it automatically.'));
+    return false;
   }
 }
 
@@ -10040,6 +10082,7 @@ function openHealthSheet(){
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
   { v:'2026.10.01', items:[
+    'The till drawer opens when a customer pays cash or takes cash back (through a Bluetooth receipt printer), and cash back is deducted from the expected till cash',
     'Point of sale records kept on their own, with every payment method in its own category and who paid, card details and approval codes',
     'Owners can register employees right from the point of sale',
     'Point of sale: a full screen sales terminal with its own staff login, PIN lockout and auto lock',
