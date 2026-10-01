@@ -741,6 +741,10 @@
   .rolebadge.owner{ background:var(--accent-bg,rgba(214,158,46,0.15)); color:var(--accent); }
   .rolebadge.manager{ background:rgba(59,130,246,0.15); color:#3B82F6; }
   .rolebadge.stockclerk{ background:rgba(168,85,247,0.15); color:#A855F7; }
+  .me-msg{ background:var(--surface-2); border-left:4px solid var(--primary); border-radius:12px; padding:12px 14px; margin-bottom:10px; cursor:pointer; }
+  .me-msg .t{ display:flex; gap:8px; align-items:center; font-weight:700; font-size:14px; } .me-msg .t svg{ width:18px; height:18px; }
+  .me-msg .s{ font-size:13px; color:var(--text-muted); margin-top:3px; }
+  .me-msg.urgent{ border-left-color:var(--danger); } .me-msg.stock{ border-left-color:var(--warn,#d98e2b); }
   .rolebadge.pending{ background:var(--accent-bg,rgba(214,158,46,0.15)); color:var(--accent); }
   .me-hero{ background:var(--primary); color:var(--primary-contrast); border-radius:16px; padding:16px; margin-bottom:12px; }
   .me-hero .hi{ font-size:12.5px; opacity:.85; } .me-hero .nm{ font-size:21px; font-weight:700; margin:2px 0 6px; } .me-hero .meta{ font-size:12.5px; opacity:.9; }
@@ -1169,6 +1173,8 @@ Object.assign(LANGS.af.strings, {"Cash back given to the customer (N$, optional)
 Object.assign(LANGS.de.strings, {"Cash back given to the customer (N$, optional)": "Dem Kunden ausgezahltes Bargeld (N$, optional)", "Charge the card": "Karte belasten mit", "give the customer": "dem Kunden geben", "in cash": "in bar", "Cash back": "Bargeldauszahlung", "Charged to card": "Der Karte belastet", "Cash back paid out": "Bargeldauszahlung ausgezahlt", "Till drawer opened": "Kassenschublade geöffnet", "Open the till drawer by hand. Connect a Bluetooth receipt printer with a cash drawer in Settings to open it automatically.": "Öffnen Sie die Kassenschublade von Hand. Verbinden Sie in den Einstellungen einen Bluetooth-Belegdrucker mit Kassenschublade, damit sie automatisch aufgeht.", "Cash drawer": "Kassenschublade", "Open the till drawer when a customer pays cash or takes cash back": "Kassenschublade öffnen, wenn ein Kunde bar zahlt oder Bargeld abhebt", "Connect printer and test the drawer": "Drucker verbinden und Schublade testen", "The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.": "Die Schublade wird an einen Bluetooth-Belegdrucker angeschlossen, der das Öffnungssignal sendet. Das funktioniert in Chrome auf Android. Ohne Drucker sagt Pesa Ihnen, die Schublade von Hand zu öffnen."});
 Object.assign(LANGS.af.strings, {"New employee sign up": "Nuwe werknemer registreer", "Invite": "Uitnodiging", "Employee": "Werknemer", "Invite code": "Uitnodigingskode", "This code has expired. Make a new one.": "Hierdie kode het verval. Maak ’n nuwe een.", "Valid until": "Geldig tot", "The employee signs up on their own phone. That phone must be connected to this business first (Advanced Pesa Connection or nearby Wi-Fi). On this same device it works straight away.": "Die werknemer registreer op sy eie foon. Daardie foon moet eers met hierdie besigheid gekoppel wees (Advanced Pesa Connection of nabygeleë Wi-Fi). Op hierdie selfde toestel werk dit dadelik.", "Send on WhatsApp": "Stuur op WhatsApp", "Edit details": "Wysig besonderhede", "Cancel invite": "Kanselleer uitnodiging", "This employee has created their account.": "Hierdie werknemer het sy rekening geskep.", "Back to team": "Terug na span", "Cancel invite?": "Kanselleer uitnodiging?", "The code stops working and this employee is removed.": "Die kode hou op werk en hierdie werknemer word verwyder.", "Your employer gave you a 6 digit invite code. Enter it to create your own account.": "Jou werkgewer het vir jou ’n 6 syfer uitnodigingskode gegee. Voer dit in om jou eie rekening te skep.", "That code was not found. Check it, or ask your employer for a new one. This phone must be connected to the business.": "Daardie kode is nie gevind nie. Gaan dit na, of vra jou werkgewer vir ’n nuwe een. Hierdie foon moet met die besigheid gekoppel wees.", "This code has expired. Ask your employer for a new one.": "Hierdie kode het verval. Vra jou werkgewer vir ’n nuwe een.", "Welcome": "Welkom", "You are joining": "Jy sluit aan by", "What this job can do": "Wat hierdie pos kan doen", "Choose a 4-digit PIN": "Kies ’n 4 syfer PIN", "Choose a password": "Kies ’n wagwoord", "Confirm PIN": "Bevestig PIN", "Create my account": "Skep my rekening", "The two entries do not match.": "Die twee invoere stem nie ooreen nie.", "This invite has already been used.": "Hierdie uitnodiging is reeds gebruik.", "Good morning": "Goeie more", "Good afternoon": "Goeie middag", "Good evening": "Goeie aand", "Out": "Uit", "Nothing is running low.": "Niks raak min nie.", "Open stock": "Maak voorraad oop", "Add a product": "Voeg ’n produk by", "My profile": "My profiel", "Products": "Produkte", "Wastage logged": "Wegdoening aangeteken", "New sale": "Nuwe verkoop", "My till": "My kassa", "Cash expected in drawer": "Kontant verwag in laai", "Your till is closed. Open it before you start selling.": "Jou kassa is gesluit. Maak dit oop voordat jy begin verkoop.", "My last 7 days": "My laaste 7 dae", "My recent sales": "My onlangse verkope", "No sales yet.": "Nog geen verkope nie.", "Job": "Pos", "Employee number": "Werknemernommer", "Joined": "Aangesluit", "Phone": "Foon", "What I can do": "Wat ek kan doen", "Not allowed": "Nie toegelaat nie", "Save details": "Stoor besonderhede", "Invited": "Uitgenooi", "Stock clerk": "Voorraadklerk", "Job title (optional)": "Poskenmerk (opsioneel)", "e.g. Front till cashier": "bv. Kassier by die voorste kassa", "How do they get access?": "Hoe kry hulle toegang?", "They create their own account": "Hulle skep hul eie rekening", "I set their PIN or password": "Ek stel hul PIN of wagwoord", "Phone or email (optional)": "Foon of e-pos (opsioneel)", "You get an invite code to give them. They open Pesa, tap New employee sign up, enter the code and choose their own PIN or password.": "Jy kry ’n uitnodigingskode om aan hulle te gee. Hulle maak Pesa oop, tik op Nuwe werknemer registreer, voer die kode in en kies hul eie PIN of wagwoord.", "Stock on hand, at selling price": "Voorraad byderhand, teen verkoopprys", "Products in stock list": "Produkte in voorraadlys", "units on hand": "eenhede byderhand", "Stock at selling price when filed": "Voorraad teen verkoopprys met afleg", "Products / units on hand": "Produkte / eenhede byderhand", "Storage is full on this device — export your data and free some space": "Berging is vol op hierdie toestel — voer jou data uit en maak spasie vry", "Stopped after": "Gestop na", "Tracking started from current stock": "Opsporing het begin vanaf huidige voorraad", "Enter the amount billed": "Voer die gefaktureerde bedrag in", "Invoice saved": "Faktuur gestoor", "Enter the amount paid": "Voer die bedrag betaal in", "Payment saved": "Betaling gestoor", "Payment deleted": "Betaling uitgevee", "Enter the statement balance": "Voer die staatsaldo in", "Statement check saved": "Staatkontrole gestoor", "That stock take was not found": "Daardie voorraadopname is nie gevind nie", "Count sheet downloaded (": "Telblad afgelaai (", "That file is empty": "Daardie lêer is leeg", "Need a name or barcode column and a \"Counted\" column": "’n Naam- of strepieskode-kolom en ’n \"Counted\"-kolom word benodig", "Stock take discarded": "Voorraadopname verwerp", "Stock take posted — stock list updated": "Voorraadopname gebook — voorraadlys opgedateer", "Could not post — try again": "Kon nie boek nie — probeer weer", "Variance report downloaded": "Verskilverslag afgelaai", "Optional": "Opsioneel", "Search by name or barcode…": "Soek volgens naam of strepieskode…", "Count": "Tel", "Sells at the till and point of sale and runs their own till.": "Verkoop by die kassa en verkooppunt en bestuur hul eie kassa.", "Looks after stock: counts, adds products and records wastage.": "Sorg vir voorraad: tel, voeg produkte by en teken wegdoening aan.", "Runs the shop day to day. Sees everything except the company legal details.": "Bestuur die winkel van dag tot dag. Sien alles behalwe die maatskappy se regsbesonderhede.", "Adding employees": "Voeg werknemers by", "Invite an employee": "Nooi ’n werknemer uit", "Employees create their own accounts, so you never have to know their PIN or password.": "Werknemers skep hul eie rekeninge, so jy hoef nooit hul PIN of wagwoord te ken nie.", "What each job can open": "Wat elke pos kan oopmaak", "A cashier sells and runs their own till. A stock clerk looks after stock and wastage. A manager sees everything except the company legal details. Only the owner has the whole app.": "’n Kassier verkoop en bestuur sy eie kassa. ’n Voorraadklerk sorg vir voorraad en wegdoening. ’n Bestuurder sien alles behalwe die maatskappy se regsbesonderhede. Net die eienaar het die hele toep.", "Employee sign up": "Werknemer registreer", "The employee opens Pesa on their own phone, taps New employee sign up and enters the code.": "Die werknemer maak Pesa op sy eie foon oop, tik op Nuwe werknemer registreer en voer die kode in.", "products ·": "produkte ·", "units · stock at cost": "eenhede · voorraad teen koste", "· at selling price": "· teen verkoopprys", "units · value at cost": "eenhede · waarde teen koste", "If a product with the same name (or barcode) already exists": "As ’n produk met dieselfde naam (of strepieskode) reeds bestaan", "Skip it (keep what I have) — recommended": "Slaan oor (behou wat ek het) — aanbeveel", "Update its prices and set stock to this number": "Werk die pryse op en stel voorraad op hierdie getal", "Update its prices and add this number to stock": "Werk die pryse op en voeg hierdie getal by voorraad", "Add it again as a new product": "Voeg dit weer by as ’n nuwe produk", "Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock, barcode. A header row is optional. There is no limit on rows: 30,000+ products upload in one go.": "Kolomme kan in enige volgorde wees: naam, kategorie, eenheid, koste, verkoopprys, hoeveelheid, lae voorraad, strepieskode. ’n Opskrifry is opsioneel. Daar is geen perk op rye nie. Meer as 30 000 produkte laai in een slag op.", "Stock value on record": "Voorraadwaarde op rekord", "Paid from": "Betaal vanaf", "Receipt / reference no.": "Kwitansie / verwysingsnr.", "Reconciliation is for owners and managers.": "Rekonsiliasie is vir eienaars en bestuurders.", "… type in the search box to narrow down": "… tik in die soekkassie om te vernou", "No suppliers": "Geen verskaffers nie", "Not started": "Nie begin nie", "End of day check (cash, card, wallets)": "Dageindkontrole (kontant, kaart, beursies)", "No suppliers yet": "Nog geen verskaffers nie", "Add supplier invoice": "Voeg verskafferfaktuur by", "This supplier is fully matched.": "Hierdie verskaffer is volledig gepas.", "Supplier invoices": "Verskafferfakture", "No invoices recorded.": "Geen fakture aangeteken nie.", "Payments": "Betalings", "No payments recorded.": "Geen betalings aangeteken nie.", "Received orders": "Ontvangde bestellings", "No received purchase orders yet. Mark a purchase order as received to bring it in here.": "Nog geen ontvangde aankoopbestellings nie. Merk ’n aankoopbestelling as ontvang om dit hier in te bring.", "Statement checks": "Staatkontroles", "Stock on hand now": "Voorraad nou byderhand", "Stock take (count stock)": "Voorraadopname (tel voorraad)", "To see stock variances, Pesa needs a starting point. Tap": "Om voorraadverskille te sien, het Pesa ’n beginpunt nodig. Tik op", "units worth": "eenhede ter waarde van", "at cost, which is": "teen koste, wat is", "Sales cash against stock sold": "Verkoopkontant teenoor voorraad verkoop", "Stock takes": "Voorraadopnames", "net at cost": "netto teen koste", "No stock takes yet.": "Nog geen voorraadopnames nie.", "Receipts and invoices against sales": "Kwitansies en fakture teenoor verkope", "A receipt is saved when you download, print or send it. Sales without one are normal if the customer did not want a receipt.": "’n Kwitansie word gestoor wanneer jy dit aflaai, druk of stuur. Verkope daarsonder is normaal as die kliënt nie ’n kwitansie wou hê nie.", "By day (tap a day to count what you hold)": "Per dag (tik op ’n dag om te tel wat jy het)", "No sales in this period": "Geen verkope in hierdie tydperk nie", "Mark all shown as reconciled": "Merk alles wat gewys word as gerekonsilieer", "Expenses (tick when matched to a receipt or payment)": "Uitgawes (merk af wanneer dit by ’n kwitansie of betaling pas)", "No expenses in this period": "Geen uitgawes in hierdie tydperk nie", "Not linked": "Nie gekoppel nie", "Supplier invoice number": "Verskafferfaktuurnommer", "Amount billed": "Bedrag gefaktureer", "Matches received order": "Pas by ontvangde bestelling", "Save invoice": "Stoor faktuur", "Amount paid": "Bedrag betaal", "Method": "Metode", "Supplier statement": "Verskafferstaat", "(billed − paid)": "(gefaktureer − betaal)", "Statement date": "Staatdatum", "Closing balance on their statement": "Sluitingssaldo op hul staat", "Save statement check": "Stoor staatkontrole", "Stock take": "Voorraadopname", "Count what is physically on the shelf and enter it. Pesa compares it with the stock list, shows the variance in": "Tel wat fisies op die rak is en voer dit in. Pesa vergelyk dit met die voorraadlys en wys die verskil in", "Name for this stock take": "Naam vir hierdie voorraadopname", "Start new stock take": "Begin nuwe voorraadopname", "Count sheet (CSV)": "Telblad (CSV)", "Discard": "Verwerp", "Biggest variances": "Grootste verskille", "Everything counted matches the stock list.": "Alles wat getel is, stem ooreen met die voorraadlys.", "Back to counting": "Terug na tel", "No variances.": "Geen verskille nie.", "Download all variances (CSV)": "Laai alle verskille af (CSV)", "Add a supplier first, then record purchase orders against them.": "Voeg eers ’n verskaffer by, teken dan aankoopbestellings teenoor hulle aan.", "Enter statement balance": "Voer staatsaldo in", "Start tracking from current stock": "Begin opsporing vanaf huidige voorraad", "Upload counts (CSV)": "Laai tellings op (CSV)", "left": "oor", "Sell and use the Point of sale": "Verkoop en gebruik die Verkooppunt", "Open and close your own till": "Maak jou eie kassa oop en toe", "See your own sales and records": "Sien jou eie verkope en rekords", "See stock levels": "Sien voorraadvlakke", "Change stock or prices": "Verander voorraad of pryse", "See reports, profit or other staff": "Sien verslae, wins of ander personeel", "Open the team list or business settings": "Maak die spanlys of besigheidsinstellings oop", "See and update stock": "Sien en werk voorraad op", "Record wastage and shrinkage": "Teken wegdoening en krimping aan", "See low stock alerts": "Sien lae voorraadwaarskuwings", "Sell or see sales": "Verkoop of sien verkope", "See reports or profit": "Sien verslae of wins", "Everything except company legal details": "Alles behalwe maatskappy se regsbesonderhede", "Add cashiers and stock clerks": "Voeg kassiers en voorraadklerke by", "See reports, stock and cash ups": "Sien verslae, voorraad en kassaafsluitings", "Change company legal details": "Verander maatskappy se regsbesonderhede", "Employees create their own accounts: the owner adds them and gets an invite code, and they sign up with it and choose their own PIN or password": "Werknemers skep hul eie rekeninge: die eienaar voeg hulle by en kry ’n uitnodigingskode, en hulle registreer daarmee en kies hul eie PIN of wagwoord", "Jobs decide what an employee can open. New Stock clerk job, and cashiers only see what they need": "Poste bepaal wat ’n werknemer kan oopmaak. Nuwe Voorraadklerk pos, en kassiers sien net wat hulle nodig het", "A personal dashboard for each employee with their sales, till, recent sales, low stock and profile": "’n Persoonlike oorsig vir elke werknemer met hul verkope, kassa, onlangse verkope, lae voorraad en profiel", "Employee accounts: the owner invites each employee with a code, the employee signs up and creates their own PIN or password, and each job only opens the parts of the app it needs. Only the owner has the whole app": "Werknemerrekeninge: die eienaar nooi elke werknemer uit met ’n kode, die werknemer registreer en skep sy eie PIN of wagwoord, en elke pos maak net die dele van die toep oop wat dit nodig het. Net die eienaar het die hele toep", "An invite code works for 7 days. Tap the employee in the Team list to make a new code or cancel the invite.": "’n Uitnodigingskode werk vir 7 dae. Tik op die werknemer in die Spanlys om ’n nuwe kode te maak of die uitnodiging te kanselleer.", "Team list": "Spanlys", "Sign in page → New employee sign up": "Aanmeldbladsy → Nuwe werknemer registreer", "Their phone must be connected to your business first, with Advanced Pesa Connection or nearby Wi-Fi. On the shop tablet it works straight away.": "Hul foon moet eers met jou besigheid gekoppel wees, met Advanced Pesa Connection of nabygeleë Wi-Fi. Op die winkel se tablet werk dit dadelik.", "Open Settings and tap Team, then Add staff member.": "Maak Instellings oop en tik op Span, dan Voeg personeellid by.", "Type their name, choose their job and an optional job title.": "Tik hul naam, kies hul pos en ’n opsionele poskenmerk.", "Leave They create their own account selected and tap Add staff member.": "Laat Hulle skep hul eie rekening gekies en tik op Voeg personeellid by.", "Send the invite code on WhatsApp, or read it out to them.": "Stuur die uitnodigingskode op WhatsApp, of lees dit vir hulle voor.", "Choose the job when you add the person. The screen lists what that job can and cannot do.": "Kies die pos wanneer jy die persoon byvoeg. Die skerm lys wat daardie pos kan en nie kan doen nie.", "Each employee lands on their own dashboard with only what they need.": "Elke werknemer beland op sy eie oorsig met net wat hulle nodig het.", "Open Pesa and tap New employee sign up.": "Maak Pesa oop en tik op Nuwe werknemer registreer.", "Enter the invite code.": "Voer die uitnodigingskode in.", "Choose a PIN (cashiers) or password and tap Create my account.": "Kies ’n PIN (kassiers) of wagwoord en tik op Skep my rekening."});
 Object.assign(LANGS.de.strings, {"New employee sign up": "Neuer Mitarbeiter registrieren", "Invite": "Einladung", "Employee": "Mitarbeiter", "Invite code": "Einladungscode", "This code has expired. Make a new one.": "Dieser Code ist abgelaufen. Erstellen Sie einen neuen.", "Valid until": "Gültig bis", "The employee signs up on their own phone. That phone must be connected to this business first (Advanced Pesa Connection or nearby Wi-Fi). On this same device it works straight away.": "Der Mitarbeiter registriert sich auf seinem eigenen Telefon. Dieses Telefon muss zuerst mit diesem Geschäft verbunden sein (Advanced Pesa Connection oder WLAN in der Nähe). Auf diesem Gerät funktioniert es sofort.", "Send on WhatsApp": "Per WhatsApp senden", "Edit details": "Angaben bearbeiten", "Cancel invite": "Einladung stornieren", "This employee has created their account.": "Dieser Mitarbeiter hat sein Konto erstellt.", "Back to team": "Zurück zum Team", "Cancel invite?": "Einladung stornieren?", "The code stops working and this employee is removed.": "Der Code funktioniert nicht mehr und dieser Mitarbeiter wird entfernt.", "Your employer gave you a 6 digit invite code. Enter it to create your own account.": "Ihr Arbeitgeber hat Ihnen einen 6 stelligen Einladungscode gegeben. Geben Sie ihn ein, um Ihr eigenes Konto zu erstellen.", "That code was not found. Check it, or ask your employer for a new one. This phone must be connected to the business.": "Dieser Code wurde nicht gefunden. Prüfen Sie ihn oder bitten Sie Ihren Arbeitgeber um einen neuen. Dieses Telefon muss mit dem Geschäft verbunden sein.", "This code has expired. Ask your employer for a new one.": "Dieser Code ist abgelaufen. Bitten Sie Ihren Arbeitgeber um einen neuen.", "Welcome": "Willkommen", "You are joining": "Sie treten bei:", "What this job can do": "Was diese Stelle tun kann", "Choose a 4-digit PIN": "Wählen Sie eine 4 stellige PIN", "Choose a password": "Wählen Sie ein Passwort", "Confirm PIN": "PIN bestätigen", "Create my account": "Mein Konto erstellen", "The two entries do not match.": "Die beiden Eingaben stimmen nicht überein.", "This invite has already been used.": "Diese Einladung wurde bereits verwendet.", "Good morning": "Guten Morgen", "Good afternoon": "Guten Tag", "Good evening": "Guten Abend", "Out": "Ausverkauft", "Nothing is running low.": "Nichts wird knapp.", "Open stock": "Bestand öffnen", "Add a product": "Produkt hinzufügen", "My profile": "Mein Profil", "Products": "Produkte", "Wastage logged": "Schwund erfasst", "New sale": "Neuer Verkauf", "My till": "Meine Kasse", "Cash expected in drawer": "Erwartetes Bargeld in der Schublade", "Your till is closed. Open it before you start selling.": "Ihre Kasse ist geschlossen. Öffnen Sie sie, bevor Sie mit dem Verkaufen beginnen.", "My last 7 days": "Meine letzten 7 Tage", "My recent sales": "Meine letzten Verkäufe", "No sales yet.": "Noch keine Verkäufe.", "Job": "Stelle", "Employee number": "Mitarbeiternummer", "Joined": "Beigetreten", "Phone": "Telefon", "What I can do": "Was ich tun kann", "Not allowed": "Nicht erlaubt", "Save details": "Angaben speichern", "Invited": "Eingeladen", "Stock clerk": "Lagermitarbeiter", "Job title (optional)": "Berufsbezeichnung (optional)", "e.g. Front till cashier": "z. B. Kassierer an der vorderen Kasse", "How do they get access?": "Wie erhalten sie Zugang?", "They create their own account": "Sie erstellen ihr eigenes Konto", "I set their PIN or password": "Ich lege ihre PIN oder ihr Passwort fest", "Phone or email (optional)": "Telefon oder E-Mail (optional)", "You get an invite code to give them. They open Pesa, tap New employee sign up, enter the code and choose their own PIN or password.": "Sie erhalten einen Einladungscode, den Sie weitergeben. Die Person öffnet Pesa, tippt auf Neuer Mitarbeiter registrieren, gibt den Code ein und wählt ihre eigene PIN oder ihr eigenes Passwort.", "Stock on hand, at selling price": "Lagerbestand zu Verkaufspreisen", "Products in stock list": "Produkte in der Bestandsliste", "units on hand": "Einheiten auf Lager", "Stock at selling price when filed": "Bestand zu Verkaufspreisen bei Ablage", "Products / units on hand": "Produkte / Einheiten auf Lager", "Storage is full on this device — export your data and free some space": "Der Speicher dieses Geräts ist voll — exportieren Sie Ihre Daten und geben Sie Speicherplatz frei", "Stopped after": "Gestoppt nach", "Tracking started from current stock": "Nachverfolgung ab aktuellem Bestand gestartet", "Enter the amount billed": "Geben Sie den berechneten Betrag ein", "Invoice saved": "Rechnung gespeichert", "Enter the amount paid": "Geben Sie den bezahlten Betrag ein", "Payment saved": "Zahlung gespeichert", "Payment deleted": "Zahlung gelöscht", "Enter the statement balance": "Geben Sie den Kontoauszugssaldo ein", "Statement check saved": "Kontoauszugsprüfung gespeichert", "That stock take was not found": "Diese Inventur wurde nicht gefunden", "Count sheet downloaded (": "Zählliste heruntergeladen (", "That file is empty": "Diese Datei ist leer", "Need a name or barcode column and a \"Counted\" column": "Eine Spalte für Name oder Barcode und eine Spalte \"Counted\" werden benötigt", "Stock take discarded": "Inventur verworfen", "Stock take posted — stock list updated": "Inventur gebucht — Bestandsliste aktualisiert", "Could not post — try again": "Buchung nicht möglich — versuchen Sie es erneut", "Variance report downloaded": "Differenzbericht heruntergeladen", "Optional": "Optional", "Search by name or barcode…": "Nach Name oder Barcode suchen…", "Count": "Zählen", "Sells at the till and point of sale and runs their own till.": "Verkauft an der Kasse und am Verkaufspunkt und führt die eigene Kasse.", "Looks after stock: counts, adds products and records wastage.": "Kümmert sich um den Bestand: zählt, fügt Produkte hinzu und erfasst Schwund.", "Runs the shop day to day. Sees everything except the company legal details.": "Führt das Geschäft im Tagesgeschäft. Sieht alles außer den rechtlichen Firmenangaben.", "Adding employees": "Mitarbeiter hinzufügen", "Invite an employee": "Mitarbeiter einladen", "Employees create their own accounts, so you never have to know their PIN or password.": "Mitarbeiter erstellen ihre eigenen Konten, sodass Sie ihre PIN oder ihr Passwort nie kennen müssen.", "What each job can open": "Was jede Stelle öffnen kann", "A cashier sells and runs their own till. A stock clerk looks after stock and wastage. A manager sees everything except the company legal details. Only the owner has the whole app.": "Ein Kassierer verkauft und führt die eigene Kasse. Ein Lagermitarbeiter kümmert sich um Bestand und Schwund. Ein Manager sieht alles außer den rechtlichen Firmenangaben. Nur der Inhaber hat die ganze App.", "Employee sign up": "Mitarbeiter registrieren", "The employee opens Pesa on their own phone, taps New employee sign up and enters the code.": "Der Mitarbeiter öffnet Pesa auf seinem eigenen Telefon, tippt auf Neuer Mitarbeiter registrieren und gibt den Code ein.", "products ·": "Produkte ·", "units · stock at cost": "Einheiten · Bestand zu Einkaufspreisen", "· at selling price": "· zu Verkaufspreisen", "units · value at cost": "Einheiten · Wert zu Einkaufspreisen", "If a product with the same name (or barcode) already exists": "Wenn ein Produkt mit demselben Namen (oder Barcode) bereits existiert", "Skip it (keep what I have) — recommended": "Überspringen (Vorhandenes behalten) — empfohlen", "Update its prices and set stock to this number": "Preise aktualisieren und Bestand auf diese Zahl setzen", "Update its prices and add this number to stock": "Preise aktualisieren und diese Zahl zum Bestand addieren", "Add it again as a new product": "Erneut als neues Produkt hinzufügen", "Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock, barcode. A header row is optional. There is no limit on rows: 30,000+ products upload in one go.": "Die Spalten können in beliebiger Reihenfolge stehen: Name, Kategorie, Einheit, Einkaufspreis, Verkaufspreis, Menge, niedriger Bestand, Barcode. Eine Kopfzeile ist optional. Die Zeilenzahl ist nicht begrenzt. Über 30.000 Produkte werden in einem Zug hochgeladen.", "Stock value on record": "Erfasster Bestandswert", "Paid from": "Bezahlt von", "Receipt / reference no.": "Beleg / Referenznr.", "Reconciliation is for owners and managers.": "Der Abgleich ist für Inhaber und Manager.", "… type in the search box to narrow down": "… geben Sie im Suchfeld etwas ein, um einzugrenzen", "No suppliers": "Keine Lieferanten", "Not started": "Nicht gestartet", "End of day check (cash, card, wallets)": "Tagesabschlusskontrolle (Bargeld, Karte, Wallets)", "No suppliers yet": "Noch keine Lieferanten", "Add supplier invoice": "Lieferantenrechnung hinzufügen", "This supplier is fully matched.": "Dieser Lieferant ist vollständig abgeglichen.", "Supplier invoices": "Lieferantenrechnungen", "No invoices recorded.": "Keine Rechnungen erfasst.", "Payments": "Zahlungen", "No payments recorded.": "Keine Zahlungen erfasst.", "Received orders": "Erhaltene Bestellungen", "No received purchase orders yet. Mark a purchase order as received to bring it in here.": "Noch keine erhaltenen Einkaufsbestellungen. Markieren Sie eine Einkaufsbestellung als erhalten, um sie hier anzuzeigen.", "Statement checks": "Kontoauszugsprüfungen", "Stock on hand now": "Aktueller Lagerbestand", "Stock take (count stock)": "Inventur (Bestand zählen)", "To see stock variances, Pesa needs a starting point. Tap": "Um Bestandsdifferenzen zu sehen, braucht Pesa einen Ausgangspunkt. Tippen Sie auf", "units worth": "Einheiten im Wert von", "at cost, which is": "zu Einkaufspreisen, das sind", "Sales cash against stock sold": "Verkaufserlöse gegenüber verkauftem Bestand", "Stock takes": "Inventuren", "net at cost": "netto zu Einkaufspreisen", "No stock takes yet.": "Noch keine Inventuren.", "Receipts and invoices against sales": "Belege und Rechnungen gegenüber Verkäufen", "A receipt is saved when you download, print or send it. Sales without one are normal if the customer did not want a receipt.": "Ein Beleg wird gespeichert, wenn Sie ihn herunterladen, drucken oder senden. Verkäufe ohne Beleg sind normal, wenn der Kunde keinen Beleg wollte.", "By day (tap a day to count what you hold)": "Nach Tag (tippen Sie auf einen Tag, um Ihren Bestand zu zählen)", "No sales in this period": "Keine Verkäufe in diesem Zeitraum", "Mark all shown as reconciled": "Alle angezeigten als abgeglichen markieren", "Expenses (tick when matched to a receipt or payment)": "Ausgaben (abhaken, wenn einem Beleg oder einer Zahlung zugeordnet)", "No expenses in this period": "Keine Ausgaben in diesem Zeitraum", "Not linked": "Nicht verknüpft", "Supplier invoice number": "Lieferantenrechnungsnummer", "Amount billed": "Berechneter Betrag", "Matches received order": "Passt zur erhaltenen Bestellung", "Save invoice": "Rechnung speichern", "Amount paid": "Bezahlter Betrag", "Method": "Methode", "Supplier statement": "Lieferantenkontoauszug", "(billed − paid)": "(berechnet − bezahlt)", "Statement date": "Auszugsdatum", "Closing balance on their statement": "Schlusssaldo auf ihrem Kontoauszug", "Save statement check": "Kontoauszugsprüfung speichern", "Stock take": "Inventur", "Count what is physically on the shelf and enter it. Pesa compares it with the stock list, shows the variance in": "Zählen Sie, was tatsächlich im Regal liegt, und geben Sie es ein. Pesa vergleicht es mit der Bestandsliste und zeigt die Differenz in", "Name for this stock take": "Name für diese Inventur", "Start new stock take": "Neue Inventur starten", "Count sheet (CSV)": "Zählliste (CSV)", "Discard": "Verwerfen", "Biggest variances": "Größte Differenzen", "Everything counted matches the stock list.": "Alles Gezählte stimmt mit der Bestandsliste überein.", "Back to counting": "Zurück zum Zählen", "No variances.": "Keine Differenzen.", "Download all variances (CSV)": "Alle Differenzen herunterladen (CSV)", "Add a supplier first, then record purchase orders against them.": "Fügen Sie zuerst einen Lieferanten hinzu und erfassen Sie dann Einkaufsbestellungen für ihn.", "Enter statement balance": "Kontoauszugssaldo eingeben", "Start tracking from current stock": "Nachverfolgung ab aktuellem Bestand starten", "Upload counts (CSV)": "Zählergebnisse hochladen (CSV)", "left": "übrig", "Sell and use the Point of sale": "Verkaufen und den Verkaufspunkt nutzen", "Open and close your own till": "Eigene Kasse öffnen und schließen", "See your own sales and records": "Eigene Verkäufe und Aufzeichnungen ansehen", "See stock levels": "Bestandsmengen ansehen", "Change stock or prices": "Bestand oder Preise ändern", "See reports, profit or other staff": "Berichte, Gewinn oder andere Mitarbeiter ansehen", "Open the team list or business settings": "Teamliste oder Geschäftseinstellungen öffnen", "See and update stock": "Bestand ansehen und aktualisieren", "Record wastage and shrinkage": "Schwund und Verluste erfassen", "See low stock alerts": "Warnungen bei niedrigem Bestand ansehen", "Sell or see sales": "Verkaufen oder Verkäufe ansehen", "See reports or profit": "Berichte oder Gewinn ansehen", "Everything except company legal details": "Alles außer rechtlichen Firmenangaben", "Add cashiers and stock clerks": "Kassierer und Lagermitarbeiter hinzufügen", "See reports, stock and cash ups": "Berichte, Bestand und Kassenabschlüsse ansehen", "Change company legal details": "Rechtliche Firmenangaben ändern", "Employees create their own accounts: the owner adds them and gets an invite code, and they sign up with it and choose their own PIN or password": "Mitarbeiter erstellen ihre eigenen Konten: Der Inhaber fügt sie hinzu und erhält einen Einladungscode, damit registrieren sie sich und wählen ihre eigene PIN oder ihr eigenes Passwort", "Jobs decide what an employee can open. New Stock clerk job, and cashiers only see what they need": "Stellen bestimmen, was ein Mitarbeiter öffnen kann. Neue Stelle Lagermitarbeiter, und Kassierer sehen nur, was sie brauchen", "A personal dashboard for each employee with their sales, till, recent sales, low stock and profile": "Eine persönliche Übersicht für jeden Mitarbeiter mit Verkäufen, Kasse, letzten Verkäufen, niedrigem Bestand und Profil", "Employee accounts: the owner invites each employee with a code, the employee signs up and creates their own PIN or password, and each job only opens the parts of the app it needs. Only the owner has the whole app": "Mitarbeiterkonten: Der Inhaber lädt jeden Mitarbeiter mit einem Code ein, der Mitarbeiter registriert sich und erstellt seine eigene PIN oder sein eigenes Passwort, und jede Stelle öffnet nur die Teile der App, die sie braucht. Nur der Inhaber hat die ganze App", "An invite code works for 7 days. Tap the employee in the Team list to make a new code or cancel the invite.": "Ein Einladungscode gilt 7 Tage. Tippen Sie in der Teamliste auf den Mitarbeiter, um einen neuen Code zu erstellen oder die Einladung zu stornieren.", "Team list": "Teamliste", "Sign in page → New employee sign up": "Anmeldeseite → Neuer Mitarbeiter registrieren", "Their phone must be connected to your business first, with Advanced Pesa Connection or nearby Wi-Fi. On the shop tablet it works straight away.": "Das Telefon der Person muss zuerst mit Ihrem Geschäft verbunden sein, mit Advanced Pesa Connection oder WLAN in der Nähe. Auf dem Tablet im Geschäft funktioniert es sofort.", "Open Settings and tap Team, then Add staff member.": "Öffnen Sie Einstellungen und tippen Sie auf Team, dann auf Mitarbeiter hinzufügen.", "Type their name, choose their job and an optional job title.": "Geben Sie den Namen ein, wählen Sie die Stelle und optional eine Berufsbezeichnung.", "Leave They create their own account selected and tap Add staff member.": "Lassen Sie Sie erstellen ihr eigenes Konto ausgewählt und tippen Sie auf Mitarbeiter hinzufügen.", "Send the invite code on WhatsApp, or read it out to them.": "Senden Sie den Einladungscode per WhatsApp oder lesen Sie ihn vor.", "Choose the job when you add the person. The screen lists what that job can and cannot do.": "Wählen Sie die Stelle, wenn Sie die Person hinzufügen. Der Bildschirm listet auf, was diese Stelle tun kann und was nicht.", "Each employee lands on their own dashboard with only what they need.": "Jeder Mitarbeiter landet auf seiner eigenen Übersicht mit nur dem, was er braucht.", "Open Pesa and tap New employee sign up.": "Öffnen Sie Pesa und tippen Sie auf Neuer Mitarbeiter registrieren.", "Enter the invite code.": "Geben Sie den Einladungscode ein.", "Choose a PIN (cashiers) or password and tap Create my account.": "Wählen Sie eine PIN (Kassierer) oder ein Passwort und tippen Sie auf Mein Konto erstellen."});
+Object.assign(LANGS.af.strings, {"Stock alert": "Voorraadwaarskuwing", "products need stock": "produkte het voorraad nodig", "out of stock": "uit voorraad", "Messages": "Boodskappe", "Work report": "Werkverslag", "My records": "My rekords", "Not seen yet": "Nog nie gesien nie", "Active now": "Nou aktief", "Seen": "Gesien", "min ago": "min gelede", "Devices are not connected. Turn on Advanced Pesa Connection in Settings so every phone shares the same data.": "Toestelle is nie gekoppel nie. Skakel Gevorderde Pesa-koppeling in Instellings aan sodat elke foon dieselfde data deel.", "Live cloud storage: all devices share the same data.": "Lewendige wolkberging: alle toestelle deel dieselfde data.", "Only the owner and managers can see this.": "Net die eienaar en bestuurders kan dit sien.", "Employee tracking": "Werknemernasporing", "Staff sales": "Personeelverkope", "Tills open now": "Kassas nou oop", "Cash in open tills": "Kontant in oop kassas", "Send a message": "Stuur ’n boodskap", "Sent messages": "Gestuurde boodskappe", "No employees yet": "Nog geen werknemers nie", "Add employees under Settings → Team.": "Voeg werknemers by onder Instellings → Span.", "Cash ups balanced": "Kassa-afsluitings gebalanseer", "wastage records": "wegdoeningsrekords", "Approved by": "Goedgekeur deur", "No": "Nee", "Yes": "Ja", "Wastage records": "Wegdoeningsrekords", "Items sold": "Items verkoop", "On the point of sale": "By die verkooppunt", "Till and cash": "Kassa en kontant", "Cash ups": "Kassa-afsluitings", "Total variance": "Totale verskil", "Activity": "Aktiwiteit", "No activity yet.": "Nog geen aktiwiteit nie.", "Edit access": "Wysigingstoegang", "All employees": "Alle werknemers", "Message": "Boodskap", "Instruction": "Opdrag", "Subject (optional)": "Onderwerp (opsioneel)", "e.g. Please count the bread before closing today.": "bv. Tel asseblief die brood voor sluiting vandag.", "Urgent": "Dringend", "Send": "Stuur", "Type a message": "Tik ’n boodskap", "Message sent": "Boodskap gestuur", "Read by": "Gelees deur", "No messages sent yet.": "Nog geen boodskappe gestuur nie.", "No messages yet.": "Nog geen boodskappe nie.", "New message from": "Nuwe boodskap van", "Message from": "Boodskap van", "Daily": "Daagliks", "Monthly": "Maandeliks", "Day": "Dag", "Each report you make is kept in My records.": "Elke verslag wat jy maak, word in My rekords bewaar.", "Till sessions": "Kassasessies", "Pick a date": "Kies ’n datum", "Everything you made is kept here. You can view, download and print, but records cannot be changed or deleted.": "Alles wat jy gemaak het, word hier bewaar. Jy kan dit besigtig, aflaai en druk, maar rekords kan nie verander of geskrap word nie.", "Make a work report": "Maak ’n werkverslag", "No reports yet.": "Nog geen verslae nie.", "No receipts yet.": "Nog geen kwitansies nie.", "Credit sale": "Kredietverkoop", "No invoices yet.": "Nog geen fakture nie.", "Float": "Wisselgeld", "No cash ups yet.": "Nog geen kassa-afsluitings nie.", "Read only record.": "Leesalleen rekord.", "Downloaded": "Afgelaai", "Cash up": "Kassa-afsluiting", "Can use the Point of sale": "Kan die verkooppunt gebruik", "Cashiers sign in on the point of sale with the same private PIN they choose when they create their account.": "Kassiers meld by die verkooppunt aan met dieselfde private PIN wat hulle kies wanneer hulle hul rekening skep.", "all employees": "alle werknemers", "Counted": "Getel", "Tracking and messaging employees": "Werknemers naspoor en boodskappe stuur", "See how each employee is doing": "Sien hoe elke werknemer vaar", "Employee tracking shows sales, payment methods, till and cash, cash ups, wastage and recent activity for every employee.": "Werknemernasporing wys verkope, betaalmetodes, kassa en kontant, kassa-afsluitings, wegdoening en onlangse aktiwiteit vir elke werknemer.", "Send a message or instruction": "Stuur ’n boodskap of opdrag", "Write to one employee or to everyone at once. Mark it Urgent when it cannot wait.": "Skryf aan een werknemer of aan almal tegelyk. Merk dit Dringend wanneer dit nie kan wag nie.", "What employees keep": "Wat werknemers bewaar", "Each employee can print daily and monthly work reports. Their reports, receipts, invoices and cash ups are kept in My records, where they can view, download and print but never edit or delete.": "Elke werknemer kan daaglikse en maandelikse werkverslae druk. Hul verslae, kwitansies, fakture en kassa-afsluitings word in My rekords bewaar, waar hulle dit kan besigtig, aflaai en druk, maar nooit wysig of skrap nie.", "new message": "nuwe boodskap", "new messages": "nuwe boodskappe", "Receipts": "Kwitansies", "Employee tracking for the owner and managers: every employee's sales, payment methods, till, cash expected in the drawer, cash ups, wastage and activity in one place, by day, week or month": "Werknemernasporing vir die eienaar en bestuurders: elke werknemer se verkope, betaalmetodes, kassa, kontant wat in die laai verwag word, kassa-afsluitings, wegdoening en aktiwiteit op een plek, per dag, week of maand", "Send a message or an instruction to one employee or to everyone at once. Employees get it on their phone and you can see who has read it": "Stuur ’n boodskap of ’n opdrag aan een werknemer of aan almal tegelyk. Werknemers kry dit op hul foon en jy kan sien wie dit gelees het", "Employees see stock alerts on their dashboard and on their device, and cashiers get the point of sale automatically with their own private PIN": "Werknemers sien voorraadwaarskuwings op hul oorsig en op hul toestel, en kassiers kry die verkooppunt outomaties met hul eie private PIN", "Employees can make and print daily or monthly work reports. My records keeps their reports, receipts, invoices and cash ups in one read only place that they cannot edit or delete": "Werknemers kan daaglikse of maandelikse werkverslae maak en druk. My rekords bewaar hul verslae, kwitansies, fakture en kassa-afsluitings op een leesalleen plek wat hulle nie kan wysig of skrap nie", "Faster syncing between devices, with a Sync now button and a live connection status on the employee dashboard": "Vinniger sinkronisering tussen toestelle, met ’n Sinkroniseer nou-knoppie en ’n lewendige verbindingstatus op die werknemeroorsig", "Employee tracking: the owner and managers see each employee's sales, tills, cash, cash ups, wastage and activity, and can send messages or instructions to one employee or all of them, with read receipts": "Werknemernasporing: die eienaar en bestuurders sien elke werknemer se verkope, kassas, kontant, kassa-afsluitings, wegdoening en aktiwiteit, en kan boodskappe of opdragte aan een werknemer of almal stuur, met leesbewyse", "Employee dashboards show stock alerts and messages, let employees print daily or monthly work reports, and keep their reports, receipts, invoices and cash ups in a read only records page that cannot be edited or deleted": "Werknemeroorsigte wys voorraadwaarskuwings en boodskappe, laat werknemers daaglikse of maandelikse werkverslae druk, en bewaar hul verslae, kwitansies, fakture en kassa-afsluitings op ’n leesalleen rekordbladsy wat nie gewysig of geskrap kan word nie", "Menu → Employee tracking": "Kieslys → Werknemernasporing", "Cash in open tills shows what should be in each drawer right now.": "Kontant in oop kassas wys wat nou in elke laai behoort te wees.", "Employee tracking → Send a message": "Werknemernasporing → Stuur ’n boodskap", "Employees need to be connected to the business to receive it.": "Werknemers moet met die besigheid gekoppel wees om dit te ontvang.", "Employee dashboard → My records": "Werknemeroorsig → My rekords", "Open the menu and tap Employee tracking.": "Maak die kieslys oop en tik op Werknemernasporing.", "Choose Today, Last 7 days, This month or All.": "Kies Vandag, Laaste 7 dae, Hierdie maand of Alles.", "Tap an employee to see their full detail.": "Tik op ’n werknemer om sy volle besonderhede te sien.", "Tap Send a message.": "Tik op Stuur ’n boodskap.", "Choose who it goes to and whether it is a message or an instruction.": "Kies na wie dit gaan en of dit ’n boodskap of ’n opdrag is.", "Type it and tap Send. Sent messages shows who has read it.": "Tik dit en tik op Stuur. Gestuurde boodskappe wys wie dit gelees het.", "Employees tap Work report on their dashboard.": "Werknemers tik op Werkverslag op hul oorsig.", "Choose daily or monthly and download or print.": "Kies daagliks of maandeliks en laai af of druk.", "Every report is saved to My records automatically.": "Elke verslag word outomaties in My rekords gestoor."});
+Object.assign(LANGS.de.strings, {"Stock alert": "Bestandswarnung", "products need stock": "Produkte brauchen Nachschub", "out of stock": "nicht vorrätig", "Messages": "Nachrichten", "Work report": "Arbeitsbericht", "My records": "Meine Aufzeichnungen", "Not seen yet": "Noch nicht gesehen", "Active now": "Jetzt aktiv", "Seen": "Gesehen", "min ago": "Min. her", "Devices are not connected. Turn on Advanced Pesa Connection in Settings so every phone shares the same data.": "Die Geräte sind nicht verbunden. Schalten Sie die erweiterte Pesa-Verbindung in den Einstellungen ein, damit alle Telefone dieselben Daten teilen.", "Live cloud storage: all devices share the same data.": "Live-Cloud-Speicher: Alle Geräte teilen dieselben Daten.", "Only the owner and managers can see this.": "Nur der Inhaber und die Manager können dies sehen.", "Employee tracking": "Mitarbeiterverfolgung", "Staff sales": "Mitarbeiterverkäufe", "Tills open now": "Jetzt offene Kassen", "Cash in open tills": "Bargeld in offenen Kassen", "Send a message": "Nachricht senden", "Sent messages": "Gesendete Nachrichten", "No employees yet": "Noch keine Mitarbeiter", "Add employees under Settings → Team.": "Fügen Sie Mitarbeiter unter Einstellungen → Team hinzu.", "Cash ups balanced": "Kassenabschlüsse ausgeglichen", "wastage records": "Schwundeinträge", "Approved by": "Genehmigt von", "No": "Nein", "Yes": "Ja", "Wastage records": "Schwundeinträge", "Items sold": "Verkaufte Artikel", "On the point of sale": "Am Verkaufspunkt", "Till and cash": "Kasse und Bargeld", "Cash ups": "Kassenabschlüsse", "Total variance": "Gesamtdifferenz", "Activity": "Aktivität", "No activity yet.": "Noch keine Aktivität.", "Edit access": "Bearbeitungszugriff", "All employees": "Alle Mitarbeiter", "Message": "Nachricht", "Instruction": "Anweisung", "Subject (optional)": "Betreff (optional)", "e.g. Please count the bread before closing today.": "z. B. Bitte zählen Sie heute vor Ladenschluss das Brot.", "Urgent": "Dringend", "Send": "Senden", "Type a message": "Nachricht eingeben", "Message sent": "Nachricht gesendet", "Read by": "Gelesen von", "No messages sent yet.": "Noch keine Nachrichten gesendet.", "No messages yet.": "Noch keine Nachrichten.", "New message from": "Neue Nachricht von", "Message from": "Nachricht von", "Daily": "Täglich", "Monthly": "Monatlich", "Day": "Tag", "Each report you make is kept in My records.": "Jeder Bericht, den Sie erstellen, wird in Meine Aufzeichnungen gespeichert.", "Till sessions": "Kassensitzungen", "Pick a date": "Datum wählen", "Everything you made is kept here. You can view, download and print, but records cannot be changed or deleted.": "Alles, was Sie erstellt haben, wird hier gespeichert. Sie können es ansehen, herunterladen und drucken, aber Aufzeichnungen können nicht geändert oder gelöscht werden.", "Make a work report": "Arbeitsbericht erstellen", "No reports yet.": "Noch keine Berichte.", "No receipts yet.": "Noch keine Belege.", "Credit sale": "Kreditverkauf", "No invoices yet.": "Noch keine Rechnungen.", "Float": "Wechselgeld", "No cash ups yet.": "Noch keine Kassenabschlüsse.", "Read only record.": "Nur Lesezugriff.", "Downloaded": "Heruntergeladen", "Cash up": "Kassenabschluss", "Can use the Point of sale": "Darf den Verkaufspunkt nutzen", "Cashiers sign in on the point of sale with the same private PIN they choose when they create their account.": "Kassierer melden sich am Verkaufspunkt mit derselben privaten PIN an, die sie beim Erstellen ihres Kontos wählen.", "all employees": "alle Mitarbeiter", "Counted": "Gezählt", "Tracking and messaging employees": "Mitarbeiter verfolgen und Nachrichten senden", "See how each employee is doing": "Sehen Sie, wie es jedem Mitarbeiter geht", "Employee tracking shows sales, payment methods, till and cash, cash ups, wastage and recent activity for every employee.": "Die Mitarbeiterverfolgung zeigt für jeden Mitarbeiter Verkäufe, Zahlungsarten, Kasse und Bargeld, Kassenabschlüsse, Schwund und die letzte Aktivität.", "Send a message or instruction": "Nachricht oder Anweisung senden", "Write to one employee or to everyone at once. Mark it Urgent when it cannot wait.": "Schreiben Sie an einen Mitarbeiter oder an alle gleichzeitig. Markieren Sie es als Dringend, wenn es nicht warten kann.", "What employees keep": "Was Mitarbeiter aufbewahren", "Each employee can print daily and monthly work reports. Their reports, receipts, invoices and cash ups are kept in My records, where they can view, download and print but never edit or delete.": "Jeder Mitarbeiter kann tägliche und monatliche Arbeitsberichte drucken. Ihre Berichte, Belege, Rechnungen und Kassenabschlüsse werden in Meine Aufzeichnungen gespeichert, wo sie sie ansehen, herunterladen und drucken, aber niemals bearbeiten oder löschen können.", "new message": "neue Nachricht", "new messages": "neue Nachrichten", "Receipts": "Belege", "Employee tracking for the owner and managers: every employee's sales, payment methods, till, cash expected in the drawer, cash ups, wastage and activity in one place, by day, week or month": "Mitarbeiterverfolgung für den Inhaber und die Manager: Verkäufe, Zahlungsarten, Kasse, erwartetes Bargeld in der Schublade, Kassenabschlüsse, Schwund und Aktivität jedes Mitarbeiters an einem Ort, nach Tag, Woche oder Monat", "Send a message or an instruction to one employee or to everyone at once. Employees get it on their phone and you can see who has read it": "Senden Sie eine Nachricht oder eine Anweisung an einen Mitarbeiter oder an alle gleichzeitig. Die Mitarbeiter erhalten sie auf ihrem Telefon und Sie sehen, wer sie gelesen hat", "Employees see stock alerts on their dashboard and on their device, and cashiers get the point of sale automatically with their own private PIN": "Mitarbeiter sehen Bestandswarnungen in ihrer Übersicht und auf ihrem Gerät, und Kassierer erhalten den Verkaufspunkt automatisch mit ihrer eigenen privaten PIN", "Employees can make and print daily or monthly work reports. My records keeps their reports, receipts, invoices and cash ups in one read only place that they cannot edit or delete": "Mitarbeiter können tägliche oder monatliche Arbeitsberichte erstellen und drucken. Meine Aufzeichnungen speichert ihre Berichte, Belege, Rechnungen und Kassenabschlüsse an einem Ort nur zum Lesen, den sie weder bearbeiten noch löschen können", "Faster syncing between devices, with a Sync now button and a live connection status on the employee dashboard": "Schnellere Synchronisierung zwischen Geräten, mit einer Schaltfläche Jetzt synchronisieren und einem Live-Verbindungsstatus in der Mitarbeiterübersicht", "Employee tracking: the owner and managers see each employee's sales, tills, cash, cash ups, wastage and activity, and can send messages or instructions to one employee or all of them, with read receipts": "Mitarbeiterverfolgung: Der Inhaber und die Manager sehen Verkäufe, Kassen, Bargeld, Kassenabschlüsse, Schwund und Aktivität jedes Mitarbeiters und können Nachrichten oder Anweisungen an einen Mitarbeiter oder alle senden, mit Lesebestätigungen", "Employee dashboards show stock alerts and messages, let employees print daily or monthly work reports, and keep their reports, receipts, invoices and cash ups in a read only records page that cannot be edited or deleted": "Mitarbeiterübersichten zeigen Bestandswarnungen und Nachrichten, lassen Mitarbeiter tägliche oder monatliche Arbeitsberichte drucken und speichern ihre Berichte, Belege, Rechnungen und Kassenabschlüsse auf einer Aufzeichnungsseite nur zum Lesen, die nicht bearbeitet oder gelöscht werden kann", "Menu → Employee tracking": "Menü → Mitarbeiterverfolgung", "Cash in open tills shows what should be in each drawer right now.": "Bargeld in offenen Kassen zeigt, was jetzt in jeder Schublade sein sollte.", "Employee tracking → Send a message": "Mitarbeiterverfolgung → Nachricht senden", "Employees need to be connected to the business to receive it.": "Mitarbeiter müssen mit dem Geschäft verbunden sein, um sie zu erhalten.", "Employee dashboard → My records": "Mitarbeiterübersicht → Meine Aufzeichnungen", "Open the menu and tap Employee tracking.": "Öffnen Sie das Menü und tippen Sie auf Mitarbeiterverfolgung.", "Choose Today, Last 7 days, This month or All.": "Wählen Sie Heute, Letzte 7 Tage, Diesen Monat oder Alle.", "Tap an employee to see their full detail.": "Tippen Sie auf einen Mitarbeiter, um alle Details zu sehen.", "Tap Send a message.": "Tippen Sie auf Nachricht senden.", "Choose who it goes to and whether it is a message or an instruction.": "Wählen Sie, an wen es geht und ob es eine Nachricht oder eine Anweisung ist.", "Type it and tap Send. Sent messages shows who has read it.": "Geben Sie es ein und tippen Sie auf Senden. Gesendete Nachrichten zeigt, wer es gelesen hat.", "Employees tap Work report on their dashboard.": "Mitarbeiter tippen in ihrer Übersicht auf Arbeitsbericht.", "Choose daily or monthly and download or print.": "Wählen Sie täglich oder monatlich und laden Sie herunter oder drucken Sie.", "Every report is saved to My records automatically.": "Jeder Bericht wird automatisch in Meine Aufzeichnungen gespeichert."});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -1787,7 +1793,7 @@ var Sync = (function(){
     window.addEventListener('online', function(){ refresh(); syncNow(); });
     window.addEventListener('offline', refresh);
     document.addEventListener('visibilitychange', function(){ if(!document.hidden) syncNow(); });
-    st.timer = setInterval(function(){ if(!document.hidden) syncNow(); }, 15000);
+    st.timer = setInterval(function(){ if(!document.hidden) syncNow(); }, 6000);
     syncNow();
   }
   return {
@@ -1824,7 +1830,7 @@ var State = {
   cart: [], // {productId, name, unitPrice, cost, qty, unit}
   sellSearch: '',
   ready: { products:false, customers:false, sales:false, expenses:false, settings:false, company:false, users:false, tills:false,
-    branches:false, suppliers:false, purchaseOrders:false, posDevices:false, posBatches:false, wastage:false, auditLog:false, invoices:false, reports:false },
+    branches:false, suppliers:false, purchaseOrders:false, posDevices:false, posBatches:false, messages:false, workReports:false, wastage:false, auditLog:false, invoices:false, reports:false },
   select: {
     stock: { active:false, ids:{} },
     credit: { active:false, ids:{} },
@@ -1839,6 +1845,8 @@ var State = {
   suppliers: [],       // {id, name, contact, phone, notes}
   posDevices: [],  // registered card machines / POS terminals
   posBatches: [],  // card batch settlements
+  messages: [],    // {to:'all'|userId, fromId, kind, title, body, readBy, createdAt}
+  workReports: [], // read only work report snapshots per employee
   purchaseOrders: [],  // {id, supplierId, items:[{productId,name,qty,cost}], status, createdAt, receivedAt}
   invoices: [],        // {id, type:'invoice'|'receipt', number, billToName, items, total, dateStr, customerId, branchId, createdBy, createdAt}
   invFilter: { q:'', period:'all', client:'' },
@@ -1957,6 +1965,8 @@ function initRefs(){
   refs.purchaseOrders = Store.collection('purchaseOrders');
   refs.posDevices = Store.collection('posDevices');
   refs.posBatches = Store.collection('posBatches');
+  refs.messages = Store.collection('messages');
+  refs.workReports = Store.collection('workReports');
   refs.wastage = Store.collection('wastage');
   refs.auditLog = Store.collection('auditLog');
   refs.invoices = Store.collection('invoices');
@@ -2043,6 +2053,17 @@ function subscribeAll(){
   refs.posBatches.onSnapshot(function(docs){
     State.posBatches = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.settledAt)-new Date(a.settledAt); });
     State.ready.posBatches = true;
+  });
+  refs.messages.onSnapshot(function(docs){
+    State.messages = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
+    State.ready.messages = true;
+    try{ onMessagesChanged(); }catch(e){}
+    if(document.getElementById('app').style.display !== 'none' && State.session) render();
+  });
+  refs.workReports.onSnapshot(function(docs){
+    State.workReports = docs.map(function(d){ return Object.assign({id:d.id}, d.data); });
+    State.ready.workReports = true;
+    if(State.tab === 'records' && document.getElementById('app').style.display !== 'none') render();
   });
   refs.wastage.onSnapshot(function(docs){
     State.wastage = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
@@ -2610,9 +2631,9 @@ function sha256Hex(str){
   });
 }
 function roleTabs(role){
-  if(role === 'cashier') return ['me','sell','till'];
-  if(role === 'stockclerk') return ['me','stock'];
-  return ['dashboard','sell','stock','credit','invoices','reports','expenses','till','reconcile'];
+  if(role === 'cashier') return ['me','sell','till','records'];
+  if(role === 'stockclerk') return ['me','stock','records'];
+  return ['dashboard','sell','stock','credit','invoices','reports','expenses','till','reconcile','team'];
 }
 function isManagerOrOwner(){ return !!(State.session && (State.session.role==='owner' || State.session.role==='manager')); }
 function isOwner(){ return !!(State.session && State.session.role==='owner'); }
@@ -2636,6 +2657,7 @@ function logout(){
 
 function checkAuthAndRoute(){
   if(suppressAuthRoute) return;
+  if(typeof POS !== 'undefined' && POS.open) return; // the point of sale handles its own sign in
   if(!State.ready.company || !State.ready.users) return;
   var appEl = document.getElementById('app');
   var authEl = document.getElementById('authScreen');
@@ -2684,6 +2706,7 @@ function checkAuthAndRoute(){
   var allowed = roleTabs(State.session.role);
   if(allowed.indexOf(State.tab) === -1) State.tab = allowed[0];
   render();
+  touchUserActive(); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
 }
 var _whatsNewChecked = false;
@@ -3019,7 +3042,7 @@ function wireEmployeeSignup(root){
       var fresh = State.users.find(function(x){ return x.id === u.id; });
       if(!fresh || !fresh.pending){ return fail(tr('This invite has already been used.')); }
       var hash = await sha256Hex(pw);
-      var patch = { passHash:hash, pending:false, inviteCode:'', inviteExpires:'', joinedAt:new Date().toISOString(), phone:box.querySelector('#empPhone').value.trim(), email:box.querySelector('#empEmail').value.trim().toLowerCase(), active:true };
+      var patch = { passHash:hash, pending:false, inviteCode:'', inviteExpires:'', joinedAt:new Date().toISOString(), phone:box.querySelector('#empPhone').value.trim(), email:box.querySelector('#empEmail').value.trim().toLowerCase(), active:true, lastActiveAt:new Date().toISOString() };
       refs.users.doc(u.id).update(patch);
       State.session = { userId:u.id, name:u.name, role:u.role };
       saveSessionLocal(u.id);
@@ -3037,22 +3060,23 @@ function renderMe(){
   var role = State.session.role, tk = todayKey(), co = State.company || {};
   var h = new Date().getHours(), hi = h < 12 ? tr('Good morning') : (h < 18 ? tr('Good afternoon') : tr('Good evening'));
   var out = '<div class="me-hero"><div class="hi">'+hi+'</div><div class="nm">'+esc(State.session.name)+'</div><div class="meta">'+esc(me.jobTitle || tr(ROLE_LABELS[role]||role))+(me.employeeNo?' · '+esc(me.employeeNo):'')+' · '+esc(co.tradingName||co.companyName||'')+'</div></div>';
+  out += meTopHtml();
   var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); }).sort(function(a,b){ return a.stockQty - b.stockQty; });
-  var lowHtml = '<div class="section-title">'+tr('Running low')+' ('+low.length+')</div>' + (low.length ? '<div class="rowlist">'+low.slice(0,6).map(function(p){
+  var lowHtml = '<div class="section-title" data-lowlist="1">'+tr('Running low')+' ('+low.length+')</div>' + (low.length ? '<div class="rowlist">'+low.slice(0,6).map(function(p){
     return '<div class="row"><div class="main"><div class="title">'+esc(p.name)+'</div></div><div class="trail"><div class="amt num" style="color:'+(p.stockQty<=0?'var(--danger)':'inherit')+'">'+(p.stockQty<=0?tr('Out'):p.stockQty+' '+esc(p.unit||tr('left')))+'</div></div></div>'; }).join('')+'</div>' : '<div style="font-size:13px;color:var(--text-muted);">'+tr('Nothing is running low.')+'</div>');
   if(role === 'stockclerk'){
     var outN = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= 0; }).length;
     out += '<div class="me-actions"><button class="me-act" data-me="stock">'+ICONS.box+tr('Open stock')+'</button><button class="me-act" data-me="waste">'+ICONS.trash+tr('Record wastage')+'</button>' +
       '<button class="me-act" data-me="addprod">'+ICONS.plus+tr('Add a product')+'</button><button class="me-act" data-me="profile">'+ICONS.people+tr('My profile')+'</button></div>' +
       '<div class="me-grid"><div class="me-stat"><div class="l">'+tr('Products')+'</div><div class="v num">'+State.products.length+'</div></div><div class="me-stat"><div class="l">'+tr('Running low')+'</div><div class="v num">'+low.length+'</div></div><div class="me-stat"><div class="l">'+tr('Out of stock')+'</div><div class="v num" style="color:var(--danger)">'+outN+'</div></div><div class="me-stat"><div class="l">'+tr('Wastage logged')+'</div><div class="v num">'+State.wastage.filter(function(w){ return w.userName === State.session.name || w.recordedBy === State.session.name; }).length+'</div></div></div>' + lowHtml;
-    return out;
+    return out + syncStripHtml();
   }
   // cashier
   var all = State.sales.filter(function(s){ return s.cashierName === State.session.name; });
   var mine = all.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk; });
   var by = { cash:0, card:0, wallet:0, credit:0 }; mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + s.total; });
   var till = State.till.current, tt = till ? tillTotals(till.id) : null;
-  out += '<div class="me-actions"><button class="me-act" data-me="pos">'+ICONS.till+tr('Point of sale')+'</button><button class="me-act" data-me="sell">'+ICONS.cart+tr('New sale')+'</button>' +
+  out += '<div class="me-actions">'+(me.posAccess === false ? '' : '<button class="me-act" data-me="pos">'+ICONS.till+tr('Point of sale')+'</button>')+'<button class="me-act" data-me="sell">'+ICONS.cart+tr('New sale')+'</button>' +
     '<button class="me-act" data-me="'+(till?'till-close':'till-open')+'">'+ICONS.clock+(till?tr('Close till'):tr('Open till'))+'</button><button class="me-act" data-me="profile">'+ICONS.people+tr('My profile')+'</button></div>';
   out += '<div class="section-title" style="margin-top:0;">'+tr('Your sales today')+'</div><div class="me-grid">' +
     '<div class="me-stat"><div class="l">'+tr('Sales')+'</div><div class="v num">'+mine.length+'</div></div><div class="me-stat"><div class="l">'+tr('Total')+'</div><div class="v num">'+fmtMoney(posSum(mine))+'</div></div>' +
@@ -3066,7 +3090,15 @@ function renderMe(){
   for(var i=6;i>=0;i--){ var d = new Date(); d.setDate(d.getDate()-i); var k = todayKey(d); var t = posSum(all.filter(function(s){ return todayKey(new Date(s.createdAt)) === k; })); days.push({ l:d.toLocaleDateString(uiLocale(),{weekday:'short'}).slice(0,2), t:t }); mx = Math.max(mx, t); }
   out += '<div class="section-title">'+tr('My last 7 days')+'</div><div class="me-week">'+days.map(function(d){ return '<i style="height:'+Math.round(d.t/mx*100)+'%" title="'+fmtMoney(d.t)+'"></i>'; }).join('')+'</div><div class="me-weekl">'+days.map(function(d){ return '<span>'+esc(d.l)+'</span>'; }).join('')+'</div>';
   out += '<div class="section-title">'+tr('My recent sales')+'</div>' + (all.length ? '<div class="rowlist">'+all.slice(0,5).map(function(s){ return '<div class="row" data-me-sale="'+s.id+'"><div class="main"><div class="title">'+esc(posSaleWho(s))+'</div><div class="sub">'+esc(fmtDateTime(s.createdAt))+' · '+tr(s.paymentMethod==='wallet'?'Mobile wallet':(s.paymentMethod||'cash').charAt(0).toUpperCase()+(s.paymentMethod||'cash').slice(1))+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(s.total)+'</div></div></div>'; }).join('')+'</div>' : '<div style="font-size:13px;color:var(--text-muted);">'+tr('No sales yet.')+'</div>');
-  return out + lowHtml;
+  return out + lowHtml + syncStripHtml();
+}
+function meTopHtml(){
+  var um = unreadMessages(), out = '';
+  if(um.length){ var m0 = um[0]; out += '<div class="me-msg'+(um.some(function(m){ return m.urgent; })?' urgent':'')+'" data-me="inbox"><div class="t">'+ICONS.bolt+'<span>'+um.length+' '+tr(um.length===1?'new message':'new messages')+'</span></div><div class="s">'+esc(m0.fromName)+': '+esc((m0.title||m0.body).slice(0,90))+'</div></div>'; }
+  var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); }), outN = low.filter(function(p){ return p.stockQty <= 0; }).length;
+  if(low.length) out += '<div class="me-msg stock" data-me="'+(State.session.role==='stockclerk'?'stock':'lowlist')+'"><div class="t">'+ICONS.warn+'<span>'+tr('Stock alert')+': '+low.length+' '+tr('products need stock')+(outN?' ('+outN+' '+tr('out of stock')+')':'')+'</span></div><div class="s">'+esc(low.slice(0,3).map(function(p){ return p.name; }).join(', '))+(low.length>3?'…':'')+'</div></div>';
+  out += '<div class="me-actions" style="grid-template-columns:repeat(3,1fr);"><button class="me-act" data-me="inbox">'+ICONS.bolt+tr('Messages')+(um.length?' ('+um.length+')':'')+'</button><button class="me-act" data-me="report">'+ICONS.chartbar+tr('Work report')+'</button><button class="me-act" data-me="records">'+ICONS.clipboard+tr('My records')+'</button></div>';
+  return out;
 }
 function wireMe(root){
   root.querySelectorAll('[data-me]').forEach(function(b){ b.addEventListener('click', function(){
@@ -3075,7 +3107,10 @@ function wireMe(root){
     else if(k === 'waste') openWastageSheet(); else if(k === 'addprod'){ setTab('stock'); openProductSheet(null); }
     else if(k === 'till-open') openStartTillSheet(); else if(k === 'till-close'){ if(State.till.current) openCloseTillSheet(State.till.current); }
     else if(k === 'profile') openMyProfileSheet();
+    else if(k === 'inbox') openInboxSheet(); else if(k === 'report') openWorkReportSheet(); else if(k === 'records') setTab('records');
+    else if(k === 'lowlist'){ var el = root.querySelector('[data-lowlist]'); if(el) el.scrollIntoView({behavior:'smooth'}); }
   }); });
+  empStockAlertTick();
   root.querySelectorAll('[data-me-sale]').forEach(function(b){ b.addEventListener('click', function(){ openPosSaleDetail(b.getAttribute('data-me-sale')); }); });
 }
 function openMyProfileSheet(){
@@ -3095,6 +3130,384 @@ function openMyProfileSheet(){
   ov.querySelector('#mpPw').addEventListener('click', openChangePasswordSheet);
   ov.querySelector('#mpOut').addEventListener('click', logout);
 }
+
+/* ============================== EMPLOYEE TRACKING, MESSAGES, WORK REPORTS, RECORDS ============================== */
+function staffList(){ return State.users.filter(function(u){ return u.role !== 'owner' && !u.pending; }); }
+function trkRange(key){
+  var now = new Date(), from = null;
+  if(key === 'today'){ from = new Date(now.getFullYear(), now.getMonth(), now.getDate()); }
+  else if(key === '7'){ from = new Date(now.getTime() - 6*86400000); from.setHours(0,0,0,0); }
+  else if(key === '30'){ from = new Date(now.getTime() - 29*86400000); from.setHours(0,0,0,0); }
+  else if(key === 'month'){ from = new Date(now.getFullYear(), now.getMonth(), 1); }
+  return from;
+}
+function inRange(iso, from, to){ var t = new Date(iso).getTime(); return (!from || t >= from.getTime()) && (!to || t < to.getTime()); }
+// Everything one employee did between two dates.
+function staffStats(u, from, to){
+  var sales = State.sales.filter(function(s){ return (s.cashierName === u.name) && inRange(s.createdAt, from, to); });
+  var by = { cash:{n:0,t:0}, card:{n:0,t:0}, wallet:{n:0,t:0}, credit:{n:0,t:0} }, items = 0, cashBack = 0, pos = 0;
+  sales.forEach(function(s){ var m = by[s.paymentMethod||'cash'] || (by[s.paymentMethod] = {n:0,t:0}); m.n++; m.t += s.total; cashBack += s.cashBack||0; if(s.viaPos) pos++; (s.items||[]).forEach(function(i){ items += i.qty||0; }); });
+  var total = sales.reduce(function(a,s){ return a + s.total; }, 0);
+  var tills = State.tillSessions.filter(function(t){ return t.cashierId === u.id && inRange(t.openedAt, from, to); });
+  var closed = tills.filter(function(t){ return t.status === 'closed'; });
+  var variance = closed.reduce(function(a,t){ return a + (t.variance||0); }, 0);
+  var openTill = State.tillSessions.find(function(t){ return t.cashierId === u.id && t.status === 'open'; });
+  var expected = 0; if(openTill){ var tt = tillTotals(openTill.id); expected = (openTill.openingFloat||0) + tt.totals.cash - (tt.cashBack||0); }
+  var waste = State.wastage.filter(function(w){ return w.recordedBy === u.name && inRange(w.createdAt, from, to); });
+  var acts = State.auditLog.filter(function(a){ return a.userId === u.id; });
+  return { sales:sales, count:sales.length, total:total, avg: sales.length ? total/sales.length : 0, by:by, items:items, cashBack:cashBack, pos:pos,
+    tills:tills, closed:closed, variance:variance, openTill:openTill, expected:expected, waste:waste, acts:acts };
+}
+function lastSeenText(u){
+  var t = u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : 0;
+  if(!t) return tr('Not seen yet');
+  var m = Math.round((Date.now() - t)/60000);
+  if(m < 10) return tr('Active now');
+  if(m < 60) return tr('Seen')+' '+m+' '+tr('min ago');
+  return tr('Seen')+' '+fmtDateTime(u.lastActiveAt);
+}
+var _touchAt = 0;
+function touchUserActive(force){
+  try{
+    if(!State.session || (!force && Date.now() - _touchAt < 5*60000)) return;
+    _touchAt = Date.now();
+    refs.users.doc(State.session.userId).update({ lastActiveAt:new Date().toISOString() });
+  }catch(e){}
+}
+function syncNowSafe(){ try{ if(Sync && Sync.usable && Sync.usable()) Sync.syncNow(); }catch(e){} }
+function syncStripHtml(){
+  var st = { state:'off', label:'' }; try{ st = Sync.status(); }catch(e){}
+  var txt = st.state === 'off' ? tr('Devices are not connected. Turn on Advanced Pesa Connection in Settings so every phone shares the same data.') : (st.state === 'cloud' ? tr('Live cloud storage: all devices share the same data.') : st.label);
+  return '<div class="banner" style="justify-content:space-between;gap:8px;">'+ICONS.globe+'<span style="flex:1;">'+esc(txt)+'</span>'+(st.state !== 'off' && st.state !== 'cloud' ? '<button class="btn btn-ghost" data-syncnow="1" type="button" style="padding:6px 10px;font-size:12px;">'+tr('Sync now')+'</button>' : '')+'</div>';
+}
+function wireSyncStrip(root){ root.querySelectorAll('[data-syncnow]').forEach(function(b){ b.addEventListener('click', function(){ syncNowSafe(); toast(tr('Syncing…')); }); }); }
+
+/* ---- owner / manager: Employee tracking tab ---- */
+var TRK = { range:'today' };
+function renderTeamTracking(){
+  if(!isManagerOrOwner()) return '<div class="empty"><div class="t">'+tr('Only the owner and managers can see this.')+'</div></div>';
+  var from = trkRange(TRK.range), staff = staffList();
+  var h = '<div class="section-title" style="margin-top:0;">'+tr('Employee tracking')+'</div>' + syncStripHtml();
+  h += '<div class="segbtns" style="margin:10px 0;">' + [['today','Today'],['7','Last 7 days'],['month','This month'],['all','All']].map(function(r){ return '<button class="segbtn'+(TRK.range===r[0]?' active':'')+'" data-trk="'+r[0]+'" style="padding:8px 4px;font-size:12.5px;">'+tr(r[1])+'</button>'; }).join('') + '</div>';
+  var stats = staff.map(function(u){ return { u:u, s:staffStats(u, from, null) }; }).sort(function(a,b){ return b.s.total - a.s.total; });
+  var team = stats.reduce(function(a,x){ a.total += x.s.total; a.count += x.s.count; a.cash += x.s.by.cash.t; a.card += x.s.by.card.t; a.drawer += x.s.openTill ? x.s.expected : 0; a.open += x.s.openTill ? 1 : 0; a.active += (x.u.lastActiveAt && Date.now()-new Date(x.u.lastActiveAt).getTime() < 600000) ? 1 : 0; return a; }, { total:0, count:0, cash:0, card:0, drawer:0, open:0, active:0 });
+  h += '<div class="me-grid">' +
+    '<div class="me-stat"><div class="l">'+tr('Staff sales')+'</div><div class="v num">'+fmtMoney(team.total)+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Sales')+'</div><div class="v num">'+team.count+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Tills open now')+'</div><div class="v num">'+team.open+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Cash in open tills')+'</div><div class="v num">'+fmtMoney(team.drawer)+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Active now')+'</div><div class="v num">'+team.active+' / '+staff.length+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Cash')+' / '+tr('Card')+'</div><div class="v num" style="font-size:15px;">'+fmtMoney(team.cash)+' / '+fmtMoney(team.card)+'</div></div></div>';
+  h += '<div class="actions" style="margin-bottom:12px;"><button class="btn btn-accent btn-block" data-trkmsg="all" type="button">'+tr('Send a message')+'</button><button class="btn btn-ghost btn-block" data-trklog="1" type="button">'+tr('Sent messages')+'</button></div>';
+  if(!staff.length) return h + '<div class="empty"><div class="t">'+tr('No employees yet')+'</div><div class="s">'+tr('Add employees under Settings → Team.')+'</div></div>';
+  var best = stats[0] && stats[0].s.total > 0 ? stats[0].u.id : null;
+  h += '<div class="rowlist">' + stats.map(function(x){
+    var u = x.u, s = x.s;
+    var tillTxt = s.openTill ? tr('Till open')+' · '+fmtMoney(s.expected)+' '+tr('expected') : tr('Till closed');
+    var varTxt = s.closed.length ? (Math.abs(s.variance) < 0.01 ? tr('Cash ups balanced') : (s.variance < 0 ? tr('Short')+' '+fmtMoney(Math.abs(s.variance)) : tr('Over')+' '+fmtMoney(s.variance))) : '';
+    var main = u.role === 'stockclerk' ? s.waste.length+' '+tr('wastage records') : s.count+' '+tr('sales')+' · '+tr('avg')+' '+fmtMoney(s.avg);
+    return '<div class="row" data-trku="'+u.id+'"><div class="avatar">'+esc(initials(u.name))+'</div><div class="main"><div class="title">'+esc(u.name)+(u.id===best?' ★':'')+(u.active===false?' ('+tr('deactivated')+')':'')+'</div>' +
+      '<div class="sub">'+esc(u.jobTitle||tr(ROLE_LABELS[u.role]||u.role))+' · '+esc(lastSeenText(u))+'</div>' +
+      '<div class="sub">'+esc(main)+(u.role!=='stockclerk'?' · '+esc(tillTxt):'')+(varTxt?' · '+esc(varTxt):'')+'</div></div>' +
+      '<div class="trail"><div class="amt num">'+(u.role==='stockclerk'?'':fmtMoney(s.total))+'</div></div></div>';
+  }).join('') + '</div>';
+  return h;
+}
+function wireTeamTracking(root){
+  wireSyncStrip(root);
+  root.querySelectorAll('[data-trk]').forEach(function(b){ b.addEventListener('click', function(){ TRK.range = b.getAttribute('data-trk'); render(); }); });
+  root.querySelectorAll('[data-trku]').forEach(function(b){ b.addEventListener('click', function(){ openStaffDetailSheet(b.getAttribute('data-trku')); }); });
+  root.querySelectorAll('[data-trkmsg]').forEach(function(b){ b.addEventListener('click', function(){ openComposeMessageSheet(b.getAttribute('data-trkmsg')); }); });
+  root.querySelectorAll('[data-trklog]').forEach(function(b){ b.addEventListener('click', openSentMessagesSheet); });
+}
+function openStaffDetailSheet(uid){
+  var u = State.users.find(function(x){ return x.id === uid; }); if(!u) return;
+  var from = trkRange(TRK.range), s = staffStats(u, from, null), all = staffStats(u, null, null);
+  function line(a,b){ return '<div class="sumline"><span>'+a+'</span><span class="num" style="text-align:right;">'+b+'</span></div>'; }
+  var rangeLbl = { today:'Today', '7':'Last 7 days', month:'This month', all:'All' }[TRK.range];
+  var h = '<div class="sheet-head"><h2>'+esc(u.name)+'</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">'+esc(u.jobTitle||tr(ROLE_LABELS[u.role]||u.role))+(u.employeeNo?' · '+esc(u.employeeNo):'')+' · '+esc(lastSeenText(u))+'</div>' +
+    '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;">'+(u.joinedAt?tr('Joined')+' '+fmtDateTime(u.joinedAt):'')+(u.approvedBy?' · '+tr('Approved by')+' '+esc(u.approvedBy):'')+(u.phone?' · '+esc(u.phone):'')+(u.email?' · '+esc(u.email):'')+' · '+tr('Point of sale')+': '+(u.posAccess===false||u.role==='stockclerk'?tr('No'):tr('Yes'))+'</div>' +
+    '<div class="section-title">'+tr(rangeLbl)+'</div>';
+  if(u.role === 'stockclerk'){
+    h += line(tr('Wastage records'), s.waste.length) + s.waste.slice(0,15).map(function(w){ return line(esc(fmtDateTime(w.createdAt))+' · '+esc(w.productName||''), w.qty+' · '+esc(w.reason||'')); }).join('');
+  } else {
+    h += line(tr('Sales'), s.count) + line(tr('Total'), fmtMoney(s.total)) + line(tr('Average sale'), fmtMoney(s.avg)) + line(tr('Items sold'), s.items) + line(tr('On the point of sale'), s.pos) +
+      line(tr('Cash'), fmtMoney(s.by.cash.t)+' · '+s.by.cash.n) + line(tr('Card'), fmtMoney(s.by.card.t)+' · '+s.by.card.n) + line(tr('Mobile wallet'), fmtMoney(s.by.wallet.t)+' · '+s.by.wallet.n) + line(tr('Credit'), fmtMoney(s.by.credit.t)+' · '+s.by.credit.n) +
+      (s.cashBack ? line(tr('Cash back paid out'), fmtMoney(s.cashBack)) : '') +
+      '<div class="section-title">'+tr('Till and cash')+'</div>' +
+      (s.openTill ? line(tr('Till open since'), fmtDateTime(s.openTill.openedAt)) + line(tr('Cash expected in drawer'), fmtMoney(s.expected)) : line(tr('Till'), tr('Closed'))) +
+      line(tr('Cash ups'), s.closed.length) + (s.closed.length ? line(tr('Total variance'), (Math.abs(s.variance)<0.01?tr('Balanced'):fmtMoney(s.variance))) : '') +
+      s.closed.slice(0,6).map(function(t){ return line(esc(fmtDay(t.closedAt)), fmtMoney(t.countedCash!=null?t.countedCash:0)+' · '+(Math.abs(t.variance||0)<0.01?tr('Balanced'):fmtMoney(t.variance||0))); }).join('') +
+      '<div class="section-title">'+tr('Recent sales')+'</div>' + (s.sales.length ? '<div class="rowlist">'+s.sales.slice(0,10).map(function(x){ return '<div class="row" data-sdsale="'+x.id+'"><div class="main"><div class="title">'+esc(posSaleWho(x))+'</div><div class="sub">'+esc(fmtDateTime(x.createdAt))+' · '+esc(x.paymentMethod||'cash')+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(x.total)+'</div></div></div>'; }).join('')+'</div>' : '<div style="font-size:13px;color:var(--text-muted);">'+tr('No sales yet.')+'</div>') +
+      '<div class="section-title">'+tr('All time')+'</div>' + line(tr('Sales'), all.count) + line(tr('Total'), fmtMoney(all.total));
+  }
+  h += '<div class="section-title">'+tr('Activity')+'</div>' + (all.acts.length ? all.acts.slice(0,10).map(function(a){ return '<div style="font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--border);">'+esc(a.summary||a.action)+' <span style="color:var(--text-muted);">· '+esc(fmtDateTime(a.createdAt))+'</span></div>'; }).join('') : '<div style="font-size:13px;color:var(--text-muted);">'+tr('No activity yet.')+'</div>');
+  h += '<div class="actions" style="margin-top:12px;"><button class="btn btn-accent btn-block" id="sdMsg" type="button">'+tr('Send a message')+'</button><button class="btn btn-ghost btn-block" id="sdRep" type="button">'+tr('Work report')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="sdEdit" type="button">'+tr('Edit access')+'</button><button class="btn btn-ghost btn-block" id="sdClose" type="button">'+tr('Close')+'</button></div>';
+  var ov = openSheet(h);
+  ov.querySelector('#sdClose').addEventListener('click', closeModal);
+  ov.querySelector('#sdMsg').addEventListener('click', function(){ openComposeMessageSheet(u.id); });
+  ov.querySelector('#sdRep').addEventListener('click', function(){ openWorkReportSheet(u.id); });
+  ov.querySelector('#sdEdit').addEventListener('click', function(){ openStaffSheet(u); });
+  ov.querySelectorAll('[data-sdsale]').forEach(function(b){ b.addEventListener('click', function(){ openPosSaleDetail(b.getAttribute('data-sdsale')); }); });
+}
+
+/* ---- messages and instructions ---- */
+function myMessages(){
+  var me = State.session ? State.session.userId : null;
+  return State.messages.filter(function(m){ return m.fromId !== me && (m.to === 'all' || m.to === me); });
+}
+function unreadMessages(){ var me = State.session ? State.session.userId : null; return myMessages().filter(function(m){ return !(m.readBy && m.readBy[me]); }); }
+function openComposeMessageSheet(to){
+  var staff = staffList().filter(function(u){ return u.active !== false; });
+  var html = '<div class="sheet-head"><h2>'+tr('Send a message')+'</h2></div>' +
+    '<div class="field"><label>'+tr('To')+'</label><select id="cmTo"><option value="all">'+tr('All employees')+' ('+staff.length+')</option>'+staff.map(function(u){ return '<option value="'+u.id+'"'+(u.id===to?' selected':'')+'>'+esc(u.name)+' · '+esc(tr(ROLE_LABELS[u.role]||u.role))+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field"><label>'+tr('Type')+'</label><div class="segbtns"><button type="button" class="segbtn active" data-cmk="message">'+tr('Message')+'</button><button type="button" class="segbtn" data-cmk="instruction">'+tr('Instruction')+'</button></div></div>' +
+    '<div class="field"><label>'+tr('Subject (optional)')+'</label><input id="cmTitle" maxlength="80"></div>' +
+    '<div class="field"><label>'+tr('Message')+'</label><textarea id="cmBody" rows="5" style="width:100%;" placeholder="'+tr('e.g. Please count the bread before closing today.')+'"></textarea></div>' +
+    '<div class="field"><label><input type="checkbox" id="cmUrgent" style="width:auto;margin-right:8px;">'+tr('Urgent')+'</label></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="cmCancel" type="button">'+tr('Cancel')+'</button><button class="btn btn-primary btn-block" id="cmSend" type="button">'+tr('Send')+'</button></div>';
+  var ov = openSheet(html), kind = 'message';
+  ov.querySelectorAll('[data-cmk]').forEach(function(b){ b.addEventListener('click', function(){ kind = b.getAttribute('data-cmk'); ov.querySelectorAll('[data-cmk]').forEach(function(x){ x.classList.toggle('active', x===b); }); }); });
+  ov.querySelector('#cmCancel').addEventListener('click', closeModal);
+  ov.querySelector('#cmSend').addEventListener('click', function(){
+    var body = ov.querySelector('#cmBody').value.trim(); if(!body){ toast(tr('Type a message')); return; }
+    var toV = ov.querySelector('#cmTo').value, tu = State.users.find(function(x){ return x.id === toV; });
+    refs.messages.add({ to:toV, toName: tu ? tu.name : 'All employees', fromId:State.session.userId, fromName:State.session.name, kind:kind, urgent:ov.querySelector('#cmUrgent').checked,
+      title:ov.querySelector('#cmTitle').value.trim(), body:body, readBy:{}, createdAt:new Date().toISOString() });
+    logAudit('other','message',null,(kind==='instruction'?'Instruction':'Message')+' sent to '+(tu?tu.name:'all employees'));
+    syncNowSafe(); closeModal(); toast(tr('Message sent'));
+  });
+}
+function openSentMessagesSheet(){
+  var staffN = staffList().filter(function(u){ return u.active !== false; }).length;
+  var list = State.messages.slice(0,60);
+  var html = '<div class="sheet-head"><h2>'+tr('Sent messages')+'</h2></div>' + (list.length ? '<div class="rowlist">'+list.map(function(m){
+    var reads = Object.keys(m.readBy||{}).length, of = m.to === 'all' ? staffN : 1;
+    return '<div class="row"><div class="main"><div class="title">'+(m.urgent?'⚠ ':'')+esc(m.title||m.body.slice(0,40))+'</div><div class="sub">'+esc(tr(m.kind==='instruction'?'Instruction':'Message'))+' · '+tr('To')+' '+esc(m.to==='all'?tr('All employees'):m.toName)+' · '+esc(fmtDateTime(m.createdAt))+'</div><div class="sub">'+tr('Read by')+' '+reads+' / '+of+(reads?' ('+esc(Object.keys(m.readBy).map(function(id){ var u = State.users.find(function(x){ return x.id===id; }); return u?u.name:'?'; }).join(', '))+')':'')+'</div></div></div>';
+  }).join('')+'</div>' : '<div class="empty" style="padding:14px 0;">'+tr('No messages sent yet.')+'</div>') +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="smNew" type="button">'+tr('Send a message')+'</button></div>';
+  var ov = openSheet(html); ov.querySelector('#smNew').addEventListener('click', function(){ openComposeMessageSheet('all'); });
+}
+function openMessageSheet(id){
+  var m = State.messages.find(function(x){ return x.id === id; }); if(!m) return;
+  var me = State.session.userId;
+  if(!(m.readBy && m.readBy[me])){ var rb = Object.assign({}, m.readBy||{}); rb[me] = new Date().toISOString(); m.readBy = rb; refs.messages.doc(m.id).update({ readBy:rb }); syncNowSafe(); }
+  var ov = openSheet('<div class="sheet-head"><h2>'+(m.urgent?'⚠ ':'')+esc(m.title || tr(m.kind==='instruction'?'Instruction':'Message'))+'</h2></div>' +
+    '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:10px;">'+tr('From')+' '+esc(m.fromName)+' · '+esc(fmtDateTime(m.createdAt))+' · '+esc(tr(m.kind==='instruction'?'Instruction':'Message'))+'</div>' +
+    '<div style="font-size:15px;line-height:1.55;white-space:pre-wrap;">'+esc(m.body)+'</div>' +
+    '<div class="actions" style="margin-top:14px;"><button class="btn btn-primary btn-block" id="msOk" type="button">'+(m.kind==='instruction'?tr('Got it'):tr('Close'))+'</button></div>', {center:true});
+  ov.querySelector('#msOk').addEventListener('click', function(){ closeModal(); render(); });
+}
+function openInboxSheet(){
+  var list = myMessages(), me = State.session.userId;
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Messages')+'</h2></div>' + (list.length ? '<div class="rowlist">'+list.map(function(m){
+    var unread = !(m.readBy && m.readBy[me]);
+    return '<div class="row" data-msg="'+m.id+'"><div class="main"><div class="title">'+(unread?'● ':'')+(m.urgent?'⚠ ':'')+esc(m.title||m.body.slice(0,50))+'</div><div class="sub">'+esc(m.fromName)+' · '+esc(fmtDateTime(m.createdAt))+' · '+esc(tr(m.kind==='instruction'?'Instruction':'Message'))+'</div></div></div>'; }).join('')+'</div>' : '<div class="empty" style="padding:14px 0;">'+tr('No messages yet.')+'</div>'));
+  ov.querySelectorAll('[data-msg]').forEach(function(b){ b.addEventListener('click', function(){ openMessageSheet(b.getAttribute('data-msg')); }); });
+}
+var _msgKnown = null;
+function onMessagesChanged(){
+  if(!State.session) return;
+  var mine = myMessages(), ids = {};
+  mine.forEach(function(m){ ids[m.id] = 1; });
+  if(_msgKnown){
+    var fresh = mine.filter(function(m){ return !_msgKnown[m.id] && !(m.readBy && m.readBy[State.session.userId]); });
+    if(fresh.length){
+      var m = fresh[0];
+      toast((m.urgent?'⚠ ':'')+tr('New message from')+' '+m.fromName+': '+(m.title||m.body).slice(0,60));
+      try{ showDeviceNotification(tr('Message from')+' '+m.fromName, (m.title ? m.title+': ' : '')+m.body.slice(0,120), 'pesa-msg-'+m.id); }catch(e){}
+    }
+  }
+  _msgKnown = ids;
+}
+
+/* ---- stock alerts for employees ---- */
+var _stockNotified = {};
+function empStockAlertTick(){
+  if(!isRestricted()) return;
+  var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); });
+  var fresh = low.filter(function(p){ return !_stockNotified[p.id]; });
+  low.forEach(function(p){ _stockNotified[p.id] = 1; });
+  Object.keys(_stockNotified).forEach(function(id){ if(!low.some(function(p){ return p.id === id; })) delete _stockNotified[id]; });
+  if(!fresh.length) return;
+  var out = fresh.filter(function(p){ return p.stockQty <= 0; }).length;
+  var title = fresh.length === 1 ? tr('Stock alert')+': '+fresh[0].name : fresh.length+' '+tr('products need stock');
+  var body = fresh.slice(0,5).map(function(p){ return p.name+': '+(p.stockQty<=0?tr('out of stock'):p.stockQty+' '+tr('left')); }).join(', ');
+  try{ showDeviceNotification(title, body, 'pesa-emp-stock'); }catch(e){}
+  setTimeout(function(){ toast((out?'⚠ ':'')+title); }, 1200);
+}
+
+/* ---- work reports (daily or monthly), saved to the employee's records ---- */
+function workReportSnapshot(u, kind, period){
+  var from, to;
+  if(kind === 'daily'){ from = new Date(period+'T00:00:00'); to = new Date(from.getTime()+86400000); }
+  else { var y = +period.slice(0,4), mo = +period.slice(5,7)-1; from = new Date(y, mo, 1); to = new Date(y, mo+1, 1); }
+  var s = staffStats(u, from, to);
+  return { id:'wr_'+u.id+'_'+kind+'_'+period, userId:u.id, userName:u.name, role:u.role, jobTitle:u.jobTitle||'', employeeNo:u.employeeNo||'', kind:kind, period:period,
+    generatedAt:new Date().toISOString(), generatedBy: State.session ? State.session.name : '',
+    figures:{ count:s.count, total:s.total, avg:s.avg, items:s.items, cashBack:s.cashBack, pos:s.pos,
+      by:{ cash:s.by.cash, card:s.by.card, wallet:s.by.wallet, credit:s.by.credit },
+      tills:s.tills.map(function(t){ return { openedAt:t.openedAt, closedAt:t.closedAt||'', openingFloat:t.openingFloat||0, expectedCash:t.expectedCash!=null?t.expectedCash:null, countedCash:t.countedCash!=null?t.countedCash:null, variance:t.variance!=null?t.variance:null, status:t.status }; }),
+      sales:s.sales.slice(0,400).map(function(x){ return { at:x.createdAt, who:posSaleWho(x), method:x.paymentMethod||'cash', total:x.total, items:(x.items||[]).reduce(function(a,i){ return a+(i.qty||0); },0) }; }),
+      waste:s.waste.map(function(w){ return { at:w.createdAt, name:w.productName||'', qty:w.qty, reason:w.reason||'' }; }) } };
+}
+function workReportPeriodLabel(r){
+  if(r.kind === 'daily') return fmtDateNice(new Date(r.period+'T00:00:00'));
+  return new Date(+r.period.slice(0,4), +r.period.slice(5,7)-1, 1).toLocaleDateString(uiLocale(), { month:'long', year:'numeric' });
+}
+async function workReportPdf(r){
+  var ok = await ensureJsPDF(); if(!ok){ toast('Couldn’t load the PDF engine — check your connection and try again'); return null; }
+  var C = getJsPDF(); if(!C) return null;
+  var doc = newPdfDoc(C, { unit:'mm', format:'a4' });
+  var head = drawDocHeader(doc), m = head.margin, w = head.contentW, y = head.y, t = head.t;
+  var f = r.figures;
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(t.primary[0],t.primary[1],t.primary[2]);
+  doc.text(r.kind === 'daily' ? 'Daily work report' : 'Monthly work report', m, y); y += 7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(60,60,60);
+  doc.text(r.userName+(r.jobTitle?' · '+r.jobTitle:'')+(r.employeeNo?' · '+r.employeeNo:''), m, y); y += 5;
+  doc.text(workReportPeriodLabel(r), m, y); y += 5;
+  doc.setFontSize(8); doc.setTextColor(130,130,130); doc.text('Generated '+fmtDateTime(r.generatedAt)+(r.generatedBy?' by '+r.generatedBy:''), m, y); y += 8;
+  if(r.role === 'stockclerk'){
+    pdfSummaryLine(doc, m, y, w, 'Wastage records', String(f.waste.length), {bold:true}); y += 8;
+    if(f.waste.length) y = pdfTable(doc, { x:m, y:y, width:w, zebra:true, columns:[{label:'Date',width:45},{label:'Product',width:w-95},{label:'Qty',width:20,align:'right'},{label:'Reason',width:30}],
+      rows:f.waste.map(function(x){ return [fmtDateTime(x.at), String(x.name).slice(0,40), String(x.qty), x.reason]; }) });
+    return doc;
+  }
+  [['Sales', String(f.count)], ['Total sales', fmtMoney(f.total)], ['Average sale', fmtMoney(f.avg)], ['Items sold', String(f.items)], ['On the point of sale', String(f.pos)]].concat(f.cashBack ? [['Cash back paid out', fmtMoney(f.cashBack)]] : []).forEach(function(row, i){
+    pdfSummaryLine(doc, m, y, w, row[0], row[1], {bold:i===1}); y += 6;
+  });
+  y += 3;
+  y = pdfTable(doc, { x:m, y:y, width:w, zebra:true, columns:[{label:'Payment method',width:w-70},{label:'Sales',width:30,align:'right'},{label:'Amount',width:40,align:'right'}],
+    rows:[['Cash',f.by.cash],['Card',f.by.card],['Mobile wallet',f.by.wallet],['Credit',f.by.credit]].map(function(x){ return [x[0], String(x[1].n), fmtMoney(x[1].t)]; }) });
+  y += 6;
+  if(f.tills.length){
+    if(y > 240){ doc.addPage(); y = 16; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(27,36,32); doc.text('Till sessions', m, y); y += 3;
+    y = pdfTable(doc, { x:m, y:y, width:w, zebra:true, columns:[{label:'Opened',width:42},{label:'Closed',width:42},{label:'Float',width:(w-84)/3,align:'right'},{label:'Counted',width:(w-84)/3,align:'right'},{label:'Variance',width:(w-84)/3,align:'right'}],
+      rows:f.tills.map(function(x){ return [fmtDateTime(x.openedAt), x.closedAt?fmtDateTime(x.closedAt):'Open', fmtMoney(x.openingFloat), x.countedCash!=null?fmtMoney(x.countedCash):'', x.variance!=null?fmtMoney(x.variance):'']; }) });
+    y += 6;
+  }
+  if(f.sales.length){
+    if(y > 240){ doc.addPage(); y = 16; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(27,36,32); doc.text('Sales', m, y); y += 3;
+    pdfTable(doc, { x:m, y:y, width:w, zebra:true, columns:[{label:'Date and time',width:42},{label:'Customer',width:w-122},{label:'Method',width:30},{label:'Items',width:14,align:'right'},{label:'Amount',width:36,align:'right'}],
+      rows:f.sales.map(function(x){ return [fmtDateTime(x.at), String(x.who).slice(0,30), x.method, String(x.items), fmtMoney(x.total)]; }) });
+  }
+  return doc;
+}
+function openWorkReportSheet(uid){
+  var u = State.users.find(function(x){ return x.id === (uid || State.session.userId); }); if(!u) return;
+  var today = todayKey(), month = today.slice(0,7), kind = 'daily';
+  var html = '<div class="sheet-head"><h2>'+tr('Work report')+'</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">'+esc(u.name)+'</div>' +
+    '<div class="segbtns" style="margin-bottom:10px;"><button type="button" class="segbtn active" data-wrk="daily">'+tr('Daily')+'</button><button type="button" class="segbtn" data-wrk="monthly">'+tr('Monthly')+'</button></div>' +
+    '<div class="field" id="wrDayBox"><label>'+tr('Day')+'</label><input id="wrDay" type="date" value="'+today+'" max="'+today+'"></div>' +
+    '<div class="field" id="wrMonBox" style="display:none;"><label>'+tr('Month')+'</label><input id="wrMon" type="month" value="'+month+'" max="'+month+'"></div>' +
+    '<div id="wrPrev"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="wrDl" type="button">'+tr('Download PDF')+'</button><button class="btn btn-ghost btn-block" id="wrPrint" type="button">'+tr('Print')+'</button></div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">'+tr('Each report you make is kept in My records.')+'</div>';
+  var ov = openSheet(html);
+  function period(){ return kind === 'daily' ? ov.querySelector('#wrDay').value : ov.querySelector('#wrMon').value; }
+  function paint(){
+    if(!period()) return;
+    var r = workReportSnapshot(u, kind, period()), f = r.figures;
+    ov.querySelector('#wrPrev').innerHTML = '<div class="rowlist">' + (u.role === 'stockclerk'
+      ? '<div class="row"><div class="main"><div class="title">'+tr('Wastage records')+'</div></div><div class="trail num">'+f.waste.length+'</div></div>'
+      : '<div class="row"><div class="main"><div class="title">'+tr('Sales')+'</div><div class="sub">'+f.count+' · '+f.items+' '+tr('items')+'</div></div><div class="trail num">'+fmtMoney(f.total)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Cash')+' / '+tr('Card')+'</div></div><div class="trail num">'+fmtMoney(f.by.cash.t)+' / '+fmtMoney(f.by.card.t)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Till sessions')+'</div></div><div class="trail num">'+f.tills.length+'</div></div>') + '</div>';
+  }
+  ov.querySelectorAll('[data-wrk]').forEach(function(b){ b.addEventListener('click', function(){ kind = b.getAttribute('data-wrk'); ov.querySelectorAll('[data-wrk]').forEach(function(x){ x.classList.toggle('active', x===b); }); ov.querySelector('#wrDayBox').style.display = kind==='daily'?'':'none'; ov.querySelector('#wrMonBox').style.display = kind==='monthly'?'':'none'; paint(); }); });
+  ov.querySelector('#wrDay').addEventListener('change', paint); ov.querySelector('#wrMon').addEventListener('change', paint);
+  async function make(print){
+    if(!period()){ toast(tr('Pick a date')); return; }
+    var r = workReportSnapshot(u, kind, period());
+    var id = r.id; delete r.id; refs.workReports.doc(id).set(r); r.id = id;
+    logAudit('other','report',id,(kind==='daily'?'Daily':'Monthly')+' work report for '+u.name+' ('+r.period+')');
+    var doc = await workReportPdf(r); if(!doc) return;
+    if(print) printPdfDoc(doc); else saveGeneratedPdf(doc, 'work-report-'+u.name.replace(/\s+/g,'-')+'-'+r.period+'.pdf').then(function(ok){ if(ok) toast(tr('Report downloaded')); });
+  }
+  ov.querySelector('#wrDl').addEventListener('click', function(){ make(false); });
+  ov.querySelector('#wrPrint').addEventListener('click', function(){ make(true); });
+  paint();
+}
+
+/* ---- My records: reports, receipts, invoices and cash ups in one read only place ---- */
+var REC = { sec:'reports' };
+function saleReceiptDraft(s){
+  return { number:'R-'+String(s.id||'').slice(-6).toUpperCase(), billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:'',
+    at:s.createdAt, payMethod:s.paymentMethod, walletProvider:s.walletProvider||'', cashBack:s.cashBack||0,
+    received: s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : s.total),
+    items:(s.items||[]).map(function(it){ return { desc:it.name, qty:it.qty, unitPrice:it.unitPrice }; }) };
+}
+function renderMyRecords(){
+  var me = State.session, u = State.users.find(function(x){ return x.id === me.userId; }) || {};
+  var reps = State.workReports.filter(function(r){ return r.userId === me.userId; }).sort(function(a,b){ return a.period < b.period ? 1 : -1; });
+  var sales = State.sales.filter(function(s){ return s.cashierName === me.name; });
+  var rec = sales.filter(function(s){ return s.paymentMethod !== 'credit'; });
+  var inv = State.invoices.filter(function(r){ return (r.createdById === me.userId || r.createdBy === me.name); });
+  var credit = sales.filter(function(s){ return s.paymentMethod === 'credit'; });
+  var tills = State.tillSessions.filter(function(t){ return t.cashierId === me.userId && t.status === 'closed'; });
+  var secs = me.role === 'stockclerk' ? [['reports','Reports',reps.length]] : [['reports','Reports',reps.length],['receipts','Receipts',rec.length],['invoices','Invoices',inv.length+credit.length],['cashups','Cash ups',tills.length]];
+  if(!secs.some(function(x){ return x[0] === REC.sec; })) REC.sec = 'reports';
+  var h = '<div class="section-title" style="margin-top:0;">'+tr('My records')+'</div>' +
+    '<div class="banner">'+ICONS.info+'<span>'+tr('Everything you made is kept here. You can view, download and print, but records cannot be changed or deleted.')+'</span></div>' +
+    '<div class="segbtns" style="margin:10px 0;flex-wrap:wrap;">'+secs.map(function(x){ return '<button class="segbtn'+(REC.sec===x[0]?' active':'')+'" data-recsec="'+x[0]+'" style="padding:8px 4px;font-size:12.5px;">'+tr(x[1])+' ('+x[2]+')</button>'; }).join('')+'</div>';
+  function row(attr, title, sub, amt){ return '<div class="row" '+attr+'><div class="main"><div class="title">'+title+'</div><div class="sub">'+sub+'</div></div><div class="trail"><div class="amt num">'+(amt||'')+'</div></div></div>'; }
+  var body = '';
+  if(REC.sec === 'reports'){
+    body = '<div class="actions" style="margin-bottom:10px;"><button class="btn btn-primary btn-block" data-recnew="1" type="button">'+tr('Make a work report')+'</button></div>' +
+      (reps.length ? '<div class="rowlist">'+reps.map(function(r){ return row('data-recrep="'+r.id+'"', esc(tr(r.kind==='daily'?'Daily work report':'Monthly work report')), esc(workReportPeriodLabel(r))+' · '+tr('made')+' '+esc(fmtDateTime(r.generatedAt)), r.role==='stockclerk'?'':fmtMoney(r.figures.total)); }).join('')+'</div>' : '<div class="empty" style="padding:10px 0;">'+tr('No reports yet.')+'</div>');
+  } else if(REC.sec === 'receipts'){
+    body = rec.length ? '<div class="rowlist">'+rec.slice(0,200).map(function(s){ return row('data-recsale="'+s.id+'"', esc(posSaleWho(s)), esc(fmtDateTime(s.createdAt))+' · '+esc(s.paymentMethod||'cash'), fmtMoney(s.total)); }).join('')+'</div>' : '<div class="empty" style="padding:10px 0;">'+tr('No receipts yet.')+'</div>';
+  } else if(REC.sec === 'invoices'){
+    var invRows = inv.map(function(r){ return row('data-recinv="'+r.id+'"', esc((r.type==='receipt'?tr('Receipt'):tr('Invoice'))+' '+(r.number||'')), esc(r.billToName||'')+' · '+esc(r.dateStr||''), fmtMoney(r.total||0)); });
+    var crRows = credit.map(function(s){ return row('data-recsale="'+s.id+'"', esc(tr('Credit sale')+' · '+(s.customerName||'')), esc(fmtDateTime(s.createdAt)), fmtMoney(s.total)); });
+    body = (invRows.length + crRows.length) ? '<div class="rowlist">'+invRows.concat(crRows).join('')+'</div>' : '<div class="empty" style="padding:10px 0;">'+tr('No invoices yet.')+'</div>';
+  } else {
+    body = tills.length ? '<div class="rowlist">'+tills.map(function(t){ return row('data-rectill="'+t.id+'"', esc(fmtDay(t.closedAt)), tr('Float')+' '+fmtMoney(t.openingFloat||0)+' · '+(Math.abs(t.variance||0)<0.01?tr('Balanced'):tr('Variance')+' '+fmtMoney(t.variance||0)), fmtMoney(t.countedCash||0)); }).join('')+'</div>' : '<div class="empty" style="padding:10px 0;">'+tr('No cash ups yet.')+'</div>';
+  }
+  return h + body;
+}
+function openRecordDocSheet(title, sub, buildDoc, filename){
+  var ov = openSheet('<div class="sheet-head"><h2>'+esc(title)+'</h2></div><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">'+esc(sub)+'</div>' +
+    '<div class="banner">'+ICONS.info+'<span>'+tr('Read only record.')+'</span></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="rdDl" type="button">'+tr('Download PDF')+'</button><button class="btn btn-ghost btn-block" id="rdPr" type="button">'+tr('Print')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="rdX" type="button">'+tr('Close')+'</button></div>', {center:true});
+  async function get(){ var ok = await ensureJsPDF(); if(!ok){ toast('Couldn’t load the PDF engine — check your connection and try again'); return null; } return buildDoc(); }
+  ov.querySelector('#rdDl').addEventListener('click', async function(){ var d = await get(); if(d) saveGeneratedPdf(d, filename).then(function(ok){ if(ok) toast(tr('Downloaded')); }); });
+  ov.querySelector('#rdPr').addEventListener('click', async function(){ var d = await get(); if(d) printPdfDoc(d); });
+  ov.querySelector('#rdX').addEventListener('click', closeModal);
+}
+function wireMyRecords(root){
+  root.querySelectorAll('[data-recsec]').forEach(function(b){ b.addEventListener('click', function(){ REC.sec = b.getAttribute('data-recsec'); render(); }); });
+  root.querySelectorAll('[data-recnew]').forEach(function(b){ b.addEventListener('click', function(){ openWorkReportSheet(); }); });
+  root.querySelectorAll('[data-recrep]').forEach(function(b){ b.addEventListener('click', function(){
+    var r = State.workReports.find(function(x){ return x.id === b.getAttribute('data-recrep'); }); if(!r) return;
+    openRecordDocSheet(tr(r.kind==='daily'?'Daily work report':'Monthly work report'), workReportPeriodLabel(r), function(){ return workReportPdf(r); }, 'work-report-'+r.period+'.pdf');
+  }); });
+  root.querySelectorAll('[data-recsale]').forEach(function(b){ b.addEventListener('click', function(){
+    var s = State.sales.find(function(x){ return x.id === b.getAttribute('data-recsale'); }); if(!s) return;
+    var d = saleReceiptDraft(s);
+    openRecordDocSheet(tr(s.paymentMethod==='credit'?'Credit sale':'Receipt')+' '+d.number, fmtDateTime(s.createdAt)+' · '+fmtMoney(s.total), function(){ return s.paymentMethod==='credit' ? buildInvoicePdf(d) : buildReceiptPdf(d); }, 'receipt-'+d.number+'.pdf');
+  }); });
+  root.querySelectorAll('[data-recinv]').forEach(function(b){ b.addEventListener('click', function(){
+    var r = State.invoices.find(function(x){ return x.id === b.getAttribute('data-recinv'); }); if(!r) return;
+    var d = { number:r.number, billToName:r.billToName, billToContact:r.billToContact||'', dateStr:r.dateStr, dueDateStr:r.dueDateStr||'', notes:r.notes||'', at:r.at||'', payMethod:r.payMethod||'', walletProvider:r.walletProvider||'', received:r.received, items:r.items||[] };
+    openRecordDocSheet((r.type==='receipt'?tr('Receipt'):tr('Invoice'))+' '+(r.number||''), (r.billToName||'')+' · '+fmtMoney(r.total||0), function(){ return r.type==='receipt' ? buildReceiptPdf(d) : buildInvoicePdf(d); }, (r.type||'invoice')+'-'+(r.number||'')+'.pdf');
+  }); });
+  root.querySelectorAll('[data-rectill]').forEach(function(b){ b.addEventListener('click', function(){
+    var t = State.tillSessions.find(function(x){ return x.id === b.getAttribute('data-rectill'); }); if(!t) return;
+    function line(a,v){ return '<div class="sumline"><span>'+a+'</span><span class="num">'+v+'</span></div>'; }
+    var ov = openSheet('<div class="sheet-head"><h2>'+tr('Cash up')+' · '+esc(fmtDay(t.closedAt))+'</h2></div>' + line(tr('Opened'), fmtDateTime(t.openedAt)) + line(tr('Closed'), fmtDateTime(t.closedAt)) + line(tr('Opening float'), fmtMoney(t.openingFloat||0)) +
+      line(tr('Expected in drawer'), fmtMoney(t.expectedCash||0)) + line(tr('Counted in drawer'), fmtMoney(t.countedCash||0)) + line(tr('Variance'), Math.abs(t.variance||0)<0.01?tr('Balanced'):fmtMoney(t.variance||0)) +
+      '<div class="banner" style="margin-top:10px;">'+ICONS.info+'<span>'+tr('Read only record.')+'</span></div><div class="actions"><button class="btn btn-ghost btn-block" id="ctX" type="button">'+tr('Close')+'</button></div>', {center:true});
+    ov.querySelector('#ctX').addEventListener('click', closeModal);
+  }); });
+}
+
 
 function renderLoginHtml(){
   var company = State.company || {};
@@ -3243,6 +3656,7 @@ function openStaffSheet(user){
     '<div class="field"><label>'+tr('Role')+'</label><select id="sfRole" '+(isMe?'disabled':'')+'>'+roleOpts+'</select></div>' +
     '<div class="field"><label>'+tr('Job title (optional)')+'</label><input id="sfJob" placeholder="'+tr('e.g. Front till cashier')+'" value="'+esc(user&&user.jobTitle||'')+'"></div>' +
     '<div id="sfRoleInfo"></div>' +
+    '<div class="field" id="sfPosBox"><label><input type="checkbox" id="sfPos" style="width:auto;margin-right:8px;" '+(!user || user.posAccess !== false ? 'checked' : '')+'>'+tr('Can use the Point of sale')+'</label><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+tr('Cashiers sign in on the point of sale with the same private PIN they choose when they create their account.')+'</div></div>' +
     (!isEdit ? '<div class="field"><label>'+tr('How do they get access?')+'</label><div class="segbtns"><button type="button" class="segbtn active" data-sfmode="invite">'+tr('They create their own account')+'</button><button type="button" class="segbtn" data-sfmode="direct">'+tr('I set their PIN or password')+'</button></div></div>' +
       '<div class="field" id="sfContactBox"><label>'+tr('Phone or email (optional)')+'</label><input id="sfContact" placeholder="081 234 5678 or name@example.com"></div>' : '') +
     '<div id="sfCredFields"></div>' +
@@ -3257,6 +3671,7 @@ function openStaffSheet(user){
     var role = ov.querySelector('#sfRole').value;
     var f = ov.querySelector('#sfCredFields');
     var ri = ROLE_INFO[role];
+    ov.querySelector('#sfPosBox').style.display = role === 'stockclerk' ? 'none' : '';
     ov.querySelector('#sfRoleInfo').innerHTML = ri ? '<div class="banner" style="display:block;font-size:12.5px;"><b>'+tr('What this job can do')+'</b><br>'+ri.can.map(function(x){ return '✓ '+esc(tr(x)); }).join('<br>')+'<br><b>'+tr('Not allowed')+'</b><br>'+ri.cannot.map(function(x){ return '✗ '+esc(tr(x)); }).join('<br>')+'</div>' : '';
     if(isEdit){ f.innerHTML=''; return; }
     var cb = ov.querySelector('#sfContactBox'); if(cb) cb.style.display = sfMode === 'invite' ? '' : 'none';
@@ -3289,7 +3704,7 @@ function openStaffSheet(user){
     if(!name) return fail(tr('Enter a name.'));
     (async function(){
       if(isEdit){
-        var patch = { name:name, jobTitle: ov.querySelector('#sfJob').value.trim() };
+        var patch = { name:name, jobTitle: ov.querySelector('#sfJob').value.trim(), posAccess: (isMe ? user.posAccess !== false : (role !== 'stockclerk' && ov.querySelector('#sfPos').checked)) };
         if(!isMe) patch.role = role;
         var newPass = ov.querySelector('#sfNewPass') ? ov.querySelector('#sfNewPass').value : '';
         if(newPass){ patch.passHash = await sha256Hex(newPass); }
@@ -3304,7 +3719,7 @@ function openStaffSheet(user){
           var invRef = refs.users.doc();
           var rec = { name:name, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), email: ct.indexOf('@')>-1 ? ct.toLowerCase() : '', phone: ct.indexOf('@')>-1 ? '' : ct,
             pending:true, active:true, passHash:'', inviteCode:newInviteCode(), inviteExpires:new Date(Date.now()+7*86400000).toISOString(),
-            employeeNo:nextEmployeeNo(), createdAt:new Date().toISOString() };
+            employeeNo:nextEmployeeNo(), createdAt:new Date().toISOString(), approvedBy:State.session.name, approvedAt:new Date().toISOString(), posAccess: role !== 'stockclerk' && ov.querySelector('#sfPos').checked };
           invRef.set(rec);
           logAudit('create','staff',invRef.id,'Invited '+name+' as '+role);
           openInviteSheet(Object.assign({id:invRef.id}, rec));
@@ -3317,7 +3732,7 @@ function openStaffSheet(user){
         if(role === 'cashier' && !/^\d{4}$/.test(pass)) return fail(tr('PIN must be exactly 4 digits.'));
         if(role !== 'cashier' && (!pass || pass.length<4)) return fail(tr('Choose a password of at least 4 characters.'));
         var passHash = await sha256Hex(pass);
-        refs.users.doc().set({ name:name, email:email, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), employeeNo:nextEmployeeNo(), passHash:passHash, active:true, createdAt:new Date().toISOString() });
+        refs.users.doc().set({ name:name, email:email, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), employeeNo:nextEmployeeNo(), passHash:passHash, active:true, createdAt:new Date().toISOString(), approvedBy:State.session.name, approvedAt:new Date().toISOString(), posAccess: role !== 'stockclerk' && ov.querySelector('#sfPos').checked });
         logAudit('create','staff',null,'Added '+name+' as '+role);
         toast(name+' '+tr('added as')+' '+tr(ROLE_LABELS[role]||role));
         openTeamSheet();
@@ -3919,6 +4334,7 @@ function finalizeSale(method, customer, extra){
   toast('Sale recorded — ' + fmtMoney(total));
   offerSaleReceipt(sale, customer);
   if(POS.open) setTimeout(posRender, 60);
+  touchUserActive(true); syncNowSafe();
 }
 
 function offerSaleReceipt(sale, customer){
@@ -4308,7 +4724,7 @@ function posLockHtml(d){
   if(d && d.status === 'blocked'){
     return h + '<div class="pos-body"><div class="banner" style="background:var(--danger-bg);color:var(--danger);">'+ICONS.warn+'<span>'+tr('This terminal has been blocked by the owner. Sales cannot be taken here.')+'</span></div></div></div>';
   }
-  var users = State.users.filter(function(u){ return u.active !== false && !u.pending && u.role !== 'stockclerk'; }).sort(function(a,b){ return (a.role==='cashier'?0:1) - (b.role==='cashier'?0:1) || (a.name||'').localeCompare(b.name||''); });
+  var users = State.users.filter(function(u){ return u.active !== false && !u.pending && u.role !== 'stockclerk' && u.posAccess !== false; }).sort(function(a,b){ return (a.role==='cashier'?0:1) - (b.role==='cashier'?0:1) || (a.name||'').localeCompare(b.name||''); });
   if(!POS.pick){
     h += '<div class="pos-body"><div class="pos-lock-title">'+tr('Who is selling?')+'</div><div class="pos-tiles">' + users.map(function(u){
       var left = posLockLeft(u.id);
@@ -4384,6 +4800,7 @@ function posSignIn(u){
   logAudit('other','staff',u.id,'POS sign in'+(d?' on '+d.name:''));
   if(d) refs.posDevices.doc(d.id).update({ lastSeen:new Date().toISOString() });
   POS.tab = 'sell';
+  touchUserActive(true);
   posRender();
 }
 function posMainHtml(d){
@@ -8050,6 +8467,8 @@ function menuRowsHtml(){
   var rows = '';
   rows += '<div class="drawer-sub">Main menu</div>';
   if(allowedTabs.indexOf('me')!==-1) rows += drawerRowHtml('tab-me', ICONS.dashboard, 'My dashboard');
+  if(allowedTabs.indexOf('records')!==-1) rows += drawerRowHtml('tab-records', ICONS.clipboard, 'My records');
+  if(isRestricted()){ var _um = unreadMessages().length; rows += drawerRowHtml('inbox', ICONS.bolt, 'Messages', _um ? _um : null); }
   if(allowedTabs.indexOf('dashboard')!==-1) rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
   if(allowedTabs.indexOf('sell')!==-1) rows += drawerRowHtml('tab-sell', ICONS.cart, 'Sell');
   if(allowedTabs.indexOf('stock')!==-1) rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
@@ -8070,6 +8489,7 @@ function menuRowsHtml(){
   }
   if(isManagerOrOwner()){
     rows += '<div class="drawer-sub">Operations</div>';
+    rows += drawerRowHtml('tab-team', ICONS.people, 'Employee tracking');
     rows += drawerRowHtml('tab-reconcile', ICONS.check, 'Reconciliation');
     rows += drawerRowHtml('stocktake', ICONS.clipboard, 'Stock take & variances');
     rows += drawerRowHtml('suppliers', ICONS.truck, 'Suppliers', State.suppliers.length);
@@ -8096,6 +8516,9 @@ function handleDrawerAction(key){
   else if(key==='tab-expenses') setTab('expenses');
   else if(key==='tab-till') setTab('till');
   else if(key==='tab-reconcile') setTab('reconcile');
+  else if(key==='tab-team') setTab('team');
+  else if(key==='tab-records') setTab('records');
+  else if(key==='inbox') openInboxSheet();
   else if(key==='stocktake'){ State.rcTab = 'stock'; setTab('reconcile'); setTimeout(openStockTakeStartSheet, 80); }
   else if(key==='insights'){
     setTab('dashboard');
@@ -8498,12 +8921,16 @@ function render(){
   else if(State.tab === 'credit') html = renderCredit();
   else if(State.tab === 'expenses') html = renderExpenses();
   else if(State.tab === 'till') html = renderTill();
+  else if(State.tab === 'team') html = renderTeamTracking();
+  else if(State.tab === 'records') html = renderMyRecords();
   else if(State.tab === 'invoices') html = renderInvoicesPage();
   else if(State.tab === 'reports') html = renderReportsPage();
   else if(State.tab === 'reconcile') html = isManagerOrOwner() ? renderReconcilePage() : '<div class="empty"><div class="t">Reconciliation is for owners and managers.</div></div>';
   content.innerHTML = html;
   wireContent();
   if(State.tab === 'me') wireMe(content);
+  if(State.tab === 'team') wireTeamTracking(content);
+  if(State.tab === 'records') wireMyRecords(content);
   renderCartBar();
   renderSidebar();
   if(!_reportsAutoFileDone) setTimeout(maybeAutoFileReports, 0);
@@ -9479,6 +9906,19 @@ var LESSONS = [
       where:'Sign in page → New employee sign up',
       steps:['Open Pesa and tap New employee sign up.','Enter the invite code.','Choose a PIN (cashiers) or password and tap Create my account.'],
       tip:'Their phone must be connected to your business first, with Advanced Pesa Connection or nearby Wi-Fi. On the shop tablet it works straight away.' }
+  ]},
+  { id:'tracking', title:'Tracking and messaging employees', icon:'people', who:'manager', slides:[
+    { title:'See how each employee is doing', text:'Employee tracking shows sales, payment methods, till and cash, cash ups, wastage and recent activity for every employee.',
+      where:'Menu → Employee tracking',
+      steps:['Open the menu and tap Employee tracking.','Choose Today, Last 7 days, This month or All.','Tap an employee to see their full detail.'],
+      tip:'Cash in open tills shows what should be in each drawer right now.' },
+    { title:'Send a message or instruction', text:'Write to one employee or to everyone at once. Mark it Urgent when it cannot wait.',
+      where:'Employee tracking → Send a message',
+      steps:['Tap Send a message.','Choose who it goes to and whether it is a message or an instruction.','Type it and tap Send. Sent messages shows who has read it.'],
+      tip:'Employees need to be connected to the business to receive it.' },
+    { title:'What employees keep', text:'Each employee can print daily and monthly work reports. Their reports, receipts, invoices and cash ups are kept in My records, where they can view, download and print but never edit or delete.',
+      where:'Employee dashboard → My records',
+      steps:['Employees tap Work report on their dashboard.','Choose daily or monthly and download or print.','Every report is saved to My records automatically.'] }
   ]},
   { id:'terminal', title:'Point of sale terminal', icon:'till', who:'all', slides:[
     { title:'Selling on the terminal', text:'The Point of sale screen is a fast, full screen place to sell. Every staff member signs in with their own PIN or password.',
@@ -11125,7 +11565,7 @@ function openStockTakeResultSheet(take){
    open (owner or manager login), keeping the latest 7. They live in the
    browser's own database on this device only. Clearing the browser's data
    removes them, so download a copy now and then. */
-var APP_VERSION = '2026.10.02';
+var APP_VERSION = '2026.10.03';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -11134,7 +11574,7 @@ function backupPayload(){
     products: State.products, customers: State.customers, sales: State.sales, expenses: State.expenses,
     invoices: State.invoices, reports: State.reports, suppliers: State.suppliers, purchaseOrders: State.purchaseOrders,
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
-    posDevices: State.posDevices, posBatches: State.posBatches,
+    posDevices: State.posDevices, posBatches: State.posBatches, messages: State.messages, workReports: State.workReports,
     stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements
   };
 }
@@ -11164,7 +11604,7 @@ async function restoreBackupData(data){
   await put(refs.expenses, data.expenses); await put(refs.invoices, data.invoices); await put(refs.reports, data.reports);
   await put(refs.suppliers, data.suppliers); await put(refs.purchaseOrders, data.purchaseOrders);
   await put(refs.branches, data.branches); await put(refs.wastage, data.wastage); await put(refs.tills, data.tillSessions);
-  await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches);
+  await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches); await put(refs.messages, data.messages); await put(refs.workReports, data.workReports);
   await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
   await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
   if(data.ledgers){
@@ -11310,6 +11750,13 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.03', items:[
+    'Employee tracking for the owner and managers: every employee\'s sales, payment methods, till, cash expected in the drawer, cash ups, wastage and activity in one place, by day, week or month',
+    'Send a message or an instruction to one employee or to everyone at once. Employees get it on their phone and you can see who has read it',
+    'Employees see stock alerts on their dashboard and on their device, and cashiers get the point of sale automatically with their own private PIN',
+    'Employees can make and print daily or monthly work reports. My records keeps their reports, receipts, invoices and cash ups in one read only place that they cannot edit or delete',
+    'Faster syncing between devices, with a Sync now button and a live connection status on the employee dashboard'
+  ]},
   { v:'2026.10.02', items:[
     'Employees create their own accounts: the owner adds them and gets an invite code, and they sign up with it and choose their own PIN or password',
     'Jobs decide what an employee can open. New Stock clerk job, and cashiers only see what they need',
@@ -11690,6 +12137,8 @@ var ABOUT_PARAGRAPHS = [
 ];
 var ABOUT_FEATURES_TITLE = 'What Pesa can do';
 var ABOUT_FEATURES = [
+  'Employee tracking: the owner and managers see each employee\'s sales, tills, cash, cash ups, wastage and activity, and can send messages or instructions to one employee or all of them, with read receipts',
+  'Employee dashboards show stock alerts and messages, let employees print daily or monthly work reports, and keep their reports, receipts, invoices and cash ups in a read only records page that cannot be edited or deleted',
   'Employee accounts: the owner invites each employee with a code, the employee signs up and creates their own PIN or password, and each job only opens the parts of the app it needs. Only the owner has the whole app',
   'A point of sale terminal with its own staff login, card terminal linking, swipe limits and card batch settlement. Pesa records and controls card sales, but it does not process cards or connect to a bank card machine itself',
   'Sales and till management, including a fast checkout screen, a shopping cart, and printed or digital receipts',
