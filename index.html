@@ -759,6 +759,26 @@
   .tillrow.grand{ font-size:15.5px; padding-top:11px; }
   .tillrow.grand .v{ font-weight:800; }
   .variance-ok{ color:var(--success); }
+  .rc-tabs{ display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; padding-bottom:2px; }
+  .rc-tabs .segbtn{ flex:0 0 auto; padding:9px 14px; white-space:nowrap; }
+  .rc-period{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:12px; }
+  .rc-period label{ display:flex; flex-direction:column; font-size:11px; font-weight:600; color:var(--text-muted); gap:3px; }
+  .rc-period input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font:inherit; font-size:13.5px; }
+  .rc-period .btn{ padding:8px 12px; font-size:12.5px; }
+  .rc-tile{ cursor:pointer; }
+  .rc-tile:hover{ border-color:var(--primary, #1f6f4a); }
+  .rctbl-wrap{ overflow-x:auto; margin-bottom:10px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+  .rctbl{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .rctbl th{ text-align:left; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-muted); padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .rctbl td{ padding:8px 10px; border-bottom:1px dashed var(--border); vertical-align:top; }
+  .rctbl td:first-child{ min-width:120px; }
+  .rctbl th.r, .rctbl td.r{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .rctbl tr:last-child td{ border-bottom:0; }
+  .rctbl tr.clickable{ cursor:pointer; }
+  .rctbl tr.clickable:hover{ background:var(--surface-2); }
+  .rctbl tr.rc-total td{ font-weight:700; background:var(--surface-2); }
+  .rc-check{ display:flex; align-items:center; padding:0 10px 0 2px; }
+  .rc-check input{ width:20px; height:20px; }
   .variance-bad{ color:var(--danger); }
   .variance-over{ color:#3B82F6; }
   .app-emblem{ flex:none; display:flex; flex-direction:column; gap:2px; align-items:center; justify-content:center; padding:5px 0 calc(5px + env(safe-area-inset-bottom,0px)); background:var(--surface); border-top:1px solid var(--border); }
@@ -1277,7 +1297,7 @@ var WS = (function(){
     // every account in the OTHER businesses on this device (with password check data when this device holds it)
     accounts: function(){
       var all = {};
-      try{ all = JSON.parse(localStorage.getItem('otengu_shop_local_v1') || '{}'); }catch(e){}
+      try{ all = Persist.data() || {}; }catch(e){}
       var out = [];
       read().forEach(function(w){
         if(w.id === id || !w.name) return;
@@ -1299,6 +1319,121 @@ var WS = (function(){
   };
 })();
 
+/* ============================== persistence (IndexedDB, with localStorage fallback) ==============================
+   Browser localStorage holds only ~5 MB, which is full at roughly 10,000 products. All shop data therefore lives
+   in IndexedDB (hundreds of MB, one small record per document), with a full in-memory copy so the app stays
+   fast and synchronous. Only the records that changed are written back. Old localStorage data is migrated once. */
+var Persist = (function(){
+  var DB_NAME = 'pesa_store_v1', SEP = '\u0001', LKEY = 'otengu_shop_local_v1';
+  var db = null, MEM = {}, KVMEM = {}, mode = 'ls';          // 'idb' | 'ls'
+  var dirty = {}, kvDirty = {}, flushTimer = null, flushing = false, quotaWarned = false;
+  function open(){
+    return new Promise(function(res){
+      try{
+        if(!window.indexedDB){ res(null); return; }
+        var rq = indexedDB.open(DB_NAME, 1);
+        rq.onupgradeneeded = function(){ var d = rq.result; if(!d.objectStoreNames.contains('docs')) d.createObjectStore('docs'); if(!d.objectStoreNames.contains('kv')) d.createObjectStore('kv'); };
+        rq.onsuccess = function(){ res(rq.result); };
+        rq.onerror = rq.onblocked = function(){ res(null); };
+      }catch(e){ res(null); }
+    });
+  }
+  function req(r){ return new Promise(function(res, rej){ r.onsuccess = function(){ res(r.result); }; r.onerror = function(){ rej(r.error); }; }); }
+  function lsRead(k){ try{ return JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){ return null; } }
+  function warnQuota(){
+    if(quotaWarned) return; quotaWarned = true;
+    try{ if(typeof toast === 'function') toast('Storage is full on this device — export your data and free some space'); }catch(e){}
+  }
+  var ready = (async function(){
+    db = await open();
+    var legacy = lsRead(LKEY);
+    if(db){
+      try{
+        var tx = db.transaction(['docs','kv'], 'readonly');
+        var ds = tx.objectStore('docs'), ks = tx.objectStore('kv');
+        var out = await Promise.all([req(ds.getAllKeys()), req(ds.getAll()), req(ks.getAllKeys()), req(ks.getAll())]);
+        var keys = out[0], vals = out[1];
+        for(var i=0; i<keys.length; i++){
+          var k = String(keys[i]), p = k.indexOf(SEP), cp = k.slice(0, p), id = k.slice(p+1);
+          (MEM[cp] = MEM[cp] || {})[id] = vals[i];
+        }
+        for(var j=0; j<out[2].length; j++) KVMEM[String(out[2][j])] = out[3][j];
+        mode = 'idb';
+        if(keys.length === 0 && legacy && typeof legacy === 'object'){
+          // one-time move of everything from localStorage into IndexedDB
+          MEM = legacy;
+          Object.keys(MEM).forEach(function(cp){ Object.keys(MEM[cp] || {}).forEach(function(id){ mark(cp+SEP+id); }); });
+          await flushNow();
+          if(!Object.keys(dirty).length){ try{ localStorage.removeItem(LKEY); }catch(e){} }
+        }
+      }catch(e){ mode = 'ls'; MEM = legacy || {}; }
+    } else {
+      MEM = legacy || {};
+    }
+  })();
+  function schedule(){ if(!flushTimer) flushTimer = setTimeout(function(){ flushTimer = null; flushNow(); }, 350); }
+  function mark(k){ dirty[k] = (dirty[k]||0) + 1; }
+  // A record stays marked as unsaved until the database confirms it, so closing the page mid-save loses nothing:
+  // the next visit still has the unsaved ones in memory only if it is the same session, and the saved ones on disk.
+  async function flushNow(){
+    if(flushing){ schedule(); return; }
+    clearTimeout(flushTimer); flushTimer = null;
+    if(mode !== 'idb'){
+      if(Object.keys(dirty).length){ try{ localStorage.setItem(LKEY, JSON.stringify(MEM)); dirty = {}; }catch(e){ warnQuota(); } }
+      Object.keys(kvDirty).forEach(function(k){ try{ localStorage.setItem(k, JSON.stringify(KVMEM[k])); delete kvDirty[k]; }catch(e){ warnQuota(); } });
+      return;
+    }
+    var dk = Object.keys(dirty), kk = Object.keys(kvDirty);
+    if(!dk.length && !kk.length) return;
+    var dsnap = {}, ksnap = {}; dk.forEach(function(k){ dsnap[k] = dirty[k]; }); kk.forEach(function(k){ ksnap[k] = kvDirty[k]; });
+    flushing = true;
+    try{
+      for(var i=0; i<dk.length || (i===0 && kk.length); i+=8000){
+        var part = dk.slice(i, i+8000);
+        var tx = db.transaction(['docs','kv'], 'readwrite'), ds = tx.objectStore('docs'), ks = tx.objectStore('kv');
+        part.forEach(function(k){
+          var p = k.indexOf(SEP), cp = k.slice(0, p), id = k.slice(p+1);
+          var v = MEM[cp] ? MEM[cp][id] : undefined;
+          if(v === undefined) ds.delete(k); else ds.put(v, k);
+        });
+        if(i === 0) kk.forEach(function(k){ if(KVMEM[k] === undefined) ks.delete(k); else ks.put(KVMEM[k], k); });
+        await new Promise(function(res, rej){ tx.oncomplete = res; tx.onerror = tx.onabort = function(){ rej(tx.error); }; });
+        part.forEach(function(k){ if(dirty[k] === dsnap[k]) delete dirty[k]; });
+        if(i === 0) kk.forEach(function(k){ if(kvDirty[k] === ksnap[k]) delete kvDirty[k]; });
+        if(!dk.length) break;
+      }
+    }catch(e){
+      if(e && /quota/i.test(String(e.name||e.message||''))) warnQuota();
+    }
+    flushing = false;
+    if(Object.keys(dirty).length || Object.keys(kvDirty).length) schedule();
+  }
+  window.addEventListener('pagehide', function(){ flushNow(); });
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) flushNow(); });
+  return {
+    ready: ready,
+    mode: function(){ return mode; },
+    data: function(){ return MEM; },
+    replaceAll: function(all){ MEM = all || {}; Object.keys(MEM).forEach(function(cp){ Object.keys(MEM[cp] || {}).forEach(function(id){ mark(cp+SEP+id); }); }); schedule(); },
+    touch: function(cp, id){ mark(cp+SEP+id); schedule(); },
+    flush: flushNow,
+    // resolves once everything changed so far is safely written to the device database
+    saved: async function(){
+      var guard = 0;
+      while((Object.keys(dirty).length || Object.keys(kvDirty).length) && guard++ < 4000){
+        if(!flushing) await flushNow();
+        await new Promise(function(r){ setTimeout(r, 40); });
+      }
+    },
+    // small key/value area for bookkeeping (sync outbox, change times) that outgrows localStorage
+    kvGet: function(k){
+      if(KVMEM[k] === undefined){ var l = lsRead(k); if(l !== null){ KVMEM[k] = l; kvDirty[k] = (kvDirty[k]||0) + 1; schedule(); try{ if(mode === 'idb') localStorage.removeItem(k); }catch(e){} } }
+      return KVMEM[k];
+    },
+    kvSet: function(k, v){ KVMEM[k] = v; kvDirty[k] = (kvDirty[k]||0) + 1; schedule(); }
+  };
+})();
+
 /* ============================== store (db capability, with local fallback) ============================== */
 var Store = (function(){
   var mode = 'pending'; // 'db' | 'local'
@@ -1309,15 +1444,24 @@ var Store = (function(){
   var writeHook = null; // set by the Sync engine: called after every local write
   function fireWrite(collPath, id, data){ if(writeHook){ try{ writeHook(collPath, id, data); }catch(e){} } }
 
-  function localReadAll(){
-    try { return JSON.parse(localStorage.getItem(LKEY) || '{}'); } catch(e){ return {}; }
+  function localReadAll(){ return Persist.data(); }
+  // all = the whole data object; touched (optional) = [[collPath,id],...] when only some records changed
+  function localWriteAll(all, touched){
+    if(touched){ if(all !== Persist.data()) Persist.replaceAll(all); touched.forEach(function(t){ Persist.touch(t[0], t[1]); }); }
+    else if(all !== Persist.data()) Persist.replaceAll(all);
+    else Object.keys(all).forEach(function(cp){ Object.keys(all[cp] || {}).forEach(function(id){ Persist.touch(cp, id); }); });
   }
-  function localWriteAll(all){
-    try { localStorage.setItem(LKEY, JSON.stringify(all)); } catch(e){}
-  }
+  var bigTimers = {};
   function localNotify(collPath){
     var subList = subs[collPath];
     if(!subList) return;
+    // very large collections (tens of thousands of records) coalesce rapid-fire writes into one refresh
+    var coll0 = Persist.data()[collPath];
+    if(coll0 && Object.keys(coll0).length > 2000 && !localNotify._now){
+      if(bigTimers[collPath]) return;
+      bigTimers[collPath] = setTimeout(function(){ delete bigTimers[collPath]; localNotify._now = true; try{ localNotify(collPath); }finally{ localNotify._now = false; } }, 60);
+      return;
+    }
     var all = localReadAll();
     var coll = all[collPath] || {};
     var docs = Object.keys(coll).map(function(id){ return {id:id, data:coll[id]}; });
@@ -1350,6 +1494,28 @@ var Store = (function(){
         var id = uid();
         return this.doc(id).set(data).then(function(){ return {id:id}; });
       },
+      // write many records at once: [{id, data}, ...] — one save, one screen refresh (used by bulk stock upload)
+      setMany: function(list){
+        var all = localReadAll();
+        var coll = (all[collPath] = all[collPath] || {});
+        var touched = [];
+        list.forEach(function(e){ coll[e.id] = Object.assign({}, e.data); touched.push([collPath, e.id]); });
+        localWriteAll(all, touched);
+        localNotify(collPath);
+        list.forEach(function(e){ fireWrite(collPath, e.id, coll[e.id]); });
+        return Promise.resolve();
+      },
+      // delete many records at once: [id, ...]
+      deleteMany: function(ids){
+        var all = localReadAll();
+        var coll = all[collPath] || {};
+        var touched = [];
+        ids.forEach(function(id){ delete coll[id]; touched.push([collPath, id]); });
+        localWriteAll(all, touched);
+        localNotify(collPath);
+        ids.forEach(function(id){ fireWrite(collPath, id, null); });
+        return Promise.resolve();
+      },
       doc: function(id){
         id = id || uid();
         var path = collPath + '/' + id;
@@ -1359,7 +1525,7 @@ var Store = (function(){
             var all = localReadAll();
             all[collPath] = all[collPath] || {};
             all[collPath][id] = Object.assign({}, data);
-            localWriteAll(all);
+            localWriteAll(all, [[collPath, id]]);
             localNotify(collPath); localNotifyDoc(path);
             fireWrite(collPath, id, all[collPath][id]);
             return Promise.resolve();
@@ -1368,7 +1534,7 @@ var Store = (function(){
             var all = localReadAll();
             all[collPath] = all[collPath] || {};
             all[collPath][id] = Object.assign({}, all[collPath][id]||{}, patch);
-            localWriteAll(all);
+            localWriteAll(all, [[collPath, id]]);
             localNotify(collPath); localNotifyDoc(path);
             fireWrite(collPath, id, all[collPath][id]);
             return Promise.resolve();
@@ -1376,7 +1542,7 @@ var Store = (function(){
           delete: function(){
             var all = localReadAll();
             if(all[collPath]) delete all[collPath][id];
-            localWriteAll(all);
+            localWriteAll(all, [[collPath, id]]);
             localNotify(collPath); localNotifyDoc(path);
             fireWrite(collPath, id, null);
             return Promise.resolve();
@@ -1405,6 +1571,16 @@ var Store = (function(){
         }, function(err){ console.warn('db snapshot error', err); cb([]); });
       },
       add: function(data){ return collRef.add(data); },
+      setMany: async function(list){
+        for(var i=0; i<list.length; i+=40){
+          await Promise.all(list.slice(i, i+40).map(function(e){ return collRef.doc(e.id).set(e.data); }));
+        }
+      },
+      deleteMany: async function(ids){
+        for(var i=0; i<ids.length; i+=40){
+          await Promise.all(ids.slice(i, i+40).map(function(id){ return collRef.doc(id).delete(); }));
+        }
+      },
       doc: function(id){
         var ref = collRef.doc(id);
         return {
@@ -1429,6 +1605,7 @@ var Store = (function(){
 
   return {
     ready: (async function(){
+      try{ await Persist.ready; }catch(e){}
       // window.claude.use('db') can lose a race with the artifact host's own
       // startup handshake on a cold load, especially right after the page is
       // reopened — retry a few times before accepting that it's truly
@@ -1453,7 +1630,7 @@ var Store = (function(){
     // used by the Sync engine
     mode: function(){ return mode; },
     setWriteHook: function(fn){ writeHook = fn; },
-    raw: { read: localReadAll, write: localWriteAll, notify: localNotify, notifyDoc: localNotifyDoc }
+    raw: { read: localReadAll, write: localWriteAll, notify: localNotify, notifyDoc: localNotifyDoc, touch: Persist.touch }
   };
 })();
 
@@ -1475,8 +1652,8 @@ var Sync = (function(){
     return { url:String(c.url || SYNC_DEFAULTS.url || '').replace(/\/+$/, ''), key:c.key || SYNC_DEFAULTS.key || '', code:c.code || '', on:!!c.on, last:c.last || '' };
   }
   function saveCfg(patch){ var all = readJson(CFG_KEY); all[WS.id] = Object.assign({}, all[WS.id], patch); writeJson(CFG_KEY, all); }
-  function outbox(){ return readJson(OUT_KEY)[WS.id] || {}; }
-  function saveOutbox(o){ var all = readJson(OUT_KEY); all[WS.id] = o; writeJson(OUT_KEY, all); }
+  function outbox(){ var all = Persist.kvGet(OUT_KEY) || {}; return all[WS.id] || {}; }
+  function saveOutbox(o){ var all = Persist.kvGet(OUT_KEY) || {}; all[WS.id] = o; Persist.kvSet(OUT_KEY, all); }
   function pendingCount(){ return Object.keys(outbox()).length; }
   function usable(){ var c = cfg(); return !!(c.on && c.url && c.key && c.code) && Store.mode() === 'local'; }
   function toColl(collPath){ return collPath.indexOf(WS.prefix) === 0 ? collPath.slice(WS.prefix.length) : collPath; }
@@ -1500,7 +1677,7 @@ var Sync = (function(){
     saveOutbox(o);
     clearTimeout(st.debounce);
     st.debounce = setTimeout(syncNow, 1500);
-    refresh();
+    if(!st.refreshSoon){ st.refreshSoon = setTimeout(function(){ st.refreshSoon = null; refresh(); }, 400); }
   }
   function fetchJson(url, opts){
     var ctl = ('AbortController' in window) ? new AbortController() : null;
@@ -1512,7 +1689,7 @@ var Sync = (function(){
     }, function(e){ clearTimeout(to); throw e; });
   }
   async function push(){
-    var c = cfg(), o = outbox(), keys = Object.keys(o);
+    var c = cfg(), o = Object.assign({}, outbox()), keys = Object.keys(o);
     for(var i=0; i<keys.length; i+=PUSH_CHUNK){
       var chunk = keys.slice(i, i+PUSH_CHUNK);
       var rows = chunk.map(function(k){ var e = o[k]; return { ws:c.code, coll:e.c, id:e.i, data:e.d, deleted:e.d === null }; });
@@ -1525,7 +1702,7 @@ var Sync = (function(){
   }
   function applyRemote(rows){
     if(!rows.length) return 0;
-    var all = Store.raw.read(), pend = outbox(), touchedColl = {}, touchedDoc = [], n = 0;
+    var all = Store.raw.read(), pend = outbox(), touchedColl = {}, touchedDoc = [], touchedPairs = [], n = 0;
     rows.forEach(function(r){
       if(pend[r.coll+'|'+r.id]) return;                 // we have a newer unsent local change — ours wins and will be pushed
       var cp = WS.prefix + r.coll;
@@ -1538,10 +1715,10 @@ var Sync = (function(){
         if(cur && JSON.stringify(cur) === JSON.stringify(r.data)) return;   // already identical (e.g. our own push coming back)
         all[cp][r.id] = r.data;
       }
-      touchedColl[cp] = 1; touchedDoc.push(cp+'/'+r.id); n++;
+      touchedColl[cp] = 1; touchedDoc.push(cp+'/'+r.id); touchedPairs.push([cp, r.id]); n++;
     });
     if(!n) return 0;
-    Store.raw.write(all);
+    Store.raw.write(all, touchedPairs);
     Object.keys(touchedColl).forEach(function(cp){ Store.raw.notify(cp); });
     touchedDoc.forEach(function(p){ Store.raw.notifyDoc(p); });
     return n;
@@ -1654,6 +1831,12 @@ var State = {
   reports: [],         // immutable monthly report snapshots: {id, type:'monthly', interim, periodKey, branchId, generatedAt, figures, ...}
   repFilter: { year:'all', scope:'any' },
   wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
+  stockTakes: [],      // {id, name, status:'open'|'posted', counts:{productId:counted}, summary, lines, before, after, createdAt, postedAt}
+  stockMoves: [],      // {id, type:'upload'|'manual'|'count', qty, cost, retail, at} — stock changes that are not sales, receipts or wastage
+  supplierInvoices: [],   // {id, supplierId, number, date, amount, poId, note}
+  supplierPayments: [],   // {id, supplierId, date, amount, method, ref}
+  supplierStatements: [], // {id, supplierId, asAt, balance, ourBalance, difference}
+  rcTab: 'overview',
   auditLog: [],        // {id, action, entityType, entityId, summary, userName, userId, createdAt}
   currentBranchId: null, // owner-selected branch filter ('all' = combined view)
   online: (typeof navigator!=='undefined' ? navigator.onLine : true),
@@ -1699,7 +1882,7 @@ function deleteSelectedInTab(tab){
   var refCol = selRefFor(tab);
   var label = selLabelFor(tab, ids.length>1);
   confirmSheet('Delete '+ids.length+' '+label+'?', 'This cannot be undone. Past sales already recorded are not affected.', 'Delete '+ids.length, function(){
-    ids.forEach(function(id){ refCol.doc(id).delete(); });
+    if(refCol.deleteMany) refCol.deleteMany(ids); else ids.forEach(function(id){ refCol.doc(id).delete(); });
     toast(ids.length+' '+label+' deleted');
     s.active = false; s.ids = {};
     render();
@@ -1711,7 +1894,7 @@ function deleteAllInTab(tab){
   var refCol = selRefFor(tab);
   var label = selLabelFor(tab, true);
   confirmSheet('Delete all '+label+'?', 'This removes all '+list.length+' '+label+' and cannot be undone. Past sales already recorded are not affected.', 'Delete all', function(){
-    list.forEach(function(x){ refCol.doc(x.id).delete(); });
+    if(refCol.deleteMany) refCol.deleteMany(list.map(function(x){ return x.id; })); else list.forEach(function(x){ refCol.doc(x.id).delete(); });
     toast('All '+label+' deleted');
     var s = selState(tab); s.active = false; s.ids = {};
     render();
@@ -1764,13 +1947,20 @@ function initRefs(){
   refs.auditLog = Store.collection('auditLog');
   refs.invoices = Store.collection('invoices');
   refs.reports = Store.collection('reports');
+  refs.stockTakes = Store.collection('stockTakes');
+  refs.stockMoves = Store.collection('stockMoves');
+  refs.supplierInvoices = Store.collection('supplierInvoices');
+  refs.supplierPayments = Store.collection('supplierPayments');
+  refs.supplierStatements = Store.collection('supplierStatements');
 }
 
 function subscribeAll(){
   refs.products.onSnapshot(function(docs){
-    State.products = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+    var coll = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator() : null;
+    State.products = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return coll ? coll.compare(a.name||'', b.name||'') : (a.name||'').localeCompare(b.name||''); });
+    _stockTotalsCache = null;
     State.ready.products = true;
-    render();
+    if(!BULK_HOLD) render();
   });
   refs.customers.onSnapshot(function(docs){
     State.customers = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return (b.balance||0)-(a.balance||0); });
@@ -1854,6 +2044,12 @@ function subscribeAll(){
     State.reports = docs.map(function(d){ return Object.assign({id:d.id}, d.data); });
     State.ready.reports = true;
     if(document.getElementById('app').style.display !== 'none') render();
+  });
+  [['stockTakes','stockTakes','createdAt'],['stockMoves','stockMoves','at'],['supplierInvoices','supplierInvoices','createdAt'],['supplierPayments','supplierPayments','createdAt'],['supplierStatements','supplierStatements','createdAt']].forEach(function(c){
+    refs[c[0]].onSnapshot(function(docs){
+      State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b[c[2]]||'').localeCompare(String(a[c[2]]||'')); });
+      if(State.tab === 'reconcile' && document.getElementById('app').style.display !== 'none') render();
+    });
   });
   refs.auditLog.onSnapshot(function(docs){
     State.auditLog = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
@@ -2390,7 +2586,7 @@ function sha256Hex(str){
 }
 function roleTabs(role){
   if(role === 'cashier') return ['sell','till'];
-  return ['dashboard','sell','stock','credit','invoices','reports','expenses','till'];
+  return ['dashboard','sell','stock','credit','invoices','reports','expenses','till','reconcile'];
 }
 function isManagerOrOwner(){ return !!(State.session && (State.session.role==='owner' || State.session.role==='manager')); }
 function isOwner(){ return !!(State.session && State.session.role==='owner'); }
@@ -3250,7 +3446,8 @@ function renderSell(){
   if(list.length === 0){
     html += '<div class="empty"><div class="t">'+tr('No matches')+'</div><div class="s">'+tr('Try a different search.')+'</div></div>';
   } else {
-    html += '<div class="grid">' + list.map(function(p){
+    var sellLimit = State.sellLimit || LIST_PAGE;
+    html += '<div class="grid">' + list.slice(0, sellLimit).map(function(p){
       var low = (p.stockQty!=null) && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault);
       var out = (p.stockQty!=null) && p.stockQty <= 0;
       var badge = p.stockQty==null ? '' : '<div class="stockbadge '+(out?'out':(low?'low':''))+'">'+ (out?'Out':(p.stockQty+' '+(p.unit||'left'))) +'</div>';
@@ -3261,9 +3458,11 @@ function renderSell(){
         '<div class="pprice num">'+fmtMoney(p.sellPrice)+'</div>' +
       '</button>';
     }).join('') + '</div>';
+    if(list.length > sellLimit) html += '<div style="text-align:center;margin:14px 0 4px;"><button class="btn btn-ghost" id="sellMoreBtn" type="button">Show more ('+(list.length - sellLimit).toLocaleString()+' more — or search)</button></div>';
   }
   return html;
 }
+var LIST_PAGE = 120;
 
 function cartTotal(){ return State.cart.reduce(function(s,i){ return s + i.unitPrice*i.qty; }, 0); }
 function cartCost(){ return State.cart.reduce(function(s,i){ return s + (i.cost||0)*i.qty; }, 0); }
@@ -3469,6 +3668,7 @@ function finalizeSale(method, customer, extra){
     tillId: State.till.current ? State.till.current.id : null,
     cashierName: State.session ? State.session.name : null,
     branchId: (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null,
+    stock: stockSnapshot(),   // whole-shop stock position when this sale was made (before it is taken off the shelf)
     createdAt: new Date().toISOString()
   };
   if(extra) Object.assign(sale, extra);
@@ -4165,6 +4365,22 @@ function openPosLinkSheet(){
   });
 }
 
+/* Whole-shop stock position: items, units, value at cost and at selling price. Cached until the product list changes. */
+var _stockTotalsCache = null;
+function stockTotals(){
+  if(_stockTotalsCache && _stockTotalsCache.src === State.products) return _stockTotalsCache;
+  var t = { src:State.products, items:State.products.length, qty:0, cost:0, retail:0, out:0 };
+  State.products.forEach(function(p){
+    var q = Number(p.stockQty)||0;
+    t.qty += q; t.cost += (Number(p.costPrice)||0)*q; t.retail += (Number(p.sellPrice)||0)*q;
+    if(p.stockQty != null && q <= 0) t.out++;
+  });
+  t.cost = Math.round(t.cost*100)/100; t.retail = Math.round(t.retail*100)/100;
+  _stockTotalsCache = t; return t;
+}
+/** Small snapshot saved onto invoices, receipts, sales and reports so the stock value at that moment is on record. */
+function stockSnapshot(){ var t = stockTotals(); return { at:new Date().toISOString(), items:t.items, qty:t.qty, cost:t.cost, retail:t.retail }; }
+
 /* ============================== TAB: STOCK ============================== */
 function renderStock(){
   if(!State.ready.products) return '<div class="empty">Loading…</div>';
@@ -4182,9 +4398,17 @@ function renderStock(){
   html += '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
     '<button class="btn btn-ghost" id="bulkAddBtn" style="flex:1;">'+ICONS.stack+' '+tr('Add stock in bulk')+'</button>' +
     '<button class="btn btn-ghost" id="stockScanBtn" style="flex:1;">'+ICONS.search+' Scan barcode</button>' +
-  '</div>';
+  '</div>' +
+  (isManagerOrOwner() ? '<div style="margin-bottom:12px;"><button class="btn btn-ghost btn-block" id="stockVarBtn" type="button">Stock take &amp; variances</button></div>' : '');
   var selS = selState('stock');
-  html += '<div class="rowlist">' + State.products.map(function(p){
+  var sq = (State.stockSearch||'').trim().toLowerCase();
+  var stockList = !sq ? State.products : State.products.filter(function(p){ return (p.name||'').toLowerCase().indexOf(sq) > -1 || (p.category||'').toLowerCase().indexOf(sq) > -1 || String(p.barcode||'').indexOf(sq) > -1; });
+  var stockLimit = State.stockLimit || LIST_PAGE;
+  var stTot = stockTotals();
+  html += '<div class="searchbar" style="margin-bottom:10px;">'+ICONS.search+'<input id="stockSearchInput" placeholder="'+esc(tr('Search products…'))+'" value="'+esc(State.stockSearch||'')+'"></div>';
+  html += '<div class="banner" style="display:block;"><strong>'+stTot.items.toLocaleString()+'</strong> products · <strong>'+stTot.qty.toLocaleString()+'</strong> units · stock at cost <strong>'+fmtMoney(stTot.cost)+'</strong> · at selling price <strong>'+fmtMoney(stTot.retail)+'</strong></div>';
+  if(sq && stockList.length === 0) html += '<div class="empty"><div class="t">'+tr('No matches')+'</div></div>';
+  html += '<div class="rowlist">' + stockList.slice(0, stockLimit).map(function(p){
     var low = p.stockQty!=null && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault);
     var out = p.stockQty!=null && p.stockQty <= 0;
     var checked = !!selS.ids[p.id];
@@ -4201,6 +4425,7 @@ function renderStock(){
       '</div>' +
     '</div>';
   }).join('') + '</div>';
+  if(stockList.length > stockLimit) html += '<div style="text-align:center;margin:14px 0 4px;"><button class="btn btn-ghost" id="stockMoreBtn" type="button">Show more ('+(stockList.length - stockLimit).toLocaleString()+' more — or search)</button></div>';
   html += renderSelectBar('stock');
   return html;
 }
@@ -4249,11 +4474,18 @@ function openProductSheet(product, prefillBarcode){
     data.barcode = (ov.querySelector('#pfBarcode') ? ov.querySelector('#pfBarcode').value.trim() : (product?product.barcode:'')) || '';
     if(State.settings.currentBranchId && State.settings.currentBranchId!=='all' && !isEdit) data.branchId = State.settings.currentBranchId;
     if(isEdit){
+      // keep the stock movement record honest: a quantity or price edit is a manual adjustment
+      var oldQ = Number(product.stockQty)||0, newQ = Number(data.stockQty)||0;
+      var oldC = (Number(product.costPrice)||0)*oldQ, newC = (Number(data.costPrice)||0)*newQ;
+      var oldR = (Number(product.sellPrice)||0)*oldQ, newR = (Number(data.sellPrice)||0)*newQ;
+      if(Math.abs(newQ-oldQ) > 0 || Math.abs(newC-oldC) > 0.004 || Math.abs(newR-oldR) > 0.004) recordStockMove('manual', newQ-oldQ, newC-oldC, newR-oldR, 'Edited '+name);
       refs.products.doc(product.id).update(data);
       logAudit('update','product',product.id,'Edited '+name);
       toast('Product updated');
     } else {
       data.createdAt = new Date().toISOString();
+      var nq = Number(data.stockQty)||0;
+      if(nq) recordStockMove('manual', nq, nq*(Number(data.costPrice)||0), nq*(Number(data.sellPrice)||0), 'Added '+name);
       refs.products.doc().set(data);
       logAudit('create','product',null,'Added '+name);
       toast('Product added');
@@ -4272,7 +4504,8 @@ function openProductSheet(product, prefillBarcode){
 }
 
 /* ============================== BULK STOCK IMPORT ============================== */
-var Bulk = { rows: [] };
+var Bulk = { rows: [], dup: 'skip' };
+var BULK_PREVIEW = 50;
 
 function parseNum(s){
   if(s==null || s==='') return 0;
@@ -4318,11 +4551,12 @@ function parseCsvText(text){
   if(lines.length===0) return { rows:[], skipped:0 };
   var header = parseCsvLine(lines[0]).map(function(h){ return h.toLowerCase(); });
   var hasHeader = header.some(function(h){ return /name|product|item/.test(h); });
-  var idx = { name:0, cost:1, sell:2, qty:3, category:4, unit:5, low:-1 };
+  var idx = { name:0, cost:1, sell:2, qty:3, category:4, unit:5, low:-1, barcode:-1 };
   if(hasHeader){
-    idx = { name:-1, cost:-1, sell:-1, qty:-1, category:-1, unit:-1, low:-1 };
+    idx = { name:-1, cost:-1, sell:-1, qty:-1, category:-1, unit:-1, low:-1, barcode:-1 };
     header.forEach(function(h,i){
-      if(/name|product|item/.test(h)) idx.name=i;
+      if(/barcode|ean|sku|code/.test(h)) idx.barcode=i;
+      else if(/name|product|item|desc/.test(h)) idx.name=i;
       else if(/categ/.test(h)) idx.category=i;
       else if(/unit/.test(h)) idx.unit=i;
       else if(/cost/.test(h)) idx.cost=i;
@@ -4343,7 +4577,8 @@ function parseCsvText(text){
       unit: idx.unit>-1 ? (parts[idx.unit]||'') : '',
       costPrice: idx.cost>-1 ? parseNum(parts[idx.cost]) : 0,
       sellPrice: idx.sell>-1 ? parseNum(parts[idx.sell]) : 0,
-      stockQty: idx.qty>-1 ? (parseInt(parts[idx.qty],10)||0) : 0,
+      stockQty: idx.qty>-1 ? (Math.round(parseNum(parts[idx.qty])*1000)/1000) : 0,
+      barcode: idx.barcode>-1 ? (parts[idx.barcode]||'') : '',
       lowStock: idx.low>-1 && parts[idx.low] ? (parseInt(parts[idx.low],10)||null) : null
     });
   });
@@ -4376,8 +4611,18 @@ function renderBulkPreview(){
   var actions = document.getElementById('bulkActions');
   if(!wrap) return;
   if(Bulk.rows.length === 0){ wrap.innerHTML=''; if(actions) actions.style.display='none'; return; }
-  wrap.innerHTML = '<div class="section-title">Review ('+Bulk.rows.length+')</div>' +
-    '<div class="rowlist" id="bulkRowList">' + Bulk.rows.map(function(r){
+  var shown = Bulk.rows.slice(0, BULK_PREVIEW);
+  var bt = Bulk.rows.reduce(function(a,r){ a.qty += Number(r.stockQty)||0; a.cost += (Number(r.costPrice)||0)*(Number(r.stockQty)||0); a.retail += (Number(r.sellPrice)||0)*(Number(r.stockQty)||0); return a; }, {qty:0,cost:0,retail:0});
+  wrap.innerHTML = '<div class="section-title">Review ('+Bulk.rows.length.toLocaleString()+')</div>' +
+    '<div class="banner" style="display:block;"><strong>'+Bulk.rows.length.toLocaleString()+'</strong> products · <strong>'+bt.qty.toLocaleString()+'</strong> units · value at cost <strong>'+fmtMoney(bt.cost)+'</strong> · at selling price <strong>'+fmtMoney(bt.retail)+'</strong>' +
+      (Bulk.rows.length > BULK_PREVIEW ? '<br>Showing the first '+BULK_PREVIEW+' to check. All '+Bulk.rows.length.toLocaleString()+' will be added.' : '') + '</div>' +
+    '<div class="field"><label>If a product with the same name (or barcode) already exists</label><select id="bulkDupMode">' +
+      '<option value="skip"'+(Bulk.dup==='skip'?' selected':'')+'>Skip it (keep what I have) — recommended</option>' +
+      '<option value="replace"'+(Bulk.dup==='replace'?' selected':'')+'>Update its prices and set stock to this number</option>' +
+      '<option value="add"'+(Bulk.dup==='add'?' selected':'')+'>Update its prices and add this number to stock</option>' +
+      '<option value="new"'+(Bulk.dup==='new'?' selected':'')+'>Add it again as a new product</option>' +
+    '</select></div>' +
+    '<div class="rowlist" id="bulkRowList">' + shown.map(function(r){
       return '<div class="card pad bulk-row-card" data-brow="'+r.id+'">' +
         '<div class="bulk-row-top">' +
           '<input data-bf="name" value="'+esc(r.name)+'" placeholder="Product name">' +
@@ -4393,7 +4638,8 @@ function renderBulkPreview(){
     }).join('') + '</div>';
   if(actions) actions.style.display='flex';
   var commitBtn = document.getElementById('bulkCommitBtn');
-  if(commitBtn) commitBtn.textContent = 'Add ' + Bulk.rows.length + ' product' + (Bulk.rows.length===1?'':'s');
+  if(commitBtn) commitBtn.textContent = 'Add ' + Bulk.rows.length.toLocaleString() + ' product' + (Bulk.rows.length===1?'':'s');
+  var dm = document.getElementById('bulkDupMode'); if(dm) dm.addEventListener('change', function(){ Bulk.dup = dm.value; });
   wireBulkPreview();
 }
 
@@ -4426,21 +4672,67 @@ function commitBulkRows(){
   var now = new Date().toISOString();
   var commitBtn = document.getElementById('bulkCommitBtn');
   if(commitBtn){ commitBtn.disabled = true; commitBtn.textContent = 'Adding…'; }
-  Promise.all(rows.map(function(r){
-    return refs.products.doc().set({
-      name: r.name.trim(), category:(r.category||'').trim(), unit:(r.unit||'').trim(),
-      costPrice: r.costPrice||0, sellPrice: r.sellPrice||0, stockQty: r.stockQty||0,
-      lowStock: r.lowStock!=null ? r.lowStock : null, createdAt: now, updatedAt: now
-    });
-  })).then(function(){
-    closeModal();
-    toast(rows.length + ' product' + (rows.length===1?'':'s') + ' added');
-  }).catch(function(err){
-    console.warn(err);
-    toast('Some products could not be saved — try again');
-    if(commitBtn){ commitBtn.disabled = false; commitBtn.textContent = 'Add ' + rows.length + ' product' + (rows.length===1?'':'s'); }
+  var mode = Bulk.dup || 'skip';
+  // look up existing products by barcode and by name so nothing is added twice by accident
+  var byName = {}, byCode = {}, byId = {};
+  State.products.forEach(function(p){ byId[p.id] = p; byName[String(p.name||'').trim().toLowerCase()] = p; if(p.barcode) byCode[String(p.barcode).trim()] = p; });
+  var addList = [], updList = [], skipped = 0, seenInFile = {};
+  rows.forEach(function(r){
+    var nm = r.name.trim(), key = nm.toLowerCase(), code = String(r.barcode||'').trim();
+    var ex = (code && byCode[code]) || byName[key];
+    if(!ex && mode !== 'new'){
+      if(seenInFile[key] || (code && seenInFile['#'+code])){ skipped++; return; }   // the same product twice inside the file
+      seenInFile[key] = 1; if(code) seenInFile['#'+code] = 1;
+    }
+    if(ex && mode !== 'new'){
+      if(mode === 'skip'){ skipped++; return; }
+      var q = Number(r.stockQty)||0;
+      updList.push({ id:ex.id, data:Object.assign({}, ex, { name:nm, category:(r.category||ex.category||'').trim(), unit:(r.unit||ex.unit||'').trim(),
+        costPrice:r.costPrice||0, sellPrice:r.sellPrice||0, stockQty: mode==='add' ? (Number(ex.stockQty)||0)+q : q, updatedAt:now }) });
+      return;
+    }
+    var data = { name:nm, category:(r.category||'').trim(), unit:(r.unit||'').trim(),
+      costPrice:r.costPrice||0, sellPrice:r.sellPrice||0, stockQty:Number(r.stockQty)||0,
+      lowStock:r.lowStock!=null ? r.lowStock : null, createdAt:now, updatedAt:now };
+    if(r.barcode) data.barcode = String(r.barcode).trim();
+    addList.push({ id:uid(), data:data });
   });
+  var total = addList.length + updList.length;
+  var all = addList.concat(updList);
+  var CH = 1500, done = 0;
+  function status(){ if(commitBtn) commitBtn.textContent = 'Saving '+done.toLocaleString()+' of '+total.toLocaleString()+'…'; }
+  // the screen would otherwise redraw after every batch; hold it until the end
+  var wasBulk = BULK_HOLD; BULK_HOLD = true;
+  (async function(){
+    try{
+      for(var i=0; i<all.length; i+=CH){
+        await refs.products.setMany(all.slice(i, i+CH));
+        done = Math.min(all.length, i+CH); status();
+        await new Promise(function(r){ setTimeout(r, 0); });
+      }
+      BULK_HOLD = wasBulk;
+      if(commitBtn) commitBtn.textContent = 'Saving to this device…';
+      try{
+        var mvQ = 0, mvC = 0, mvR = 0;
+        addList.forEach(function(e){ var q=Number(e.data.stockQty)||0; mvQ+=q; mvC+=q*(e.data.costPrice||0); mvR+=q*(e.data.sellPrice||0); });
+        updList.forEach(function(e){ var ex = byId[e.id], q=Number(e.data.stockQty)||0, oq=Number(ex&&ex.stockQty)||0;
+          mvQ += q-oq; mvC += q*(e.data.costPrice||0) - oq*(Number(ex&&ex.costPrice)||0); mvR += q*(e.data.sellPrice||0) - oq*(Number(ex&&ex.sellPrice)||0); });
+        if(mvQ || mvC || mvR) recordStockMove('upload', mvQ, mvC, mvR, 'Bulk stock upload ('+total.toLocaleString()+' products)');
+      }catch(e){}
+      try{ logAudit('create','product','bulk','Bulk stock upload: '+addList.length+' added, '+updList.length+' updated, '+skipped+' skipped'); }catch(e){}
+      await Persist.saved();
+      closeModal();
+      toast(addList.length.toLocaleString()+' added'+(updList.length?', '+updList.length.toLocaleString()+' updated':'')+(skipped?', '+skipped.toLocaleString()+' skipped (already in your stock)':''));
+      render();
+    }catch(err){
+      BULK_HOLD = wasBulk;
+      console.warn(err);
+      toast('Stopped after '+done.toLocaleString()+' products — try again to finish');
+      if(commitBtn){ commitBtn.disabled = false; commitBtn.textContent = 'Add ' + rows.length.toLocaleString() + ' products'; }
+    }
+  })();
 }
+var BULK_HOLD = false;
 
 var SAMPLE_STOCK_TEXT = 'Maize Meal 10kg,68,89.99,40,Groceries,bag\nMaize Meal 2.5kg,22,29.99,60,Groceries,bag\nWhite Sugar 2kg,34,42.99,35,Groceries,bag\nCooking Oil 750ml,29,37.99,30,Groceries,bottle\nRice 2kg,38,49.99,25,Groceries,bag\nSpaghetti 500g,10,14.99,48,Groceries,pack\nSalt 1kg,7,10.99,40,Groceries,pack\nTinned Pilchards 400g,14,19.99,3,Groceries,tin\nBaked Beans 410g,9,13.99,60,Groceries,tin\nEggs Tray of 30,58,74.99,12,Groceries,tray\nWhite Bread,13,17.99,20,Groceries,loaf\nBrown Bread,14,18.99,2,Groceries,loaf\nFull Cream Milk 1L,16,21.99,24,Dairy,carton\nLong Life Milk 500ml,9,12.99,36,Dairy,carton\nMargarine 500g,22,28.99,15,Dairy,tub\nCoca-Cola 500ml,8,12,96,Drinks,bottle\nCoca-Cola 2L,19,27.99,30,Drinks,bottle\nFanta Orange 500ml,8,12,72,Drinks,bottle\nSparletta Cream Soda 2L,18,26.99,4,Drinks,bottle\nStill Water 500ml,4,7,120,Drinks,bottle\nRooibos Tea 40 bags,17,24.99,18,Drinks,box\nWindhoek Lager 340ml,13,19.99,72,Drinks,bottle\nTafel Lager 340ml,12,18.99,48,Drinks,bottle\nOmajowa Juice 1L,15,21.99,0,Drinks,carton\nSunlight Soap Bar,6,9.99,50,Household,bar\nOmo Washing Powder 1kg,32,42.99,14,Household,pack\nToilet Paper 9 pack,36,47.99,20,Household,pack\nCandles Pack of 6,12,18.99,25,Household,pack\nMatches Box,2,3.99,100,Household,box\nBlue Band Petroleum Jelly 250ml,15,22.99,10,Personal Care,jar\nColgate Toothpaste 100ml,15,21.99,22,Personal Care,tube\nRoll On Deodorant,18,26.99,16,Personal Care,bottle\nLucky Star Airtime Voucher N$10,9.4,10,100,Airtime,voucher\nMTC Airtime N$20,18.8,20,80,Airtime,voucher\nLoose Cigarettes,0.8,1.5,200,Other,each\nIce Block,1.5,3,40,Other,each\nCake Flour 2.5kg,25,19.99,15,Groceries,bag';
 
@@ -4467,7 +4759,7 @@ function openBulkAddSheet(){
   var csvHtml =
     '<label class="btn btn-ghost btn-block" for="bulkCsvInput" style="cursor:pointer;">'+ICONS.fileup+' Choose a .csv file</label>' +
     '<input type="file" id="bulkCsvInput" accept=".csv,text/csv" style="display:none;">' +
-    '<div class="banner">Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock. A header row is optional.</div>' +
+    '<div class="banner">Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock, barcode. A header row is optional. There is no limit on rows: 30,000+ products upload in one go.</div>' +
     '<button class="btn btn-ghost btn-block" id="bulkCsvTemplateBtn" type="button" style="margin-bottom:10px;">'+INV_ICO.download+' Download CSV template</button>' +
     '<div id="bulkCsvStatus"></div>';
 
@@ -4495,9 +4787,9 @@ function openBulkAddSheet(){
     } else {
       body.innerHTML = csvHtml;
       body.querySelector('#bulkCsvTemplateBtn').addEventListener('click', function(){
-        var csv = 'Name,Cost price,Selling price,Stock,Category,Unit\r\n' +
-          'Bread loaf,9,13,20,Bakery,loaf\r\n' +
-          'Cooking oil 750ml,22,29,10,Groceries,bottle\r\n';
+        var csv = 'Name,Cost price,Selling price,Stock,Category,Unit,Barcode\r\n' +
+          'Bread loaf,9,13,20,Bakery,loaf,6001234567890\r\n' +
+          'Cooking oil 750ml,22,29,10,Groceries,bottle,6009876543210\r\n';
         if(browserDownload('pesa-stock-template.csv', new Blob([csv], {type:'text/csv'}))) toast('Template downloaded');
         else toast('Couldn’t save the file — try again');
       });
@@ -5283,6 +5575,7 @@ function saveInvoiceRecord(draft, kind, customerId){
       customerId: customerId || null
     };
     if(_invRecIds[key]){ refs.invoices.doc(_invRecIds[key]).update(data); return; }
+    data.stock = stockSnapshot();   // whole-shop stock value on record when this document was issued
     data.branchId = (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null;
     data.createdById = State.session ? State.session.userId : null;
     data.createdBy = State.session ? State.session.name : null;
@@ -5502,6 +5795,9 @@ function openInvoiceDetailSheet(rec){
       }).join('') + '</tbody></table>' +
     '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num">'+esc(fmtMoney(rec.total||0))+'</span></div>' +
     (rec.notes ? '<div style="font-size:12.5px;color:var(--text-muted);margin-top:10px;white-space:pre-wrap;">'+esc(rec.notes)+'</div>' : '') +
+    (rec.stock && isManagerOrOwner() ? '<div class="section-title" style="margin-top:14px;">Stock value on record</div><div class="tillcard">' +
+      rcRow('Stock at cost when issued', fmtMoney(rec.stock.cost)) + rcRow('Stock at selling price', fmtMoney(rec.stock.retail)) +
+      rcRow('Products / units on hand', (rec.stock.items||0).toLocaleString()+' / '+(rec.stock.qty||0).toLocaleString()) + '</div>' : '') +
     '<div style="font-size:11.5px;color:var(--text-muted);margin-top:10px;">'+esc(tr('Saved'))+' '+esc(fmtDateTime(rec.createdAt))+(rec.createdBy ? ' · '+esc(rec.createdBy) : '')+'</div>' +
     '<div class="inv-card" style="margin-top:14px;"><div class="inv-actions">' +
       '<button type="button" data-d="share">'+INV_ICO.share+'<span>'+tr('Share')+'</span></button>' +
@@ -6161,15 +6457,24 @@ function computeReportFigures(start, end, opts){
 
   var totalStockValue = State.products.reduce(function(s,p){ return s+(p.costPrice||0)*(p.stockQty||0); }, 0);
   var expenseRows = Object.keys(expByCat).sort(function(a,b){return expByCat[b]-expByCat[a];}).map(function(k){ return { category:String(k), amount:expByCat[k] }; });
-  var stockRows = State.products.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'');}).map(function(p){
+  var stockRows = State.products.map(function(p){
     return { name:p.name, cost:p.costPrice, sell:p.sellPrice, qty:p.stockQty };
   });
 
+  var stT = stockTotals();
   var fig = {
     revenue:revenue, cogs:cogs, grossProfit:grossProfit, expensesTotal:expensesTotal, netProfit:netProfit,
-    expenseRows:expenseRows, productRows:productRows, totalOwed:totalOwed, totalStockValue:totalStockValue, stockRows:stockRows
+    expenseRows:expenseRows, productRows:productRows, totalOwed:totalOwed, totalStockValue:totalStockValue, stockRows:stockRows,
+    totalStockRetail:stT.retail, totalStockQty:stT.qty, stockCount:stT.items, stockOutCount:stT.out
   };
-  if(!snap) return fig;
+  if(!snap){
+    // the live PDF lists the highest-value lines; the totals above always cover every product
+    if(fig.stockRows.length > 500){
+      fig.stockTruncated = true;
+      fig.stockRows = fig.stockRows.slice().sort(function(a,b){ return (Number(b.cost)||0)*(Number(b.qty)||0) - (Number(a.cost)||0)*(Number(a.qty)||0); }).slice(0, 500);
+    }
+    return fig;
+  }
 
   var PRODUCT_CAP = 300, STOCK_CAP = 200;
   fig.salesCount = salesIn.length;
@@ -6192,13 +6497,13 @@ function computeReportFigures(start, end, opts){
     fig.tills = { closedCount:tIn.length,
       cashCounted: tIn.reduce(function(s,t){ return s + (Number(t.closingCash)||0); }, 0),
       variance: tIn.reduce(function(s,t){ return s + (Number(t.variance)||0); }, 0) };
-    fig.stockCount = stockRows.length;
+    fig.stockCount = stockRows.length;   // every product, not just the ones listed
     var byValue = stockRows.slice().sort(function(a,b){ return (Number(b.cost)||0)*(Number(b.qty)||0) - (Number(a.cost)||0)*(Number(a.qty)||0); }).slice(0, STOCK_CAP);
     fig.stockRows = byValue.map(function(p){ return { name:p.name||'', cost:Number(p.cost)||0, sell:Number(p.sell)||0, qty:Number(p.qty)||0 }; });
     fig.stockTruncated = stockRows.length > STOCK_CAP;
   } else {
     // credit, stock, wastage and tills are shop wide, not tracked per branch
-    fig.totalOwed = null; fig.totalStockValue = null; fig.stockRows = null;
+    fig.totalOwed = null; fig.totalStockValue = null; fig.totalStockRetail = null; fig.stockRows = null;
   }
   return JSON.parse(JSON.stringify(fig));
 }
@@ -6258,7 +6563,11 @@ function drawReportPdf(fig, monthLabel, meta){
   if(fig.totalOwed != null){
     var asAt = arch ? tr('as at')+' '+fmtDateNice(gen) : tr('as of today');
     pdfSummaryLine(doc,margin,y,contentW,tr('Outstanding customer credit')+' ('+asAt+')', fmtMoney(fig.totalOwed)); y+=6.5;
-    pdfSummaryLine(doc,margin,y,contentW,tr('Stock on hand, valued at cost')+' ('+asAt+')', fmtMoney(fig.totalStockValue)); y+=10;
+    pdfSummaryLine(doc,margin,y,contentW,tr('Stock on hand, valued at cost')+' ('+asAt+')', fmtMoney(fig.totalStockValue)); y+=6.5;
+    if(fig.totalStockRetail != null){
+      pdfSummaryLine(doc,margin,y,contentW,tr('Stock on hand, at selling price')+' ('+asAt+')', fmtMoney(fig.totalStockRetail)); y+=6.5;
+      pdfSummaryLine(doc,margin,y,contentW,tr('Products in stock list')+' / '+tr('units on hand'), (fig.stockCount||0).toLocaleString()+' / '+(fig.totalStockQty||0).toLocaleString()); y+=10;
+    } else { y+=3.5; }
   } else if(arch){
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
     doc.text('Customer credit and stock are shop wide, so they appear only on the whole shop report.', margin, y); y+=9;
@@ -6338,12 +6647,13 @@ function drawReportPdf(fig, monthLabel, meta){
       rows: fig.stockRows.map(function(p){ return [p.name, fmtMoney(p.cost), fmtMoney(p.sell), String(p.qty), fmtMoney((p.cost||0)*(p.qty||0))]; })
     });
     y += 6;
-    if(arch && fig.stockTruncated){
+    if(fig.stockTruncated){
       doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text('The '+fig.stockRows.length+' products with the highest stock value are listed, out of '+fig.stockCount+'.', margin, y); y+=6;
+      doc.text('The '+fig.stockRows.length+' products with the highest stock value are listed, out of '+(fig.stockCount||'all')+'. The totals below cover every product.', margin, y); y+=6;
     }
     doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y+=6;
     pdfSummaryLine(doc, margin, y, contentW, 'Total stock value (at cost)', fmtMoney(fig.totalStockValue), {bold:true});
+    if(fig.totalStockRetail != null){ y+=7; pdfSummaryLine(doc, margin, y, contentW, 'Total stock value (at selling price)', fmtMoney(fig.totalStockRetail), {bold:true}); }
   }
 
   if(arch){
@@ -6665,7 +6975,7 @@ function reportCsv(rec){
   add('Sales revenue', m(f.revenue)); add('Number of sales', f.salesCount||0);
   add('Cost of goods sold', m(f.cogs)); add('Gross profit', m(f.grossProfit));
   add('Operating expenses', m(f.expensesTotal)); add('Net profit (loss)', m(f.netProfit));
-  if(f.totalOwed != null){ add('Outstanding customer credit when filed', m(f.totalOwed)); add('Stock on hand at cost when filed', m(f.totalStockValue)); }
+  if(f.totalOwed != null){ add('Outstanding customer credit when filed', m(f.totalOwed)); add('Stock on hand at cost when filed', m(f.totalStockValue)); if(f.totalStockRetail != null){ add('Stock on hand at selling price when filed', m(f.totalStockRetail)); add('Units on hand when filed', String(f.totalStockQty||0)); } }
   add();
   add('Payment method', 'Amount');
   Object.keys(f.payments||{}).forEach(function(k){ add(k, m(f.payments[k])); });
@@ -6875,7 +7185,8 @@ function openReportDetailSheet(rec){
     ((f.wastageValue != null || f.tills || f.totalOwed != null) ? '<div class="section-title" style="margin-top:0;">'+tr('Other records')+'</div><div class="tillcard">' +
       (f.wastageValue != null ? row(tr('Wastage at cost'), fmtMoney(f.wastageValue)) : '') +
       (f.tills ? row(tr('Tills closed'), String(f.tills.closedCount)) + row(tr('Total till variance'), (f.tills.variance<0?'-':'')+fmtMoney(Math.abs(f.tills.variance))) : '') +
-      (f.totalOwed != null ? row(tr('Customer credit when filed'), fmtMoney(f.totalOwed)) + row(tr('Stock at cost when filed'), fmtMoney(f.totalStockValue)) : '') + '</div>' : '') +
+      (f.totalOwed != null ? row(tr('Customer credit when filed'), fmtMoney(f.totalOwed)) + row(tr('Stock at cost when filed'), fmtMoney(f.totalStockValue)) +
+        (f.totalStockRetail != null ? row(tr('Stock at selling price when filed'), fmtMoney(f.totalStockRetail)) + row(tr('Products / units on hand'), (f.stockCount||0).toLocaleString()+' / '+(f.totalStockQty||0).toLocaleString()) : '') : '') + '</div>' : '') +
     '<div class="inv-card" style="margin-top:14px;"><div class="inv-actions">' +
       '<button type="button" data-d="share">'+INV_ICO.share+'<span>'+tr('Share')+'</span></button>' +
       '<button type="button" data-d="download">'+INV_ICO.download+'<span>PDF</span></button>' +
@@ -7078,7 +7389,7 @@ function openCreditSaleSheet(preCustomer){
       var cost = items.reduce(function(s,it){ return s + (it.cost||0)*it.qty; }, 0);
       sale = { items:items, total:total, cost:cost, profit:total-cost, paymentMethod:'credit', customerId:custRef.id, customerName:custName,
         tillId: State.till.current ? State.till.current.id : null, cashierName: State.session ? State.session.name : null,
-        branchId: (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null, createdAt:now };
+        branchId: (State.settings.currentBranchId && State.settings.currentBranchId!=='all') ? State.settings.currentBranchId : null, stock: stockSnapshot(), createdAt:now };
       refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, 'Credit sale to '+custName+', '+items.length+' item(s), '+fmtMoney(total)); });
       var stockChanges = [];
       items.forEach(function(it){
@@ -7244,6 +7555,9 @@ function openExpenseSheet(expense){
     '<div class="field"><label>'+tr('Category')+'</label><select id="efCat">'+opts+'</select></div>' +
     '<div class="field"><label>'+tr('Amount')+'</label><input id="efAmt" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="'+(expense?expense.amount:'')+'"></div>' +
     '<div class="field"><label>'+tr('Note (optional)')+'</label><input id="efNote" placeholder="Details" value="'+esc(expense?expense.note||'':'')+'"></div>' +
+    '<div class="field-row"><div class="field"><label>Paid from</label><select id="efPaid">' +
+      ['Cash drawer','Bank','Card','Mobile wallet','Other'].map(function(o){ return '<option'+((expense&&expense.paidFrom===o)?' selected':'')+'>'+o+'</option>'; }).join('') +
+    '</select></div><div class="field"><label>Receipt / reference no.</label><input id="efRef" placeholder="Optional" value="'+esc(expense?expense.ref||'':'')+'"></div></div>' +
     '<div class="actions">' +
       (isEdit ? '<button class="btn btn-danger" id="efDelete">'+tr('Delete')+'</button>' : '') +
       '<button class="btn btn-primary btn-block" id="efSave">'+(isEdit?'Save':tr('Add expense'))+'</button>' +
@@ -7252,7 +7566,8 @@ function openExpenseSheet(expense){
   ov.querySelector('#efSave').addEventListener('click', function(){
     var amt = parseFloat(ov.querySelector('#efAmt').value);
     if(!amt || amt<=0){ toast('Enter an amount'); return; }
-    var data = { category: ov.querySelector('#efCat').value, amount:amt, note: ov.querySelector('#efNote').value.trim() };
+    var data = { category: ov.querySelector('#efCat').value, amount:amt, note: ov.querySelector('#efNote').value.trim(),
+      paidFrom: ov.querySelector('#efPaid').value, ref: ov.querySelector('#efRef').value.trim() };
     if(isEdit){
       refs.expenses.doc(expense.id).update(data);
       logAudit('update','expense',expense.id,'Edited expense '+fmtMoney(amt)+' ('+data.category+')');
@@ -7532,6 +7847,8 @@ function menuRowsHtml(){
   }
   if(isManagerOrOwner()){
     rows += '<div class="drawer-sub">Operations</div>';
+    rows += drawerRowHtml('tab-reconcile', ICONS.check, 'Reconciliation');
+    rows += drawerRowHtml('stocktake', ICONS.clipboard, 'Stock take & variances');
     rows += drawerRowHtml('suppliers', ICONS.truck, 'Suppliers', State.suppliers.length);
     rows += drawerRowHtml('pos', ICONS.clipboard, 'Purchase orders', State.purchaseOrders.length);
     rows += drawerRowHtml('wastage', ICONS.trash, 'Wastage & shrinkage');
@@ -7554,6 +7871,8 @@ function handleDrawerAction(key){
   else if(key==='tab-reports') setTab('reports');
   else if(key==='tab-expenses') setTab('expenses');
   else if(key==='tab-till') setTab('till');
+  else if(key==='tab-reconcile') setTab('reconcile');
+  else if(key==='stocktake'){ State.rcTab = 'stock'; setTab('reconcile'); setTimeout(openStockTakeStartSheet, 80); }
   else if(key==='insights'){
     setTab('dashboard');
     _insightsOpen = true;
@@ -7954,6 +8273,7 @@ function render(){
   else if(State.tab === 'till') html = renderTill();
   else if(State.tab === 'invoices') html = renderInvoicesPage();
   else if(State.tab === 'reports') html = renderReportsPage();
+  else if(State.tab === 'reconcile') html = isManagerOrOwner() ? renderReconcilePage() : '<div class="empty"><div class="t">Reconciliation is for owners and managers.</div></div>';
   content.innerHTML = html;
   wireContent();
   renderCartBar();
@@ -7984,7 +8304,7 @@ function wireContent(){
   var searchInput = content.querySelector('#sellSearchInput');
   if(searchInput){
     searchInput.addEventListener('input', debounce(function(){
-      State.sellSearch = searchInput.value;
+      State.sellSearch = searchInput.value; State.sellLimit = LIST_PAGE;
       var content2 = document.getElementById('content');
       content2.innerHTML = renderSell();
       wireContent();
@@ -7999,6 +8319,18 @@ function wireContent(){
       var c2 = document.getElementById('content'); c2.innerHTML = renderSell(); wireContent();
     });
   });
+  var sellMore = content.querySelector('#sellMoreBtn');
+  if(sellMore) sellMore.addEventListener('click', function(){ State.sellLimit = (State.sellLimit || LIST_PAGE) + LIST_PAGE*2; var y = window.scrollY; render(); window.scrollTo(0, y); });
+  var stockVar = content.querySelector('#stockVarBtn');
+  if(stockVar) stockVar.addEventListener('click', function(){ State.rcTab = 'stock'; setTab('reconcile'); });
+  var stockMore = content.querySelector('#stockMoreBtn');
+  if(stockMore) stockMore.addEventListener('click', function(){ State.stockLimit = (State.stockLimit || LIST_PAGE) + LIST_PAGE*2; var y = window.scrollY; render(); window.scrollTo(0, y); });
+  var stockSearch = content.querySelector('#stockSearchInput');
+  if(stockSearch) stockSearch.addEventListener('input', debounce(function(){
+    State.stockSearch = stockSearch.value; State.stockLimit = LIST_PAGE;
+    var c3 = document.getElementById('content'); c3.innerHTML = renderStock(); wireContent();
+    var si = c3.querySelector('#stockSearchInput'); if(si){ si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
+  }, 250));
   var goStock = content.querySelector('#goStock');
   if(goStock) goStock.addEventListener('click', function(){ setTab('stock'); });
 
@@ -8076,6 +8408,7 @@ function wireContent(){
 
   if(State.tab === 'invoices') wireInvoicesPage(content);
   if(State.tab === 'reports') wireReportsPage(content);
+  if(State.tab === 'reconcile') wireReconcilePage(content);
   var createInvoiceBtn = content.querySelector('#createInvoiceBtn');
   if(createInvoiceBtn) createInvoiceBtn.addEventListener('click', function(){ openInvoiceSheet(null); });
 
@@ -8431,7 +8764,7 @@ function syncStatusHtml(){
 }
 function localPendingCount(){
   try{
-    var all = JSON.parse(localStorage.getItem('otengu_shop_local_v1')||'{}');
+    var all = Persist.data() || {};
     var n = 0;
     Object.keys(all).forEach(function(k){ n += Object.keys(all[k]||{}).length; });
     return n;
@@ -8462,7 +8795,7 @@ function attemptCloudReconnect(){
       // Push every locally-queued record up into the matching cloud collection,
       // using the same ids so a record already pushed is simply overwritten
       // rather than duplicated.
-      var all = JSON.parse(localStorage.getItem('otengu_shop_local_v1')||'{}');
+      var all = Persist.data() || {};
       var paths = Object.keys(all);
       for(var i=0;i<paths.length;i++){
         var path = paths[i];
@@ -8570,18 +8903,38 @@ function openPurchaseOrdersSheet(){
   renderList();
   ov.querySelector('#poNewBtn').addEventListener('click', function(){ openPOFormSheet(openPurchaseOrdersSheet); });
 }
+/** Product dropdown that stays fast with tens of thousands of products: a search box plus the best 100 matches. */
+function productOptionsHtml(q, withStock, keepId){
+  q = String(q||'').trim().toLowerCase();
+  var out = '<option value="">Choose a product…</option>', n = 0, keepDone = false;
+  for(var i=0; i<State.products.length && n<100; i++){
+    var p = State.products[i];
+    if(q && (p.name||'').toLowerCase().indexOf(q) === -1 && String(p.barcode||'').indexOf(q) === -1) continue;
+    out += '<option value="'+p.id+'"'+(p.id===keepId?' selected':'')+'>'+esc(p.name)+(withStock?' ('+(p.stockQty!=null?p.stockQty:'—')+' in stock)':'')+'</option>';
+    if(p.id === keepId) keepDone = true; n++;
+  }
+  if(keepId && !keepDone){ var kp = State.products.find(function(x){ return x.id===keepId; }); if(kp) out += '<option value="'+kp.id+'" selected>'+esc(kp.name)+'</option>'; }
+  if(n >= 100) out += '<option value="" disabled>… type in the search box to narrow down</option>';
+  return out;
+}
+function wireProductSearch(ov, searchId, selectId, withStock){
+  var inp = ov.querySelector('#'+searchId), sel = ov.querySelector('#'+selectId);
+  if(!inp || !sel) return;
+  inp.addEventListener('input', debounce(function(){ sel.innerHTML = productOptionsHtml(inp.value, withStock, ''); }, 150));
+}
 function openPOFormSheet(onDone){
   var draft = { supplierId: State.suppliers[0] ? State.suppliers[0].id : '', items: [] };
   var supOpts = State.suppliers.map(function(s){ return '<option value="'+s.id+'">'+esc(s.name)+'</option>'; }).join('');
-  var prodOpts = '<option value="">Choose a product…</option>' + State.products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+'</option>'; }).join('');
+  var prodOpts = productOptionsHtml('', false, '');
   var html = '<div class="sheet-head"><h2>New purchase order</h2></div>' +
     '<div class="field"><label>Supplier</label><select id="poSupplier">'+supOpts+'</select></div>' +
-    '<div class="field"><label>Add product</label><select id="poProdSelect">'+prodOpts+'</select></div>' +
+    '<div class="field"><label>Add product</label><input id="poProdSearch" placeholder="Search products…" style="margin-bottom:6px;"><select id="poProdSelect">'+prodOpts+'</select></div>' +
     '<div class="field-row"><div class="field"><label>Quantity</label><input id="poQty" type="number" inputmode="numeric" placeholder="1"></div><div class="field"><label>Cost each</label><input id="poCost" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>' +
     '<button class="btn btn-ghost btn-block" id="poAddLineBtn" type="button" style="margin-bottom:10px;">Add line item</button>' +
     '<div id="poLines"></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="poSaveBtn">Save as draft</button></div>';
   var ov = openSheet(html);
+  wireProductSearch(ov, 'poProdSearch', 'poProdSelect', false);
   function renderLines(){
     var el = ov.querySelector('#poLines');
     if(draft.items.length===0){ el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;margin-bottom:10px;">No line items yet.</div>'; return; }
@@ -8742,15 +9095,16 @@ function openWastageSheet(){
   ov.querySelector('#wasteAddBtn').addEventListener('click', function(){ openRecordWastageSheet(openWastageSheet); });
 }
 function openRecordWastageSheet(onDone){
-  var prodOpts = '<option value="">Choose a product…</option>' + State.products.map(function(p){ return '<option value="'+p.id+'">'+esc(p.name)+' ('+(p.stockQty!=null?p.stockQty:'—')+' in stock)</option>'; }).join('');
+  var prodOpts = productOptionsHtml('', true, '');
   var reasonOpts = WASTAGE_REASONS.map(function(r){ return '<option value="'+r+'">'+r.charAt(0).toUpperCase()+r.slice(1)+'</option>'; }).join('');
   var html = '<div class="sheet-head"><h2>Record wastage</h2></div>' +
-    '<div class="field"><label>Product</label><select id="wProd">'+prodOpts+'</select></div>' +
+    '<div class="field"><label>Product</label><input id="wProdSearch" placeholder="Search products…" style="margin-bottom:6px;"><select id="wProd">'+prodOpts+'</select></div>' +
     '<div class="field"><label>Quantity lost</label><input id="wQty" type="number" inputmode="numeric" placeholder="1"></div>' +
     '<div class="field"><label>Reason</label><select id="wReason">'+reasonOpts+'</select></div>' +
     '<div class="field"><label>Notes (optional)</label><textarea id="wNotes" rows="2"></textarea></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="wSaveBtn">Record wastage</button></div>';
   var ov = openSheet(html, {center:true});
+  wireProductSearch(ov, 'wProdSearch', 'wProd', true);
   ov.querySelector('#wSaveBtn').addEventListener('click', function(){
     var pid = ov.querySelector('#wProd').value;
     var p = State.products.find(function(x){ return x.id===pid; });
@@ -9666,10 +10020,11 @@ function openAlertCentreSheet(){
 
 /* ---- reorder list ---- */
 function openReorderSheet(){
-  var list = reorderSuggestions();
+  var allSuggested = reorderSuggestions();
+  var list = allSuggested.slice(0, 300);   // most urgent first; keeps the screen fast with very large stock lists
   var supOpts = '<option value="">'+tr('Choose a supplier')+'</option>' + State.suppliers.map(function(s){ return '<option value="'+s.id+'">'+esc(s.name)+'</option>'; }).join('');
   var html = '<div class="sheet-head"><h2>'+tr('Reorder list')+'</h2></div>' +
-    '<div class="banner" style="display:block;">'+tr('Suggested from your stock levels and how fast each product sold over the last 30 days. Change any quantity before you order.')+'</div>' +
+    '<div class="banner" style="display:block;">'+tr('Suggested from your stock levels and how fast each product sold over the last 30 days. Change any quantity before you order.')+(allSuggested.length > list.length ? ' Showing the '+list.length+' most urgent of '+allSuggested.length.toLocaleString()+'.' : '')+'</div>' +
     (list.length ? '<div class="rowlist" id="roList">' + list.map(function(r,i){
       var left = r.daysLeft === Infinity ? '' : ' · '+(r.daysLeft < 1 ? 'less than a day' : Math.floor(r.daysLeft)+' days')+' left';
       return '<div class="row"><div class="main"><div class="title">'+esc(r.product.name)+'</div><div class="sub">'+r.stock+' '+tr('in stock')+left+'</div></div>' +
@@ -9848,8 +10203,8 @@ function openCustomerProfileSheet(id){
 }
 
 /* ---- end of day check (mobile money and every payment type) ---- */
-function openReconcileSheet(){
-  var day = todayKey();
+function openReconcileSheet(day0){
+  var day = (typeof day0 === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day0)) ? day0 : todayKey();
   var html = '<div class="sheet-head"><h2>'+tr('End of day check')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+tr('Compare what Pesa recorded with what you really hold: cash in the drawer, card machine totals, and each wallet or bank app. Pesa records these payments only. It does not process them.')+'</div>' +
     '<div class="field"><label>'+tr('Date')+'</label><input id="rcDay" type="date" value="'+day+'"></div><div id="rcBody"></div>' +
@@ -9898,6 +10253,632 @@ function openReconcileSheet(){
   ov.querySelector('#rcDay').addEventListener('change', paint); paint();
 }
 
+/* ============================== RECONCILIATION PAGE ==============================
+   One place to check every record against its source:
+   • Suppliers: what we received, what the supplier billed, what we paid, and their statement
+   • Stock variance: expected stock against what is really on the shelf, in units, cost and cash value, plus stock takes
+   • Sales & cash: sales by payment type against till counts, card batches and receipts
+   • Expenses: expenses against receipts and cash paid out of the drawer
+   Stock value is recorded on every sale, invoice, receipt and report so it can be traced here. */
+var RC_TABS = [['overview','Overview'],['supplier','Suppliers'],['stock','Stock variance'],['sales','Sales & cash'],['expenses','Expenses']];
+function r2(n){ return Math.round((Number(n)||0)*100)/100; }
+function sgnMoney(v){ v = r2(v); return Math.abs(v) < 0.005 ? fmtMoney(0) : (v > 0 ? '+' : '') + fmtMoney(v); }
+function varCls(v){ return Math.abs(v) < 0.01 ? 'variance-ok' : (v < 0 ? 'variance-bad' : 'variance-over'); }
+function rcRange(){
+  var f = State.rcFrom || todayKey(startOfMonth(new Date())), t = State.rcTo || todayKey();
+  if(t < f){ var x = f; f = t; t = x; }
+  var a = new Date(f+'T00:00:00').getTime(), b = new Date(t+'T00:00:00').getTime() + 86400000;
+  return { f:f, t:t, a:a, b:b };
+}
+function rcIn(iso, r){ if(!iso) return false; var x = new Date(iso).getTime(); return x >= r.a && x < r.b; }
+function rcTable(head, rows, opts){
+  opts = opts || {};
+  return '<div class="rctbl-wrap"><table class="rctbl"><thead><tr>' + head.map(function(h,i){ return '<th'+(i>0&&!opts.leftAll?' class="r"':'')+'>'+esc(h)+'</th>'; }).join('') + '</tr></thead><tbody>' +
+    rows.map(function(r){ return '<tr'+(r._cls?' class="'+r._cls+'"':'')+(r._attr||'')+'>' + r.cells.map(function(c,i){ return '<td'+(i>0&&!opts.leftAll?' class="r"':'')+'>'+c+'</td>'; }).join('') + '</tr>'; }).join('') +
+    '</tbody></table></div>';
+}
+function rcRow(label, value, cls){ return '<div class="tillrow'+(cls?' '+cls:'')+'"><span class="l">'+label+'</span><span class="v num">'+value+'</span></div>'; }
+function rcStatusChip(ok, okText, badText){
+  return ok ? '<span class="chip" style="background:var(--success-bg, #e6f4ea);color:var(--success);">'+esc(okText||'Balanced')+'</span>' : '<span class="chip low">'+esc(badText||'Needs attention')+'</span>';
+}
+function rcPoTotal(po){ return r2((po.items||[]).reduce(function(a,i){ return a + (Number(i.qty)||0)*(Number(i.cost)||0); }, 0)); }
+
+/* ---------- supplier position ---------- */
+function rcSupplierData(supId){
+  var pos = State.purchaseOrders.filter(function(po){ return po.supplierId === supId && po.status === 'received'; });
+  var invs = State.supplierInvoices.filter(function(i){ return i.supplierId === supId; });
+  var pays = State.supplierPayments.filter(function(i){ return i.supplierId === supId; });
+  var linked = {};
+  invs.forEach(function(i){ if(i.poId) linked[i.poId] = i; });
+  var received = r2(pos.reduce(function(a,po){ return a + rcPoTotal(po); }, 0));
+  var invoiced = r2(invs.reduce(function(a,i){ return a + (Number(i.amount)||0); }, 0));
+  var paid = r2(pays.reduce(function(a,i){ return a + (Number(i.amount)||0); }, 0));
+  var uninv = pos.filter(function(po){ return !linked[po.id]; });
+  var uninvValue = r2(uninv.reduce(function(a,po){ return a + rcPoTotal(po); }, 0));
+  var priceDiffs = [];
+  invs.forEach(function(i){
+    if(!i.poId) return;
+    var po = State.purchaseOrders.find(function(x){ return x.id === i.poId; });
+    if(po){ var d = r2((Number(i.amount)||0) - rcPoTotal(po)); if(Math.abs(d) >= 0.01) priceDiffs.push({ inv:i, po:po, diff:d }); }
+  });
+  var unlinkedInv = invs.filter(function(i){ return !i.poId; });
+  var sts = State.supplierStatements.filter(function(x){ return x.supplierId === supId; }).sort(function(a,b){ return String(b.asAt||'').localeCompare(String(a.asAt||'')) || String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
+  var st = sts[0] || null;
+  var owed = r2(invoiced - paid);
+  return { pos:pos, invs:invs, pays:pays, received:received, invoiced:invoiced, paid:paid, uninv:uninv, uninvValue:uninvValue,
+    priceDiffs:priceDiffs, unlinkedInv:unlinkedInv, statements:sts, statement:st, owed:owed,
+    diff: st ? r2((Number(st.balance)||0) - owed) : null };
+}
+function rcSupplierOk(d){ return !d.uninv.length && !d.priceDiffs.length && !d.unlinkedInv.length && (d.statement ? Math.abs(d.diff) < 0.01 : (d.owed === 0 && !d.invs.length && !d.pos.length)); }
+
+/* ---------- stock movement since the baseline ---------- */
+function rcBaseline(){ var b = State.settings && State.settings.stockBaseline; return (b && b.at) ? b : null; }
+function rcStockMovement(base){
+  var since = new Date(base.at).getTime();
+  var pm = {}; State.products.forEach(function(p){ pm[p.id] = p; });
+  var z = function(){ return { q:0, c:0, r:0 }; };
+  var m = { recv:z(), adds:z(), sold:z(), waste:z(), revenue:0, salesCount:0 };
+  State.purchaseOrders.forEach(function(po){
+    if(po.status !== 'received' || !po.receivedAt || new Date(po.receivedAt).getTime() < since) return;
+    (po.items||[]).forEach(function(it){ var p = pm[it.productId], q = Number(it.qty)||0; m.recv.q += q; m.recv.c += q*(Number(it.cost)||0); m.recv.r += q*(p ? Number(p.sellPrice)||0 : 0); });
+  });
+  State.stockMoves.forEach(function(mv){ if(mv.type === 'count' || !mv.at || new Date(mv.at).getTime() < since) return; m.adds.q += Number(mv.qty)||0; m.adds.c += Number(mv.cost)||0; m.adds.r += Number(mv.retail)||0; });
+  State.sales.forEach(function(sl){
+    if(!sl.createdAt || new Date(sl.createdAt).getTime() < since) return;
+    m.salesCount++; m.revenue += Number(sl.total)||0;
+    (sl.items||[]).forEach(function(it){
+      if(!it.productId) return;
+      var p = pm[it.productId], q = Number(it.qty)||0;
+      m.sold.q += q; m.sold.c += q*(Number(it.cost)||0); m.sold.r += q*(p ? Number(p.sellPrice)||0 : Number(it.unitPrice)||0);
+    });
+  });
+  State.wastage.forEach(function(w){
+    if(!w.createdAt || new Date(w.createdAt).getTime() < since) return;
+    var p = pm[w.productId], q = Number(w.qty)||0; m.waste.q += q; m.waste.c += q*(p ? Number(p.costPrice)||0 : 0); m.waste.r += q*(p ? Number(p.sellPrice)||0 : 0);
+  });
+  var cur = stockTotals();
+  var exp = { q: base.qty + m.recv.q + m.adds.q - m.sold.q - m.waste.q, c: base.cost + m.recv.c + m.adds.c - m.sold.c - m.waste.c, r: base.retail + m.recv.r + m.adds.r - m.sold.r - m.waste.r };
+  var act = { q:cur.qty, c:cur.cost, r:cur.retail };
+  var v = { q: r2(act.q - exp.q), c: r2(act.c - exp.c), r: r2(act.r - exp.r) };
+  return { m:m, exp:exp, act:act, v:v, cur:cur };
+}
+
+/* ---------- main page ---------- */
+function renderReconcilePage(){
+  var tab = State.rcTab || 'overview';
+  var html = '<div class="segbtns rc-tabs" id="rcTabs">' + RC_TABS.map(function(t){ return '<button class="segbtn'+(tab===t[0]?' active':'')+'" data-rctab="'+t[0]+'" type="button">'+esc(tr(t[1]))+'</button>'; }).join('') + '</div>';
+  if(tab === 'overview' || tab === 'sales' || tab === 'expenses'){
+    var r = rcRange();
+    html += '<div class="rc-period"><label>From<input type="date" id="rcFrom" value="'+r.f+'"></label><label>To<input type="date" id="rcTo" value="'+r.t+'"></label>' +
+      '<button class="btn btn-ghost" type="button" data-rcquick="today">Today</button><button class="btn btn-ghost" type="button" data-rcquick="week">This week</button><button class="btn btn-ghost" type="button" data-rcquick="month">This month</button></div>';
+  }
+  if(tab === 'overview') html += rcOverviewHtml();
+  else if(tab === 'supplier') html += rcSupplierHtml();
+  else if(tab === 'stock') html += rcStockHtml();
+  else if(tab === 'sales') html += rcSalesHtml();
+  else if(tab === 'expenses') html += rcExpensesHtml();
+  return html;
+}
+
+function rcSalesData(r){
+  var days = {};
+  function day(k){ return days[k] || (days[k] = { day:k, cash:0, card:0, wallet:0, credit:0, total:0, n:0, tillVar:0, tills:0, cardVar:0, batches:0, eodDiff:0, eod:0 }); }
+  State.sales.forEach(function(s){
+    if(!rcIn(s.createdAt, r)) return;
+    var d = day(todayKey(new Date(s.createdAt))), m = s.paymentMethod || 'cash';
+    d[m] = (d[m]||0) + (Number(s.total)||0); d.total += Number(s.total)||0; d.n++;
+  });
+  State.tillSessions.forEach(function(t){ if(t.status === 'closed' && rcIn(t.closedAt, r)){ var d = day(todayKey(new Date(t.closedAt))); d.tillVar += Number(t.variance)||0; d.tills++; } });
+  State.posBatches.forEach(function(b){ if(rcIn(b.settledAt, r)){ var d = day(todayKey(new Date(b.settledAt))); d.cardVar += Number(b.variance)||0; d.batches++; } });
+  State.auditLog.forEach(function(a){
+    if(a.entityType !== 'reconciliation' || !a.forDay || !a.counted) return;
+    var t = new Date(a.forDay+'T00:00:00').getTime(); if(t < r.a || t >= r.b) return;
+    var d = day(a.forDay); d.eod++;
+    Object.keys(a.counted).forEach(function(k){ d.eodDiff += (Number(a.counted[k])||0) - (Number((a.expected||{})[k])||0); });
+  });
+  var list = Object.keys(days).sort().reverse().map(function(k){ return days[k]; });
+  return list;
+}
+function rcReceiptsData(r){
+  var recAt = {}; State.invoices.forEach(function(i){ if(i.at) recAt[i.at] = i; });
+  var inRange = State.sales.filter(function(s){ return rcIn(s.createdAt, r); });
+  var withDoc = inRange.filter(function(s){ return recAt[s.createdAt]; });
+  var docsTotal = r2(withDoc.reduce(function(a,s){ return a + (Number(s.total)||0); }, 0));
+  var salesTotal = r2(inRange.reduce(function(a,s){ return a + (Number(s.total)||0); }, 0));
+  var invIn = State.invoices.filter(function(i){ return rcIn(i.createdAt, r); });
+  return { sales:inRange.length, salesTotal:salesTotal, withDoc:withDoc.length, docsTotal:docsTotal, without:inRange.length - withDoc.length, withoutTotal:r2(salesTotal - docsTotal), docs:invIn.length, docsAll:r2(invIn.reduce(function(a,i){ return a + (Number(i.total)||0); }, 0)) };
+}
+function rcExpensesData(r){
+  var list = State.expenses.filter(function(e){ return rcIn(e.createdAt, r); });
+  var total = r2(list.reduce(function(a,e){ return a + (Number(e.amount)||0); }, 0));
+  var done = list.filter(function(e){ return e.reconciled; });
+  var doneTotal = r2(done.reduce(function(a,e){ return a + (Number(e.amount)||0); }, 0));
+  var noRef = list.filter(function(e){ return !String(e.ref||'').trim(); });
+  var byFrom = {};
+  list.forEach(function(e){ var k = e.paidFrom || 'Not recorded'; byFrom[k] = (byFrom[k]||0) + (Number(e.amount)||0); });
+  var cashExp = r2(list.filter(function(e){ return (e.paidFrom||'') === 'Cash drawer'; }).reduce(function(a,e){ return a + (Number(e.amount)||0); }, 0));
+  var payouts = r2(State.tillSessions.filter(function(t){ return t.status === 'closed' && rcIn(t.closedAt, r); }).reduce(function(a,t){ return a + (Number(t.cashPayout)||0); }, 0));
+  return { list:list, total:total, done:done.length, doneTotal:doneTotal, open:list.length - done.length, openTotal:r2(total - doneTotal), noRef:noRef.length, byFrom:byFrom, cashExp:cashExp, payouts:payouts };
+}
+
+function rcOverviewHtml(){
+  var r = rcRange();
+  var html = '';
+  // suppliers
+  var supBad = 0, supOwed = 0;
+  State.suppliers.forEach(function(s){ var d = rcSupplierData(s.id); supOwed += d.owed; if(!rcSupplierOk(d)) supBad++; });
+  // stock
+  var base = rcBaseline(), mv = base ? rcStockMovement(base) : null, cur = stockTotals();
+  // sales
+  var days = rcSalesData(r), tillVar = 0, cardVar = 0, salesTot = 0;
+  days.forEach(function(d){ tillVar += d.tillVar; cardVar += d.cardVar; salesTot += d.total; });
+  var rec = rcReceiptsData(r);
+  var ex = rcExpensesData(r);
+  function tile(tabKey, title, chip, lines){
+    return '<div class="tillcard rc-tile" data-rctab="'+tabKey+'" role="button" tabindex="0"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;"><strong>'+esc(title)+'</strong>'+chip+'</div>' + lines + '</div>';
+  }
+  html += tile('supplier', 'Suppliers', State.suppliers.length ? rcStatusChip(supBad === 0, 'All matched', supBad+' to check') : '<span class="chip">No suppliers</span>',
+    rcRow('Suppliers', String(State.suppliers.length)) + rcRow('Owed to suppliers (billed − paid)', fmtMoney(supOwed)));
+  html += tile('stock', 'Stock variance', !base ? '<span class="chip low">Not started</span>' : rcStatusChip(Math.abs(mv.v.c) < 0.01 && Math.abs(mv.v.q) < 0.0005, 'No variance', 'Variance found'),
+    rcRow('Stock on hand (at cost)', fmtMoney(cur.cost)) + rcRow('Stock on hand (at selling price)', fmtMoney(cur.retail)) + (base ? rcRow('Variance vs expected (at cost)', '<span class="'+varCls(mv.v.c)+'">'+sgnMoney(mv.v.c)+'</span>') : rcRow('Tracking', 'Tap to start')));
+  html += tile('sales', 'Sales & cash', rcStatusChip(Math.abs(tillVar) < 0.01 && Math.abs(cardVar) < 0.01 && rec.without === 0, 'Balanced', 'Needs attention'),
+    rcRow('Sales in period', fmtMoney(salesTot)) + rcRow('Till cash variance', '<span class="'+varCls(tillVar)+'">'+sgnMoney(tillVar)+'</span>') + rcRow('Card batch variance', '<span class="'+varCls(cardVar)+'">'+sgnMoney(cardVar)+'</span>') + rcRow('Sales with no receipt saved', rec.without + ' ('+fmtMoney(rec.withoutTotal)+')'));
+  html += tile('expenses', 'Expenses', rcStatusChip(ex.open === 0, 'All reconciled', ex.open+' to match'),
+    rcRow('Expenses in period', fmtMoney(ex.total)) + rcRow('Reconciled', ex.done+' of '+ex.list.length) + rcRow('Cash drawer expenses vs till payouts', '<span class="'+varCls(ex.payouts-ex.cashExp)+'">'+sgnMoney(ex.payouts - ex.cashExp)+'</span>'));
+  html += '<div class="actions"><button class="btn btn-ghost btn-block" id="rcEodBtn" type="button">End of day check (cash, card, wallets)</button></div>';
+  return html;
+}
+
+function rcSupplierHtml(){
+  if(!State.suppliers.length) return '<div class="empty"><div class="t">No suppliers yet</div><div class="s">Add a supplier first, then record purchase orders against them.</div><div style="margin-top:14px;"><button class="btn btn-primary" id="rcAddSupplier" type="button">Add supplier</button></div></div>';
+  var id = State.rcSupplier && State.suppliers.some(function(s){ return s.id === State.rcSupplier; }) ? State.rcSupplier : State.suppliers[0].id;
+  State.rcSupplier = id;
+  var sup = State.suppliers.find(function(s){ return s.id === id; }), d = rcSupplierData(id);
+  var html = '<div class="field"><label>Supplier</label><select id="rcSupSel">' + State.suppliers.map(function(s){ return '<option value="'+s.id+'"'+(s.id===id?' selected':'')+'>'+esc(s.name)+'</option>'; }).join('') + '</select></div>';
+  html += '<div class="tillcard">' +
+    rcRow('Goods received (purchase orders)', fmtMoney(d.received)) +
+    rcRow('Billed by supplier (invoices)', fmtMoney(d.invoiced)) +
+    rcRow('Paid to supplier', fmtMoney(d.paid)) +
+    rcRow('Owed per invoices (billed − paid)', fmtMoney(d.owed), 'grand') +
+    rcRow('Received but not yet invoiced', fmtMoney(d.uninvValue)) +
+    rcRow('Supplier statement balance' + (d.statement ? ' ('+fmtDateNice(d.statement.asAt+'T00:00:00')+')' : ''), d.statement ? fmtMoney(d.statement.balance) : 'Not entered') +
+    (d.statement ? rcRow('Difference (statement − our records)', '<span class="'+varCls(d.diff)+'">'+(Math.abs(d.diff)<0.01?'Matches':sgnMoney(d.diff))+'</span>', 'grand') : '') +
+  '</div>';
+  html += '<div class="actions"><button class="btn btn-primary" id="rcInvBtn" type="button">Add supplier invoice</button><button class="btn btn-ghost" id="rcPayBtn" type="button">Record payment</button><button class="btn btn-accent" id="rcStmtBtn" type="button">Enter statement balance</button></div>';
+  // flags
+  var flags = [];
+  if(d.uninv.length) flags.push('<b>'+d.uninv.length+'</b> received order(s) worth '+fmtMoney(d.uninvValue)+' have no supplier invoice linked.');
+  d.priceDiffs.forEach(function(x){ flags.push('Invoice <b>'+esc(x.inv.number||'')+'</b> is '+sgnMoney(x.diff)+' compared with its purchase order ('+fmtMoney(rcPoTotal(x.po))+').'); });
+  if(d.unlinkedInv.length) flags.push('<b>'+d.unlinkedInv.length+'</b> invoice(s) are not linked to a received purchase order.');
+  if(d.statement && Math.abs(d.diff) >= 0.01) flags.push('The statement is '+sgnMoney(d.diff)+' away from our records.');
+  if(!d.statement && (d.invs.length || d.pos.length)) flags.push('No supplier statement balance entered yet.');
+  html += '<div class="section-title">Needs attention</div>' + (flags.length ? flags.map(function(f){ return '<div class="banner" style="display:block;">'+ICONS.warn+' <span>'+f+'</span></div>'; }).join('') : '<div class="banner" style="color:var(--success);">'+ICONS.check.replace(/width="24" height="24"/,'width="16" height="16"')+'<span>This supplier is fully matched.</span></div>');
+  // invoices
+  var linkedPo = function(i){ var po = i.poId && State.purchaseOrders.find(function(x){ return x.id === i.poId; }); return po ? ('PO '+fmtDay(po.createdAt)+' · '+fmtMoney(rcPoTotal(po))) : '—'; };
+  html += '<div class="section-title">Supplier invoices</div>' + (d.invs.length ? rcTable(['Invoice','Date','Amount','Matched to'], d.invs.slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); }).map(function(i){
+    return { cells:[esc(i.number||'—'), esc(i.date||''), fmtMoney(i.amount), esc(linkedPo(i))], _attr:' data-rcinv="'+i.id+'" class="clickable"' };
+  })) : '<div class="empty" style="padding:10px 0;"><div class="s">No invoices recorded.</div></div>');
+  html += '<div class="section-title">Payments</div>' + (d.pays.length ? rcTable(['Date','Method / reference','Amount'], d.pays.slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); }).map(function(p){
+    return { cells:[esc(p.date||''), esc([p.method,p.ref].filter(Boolean).join(' · ')||'—'), fmtMoney(p.amount)], _attr:' data-rcpay="'+p.id+'" class="clickable"' };
+  })) : '<div class="empty" style="padding:10px 0;"><div class="s">No payments recorded.</div></div>');
+  html += '<div class="section-title">Received orders</div>' + (d.pos.length ? rcTable(['Received','Order total','Invoice'], d.pos.slice().sort(function(a,b){ return String(b.receivedAt||'').localeCompare(String(a.receivedAt||'')); }).map(function(po){
+    var inv = d.invs.find(function(i){ return i.poId === po.id; });
+    return { cells:[fmtDay(po.receivedAt||po.createdAt), fmtMoney(rcPoTotal(po)), inv ? esc(inv.number||'matched') : '<span class="chip low">None</span>'] };
+  })) : '<div class="empty" style="padding:10px 0;"><div class="s">No received purchase orders yet. Mark a purchase order as received to bring it in here.</div></div>');
+  if(d.statements.length) html += '<div class="section-title">Statement checks</div>' + rcTable(['As at','Statement','Our records','Difference'], d.statements.slice(0,10).map(function(x){
+    return { cells:[esc(x.asAt||''), fmtMoney(x.balance), fmtMoney(x.ourBalance), '<span class="'+varCls(x.difference||0)+'">'+(Math.abs(x.difference||0)<0.01?'Matches':sgnMoney(x.difference))+'</span>'] };
+  }));
+  return html;
+}
+
+function rcStockHtml(){
+  var cur = stockTotals(), base = rcBaseline(), html = '';
+  html += '<div class="section-title" style="margin-top:6px;">Stock on hand now</div><div class="tillcard">' +
+    rcRow('Products in stock list', cur.items.toLocaleString()) + rcRow('Units on hand', cur.qty.toLocaleString()) +
+    rcRow('Value at cost', fmtMoney(cur.cost)) + rcRow('Cash value at selling price', fmtMoney(cur.retail)) +
+    rcRow('Potential gross profit', fmtMoney(cur.retail - cur.cost)) + rcRow('Products out of stock', cur.out.toLocaleString()) + '</div>';
+  html += '<div class="actions"><button class="btn btn-primary" id="rcTakeBtn" type="button">Stock take (count stock)</button>' +
+    '<button class="btn btn-ghost" id="rcBaseBtn" type="button">'+(base ? 'Reset tracking to current stock' : 'Start tracking from current stock')+'</button></div>';
+  if(!base){
+    html += '<div class="banner" style="display:block;">To see stock variances, Pesa needs a starting point. Tap <b>Start tracking from current stock</b> (or finish a stock take). From then on Pesa compares what you <i>should</i> have (opening + received − sold − wastage) with what is really in the stock list.</div>';
+  } else {
+    var mv = rcStockMovement(base), m = mv.m;
+    var row = function(label, o, sign, cls){ var sg = (o.q || o.c || o.r) ? (sign||'') : ''; return { cells:[esc(label), sg+r2(o.q).toLocaleString(), sg+fmtMoney(o.c), sg+fmtMoney(o.r)], _cls:cls||'' }; };
+    html += '<div class="section-title">Expected against actual since '+esc(fmtDateTime(base.at))+'</div>';
+    html += rcTable(['', 'Units', 'At cost', 'Cash value (selling price)'], [
+      row('Opening stock', { q:base.qty, c:base.cost, r:base.retail }),
+      row('+ Received from suppliers', m.recv, '+'),
+      row('+ Uploads & manual stock added', m.adds, ''),
+      row('− Sold', m.sold, '−'),
+      row('− Wastage', m.waste, '−'),
+      row('= Expected stock', mv.exp, '', 'rc-total'),
+      row('Actual stock now', mv.act, '', 'rc-total'),
+      { cells:['Variance (actual − expected)', '<span class="'+varCls(mv.v.q)+'">'+(mv.v.q>0?'+':'')+mv.v.q.toLocaleString()+'</span>', '<span class="'+varCls(mv.v.c)+'">'+sgnMoney(mv.v.c)+'</span>', '<span class="'+varCls(mv.v.r)+'">'+sgnMoney(mv.v.r)+'</span>'], _cls:'rc-total' }
+    ], {});
+    var ok = Math.abs(mv.v.c) < 0.01 && Math.abs(mv.v.q) < 0.0005;
+    html += '<div class="banner" style="display:block;'+(ok?'color:var(--success);':'')+'">' + (ok ? 'Stock agrees with the records.' :
+      (mv.v.q < 0 ? 'Missing: <b>'+Math.abs(mv.v.q).toLocaleString()+'</b> units worth <b>'+fmtMoney(Math.abs(mv.v.c))+'</b> at cost, which is <b>'+fmtMoney(Math.abs(mv.v.r))+'</b> in cash value if they had been sold at selling price.' :
+        'Extra: <b>'+mv.v.q.toLocaleString()+'</b> units worth <b>'+fmtMoney(mv.v.c)+'</b> at cost that the records do not explain (stock added without a purchase order or upload).') +
+      ' This includes deleted products and any change that was not recorded. Do a stock take to find the cause.') + '</div>';
+    var listRev = m.sold.r, rev = m.revenue;
+    html += '<div class="section-title">Sales cash against stock sold</div><div class="tillcard">' +
+      rcRow('Sales recorded ('+m.salesCount.toLocaleString()+')', fmtMoney(rev)) +
+      rcRow('Units sold at current selling prices', fmtMoney(listRev)) +
+      rcRow('Difference (discounts, price changes, prices not matched)', '<span class="'+varCls(rev-listRev)+'">'+sgnMoney(rev-listRev)+'</span>') + '</div>';
+  }
+  // records
+  var recs = [];
+  recs.push({ src:'Stock list now', at:new Date().toISOString(), cost:cur.cost, retail:cur.retail });
+  var lastRep = State.reports.filter(function(x){ return x.figures && x.figures.totalStockValue != null && x.generatedAt; }).sort(function(a,b){ return String(b.generatedAt).localeCompare(String(a.generatedAt)); })[0];
+  if(lastRep) recs.push({ src:'Last report ('+lastRep.label+')', at:lastRep.generatedAt, cost:lastRep.figures.totalStockValue, retail:lastRep.figures.totalStockRetail });
+  var lastInv = State.invoices.filter(function(x){ return x.stock; }).sort(function(a,b){ return String(b.createdAt).localeCompare(String(a.createdAt)); })[0];
+  if(lastInv) recs.push({ src:(lastInv.type === 'receipt' ? 'Last receipt ' : 'Last invoice ')+(lastInv.number||''), at:lastInv.stock.at, cost:lastInv.stock.cost, retail:lastInv.stock.retail });
+  var lastSale = State.sales.filter(function(x){ return x.stock; })[0];
+  if(lastSale) recs.push({ src:'Last sale', at:lastSale.stock.at, cost:lastSale.stock.cost, retail:lastSale.stock.retail });
+  var lastTake = State.stockTakes.filter(function(x){ return x.status === 'posted' && x.after; }).sort(function(a,b){ return String(b.postedAt).localeCompare(String(a.postedAt)); })[0];
+  if(lastTake) recs.push({ src:'Last stock take ('+(lastTake.name||'')+')', at:lastTake.postedAt, cost:lastTake.after.cost, retail:lastTake.after.retail });
+  html += '<div class="section-title">Stock value on record</div>' + rcTable(['Record','Date','Stock at cost','At selling price','Cost vs now'], recs.map(function(x){
+    var d = r2(x.cost - cur.cost);
+    return { cells:[esc(x.src), esc(fmtDateTime(x.at)), fmtMoney(x.cost), x.retail != null ? fmtMoney(x.retail) : '—', x.src === 'Stock list now' ? '—' : '<span class="'+varCls(d)+'">'+(Math.abs(d)<0.01?'Same':sgnMoney(d))+'</span>'] };
+  }), { leftAll:false });
+  html += '<div class="banner" style="display:block;">Every sale, invoice, receipt and report saves the whole-shop stock value at that moment. Differences here are normal when stock has moved since; they point to a problem only when nothing was sold, received or counted in between.</div>';
+  // stock takes
+  html += '<div class="section-title">Stock takes</div>';
+  var takes = State.stockTakes.slice().sort(function(a,b){ return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  html += takes.length ? '<div class="rowlist">' + takes.slice(0,15).map(function(t){
+    var s = t.summary || {};
+    return '<div class="row" data-take="'+t.id+'"><div class="avatar">'+ICONS.clipboard.replace(/width="\d+" height="\d+"/,'width="16" height="16"')+'</div><div class="main"><div class="title">'+esc(t.name||'Stock take')+'</div><div class="sub">'+(t.status==='posted'?'Posted '+esc(fmtDateTime(t.postedAt)):'In progress · '+Object.keys(t.counts||{}).length.toLocaleString()+' counted')+'</div></div>' +
+      '<div class="trail">'+(t.status==='posted' ? '<div class="amt num '+varCls(s.netCost||0)+'">'+sgnMoney(s.netCost||0)+'</div><div class="note">net at cost</div>' : '<span class="chip">Open</span>')+'</div></div>';
+  }).join('') + '</div>' : '<div class="empty" style="padding:10px 0;"><div class="s">No stock takes yet.</div></div>';
+  return html;
+}
+
+function rcSalesHtml(){
+  var r = rcRange(), days = rcSalesData(r), rec = rcReceiptsData(r);
+  var tot = days.reduce(function(a,d){ ['cash','card','wallet','credit','total','tillVar','cardVar','eodDiff','n'].forEach(function(k){ a[k] += d[k]||0; }); return a; }, { cash:0, card:0, wallet:0, credit:0, total:0, tillVar:0, cardVar:0, eodDiff:0, n:0 });
+  var html = '<div class="tillcard">' + rcRow('Sales recorded ('+tot.n.toLocaleString()+')', fmtMoney(tot.total), 'grand') +
+    rcRow('Cash', fmtMoney(tot.cash)) + rcRow('Card', fmtMoney(tot.card)) + rcRow('Mobile wallet', fmtMoney(tot.wallet)) + rcRow('Credit (no cash yet)', fmtMoney(tot.credit)) +
+    rcRow('Till cash variance (counted − expected)', '<span class="'+varCls(tot.tillVar)+'">'+sgnMoney(tot.tillVar)+'</span>') +
+    rcRow('Card batch variance (terminal − Pesa)', '<span class="'+varCls(tot.cardVar)+'">'+sgnMoney(tot.cardVar)+'</span>') +
+    rcRow('End of day check differences', '<span class="'+varCls(tot.eodDiff)+'">'+sgnMoney(tot.eodDiff)+'</span>') + '</div>';
+  html += '<div class="section-title">Receipts and invoices against sales</div><div class="tillcard">' +
+    rcRow('Sales in period', rec.sales.toLocaleString()+' · '+fmtMoney(rec.salesTotal)) +
+    rcRow('With a saved receipt or invoice', rec.withDoc.toLocaleString()+' · '+fmtMoney(rec.docsTotal)) +
+    rcRow('Without a saved receipt', rec.without.toLocaleString()+' · '+fmtMoney(rec.withoutTotal), rec.without ? 'grand' : '') +
+    rcRow('All receipts and invoices issued in period', rec.docs.toLocaleString()+' · '+fmtMoney(rec.docsAll)) + '</div>' +
+    '<div class="banner" style="display:block;">A receipt is saved when you download, print or send it. Sales without one are normal if the customer did not want a receipt.</div>';
+  html += '<div class="section-title">By day (tap a day to count what you hold)</div>';
+  html += days.length ? rcTable(['Day','Sales','Cash','Card','Wallet','Till var.','Card var.','Status'], days.slice(0, 92).map(function(d){
+    var ok = Math.abs(d.tillVar) < 0.01 && Math.abs(d.cardVar) < 0.01 && Math.abs(d.eodDiff) < 0.01;
+    return { cells:[esc(fmtDateNice(d.day+'T00:00:00')), fmtMoney(d.total), fmtMoney(d.cash), fmtMoney(d.card), fmtMoney(d.wallet),
+      d.tills ? '<span class="'+varCls(d.tillVar)+'">'+sgnMoney(d.tillVar)+'</span>' : '—', d.batches ? '<span class="'+varCls(d.cardVar)+'">'+sgnMoney(d.cardVar)+'</span>' : '—',
+      rcStatusChip(ok && (d.tills || d.eod || d.batches), 'Checked', (d.tills||d.eod||d.batches) ? 'Variance' : 'Not checked')], _attr:' data-rcday="'+d.day+'" class="clickable"' };
+  })) : '<div class="empty"><div class="t">No sales in this period</div></div>';
+  return html;
+}
+
+function rcExpensesHtml(){
+  var r = rcRange(), e = rcExpensesData(r);
+  var html = '<div class="tillcard">' + rcRow('Expenses in period ('+e.list.length+')', fmtMoney(e.total), 'grand') +
+    rcRow('Reconciled to a receipt or payment', e.done+' · '+fmtMoney(e.doneTotal)) +
+    rcRow('Still to reconcile', e.open+' · '+fmtMoney(e.openTotal)) +
+    rcRow('Without a receipt / reference number', String(e.noRef)) +
+    Object.keys(e.byFrom).sort().map(function(k){ return rcRow('Paid from '+esc(k), fmtMoney(e.byFrom[k])); }).join('') +
+    rcRow('Cash drawer expenses recorded', fmtMoney(e.cashExp)) +
+    rcRow('Cash paid out when tills were closed', fmtMoney(e.payouts)) +
+    rcRow('Difference (till payouts − expenses)', '<span class="'+varCls(e.payouts-e.cashExp)+'">'+(Math.abs(e.payouts-e.cashExp)<0.01?'Matches':sgnMoney(e.payouts-e.cashExp))+'</span>', 'grand') + '</div>';
+  html += '<div class="actions"><button class="btn btn-primary" id="rcExpAll" type="button" '+(e.open?'':'disabled')+'>Mark all shown as reconciled</button></div>';
+  html += '<div class="section-title">Expenses (tick when matched to a receipt or payment)</div>';
+  html += e.list.length ? '<div class="rowlist">' + e.list.map(function(x){
+    return '<div class="row" style="cursor:default;"><label class="rc-check"><input type="checkbox" data-rcexp="'+x.id+'"'+(x.reconciled?' checked':'')+'></label><div class="main" data-expopen="'+x.id+'" style="cursor:pointer;"><div class="title">'+esc(x.category)+'</div><div class="sub">'+esc([fmtDay(x.createdAt), x.paidFrom||'Source not set', x.ref?('Ref '+x.ref):'No reference', x.note].filter(Boolean).join(' · '))+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(x.amount)+'</div></div></div>';
+  }).join('') + '</div>' : '<div class="empty"><div class="t">No expenses in this period</div></div>';
+  return html;
+}
+
+/* ---------- wiring ---------- */
+function wireReconcilePage(content){
+  function go(){ render(); }
+  content.querySelectorAll('[data-rctab]').forEach(function(el){
+    function open(){ State.rcTab = el.getAttribute('data-rctab'); var y = el.classList.contains('segbtn') ? 0 : 0; go(); window.scrollTo(0, y); }
+    el.addEventListener('click', open);
+    if(el.getAttribute('role') === 'button') el.addEventListener('keydown', function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); open(); } });
+  });
+  var f = content.querySelector('#rcFrom'), t = content.querySelector('#rcTo');
+  if(f) f.addEventListener('change', function(){ State.rcFrom = f.value || null; go(); });
+  if(t) t.addEventListener('change', function(){ State.rcTo = t.value || null; go(); });
+  content.querySelectorAll('[data-rcquick]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var k = b.getAttribute('data-rcquick'), now = new Date();
+      State.rcTo = todayKey(now); State.rcFrom = k === 'today' ? todayKey(now) : (k === 'week' ? todayKey(startOfWeek(now)) : todayKey(startOfMonth(now)));
+      go();
+    });
+  });
+  var eod = content.querySelector('#rcEodBtn'); if(eod) eod.addEventListener('click', function(){ openReconcileSheet(); });
+  var addSup = content.querySelector('#rcAddSupplier'); if(addSup) addSup.addEventListener('click', function(){ openSupplierFormSheet(null, function(){ render(); }); });
+  var sel = content.querySelector('#rcSupSel'); if(sel) sel.addEventListener('change', function(){ State.rcSupplier = sel.value; go(); });
+  var ib = content.querySelector('#rcInvBtn'); if(ib) ib.addEventListener('click', function(){ openSupplierInvoiceSheet(State.rcSupplier, null); });
+  var pb = content.querySelector('#rcPayBtn'); if(pb) pb.addEventListener('click', function(){ openSupplierPaymentSheet(State.rcSupplier, null); });
+  var sb = content.querySelector('#rcStmtBtn'); if(sb) sb.addEventListener('click', function(){ openSupplierStatementSheet(State.rcSupplier); });
+  content.querySelectorAll('[data-rcinv]').forEach(function(tr0){ tr0.addEventListener('click', function(){ var i = State.supplierInvoices.find(function(x){ return x.id === tr0.getAttribute('data-rcinv'); }); if(i) openSupplierInvoiceSheet(i.supplierId, i); }); });
+  content.querySelectorAll('[data-rcpay]').forEach(function(tr0){ tr0.addEventListener('click', function(){ var p = State.supplierPayments.find(function(x){ return x.id === tr0.getAttribute('data-rcpay'); }); if(p) openSupplierPaymentSheet(p.supplierId, p); }); });
+  var tk = content.querySelector('#rcTakeBtn'); if(tk) tk.addEventListener('click', openStockTakeStartSheet);
+  var bb = content.querySelector('#rcBaseBtn'); if(bb) bb.addEventListener('click', function(){
+    var doIt = function(){
+      var snap = stockSnapshot();
+      State.settings = Object.assign({}, State.settings, { stockBaseline: snap });
+      refs.settings.set(State.settings);
+      logAudit('other','stock','baseline','Stock tracking started: '+snap.qty.toLocaleString()+' units, '+fmtMoney(snap.cost)+' at cost');
+      toast('Tracking started from current stock'); render();
+    };
+    if(rcBaseline()) confirmSheet('Reset tracking?', 'The starting point moves to the stock you have now. Variances so far are cleared from this view (they stay in the activity log).', 'Reset', doIt, false); else doIt();
+  });
+  content.querySelectorAll('[data-take]').forEach(function(el){ el.addEventListener('click', function(){ var t0 = State.stockTakes.find(function(x){ return x.id === el.getAttribute('data-take'); }); if(t0) (t0.status === 'posted' ? openStockTakeResultSheet(t0) : openStockTakeSheet(t0.id)); }); });
+  content.querySelectorAll('[data-rcday]').forEach(function(el){ el.addEventListener('click', function(){ openReconcileSheet(el.getAttribute('data-rcday')); }); });
+  content.querySelectorAll('[data-rcexp]').forEach(function(cb){ cb.addEventListener('change', function(){ refs.expenses.doc(cb.getAttribute('data-rcexp')).update({ reconciled: cb.checked, reconciledAt: cb.checked ? new Date().toISOString() : null }); }); });
+  content.querySelectorAll('[data-expopen]').forEach(function(el){ el.addEventListener('click', function(){ var x = State.expenses.find(function(e0){ return e0.id === el.getAttribute('data-expopen'); }); if(x) openExpenseSheet(x); }); });
+  var ea = content.querySelector('#rcExpAll'); if(ea) ea.addEventListener('click', function(){
+    var e = rcExpensesData(rcRange()), now = new Date().toISOString();
+    e.list.filter(function(x){ return !x.reconciled; }).forEach(function(x){ refs.expenses.doc(x.id).update({ reconciled:true, reconciledAt:now }); });
+    logAudit('other','reconciliation','expenses','Marked '+e.open+' expense(s) reconciled for '+rcRange().f+' to '+rcRange().t);
+    toast(e.open+' expenses marked as reconciled');
+  });
+}
+
+/* ---------- supplier sheets ---------- */
+function recordStockMove(type, qty, cost, retail, note){
+  try{ refs.stockMoves.doc().set({ type:type, qty:r2(qty), cost:r2(cost), retail:r2(retail), note:note||'', at:new Date().toISOString(), by:State.session ? State.session.name : '' }); }catch(e){}
+}
+function openSupplierInvoiceSheet(supId, inv){
+  var sup = State.suppliers.find(function(s){ return s.id === supId; }); if(!sup) return;
+  var d = rcSupplierData(supId);
+  var linkedIds = {}; d.invs.forEach(function(i){ if(i.poId && (!inv || i.id !== inv.id)) linkedIds[i.poId] = 1; });
+  var poOpts = '<option value="">Not linked</option>' + d.pos.filter(function(po){ return !linkedIds[po.id]; }).map(function(po){
+    return '<option value="'+po.id+'"'+(inv && inv.poId === po.id ? ' selected' : '')+'>Received '+esc(fmtDay(po.receivedAt||po.createdAt))+' · '+fmtMoney(rcPoTotal(po))+'</option>'; }).join('');
+  var html = '<div class="sheet-head"><h2>'+(inv?'Supplier invoice':'Add supplier invoice')+'</h2></div><div class="banner">'+esc(sup.name)+'</div>' +
+    '<div class="field"><label>Supplier invoice number</label><input id="siNum" value="'+esc(inv?inv.number||'':'')+'"></div>' +
+    '<div class="field-row"><div class="field"><label>Invoice date</label><input id="siDate" type="date" value="'+esc(inv?inv.date||'':todayKey())+'"></div>' +
+    '<div class="field"><label>Amount billed</label><input id="siAmt" type="number" inputmode="decimal" step="0.01" value="'+(inv?inv.amount:'')+'"></div></div>' +
+    '<div class="field"><label>Matches received order</label><select id="siPo">'+poOpts+'</select></div><div id="siDiff"></div>' +
+    '<div class="field"><label>Note (optional)</label><input id="siNote" value="'+esc(inv?inv.note||'':'')+'"></div>' +
+    '<div class="actions">'+(inv?'<button class="btn btn-danger" id="siDel" type="button">Delete</button>':'')+'<button class="btn btn-primary btn-block" id="siSave" type="button">Save invoice</button></div>';
+  var ov = openSheet(html, {center:true});
+  function diff(){
+    var po = d.pos.find(function(x){ return x.id === ov.querySelector('#siPo').value; }), amt = parseFloat(ov.querySelector('#siAmt').value), box = ov.querySelector('#siDiff');
+    if(!po || isNaN(amt)){ box.innerHTML = ''; return; }
+    var df = r2(amt - rcPoTotal(po));
+    box.innerHTML = '<div class="banner" style="display:block;'+(Math.abs(df)<0.01?'color:var(--success);':'')+'">'+(Math.abs(df)<0.01?'Matches the purchase order ('+fmtMoney(rcPoTotal(po))+').':'Differs from the purchase order ('+fmtMoney(rcPoTotal(po))+') by '+sgnMoney(df)+'.')+'</div>';
+  }
+  ov.querySelector('#siPo').addEventListener('change', function(){
+    var po = d.pos.find(function(x){ return x.id === ov.querySelector('#siPo').value; });
+    if(po && !ov.querySelector('#siAmt').value) ov.querySelector('#siAmt').value = rcPoTotal(po);
+    diff();
+  });
+  ov.querySelector('#siAmt').addEventListener('input', diff); diff();
+  ov.querySelector('#siSave').addEventListener('click', function(){
+    var amt = parseFloat(ov.querySelector('#siAmt').value);
+    if(isNaN(amt) || amt <= 0){ toast('Enter the amount billed'); return; }
+    var data = { supplierId:supId, number:ov.querySelector('#siNum').value.trim(), date:ov.querySelector('#siDate').value || todayKey(), amount:r2(amt), poId:ov.querySelector('#siPo').value || null, note:ov.querySelector('#siNote').value.trim() };
+    if(inv){ refs.supplierInvoices.doc(inv.id).update(data); logAudit('update','supplierInvoice',inv.id,'Edited supplier invoice '+data.number+' for '+sup.name); }
+    else { data.createdAt = new Date().toISOString(); refs.supplierInvoices.doc().set(data); logAudit('create','supplierInvoice',null,'Supplier invoice '+data.number+' '+fmtMoney(data.amount)+' from '+sup.name); }
+    closeModal(); toast('Invoice saved'); render();
+  });
+  var del = ov.querySelector('#siDel'); if(del) del.addEventListener('click', function(){ confirmSheet('Delete this invoice?', 'It will no longer count towards what you owe '+sup.name+'.', 'Delete', function(){ refs.supplierInvoices.doc(inv.id).delete(); logAudit('delete','supplierInvoice',inv.id,'Deleted supplier invoice '+(inv.number||'')); toast('Invoice deleted'); render(); }, true); });
+}
+function openSupplierPaymentSheet(supId, pay){
+  var sup = State.suppliers.find(function(s){ return s.id === supId; }); if(!sup) return;
+  var html = '<div class="sheet-head"><h2>'+(pay?'Payment':'Record payment')+'</h2></div><div class="banner">'+esc(sup.name)+'</div>' +
+    '<div class="field-row"><div class="field"><label>Date</label><input id="spDate" type="date" value="'+esc(pay?pay.date||'':todayKey())+'"></div>' +
+    '<div class="field"><label>Amount paid</label><input id="spAmt" type="number" inputmode="decimal" step="0.01" value="'+(pay?pay.amount:'')+'"></div></div>' +
+    '<div class="field-row"><div class="field"><label>Method</label><select id="spMethod">'+['Bank transfer','Cash','Card','Mobile wallet','Cheque','Other'].map(function(o){ return '<option'+(pay&&pay.method===o?' selected':'')+'>'+o+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field"><label>Reference</label><input id="spRef" value="'+esc(pay?pay.ref||'':'')+'"></div></div>' +
+    '<div class="actions">'+(pay?'<button class="btn btn-danger" id="spDel" type="button">Delete</button>':'')+'<button class="btn btn-primary btn-block" id="spSave" type="button">Save payment</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#spSave').addEventListener('click', function(){
+    var amt = parseFloat(ov.querySelector('#spAmt').value);
+    if(isNaN(amt) || amt <= 0){ toast('Enter the amount paid'); return; }
+    var data = { supplierId:supId, date:ov.querySelector('#spDate').value || todayKey(), amount:r2(amt), method:ov.querySelector('#spMethod').value, ref:ov.querySelector('#spRef').value.trim() };
+    if(pay){ refs.supplierPayments.doc(pay.id).update(data); logAudit('update','supplierPayment',pay.id,'Edited payment to '+sup.name); }
+    else { data.createdAt = new Date().toISOString(); refs.supplierPayments.doc().set(data); logAudit('create','supplierPayment',null,'Paid '+sup.name+' '+fmtMoney(data.amount)+' ('+data.method+')'); }
+    closeModal(); toast('Payment saved'); render();
+  });
+  var del = ov.querySelector('#spDel'); if(del) del.addEventListener('click', function(){ confirmSheet('Delete this payment?', 'The amount will count as unpaid again.', 'Delete', function(){ refs.supplierPayments.doc(pay.id).delete(); logAudit('delete','supplierPayment',pay.id,'Deleted payment to '+sup.name); toast('Payment deleted'); render(); }, true); });
+}
+function openSupplierStatementSheet(supId){
+  var sup = State.suppliers.find(function(s){ return s.id === supId; }); if(!sup) return;
+  var d = rcSupplierData(supId);
+  var html = '<div class="sheet-head"><h2>Supplier statement</h2></div><div class="banner">'+esc(sup.name)+' · our records say you owe <b>'+fmtMoney(d.owed)+'</b> (billed − paid)</div>' +
+    '<div class="field-row"><div class="field"><label>Statement date</label><input id="stDate" type="date" value="'+todayKey()+'"></div>' +
+    '<div class="field"><label>Closing balance on their statement</label><input id="stBal" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>' +
+    '<div id="stRes"></div><div class="field"><label>Note (optional)</label><input id="stNote"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="stSave" type="button">Save statement check</button></div>';
+  var ov = openSheet(html, {center:true});
+  function calc(){
+    var v = parseFloat(ov.querySelector('#stBal').value), box = ov.querySelector('#stRes');
+    if(isNaN(v)){ box.innerHTML = ''; return null; }
+    var df = r2(v - d.owed);
+    box.innerHTML = '<div class="banner" style="display:block;'+(Math.abs(df)<0.01?'color:var(--success);':'')+'">'+(Math.abs(df)<0.01 ? 'Matches our records.' : 'Statement is '+sgnMoney(df)+' compared with our records. Check for a missing invoice, payment or credit note.')+'</div>';
+    return df;
+  }
+  ov.querySelector('#stBal').addEventListener('input', calc);
+  ov.querySelector('#stSave').addEventListener('click', function(){
+    var v = parseFloat(ov.querySelector('#stBal').value);
+    if(isNaN(v)){ toast('Enter the statement balance'); return; }
+    var df = r2(v - d.owed);
+    refs.supplierStatements.doc().set({ supplierId:supId, asAt:ov.querySelector('#stDate').value || todayKey(), balance:r2(v), ourBalance:d.owed, difference:df, note:ov.querySelector('#stNote').value.trim(), createdAt:new Date().toISOString(), by:State.session ? State.session.name : '' });
+    logAudit('other','reconciliation',supId,'Supplier statement check for '+sup.name+': statement '+fmtMoney(v)+', records '+fmtMoney(d.owed)+(Math.abs(df)<0.01?' (matches)':' (difference '+fmtMoney(df)+')'));
+    closeModal(); toast('Statement check saved'); render();
+  });
+}
+
+/* ---------- stock take ---------- */
+var TK = null;   // the stock take being counted: { id, counts:{productId:counted}, search, limit, saveT }
+function openStockTakeStartSheet(){
+  var open = State.stockTakes.filter(function(t){ return t.status === 'open'; });
+  var html = '<div class="sheet-head"><h2>Stock take</h2></div>' +
+    '<div class="banner" style="display:block;">Count what is physically on the shelf and enter it. Pesa compares it with the stock list, shows the variance in <b>units</b>, <b>cost</b> and <b>cash value</b>, and (when you post it) corrects the stock list. Products you do not count are left as they are.</div>' +
+    (open.length ? '<div class="section-title">Continue</div><div class="rowlist">' + open.map(function(t){ return '<div class="row" data-tkopen="'+t.id+'"><div class="main"><div class="title">'+esc(t.name)+'</div><div class="sub">'+Object.keys(t.counts||{}).length.toLocaleString()+' counted · started '+esc(fmtDateTime(t.createdAt))+'</div></div></div>'; }).join('') + '</div>' : '') +
+    '<div class="field"><label>Name for this stock take</label><input id="tkName" value="Stock take '+esc(fmtDateNice(new Date()))+'"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="tkNew" type="button">Start new stock take</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelectorAll('[data-tkopen]').forEach(function(el){ el.addEventListener('click', function(){ closeModal(); openStockTakeSheet(el.getAttribute('data-tkopen')); }); });
+  ov.querySelector('#tkNew').addEventListener('click', function(){
+    var ref = refs.stockTakes.doc();
+    ref.set({ name:ov.querySelector('#tkName').value.trim() || 'Stock take', status:'open', counts:{}, createdAt:new Date().toISOString(), createdBy:State.session ? State.session.name : '' }).then(function(){ closeModal(); openStockTakeSheet(ref.id); });
+  });
+}
+function takeCompute(counts){
+  var pm = {}; State.products.forEach(function(p){ pm[p.id] = p; });
+  var lines = [], s = { counted:0, matched:0, shortQ:0, shortC:0, shortR:0, overQ:0, overC:0, overR:0, netQ:0, netC:0, netR:0, missing:0 };
+  Object.keys(counts||{}).forEach(function(id){
+    var p = pm[id], c = Number(counts[id]); if(!p || isNaN(c)) { s.missing++; return; }
+    var sys = Number(p.stockQty)||0, df = r2(c - sys), cost = Number(p.costPrice)||0, sell = Number(p.sellPrice)||0;
+    s.counted++;
+    if(Math.abs(df) < 0.0005){ s.matched++; return; }
+    var ln = { id:id, name:p.name, system:sys, counted:c, diff:df, cost:cost, sell:sell, vc:r2(df*cost), vr:r2(df*sell) };
+    lines.push(ln);
+    if(df < 0){ s.shortQ += -df; s.shortC += -df*cost; s.shortR += -df*sell; } else { s.overQ += df; s.overC += df*cost; s.overR += df*sell; }
+  });
+  s.netQ = r2(s.overQ - s.shortQ); s.netC = r2(s.overC - s.shortC); s.netR = r2(s.overR - s.shortR);
+  ['shortQ','shortC','shortR','overQ','overC','overR'].forEach(function(k){ s[k] = r2(s[k]); });
+  lines.sort(function(a,b){ return Math.abs(b.vc) - Math.abs(a.vc) || Math.abs(b.diff) - Math.abs(a.diff); });
+  return { lines:lines, s:s };
+}
+function takeSummaryHtml(s){
+  return rcTable(['Variance','Units','At cost','Cash value'], [
+    { cells:['Short (less than the list)', '<span class="variance-bad">'+s.shortQ.toLocaleString()+'</span>', '<span class="variance-bad">'+fmtMoney(s.shortC)+'</span>', '<span class="variance-bad">'+fmtMoney(s.shortR)+'</span>'] },
+    { cells:['Over (more than the list)', '<span class="variance-over">'+s.overQ.toLocaleString()+'</span>', '<span class="variance-over">'+fmtMoney(s.overC)+'</span>', '<span class="variance-over">'+fmtMoney(s.overR)+'</span>'] },
+    { cells:['Net', '<span class="'+varCls(s.netC)+'">'+(s.netQ>0?'+':'')+s.netQ.toLocaleString()+'</span>', '<span class="'+varCls(s.netC)+'">'+sgnMoney(s.netC)+'</span>', '<span class="'+varCls(s.netR)+'">'+sgnMoney(s.netR)+'</span>'], _cls:'rc-total' }
+  ], {}) + '<div style="font-size:12px;color:var(--text-muted);margin:-4px 2px 10px;">'+s.counted.toLocaleString()+' product(s) counted, '+s.matched.toLocaleString()+' matched the stock list. Cash value is at selling price.</div>';
+}
+function openStockTakeSheet(id){
+  var take = State.stockTakes.find(function(t){ return t.id === id; });
+  if(!take){ toast('That stock take was not found'); return; }
+  if(take.status === 'posted'){ openStockTakeResultSheet(take); return; }
+  TK = { id:id, counts:Object.assign({}, take.counts || {}), search:'', limit:40, saveT:null };
+  var html = '<div class="sheet-head"><h2>'+esc(take.name)+'</h2></div>' +
+    '<div id="tkSum"></div>' +
+    '<div class="searchbar" style="margin-bottom:8px;">'+ICONS.search+'<input id="tkSearch" placeholder="Search by name or barcode…"></div>' +
+    '<div id="tkList"></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="tkSheetBtn" type="button">Count sheet (CSV)</button><label class="btn btn-ghost" for="tkCsv" style="cursor:pointer;margin:0;">Upload counts (CSV)</label><input type="file" id="tkCsv" accept=".csv,text/csv" style="display:none;"></div>' +
+    '<div class="actions"><button class="btn btn-danger" id="tkDel" type="button">Discard</button><button class="btn btn-primary btn-block" id="tkReview" type="button">Review &amp; post</button></div>';
+  var ov = openSheet(html);
+  function saveSoon(){ clearTimeout(TK.saveT); TK.saveT = setTimeout(function(){ refs.stockTakes.doc(id).update({ counts:TK.counts, updatedAt:new Date().toISOString() }); }, 700); }
+  function paintSum(){ var c = takeCompute(TK.counts); ov.querySelector('#tkSum').innerHTML = takeSummaryHtml(c.s); }
+  function paintList(){
+    var q = TK.search.trim().toLowerCase();
+    var list = !q ? State.products : State.products.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q) > -1 || String(p.barcode||'').toLowerCase().indexOf(q) > -1; });
+    var shown = list.slice(0, TK.limit);
+    ov.querySelector('#tkList').innerHTML = (shown.length ? '<div class="rowlist">' + shown.map(function(p){
+      var c = TK.counts[p.id], sys = Number(p.stockQty)||0, has = c !== undefined && c !== '';
+      var df = has ? r2(Number(c) - sys) : 0;
+      return '<div class="row" style="cursor:default;"><div class="main"><div class="title">'+esc(p.name)+'</div><div class="sub">System '+sys.toLocaleString()+' · cost '+fmtMoney(p.costPrice)+' · sells '+fmtMoney(p.sellPrice)+'</div></div>' +
+        '<div class="trail"><input type="number" inputmode="decimal" step="any" data-tkc="'+p.id+'" value="'+(has?c:'')+'" placeholder="Count" style="width:84px;text-align:right;">' +
+        '<div class="note num" data-tkv="'+p.id+'" style="min-height:14px;">'+(has && Math.abs(df)>=0.0005 ? '<span class="'+varCls(df)+'">'+(df>0?'+':'')+df+' · '+sgnMoney(df*(Number(p.costPrice)||0))+'</span>' : (has?'<span class="variance-ok">OK</span>':''))+'</div></div></div>';
+    }).join('') + '</div>' : '<div class="empty"><div class="t">No matches</div></div>') +
+      (list.length > TK.limit ? '<div style="text-align:center;margin:10px 0;"><button class="btn btn-ghost" id="tkMore" type="button">Show more ('+(list.length-TK.limit).toLocaleString()+' more — or search)</button></div>' : '');
+    ov.querySelectorAll('[data-tkc]').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var pid = inp.getAttribute('data-tkc'), p = State.products.find(function(x){ return x.id === pid; });
+        if(inp.value === '') delete TK.counts[pid]; else TK.counts[pid] = parseFloat(inp.value);
+        var out = ov.querySelector('[data-tkv="'+pid+'"]');
+        if(out && p){ if(inp.value === ''){ out.innerHTML = ''; } else { var df = r2(parseFloat(inp.value) - (Number(p.stockQty)||0)); out.innerHTML = Math.abs(df)<0.0005 ? '<span class="variance-ok">OK</span>' : '<span class="'+varCls(df)+'">'+(df>0?'+':'')+df+' · '+sgnMoney(df*(Number(p.costPrice)||0))+'</span>'; } }
+        paintSumSoon(); saveSoon();
+      });
+    });
+    var more = ov.querySelector('#tkMore'); if(more) more.addEventListener('click', function(){ TK.limit += 80; paintList(); });
+  }
+  var sumT = null; function paintSumSoon(){ clearTimeout(sumT); sumT = setTimeout(paintSum, 250); }
+  paintSum(); paintList();
+  ov.querySelector('#tkSearch').addEventListener('input', debounce(function(){ TK.search = ov.querySelector('#tkSearch').value; TK.limit = 40; paintList(); }, 220));
+  ov.querySelector('#tkSheetBtn').addEventListener('click', function(){
+    var q = function(v){ v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    var out = ['Barcode,Name,System quantity,Counted quantity'];
+    State.products.forEach(function(p){ out.push([q(p.barcode||''), q(p.name), q(p.stockQty||0), q(TK.counts[p.id]!==undefined?TK.counts[p.id]:'')].join(',')); });
+    if(browserDownload('pesa-count-sheet.csv', new Blob([out.join('\r\n')], {type:'text/csv'}))) toast('Count sheet downloaded ('+State.products.length.toLocaleString()+' products)');
+  });
+  ov.querySelector('#tkCsv').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var lines = String(reader.result||'').split(/\r?\n/).filter(function(l){ return l.trim(); });
+      if(!lines.length){ toast('That file is empty'); return; }
+      var head = parseCsvLine(lines[0]).map(function(h){ return h.toLowerCase(); }), idx = { code:-1, name:-1, count:-1 };
+      head.forEach(function(h,i){ if(/barcode|ean|sku|code/.test(h)) idx.code = i; else if(/name|product|item|desc/.test(h)) idx.name = i; else if(/count/.test(h) || (/qty|quantity|stock|physical/.test(h) && !/system/.test(h))) idx.count = i; });
+      if(idx.count < 0 || (idx.code < 0 && idx.name < 0)){ toast('Need a name or barcode column and a "Counted" column'); return; }
+      var byCode = {}, byName = {}; State.products.forEach(function(p){ if(p.barcode) byCode[String(p.barcode).trim()] = p; byName[String(p.name||'').trim().toLowerCase()] = p; });
+      var ok = 0, bad = 0;
+      lines.slice(1).forEach(function(l){
+        var c = parseCsvLine(l), v = c[idx.count]; if(v === undefined || v === '') return;
+        var p = (idx.code > -1 && c[idx.code] && byCode[String(c[idx.code]).trim()]) || (idx.name > -1 && byName[String(c[idx.name]||'').trim().toLowerCase()]);
+        if(!p || isNaN(parseFloat(v))){ bad++; return; }
+        TK.counts[p.id] = parseFloat(v); ok++;
+      });
+      saveSoon(); paintSum(); paintList();
+      toast(ok.toLocaleString()+' counts loaded'+(bad?' · '+bad.toLocaleString()+' rows not matched':''));
+    };
+    reader.readAsText(file);
+  });
+  ov.querySelector('#tkDel').addEventListener('click', function(){ confirmSheet('Discard this stock take?', 'The counts entered so far are deleted. The stock list is not changed.', 'Discard', function(){ refs.stockTakes.doc(id).delete(); TK = null; toast('Stock take discarded'); render(); }, true); });
+  ov.querySelector('#tkReview').addEventListener('click', function(){
+    clearTimeout(TK.saveT);
+    refs.stockTakes.doc(id).update({ counts:TK.counts, updatedAt:new Date().toISOString() });
+    openStockTakeReviewSheet(id);
+  });
+}
+function openStockTakeReviewSheet(id){
+  var take = State.stockTakes.find(function(t){ return t.id === id; }); if(!take) return;
+  var counts = (TK && TK.id === id) ? TK.counts : (take.counts || {});
+  var c = takeCompute(counts), s = c.s, uncounted = State.products.length - s.counted;
+  var html = '<div class="sheet-head"><h2>Review &amp; post</h2></div>' + takeSummaryHtml(s) +
+    '<div class="banner" style="display:block;">'+uncounted.toLocaleString()+' products were not counted and will not change. Posting sets the stock list to your counts for the '+c.lines.length.toLocaleString()+' product(s) that differ, and records the variance.</div>' +
+    '<div class="section-title">Biggest variances</div>' + (c.lines.length ? rcTable(['Product','System','Counted','Diff','At cost','Cash value'], c.lines.slice(0,100).map(function(l){
+      return { cells:[esc(l.name), l.system.toLocaleString(), l.counted.toLocaleString(), '<span class="'+varCls(l.diff)+'">'+(l.diff>0?'+':'')+l.diff+'</span>', sgnMoney(l.vc), sgnMoney(l.vr)] };
+    }), {}) + (c.lines.length > 100 ? '<div class="banner">Showing the 100 biggest of '+c.lines.length.toLocaleString()+'. All are saved with the stock take.</div>' : '') : '<div class="empty"><div class="t">Everything counted matches the stock list.</div></div>') +
+    '<div class="actions"><button class="btn btn-ghost" id="rvBack" type="button">Back to counting</button><button class="btn btn-primary btn-block" id="rvPost" type="button">Post &amp; adjust stock</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#rvBack').addEventListener('click', function(){ openStockTakeSheet(id); });
+  ov.querySelector('#rvPost').addEventListener('click', function(){
+    var btn = ov.querySelector('#rvPost'); btn.disabled = true; btn.textContent = 'Posting…';
+    postStockTake(take, counts, c).then(function(){ closeModal(); TK = null; toast('Stock take posted — stock list updated'); render(); }).catch(function(e){ console.warn(e); btn.disabled = false; btn.textContent = 'Post & adjust stock'; toast('Could not post — try again'); });
+  });
+}
+async function postStockTake(take, counts, c){
+  var pm = {}; State.products.forEach(function(p){ pm[p.id] = p; });
+  var cur = stockTotals(), s = c.s, now = new Date().toISOString();
+  var after = { at:now, items:cur.items, qty:r2(cur.qty + s.netQ), cost:r2(cur.cost + s.netC), retail:r2(cur.retail + s.netR) };
+  var changes = c.lines.map(function(l){ var p = Object.assign({}, pm[l.id]); delete p.id; p.stockQty = l.counted; p.updatedAt = now; return { id:l.id, data:p }; });
+  var wasHold = BULK_HOLD; BULK_HOLD = true;
+  try{
+    for(var i=0; i<changes.length; i+=1500){ await refs.products.setMany(changes.slice(i, i+1500)); await new Promise(function(r){ setTimeout(r, 0); }); }
+  } finally { BULK_HOLD = wasHold; }
+  await Persist.saved();
+  await refs.stockTakes.doc(take.id).update({ status:'posted', postedAt:now, postedBy:State.session ? State.session.name : '', counts:counts,
+    summary:s, before:{ at:now, items:cur.items, qty:cur.qty, cost:cur.cost, retail:cur.retail }, after:after,
+    lines:c.lines.map(function(l){ return { id:l.id, name:l.name, system:l.system, counted:l.counted, diff:l.diff, cost:l.cost, sell:l.sell, vc:l.vc, vr:l.vr }; }) });
+  recordStockMove('count', s.netQ, s.netC, s.netR, 'Stock take: '+(take.name||''));
+  State.settings = Object.assign({}, State.settings, { stockBaseline: after });
+  refs.settings.set(State.settings);
+  logAudit('other','stock',take.id,'Stock take "'+(take.name||'')+'" posted: '+s.counted.toLocaleString()+' counted, net '+(s.netQ>0?'+':'')+s.netQ+' units, '+sgnMoney(s.netC)+' at cost, '+sgnMoney(s.netR)+' cash value');
+  await Persist.saved();
+  if(typeof render === 'function') setTimeout(function(){ _stockTotalsCache = null; render(); }, 100);
+}
+function openStockTakeResultSheet(take){
+  var s = take.summary || {}, lines = take.lines || [];
+  var html = '<div class="sheet-head"><h2>'+esc(take.name||'Stock take')+'</h2></div>' +
+    '<div class="banner">Posted '+esc(fmtDateTime(take.postedAt))+(take.postedBy?' by '+esc(take.postedBy):'')+'</div>' + takeSummaryHtml(Object.assign({ counted:0, matched:0, shortQ:0, shortC:0, shortR:0, overQ:0, overC:0, overR:0, netQ:0, netC:0, netR:0 }, s)) +
+    (take.before && take.after ? '<div class="tillcard">' + rcRow('Stock at cost before → after', fmtMoney(take.before.cost)+' → '+fmtMoney(take.after.cost)) + rcRow('Cash value before → after', fmtMoney(take.before.retail)+' → '+fmtMoney(take.after.retail)) + rcRow('Units before → after', take.before.qty.toLocaleString()+' → '+take.after.qty.toLocaleString()) + '</div>' : '') +
+    '<div class="section-title">Variances ('+lines.length.toLocaleString()+')</div>' +
+    (lines.length ? rcTable(['Product','System','Counted','Diff','At cost','Cash value'], lines.slice(0,100).map(function(l){ return { cells:[esc(l.name), l.system.toLocaleString(), l.counted.toLocaleString(), '<span class="'+varCls(l.diff)+'">'+(l.diff>0?'+':'')+l.diff+'</span>', sgnMoney(l.vc), sgnMoney(l.vr)] }; })) : '<div class="empty"><div class="t">No variances.</div></div>') +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="trCsv" type="button">Download all variances (CSV)</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#trCsv').addEventListener('click', function(){
+    var q = function(v){ v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    var out = ['Product,System quantity,Counted,Difference,Cost price,Selling price,Variance at cost,Variance cash value'];
+    lines.forEach(function(l){ out.push([q(l.name), l.system, l.counted, l.diff, l.cost, l.sell, l.vc, l.vr].join(',')); });
+    if(browserDownload('pesa-stock-variances-'+(take.postedAt||'').slice(0,10)+'.csv', new Blob([out.join('\r\n')], {type:'text/csv'}))) toast('Variance report downloaded');
+  });
+}
+
 /* ============================== AUTOMATIC BACKUPS ==============================
    A snapshot of the business is saved on this device once a day while Pesa is
    open (owner or manager login), keeping the latest 7. They live in the
@@ -9912,7 +10893,8 @@ function backupPayload(){
     products: State.products, customers: State.customers, sales: State.sales, expenses: State.expenses,
     invoices: State.invoices, reports: State.reports, suppliers: State.suppliers, purchaseOrders: State.purchaseOrders,
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
-    posDevices: State.posDevices, posBatches: State.posBatches
+    posDevices: State.posDevices, posBatches: State.posBatches,
+    stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -9942,6 +10924,8 @@ async function restoreBackupData(data){
   await put(refs.suppliers, data.suppliers); await put(refs.purchaseOrders, data.purchaseOrders);
   await put(refs.branches, data.branches); await put(refs.wastage, data.wastage); await put(refs.tills, data.tillSessions);
   await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches);
+  await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
+  await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
@@ -10132,8 +11116,8 @@ function maybeShowWhatsNew(){
    two short codes, shown as QR codes or text. Newest change wins per record. */
 var NB_MT_KEY = 'pesa_mtimes_' + WS.id;
 var NB_MT = null, nbSaveTimer = null;
-function nbMt(){ if(!NB_MT){ try{ NB_MT = JSON.parse(localStorage.getItem(NB_MT_KEY) || '{}') || {}; }catch(e){ NB_MT = {}; } } return NB_MT; }
-function nbPersist(){ clearTimeout(nbSaveTimer); nbSaveTimer = setTimeout(function(){ try{ localStorage.setItem(NB_MT_KEY, JSON.stringify(NB_MT)); }catch(e){} }, 800); }
+function nbMt(){ if(!NB_MT){ NB_MT = Persist.kvGet(NB_MT_KEY) || {}; } return NB_MT; }
+function nbPersist(){ clearTimeout(nbSaveTimer); nbSaveTimer = setTimeout(function(){ Persist.kvSet(NB_MT_KEY, NB_MT); }, 800); }
 function nbCollOf(collPath){ return collPath.indexOf(WS.prefix) === 0 ? collPath.slice(WS.prefix.length) : collPath; }
 // Called after every local write (see Sync.start): remembers when each record last changed.
 function nearbyNote(collPath, id, data){
@@ -10151,7 +11135,7 @@ function nbLocalSet(){
   return out;
 }
 function nbApply(list){
-  var all = Store.raw.read(), m = nbMt(), touchedColl = {}, touchedDoc = [], n = 0;
+  var all = Store.raw.read(), m = nbMt(), touchedColl = {}, touchedDoc = [], touchedPairs = [], n = 0;
   list.forEach(function(r){
     var k = r.c+'|'+r.i, cp = WS.prefix + r.c;
     all[cp] = all[cp] || {};
@@ -10160,11 +11144,11 @@ function nbApply(list){
     if(!(r.t > curT)) return;
     if(r.d === null){ if(exists) delete all[cp][r.i]; m[k] = { t:r.t, del:1 }; }
     else { all[cp][r.i] = r.d; m[k] = { t:r.t }; }
-    touchedColl[cp] = 1; touchedDoc.push(cp+'/'+r.i); n++;
+    touchedColl[cp] = 1; touchedDoc.push(cp+'/'+r.i); touchedPairs.push([cp, r.i]); n++;
     try{ Sync.queue(cp, r.i, r.d); }catch(e){}   // if cloud connection is on, pass the change on
   });
   if(n){
-    Store.raw.write(all); nbPersist();
+    Store.raw.write(all, touchedPairs); nbPersist();
     Object.keys(touchedColl).forEach(function(cp){ Store.raw.notify(cp); });
     touchedDoc.forEach(function(p){ Store.raw.notifyDoc(p); });
   }
