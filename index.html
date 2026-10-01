@@ -740,6 +740,18 @@
   .rolebadge{ display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; padding:3px 8px; border-radius:999px; background:var(--surface-3); color:var(--text-muted); }
   .rolebadge.owner{ background:var(--accent-bg,rgba(214,158,46,0.15)); color:var(--accent); }
   .rolebadge.manager{ background:rgba(59,130,246,0.15); color:#3B82F6; }
+  .rolebadge.stockclerk{ background:rgba(168,85,247,0.15); color:#A855F7; }
+  .rolebadge.pending{ background:var(--accent-bg,rgba(214,158,46,0.15)); color:var(--accent); }
+  .me-hero{ background:var(--primary); color:var(--primary-contrast); border-radius:16px; padding:16px; margin-bottom:12px; }
+  .me-hero .hi{ font-size:12.5px; opacity:.85; } .me-hero .nm{ font-size:21px; font-weight:700; margin:2px 0 6px; } .me-hero .meta{ font-size:12.5px; opacity:.9; }
+  .me-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .me-act{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:14px; border-radius:14px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-weight:600; font-size:14px; cursor:pointer; text-align:left; }
+  .me-act svg{ width:22px; height:22px; color:var(--primary); }
+  .me-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .me-stat{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; }
+  .me-stat .l{ font-size:11.5px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.03em; } .me-stat .v{ font-size:19px; font-weight:700; margin-top:4px; }
+  .me-week{ display:flex; align-items:flex-end; gap:6px; height:70px; margin:6px 0 4px; } .me-week i{ flex:1; background:var(--primary); border-radius:5px 5px 0 0; min-height:3px; opacity:.85; }
+  .me-weekl{ display:flex; gap:6px; font-size:10.5px; color:var(--text-muted); text-align:center; } .me-weekl span{ flex:1; }
   .rolebadge.cashier{ background:var(--success-bg); color:var(--success); }
   .staffrow{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
   .staffrow:last-child{ border-bottom:none; }
@@ -1155,6 +1167,8 @@ Object.assign(LANGS.af.strings, {"Paid by (name, optional)": "Betaal deur (naam,
 Object.assign(LANGS.de.strings, {"Paid by (name, optional)": "Bezahlt von (Name, optional)", "Who is paying?": "Wer zahlt?", "Employees on this terminal": "Mitarbeiter an diesem Terminal", "Card customer": "Kartenkunde", "Wallet customer": "Wallet-Kunde", "Cash customer": "Barkunde", "Approval": "Genehmigung", "owes now": "schuldet jetzt", "Change": "Wechselgeld", "No point of sale records yet": "Noch keine Kassenaufzeichnungen", "Sales made on this terminal appear here, sorted by how they were paid.": "Verkäufe an diesem Terminal erscheinen hier, sortiert nach Zahlungsart.", "None": "Keine", "Date and time": "Datum und Uhrzeit", "Terminal": "Terminal", "Card number": "Kartennummer", "How the card was used": "Wie die Karte verwendet wurde", "Approval code": "Genehmigungscode", "Limit override approved by": "Limitüberschreitung genehmigt von", "Reference": "Referenz", "Status": "Status", "Records": "Aufzeichnungen"});
 Object.assign(LANGS.af.strings, {"Cash back given to the customer (N$, optional)": "Kontant terug aan die kliënt gegee (N$, opsioneel)", "Charge the card": "Debiteer die kaart", "give the customer": "gee die kliënt", "in cash": "in kontant", "Cash back": "Kontant terug", "Charged to card": "Aan kaart gehef", "Cash back paid out": "Kontant terug uitbetaal", "Till drawer opened": "Kassalaai oop", "Open the till drawer by hand. Connect a Bluetooth receipt printer with a cash drawer in Settings to open it automatically.": "Maak die kassalaai met die hand oop. Koppel 'n Bluetooth-kwitansiedrukker met 'n kontantlaai in Instellings om dit outomaties oop te maak.", "Cash drawer": "Kontantlaai", "Open the till drawer when a customer pays cash or takes cash back": "Maak die kassalaai oop wanneer 'n kliënt kontant betaal of kontant terug neem", "Connect printer and test the drawer": "Koppel drukker en toets die laai", "The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.": "Die laai word aan 'n Bluetooth-kwitansiedrukker gekoppel, wat die oopmaaksein stuur. Dit werk in Chrome op Android. Sonder 'n drukker sê Pesa jou om die laai met die hand oop te maak."});
 Object.assign(LANGS.de.strings, {"Cash back given to the customer (N$, optional)": "Dem Kunden ausgezahltes Bargeld (N$, optional)", "Charge the card": "Karte belasten mit", "give the customer": "dem Kunden geben", "in cash": "in bar", "Cash back": "Bargeldauszahlung", "Charged to card": "Der Karte belastet", "Cash back paid out": "Bargeldauszahlung ausgezahlt", "Till drawer opened": "Kassenschublade geöffnet", "Open the till drawer by hand. Connect a Bluetooth receipt printer with a cash drawer in Settings to open it automatically.": "Öffnen Sie die Kassenschublade von Hand. Verbinden Sie in den Einstellungen einen Bluetooth-Belegdrucker mit Kassenschublade, damit sie automatisch aufgeht.", "Cash drawer": "Kassenschublade", "Open the till drawer when a customer pays cash or takes cash back": "Kassenschublade öffnen, wenn ein Kunde bar zahlt oder Bargeld abhebt", "Connect printer and test the drawer": "Drucker verbinden und Schublade testen", "The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.": "Die Schublade wird an einen Bluetooth-Belegdrucker angeschlossen, der das Öffnungssignal sendet. Das funktioniert in Chrome auf Android. Ohne Drucker sagt Pesa Ihnen, die Schublade von Hand zu öffnen."});
+Object.assign(LANGS.af.strings, {"New employee sign up": "Nuwe werknemer registreer", "Invite": "Uitnodiging", "Employee": "Werknemer", "Invite code": "Uitnodigingskode", "This code has expired. Make a new one.": "Hierdie kode het verval. Maak ’n nuwe een.", "Valid until": "Geldig tot", "The employee signs up on their own phone. That phone must be connected to this business first (Advanced Pesa Connection or nearby Wi-Fi). On this same device it works straight away.": "Die werknemer registreer op sy eie foon. Daardie foon moet eers met hierdie besigheid gekoppel wees (Advanced Pesa Connection of nabygeleë Wi-Fi). Op hierdie selfde toestel werk dit dadelik.", "Send on WhatsApp": "Stuur op WhatsApp", "Edit details": "Wysig besonderhede", "Cancel invite": "Kanselleer uitnodiging", "This employee has created their account.": "Hierdie werknemer het sy rekening geskep.", "Back to team": "Terug na span", "Cancel invite?": "Kanselleer uitnodiging?", "The code stops working and this employee is removed.": "Die kode hou op werk en hierdie werknemer word verwyder.", "Your employer gave you a 6 digit invite code. Enter it to create your own account.": "Jou werkgewer het vir jou ’n 6 syfer uitnodigingskode gegee. Voer dit in om jou eie rekening te skep.", "That code was not found. Check it, or ask your employer for a new one. This phone must be connected to the business.": "Daardie kode is nie gevind nie. Gaan dit na, of vra jou werkgewer vir ’n nuwe een. Hierdie foon moet met die besigheid gekoppel wees.", "This code has expired. Ask your employer for a new one.": "Hierdie kode het verval. Vra jou werkgewer vir ’n nuwe een.", "Welcome": "Welkom", "You are joining": "Jy sluit aan by", "What this job can do": "Wat hierdie pos kan doen", "Choose a 4-digit PIN": "Kies ’n 4 syfer PIN", "Choose a password": "Kies ’n wagwoord", "Confirm PIN": "Bevestig PIN", "Create my account": "Skep my rekening", "The two entries do not match.": "Die twee invoere stem nie ooreen nie.", "This invite has already been used.": "Hierdie uitnodiging is reeds gebruik.", "Good morning": "Goeie more", "Good afternoon": "Goeie middag", "Good evening": "Goeie aand", "Out": "Uit", "Nothing is running low.": "Niks raak min nie.", "Open stock": "Maak voorraad oop", "Add a product": "Voeg ’n produk by", "My profile": "My profiel", "Products": "Produkte", "Wastage logged": "Wegdoening aangeteken", "New sale": "Nuwe verkoop", "My till": "My kassa", "Cash expected in drawer": "Kontant verwag in laai", "Your till is closed. Open it before you start selling.": "Jou kassa is gesluit. Maak dit oop voordat jy begin verkoop.", "My last 7 days": "My laaste 7 dae", "My recent sales": "My onlangse verkope", "No sales yet.": "Nog geen verkope nie.", "Job": "Pos", "Employee number": "Werknemernommer", "Joined": "Aangesluit", "Phone": "Foon", "What I can do": "Wat ek kan doen", "Not allowed": "Nie toegelaat nie", "Save details": "Stoor besonderhede", "Invited": "Uitgenooi", "Stock clerk": "Voorraadklerk", "Job title (optional)": "Poskenmerk (opsioneel)", "e.g. Front till cashier": "bv. Kassier by die voorste kassa", "How do they get access?": "Hoe kry hulle toegang?", "They create their own account": "Hulle skep hul eie rekening", "I set their PIN or password": "Ek stel hul PIN of wagwoord", "Phone or email (optional)": "Foon of e-pos (opsioneel)", "You get an invite code to give them. They open Pesa, tap New employee sign up, enter the code and choose their own PIN or password.": "Jy kry ’n uitnodigingskode om aan hulle te gee. Hulle maak Pesa oop, tik op Nuwe werknemer registreer, voer die kode in en kies hul eie PIN of wagwoord.", "Stock on hand, at selling price": "Voorraad byderhand, teen verkoopprys", "Products in stock list": "Produkte in voorraadlys", "units on hand": "eenhede byderhand", "Stock at selling price when filed": "Voorraad teen verkoopprys met afleg", "Products / units on hand": "Produkte / eenhede byderhand", "Storage is full on this device — export your data and free some space": "Berging is vol op hierdie toestel — voer jou data uit en maak spasie vry", "Stopped after": "Gestop na", "Tracking started from current stock": "Opsporing het begin vanaf huidige voorraad", "Enter the amount billed": "Voer die gefaktureerde bedrag in", "Invoice saved": "Faktuur gestoor", "Enter the amount paid": "Voer die bedrag betaal in", "Payment saved": "Betaling gestoor", "Payment deleted": "Betaling uitgevee", "Enter the statement balance": "Voer die staatsaldo in", "Statement check saved": "Staatkontrole gestoor", "That stock take was not found": "Daardie voorraadopname is nie gevind nie", "Count sheet downloaded (": "Telblad afgelaai (", "That file is empty": "Daardie lêer is leeg", "Need a name or barcode column and a \"Counted\" column": "’n Naam- of strepieskode-kolom en ’n \"Counted\"-kolom word benodig", "Stock take discarded": "Voorraadopname verwerp", "Stock take posted — stock list updated": "Voorraadopname gebook — voorraadlys opgedateer", "Could not post — try again": "Kon nie boek nie — probeer weer", "Variance report downloaded": "Verskilverslag afgelaai", "Optional": "Opsioneel", "Search by name or barcode…": "Soek volgens naam of strepieskode…", "Count": "Tel", "Sells at the till and point of sale and runs their own till.": "Verkoop by die kassa en verkooppunt en bestuur hul eie kassa.", "Looks after stock: counts, adds products and records wastage.": "Sorg vir voorraad: tel, voeg produkte by en teken wegdoening aan.", "Runs the shop day to day. Sees everything except the company legal details.": "Bestuur die winkel van dag tot dag. Sien alles behalwe die maatskappy se regsbesonderhede.", "Adding employees": "Voeg werknemers by", "Invite an employee": "Nooi ’n werknemer uit", "Employees create their own accounts, so you never have to know their PIN or password.": "Werknemers skep hul eie rekeninge, so jy hoef nooit hul PIN of wagwoord te ken nie.", "What each job can open": "Wat elke pos kan oopmaak", "A cashier sells and runs their own till. A stock clerk looks after stock and wastage. A manager sees everything except the company legal details. Only the owner has the whole app.": "’n Kassier verkoop en bestuur sy eie kassa. ’n Voorraadklerk sorg vir voorraad en wegdoening. ’n Bestuurder sien alles behalwe die maatskappy se regsbesonderhede. Net die eienaar het die hele toep.", "Employee sign up": "Werknemer registreer", "The employee opens Pesa on their own phone, taps New employee sign up and enters the code.": "Die werknemer maak Pesa op sy eie foon oop, tik op Nuwe werknemer registreer en voer die kode in.", "products ·": "produkte ·", "units · stock at cost": "eenhede · voorraad teen koste", "· at selling price": "· teen verkoopprys", "units · value at cost": "eenhede · waarde teen koste", "If a product with the same name (or barcode) already exists": "As ’n produk met dieselfde naam (of strepieskode) reeds bestaan", "Skip it (keep what I have) — recommended": "Slaan oor (behou wat ek het) — aanbeveel", "Update its prices and set stock to this number": "Werk die pryse op en stel voorraad op hierdie getal", "Update its prices and add this number to stock": "Werk die pryse op en voeg hierdie getal by voorraad", "Add it again as a new product": "Voeg dit weer by as ’n nuwe produk", "Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock, barcode. A header row is optional. There is no limit on rows: 30,000+ products upload in one go.": "Kolomme kan in enige volgorde wees: naam, kategorie, eenheid, koste, verkoopprys, hoeveelheid, lae voorraad, strepieskode. ’n Opskrifry is opsioneel. Daar is geen perk op rye nie. Meer as 30 000 produkte laai in een slag op.", "Stock value on record": "Voorraadwaarde op rekord", "Paid from": "Betaal vanaf", "Receipt / reference no.": "Kwitansie / verwysingsnr.", "Reconciliation is for owners and managers.": "Rekonsiliasie is vir eienaars en bestuurders.", "… type in the search box to narrow down": "… tik in die soekkassie om te vernou", "No suppliers": "Geen verskaffers nie", "Not started": "Nie begin nie", "End of day check (cash, card, wallets)": "Dageindkontrole (kontant, kaart, beursies)", "No suppliers yet": "Nog geen verskaffers nie", "Add supplier invoice": "Voeg verskafferfaktuur by", "This supplier is fully matched.": "Hierdie verskaffer is volledig gepas.", "Supplier invoices": "Verskafferfakture", "No invoices recorded.": "Geen fakture aangeteken nie.", "Payments": "Betalings", "No payments recorded.": "Geen betalings aangeteken nie.", "Received orders": "Ontvangde bestellings", "No received purchase orders yet. Mark a purchase order as received to bring it in here.": "Nog geen ontvangde aankoopbestellings nie. Merk ’n aankoopbestelling as ontvang om dit hier in te bring.", "Statement checks": "Staatkontroles", "Stock on hand now": "Voorraad nou byderhand", "Stock take (count stock)": "Voorraadopname (tel voorraad)", "To see stock variances, Pesa needs a starting point. Tap": "Om voorraadverskille te sien, het Pesa ’n beginpunt nodig. Tik op", "units worth": "eenhede ter waarde van", "at cost, which is": "teen koste, wat is", "Sales cash against stock sold": "Verkoopkontant teenoor voorraad verkoop", "Stock takes": "Voorraadopnames", "net at cost": "netto teen koste", "No stock takes yet.": "Nog geen voorraadopnames nie.", "Receipts and invoices against sales": "Kwitansies en fakture teenoor verkope", "A receipt is saved when you download, print or send it. Sales without one are normal if the customer did not want a receipt.": "’n Kwitansie word gestoor wanneer jy dit aflaai, druk of stuur. Verkope daarsonder is normaal as die kliënt nie ’n kwitansie wou hê nie.", "By day (tap a day to count what you hold)": "Per dag (tik op ’n dag om te tel wat jy het)", "No sales in this period": "Geen verkope in hierdie tydperk nie", "Mark all shown as reconciled": "Merk alles wat gewys word as gerekonsilieer", "Expenses (tick when matched to a receipt or payment)": "Uitgawes (merk af wanneer dit by ’n kwitansie of betaling pas)", "No expenses in this period": "Geen uitgawes in hierdie tydperk nie", "Not linked": "Nie gekoppel nie", "Supplier invoice number": "Verskafferfaktuurnommer", "Amount billed": "Bedrag gefaktureer", "Matches received order": "Pas by ontvangde bestelling", "Save invoice": "Stoor faktuur", "Amount paid": "Bedrag betaal", "Method": "Metode", "Supplier statement": "Verskafferstaat", "(billed − paid)": "(gefaktureer − betaal)", "Statement date": "Staatdatum", "Closing balance on their statement": "Sluitingssaldo op hul staat", "Save statement check": "Stoor staatkontrole", "Stock take": "Voorraadopname", "Count what is physically on the shelf and enter it. Pesa compares it with the stock list, shows the variance in": "Tel wat fisies op die rak is en voer dit in. Pesa vergelyk dit met die voorraadlys en wys die verskil in", "Name for this stock take": "Naam vir hierdie voorraadopname", "Start new stock take": "Begin nuwe voorraadopname", "Count sheet (CSV)": "Telblad (CSV)", "Discard": "Verwerp", "Biggest variances": "Grootste verskille", "Everything counted matches the stock list.": "Alles wat getel is, stem ooreen met die voorraadlys.", "Back to counting": "Terug na tel", "No variances.": "Geen verskille nie.", "Download all variances (CSV)": "Laai alle verskille af (CSV)", "Add a supplier first, then record purchase orders against them.": "Voeg eers ’n verskaffer by, teken dan aankoopbestellings teenoor hulle aan.", "Enter statement balance": "Voer staatsaldo in", "Start tracking from current stock": "Begin opsporing vanaf huidige voorraad", "Upload counts (CSV)": "Laai tellings op (CSV)", "left": "oor", "Sell and use the Point of sale": "Verkoop en gebruik die Verkooppunt", "Open and close your own till": "Maak jou eie kassa oop en toe", "See your own sales and records": "Sien jou eie verkope en rekords", "See stock levels": "Sien voorraadvlakke", "Change stock or prices": "Verander voorraad of pryse", "See reports, profit or other staff": "Sien verslae, wins of ander personeel", "Open the team list or business settings": "Maak die spanlys of besigheidsinstellings oop", "See and update stock": "Sien en werk voorraad op", "Record wastage and shrinkage": "Teken wegdoening en krimping aan", "See low stock alerts": "Sien lae voorraadwaarskuwings", "Sell or see sales": "Verkoop of sien verkope", "See reports or profit": "Sien verslae of wins", "Everything except company legal details": "Alles behalwe maatskappy se regsbesonderhede", "Add cashiers and stock clerks": "Voeg kassiers en voorraadklerke by", "See reports, stock and cash ups": "Sien verslae, voorraad en kassaafsluitings", "Change company legal details": "Verander maatskappy se regsbesonderhede", "Employees create their own accounts: the owner adds them and gets an invite code, and they sign up with it and choose their own PIN or password": "Werknemers skep hul eie rekeninge: die eienaar voeg hulle by en kry ’n uitnodigingskode, en hulle registreer daarmee en kies hul eie PIN of wagwoord", "Jobs decide what an employee can open. New Stock clerk job, and cashiers only see what they need": "Poste bepaal wat ’n werknemer kan oopmaak. Nuwe Voorraadklerk pos, en kassiers sien net wat hulle nodig het", "A personal dashboard for each employee with their sales, till, recent sales, low stock and profile": "’n Persoonlike oorsig vir elke werknemer met hul verkope, kassa, onlangse verkope, lae voorraad en profiel", "Employee accounts: the owner invites each employee with a code, the employee signs up and creates their own PIN or password, and each job only opens the parts of the app it needs. Only the owner has the whole app": "Werknemerrekeninge: die eienaar nooi elke werknemer uit met ’n kode, die werknemer registreer en skep sy eie PIN of wagwoord, en elke pos maak net die dele van die toep oop wat dit nodig het. Net die eienaar het die hele toep", "An invite code works for 7 days. Tap the employee in the Team list to make a new code or cancel the invite.": "’n Uitnodigingskode werk vir 7 dae. Tik op die werknemer in die Spanlys om ’n nuwe kode te maak of die uitnodiging te kanselleer.", "Team list": "Spanlys", "Sign in page → New employee sign up": "Aanmeldbladsy → Nuwe werknemer registreer", "Their phone must be connected to your business first, with Advanced Pesa Connection or nearby Wi-Fi. On the shop tablet it works straight away.": "Hul foon moet eers met jou besigheid gekoppel wees, met Advanced Pesa Connection of nabygeleë Wi-Fi. Op die winkel se tablet werk dit dadelik.", "Open Settings and tap Team, then Add staff member.": "Maak Instellings oop en tik op Span, dan Voeg personeellid by.", "Type their name, choose their job and an optional job title.": "Tik hul naam, kies hul pos en ’n opsionele poskenmerk.", "Leave They create their own account selected and tap Add staff member.": "Laat Hulle skep hul eie rekening gekies en tik op Voeg personeellid by.", "Send the invite code on WhatsApp, or read it out to them.": "Stuur die uitnodigingskode op WhatsApp, of lees dit vir hulle voor.", "Choose the job when you add the person. The screen lists what that job can and cannot do.": "Kies die pos wanneer jy die persoon byvoeg. Die skerm lys wat daardie pos kan en nie kan doen nie.", "Each employee lands on their own dashboard with only what they need.": "Elke werknemer beland op sy eie oorsig met net wat hulle nodig het.", "Open Pesa and tap New employee sign up.": "Maak Pesa oop en tik op Nuwe werknemer registreer.", "Enter the invite code.": "Voer die uitnodigingskode in.", "Choose a PIN (cashiers) or password and tap Create my account.": "Kies ’n PIN (kassiers) of wagwoord en tik op Skep my rekening."});
+Object.assign(LANGS.de.strings, {"New employee sign up": "Neuer Mitarbeiter registrieren", "Invite": "Einladung", "Employee": "Mitarbeiter", "Invite code": "Einladungscode", "This code has expired. Make a new one.": "Dieser Code ist abgelaufen. Erstellen Sie einen neuen.", "Valid until": "Gültig bis", "The employee signs up on their own phone. That phone must be connected to this business first (Advanced Pesa Connection or nearby Wi-Fi). On this same device it works straight away.": "Der Mitarbeiter registriert sich auf seinem eigenen Telefon. Dieses Telefon muss zuerst mit diesem Geschäft verbunden sein (Advanced Pesa Connection oder WLAN in der Nähe). Auf diesem Gerät funktioniert es sofort.", "Send on WhatsApp": "Per WhatsApp senden", "Edit details": "Angaben bearbeiten", "Cancel invite": "Einladung stornieren", "This employee has created their account.": "Dieser Mitarbeiter hat sein Konto erstellt.", "Back to team": "Zurück zum Team", "Cancel invite?": "Einladung stornieren?", "The code stops working and this employee is removed.": "Der Code funktioniert nicht mehr und dieser Mitarbeiter wird entfernt.", "Your employer gave you a 6 digit invite code. Enter it to create your own account.": "Ihr Arbeitgeber hat Ihnen einen 6 stelligen Einladungscode gegeben. Geben Sie ihn ein, um Ihr eigenes Konto zu erstellen.", "That code was not found. Check it, or ask your employer for a new one. This phone must be connected to the business.": "Dieser Code wurde nicht gefunden. Prüfen Sie ihn oder bitten Sie Ihren Arbeitgeber um einen neuen. Dieses Telefon muss mit dem Geschäft verbunden sein.", "This code has expired. Ask your employer for a new one.": "Dieser Code ist abgelaufen. Bitten Sie Ihren Arbeitgeber um einen neuen.", "Welcome": "Willkommen", "You are joining": "Sie treten bei:", "What this job can do": "Was diese Stelle tun kann", "Choose a 4-digit PIN": "Wählen Sie eine 4 stellige PIN", "Choose a password": "Wählen Sie ein Passwort", "Confirm PIN": "PIN bestätigen", "Create my account": "Mein Konto erstellen", "The two entries do not match.": "Die beiden Eingaben stimmen nicht überein.", "This invite has already been used.": "Diese Einladung wurde bereits verwendet.", "Good morning": "Guten Morgen", "Good afternoon": "Guten Tag", "Good evening": "Guten Abend", "Out": "Ausverkauft", "Nothing is running low.": "Nichts wird knapp.", "Open stock": "Bestand öffnen", "Add a product": "Produkt hinzufügen", "My profile": "Mein Profil", "Products": "Produkte", "Wastage logged": "Schwund erfasst", "New sale": "Neuer Verkauf", "My till": "Meine Kasse", "Cash expected in drawer": "Erwartetes Bargeld in der Schublade", "Your till is closed. Open it before you start selling.": "Ihre Kasse ist geschlossen. Öffnen Sie sie, bevor Sie mit dem Verkaufen beginnen.", "My last 7 days": "Meine letzten 7 Tage", "My recent sales": "Meine letzten Verkäufe", "No sales yet.": "Noch keine Verkäufe.", "Job": "Stelle", "Employee number": "Mitarbeiternummer", "Joined": "Beigetreten", "Phone": "Telefon", "What I can do": "Was ich tun kann", "Not allowed": "Nicht erlaubt", "Save details": "Angaben speichern", "Invited": "Eingeladen", "Stock clerk": "Lagermitarbeiter", "Job title (optional)": "Berufsbezeichnung (optional)", "e.g. Front till cashier": "z. B. Kassierer an der vorderen Kasse", "How do they get access?": "Wie erhalten sie Zugang?", "They create their own account": "Sie erstellen ihr eigenes Konto", "I set their PIN or password": "Ich lege ihre PIN oder ihr Passwort fest", "Phone or email (optional)": "Telefon oder E-Mail (optional)", "You get an invite code to give them. They open Pesa, tap New employee sign up, enter the code and choose their own PIN or password.": "Sie erhalten einen Einladungscode, den Sie weitergeben. Die Person öffnet Pesa, tippt auf Neuer Mitarbeiter registrieren, gibt den Code ein und wählt ihre eigene PIN oder ihr eigenes Passwort.", "Stock on hand, at selling price": "Lagerbestand zu Verkaufspreisen", "Products in stock list": "Produkte in der Bestandsliste", "units on hand": "Einheiten auf Lager", "Stock at selling price when filed": "Bestand zu Verkaufspreisen bei Ablage", "Products / units on hand": "Produkte / Einheiten auf Lager", "Storage is full on this device — export your data and free some space": "Der Speicher dieses Geräts ist voll — exportieren Sie Ihre Daten und geben Sie Speicherplatz frei", "Stopped after": "Gestoppt nach", "Tracking started from current stock": "Nachverfolgung ab aktuellem Bestand gestartet", "Enter the amount billed": "Geben Sie den berechneten Betrag ein", "Invoice saved": "Rechnung gespeichert", "Enter the amount paid": "Geben Sie den bezahlten Betrag ein", "Payment saved": "Zahlung gespeichert", "Payment deleted": "Zahlung gelöscht", "Enter the statement balance": "Geben Sie den Kontoauszugssaldo ein", "Statement check saved": "Kontoauszugsprüfung gespeichert", "That stock take was not found": "Diese Inventur wurde nicht gefunden", "Count sheet downloaded (": "Zählliste heruntergeladen (", "That file is empty": "Diese Datei ist leer", "Need a name or barcode column and a \"Counted\" column": "Eine Spalte für Name oder Barcode und eine Spalte \"Counted\" werden benötigt", "Stock take discarded": "Inventur verworfen", "Stock take posted — stock list updated": "Inventur gebucht — Bestandsliste aktualisiert", "Could not post — try again": "Buchung nicht möglich — versuchen Sie es erneut", "Variance report downloaded": "Differenzbericht heruntergeladen", "Optional": "Optional", "Search by name or barcode…": "Nach Name oder Barcode suchen…", "Count": "Zählen", "Sells at the till and point of sale and runs their own till.": "Verkauft an der Kasse und am Verkaufspunkt und führt die eigene Kasse.", "Looks after stock: counts, adds products and records wastage.": "Kümmert sich um den Bestand: zählt, fügt Produkte hinzu und erfasst Schwund.", "Runs the shop day to day. Sees everything except the company legal details.": "Führt das Geschäft im Tagesgeschäft. Sieht alles außer den rechtlichen Firmenangaben.", "Adding employees": "Mitarbeiter hinzufügen", "Invite an employee": "Mitarbeiter einladen", "Employees create their own accounts, so you never have to know their PIN or password.": "Mitarbeiter erstellen ihre eigenen Konten, sodass Sie ihre PIN oder ihr Passwort nie kennen müssen.", "What each job can open": "Was jede Stelle öffnen kann", "A cashier sells and runs their own till. A stock clerk looks after stock and wastage. A manager sees everything except the company legal details. Only the owner has the whole app.": "Ein Kassierer verkauft und führt die eigene Kasse. Ein Lagermitarbeiter kümmert sich um Bestand und Schwund. Ein Manager sieht alles außer den rechtlichen Firmenangaben. Nur der Inhaber hat die ganze App.", "Employee sign up": "Mitarbeiter registrieren", "The employee opens Pesa on their own phone, taps New employee sign up and enters the code.": "Der Mitarbeiter öffnet Pesa auf seinem eigenen Telefon, tippt auf Neuer Mitarbeiter registrieren und gibt den Code ein.", "products ·": "Produkte ·", "units · stock at cost": "Einheiten · Bestand zu Einkaufspreisen", "· at selling price": "· zu Verkaufspreisen", "units · value at cost": "Einheiten · Wert zu Einkaufspreisen", "If a product with the same name (or barcode) already exists": "Wenn ein Produkt mit demselben Namen (oder Barcode) bereits existiert", "Skip it (keep what I have) — recommended": "Überspringen (Vorhandenes behalten) — empfohlen", "Update its prices and set stock to this number": "Preise aktualisieren und Bestand auf diese Zahl setzen", "Update its prices and add this number to stock": "Preise aktualisieren und diese Zahl zum Bestand addieren", "Add it again as a new product": "Erneut als neues Produkt hinzufügen", "Columns can be in any order: name, category, unit, cost, sell price, quantity, low stock, barcode. A header row is optional. There is no limit on rows: 30,000+ products upload in one go.": "Die Spalten können in beliebiger Reihenfolge stehen: Name, Kategorie, Einheit, Einkaufspreis, Verkaufspreis, Menge, niedriger Bestand, Barcode. Eine Kopfzeile ist optional. Die Zeilenzahl ist nicht begrenzt. Über 30.000 Produkte werden in einem Zug hochgeladen.", "Stock value on record": "Erfasster Bestandswert", "Paid from": "Bezahlt von", "Receipt / reference no.": "Beleg / Referenznr.", "Reconciliation is for owners and managers.": "Der Abgleich ist für Inhaber und Manager.", "… type in the search box to narrow down": "… geben Sie im Suchfeld etwas ein, um einzugrenzen", "No suppliers": "Keine Lieferanten", "Not started": "Nicht gestartet", "End of day check (cash, card, wallets)": "Tagesabschlusskontrolle (Bargeld, Karte, Wallets)", "No suppliers yet": "Noch keine Lieferanten", "Add supplier invoice": "Lieferantenrechnung hinzufügen", "This supplier is fully matched.": "Dieser Lieferant ist vollständig abgeglichen.", "Supplier invoices": "Lieferantenrechnungen", "No invoices recorded.": "Keine Rechnungen erfasst.", "Payments": "Zahlungen", "No payments recorded.": "Keine Zahlungen erfasst.", "Received orders": "Erhaltene Bestellungen", "No received purchase orders yet. Mark a purchase order as received to bring it in here.": "Noch keine erhaltenen Einkaufsbestellungen. Markieren Sie eine Einkaufsbestellung als erhalten, um sie hier anzuzeigen.", "Statement checks": "Kontoauszugsprüfungen", "Stock on hand now": "Aktueller Lagerbestand", "Stock take (count stock)": "Inventur (Bestand zählen)", "To see stock variances, Pesa needs a starting point. Tap": "Um Bestandsdifferenzen zu sehen, braucht Pesa einen Ausgangspunkt. Tippen Sie auf", "units worth": "Einheiten im Wert von", "at cost, which is": "zu Einkaufspreisen, das sind", "Sales cash against stock sold": "Verkaufserlöse gegenüber verkauftem Bestand", "Stock takes": "Inventuren", "net at cost": "netto zu Einkaufspreisen", "No stock takes yet.": "Noch keine Inventuren.", "Receipts and invoices against sales": "Belege und Rechnungen gegenüber Verkäufen", "A receipt is saved when you download, print or send it. Sales without one are normal if the customer did not want a receipt.": "Ein Beleg wird gespeichert, wenn Sie ihn herunterladen, drucken oder senden. Verkäufe ohne Beleg sind normal, wenn der Kunde keinen Beleg wollte.", "By day (tap a day to count what you hold)": "Nach Tag (tippen Sie auf einen Tag, um Ihren Bestand zu zählen)", "No sales in this period": "Keine Verkäufe in diesem Zeitraum", "Mark all shown as reconciled": "Alle angezeigten als abgeglichen markieren", "Expenses (tick when matched to a receipt or payment)": "Ausgaben (abhaken, wenn einem Beleg oder einer Zahlung zugeordnet)", "No expenses in this period": "Keine Ausgaben in diesem Zeitraum", "Not linked": "Nicht verknüpft", "Supplier invoice number": "Lieferantenrechnungsnummer", "Amount billed": "Berechneter Betrag", "Matches received order": "Passt zur erhaltenen Bestellung", "Save invoice": "Rechnung speichern", "Amount paid": "Bezahlter Betrag", "Method": "Methode", "Supplier statement": "Lieferantenkontoauszug", "(billed − paid)": "(berechnet − bezahlt)", "Statement date": "Auszugsdatum", "Closing balance on their statement": "Schlusssaldo auf ihrem Kontoauszug", "Save statement check": "Kontoauszugsprüfung speichern", "Stock take": "Inventur", "Count what is physically on the shelf and enter it. Pesa compares it with the stock list, shows the variance in": "Zählen Sie, was tatsächlich im Regal liegt, und geben Sie es ein. Pesa vergleicht es mit der Bestandsliste und zeigt die Differenz in", "Name for this stock take": "Name für diese Inventur", "Start new stock take": "Neue Inventur starten", "Count sheet (CSV)": "Zählliste (CSV)", "Discard": "Verwerfen", "Biggest variances": "Größte Differenzen", "Everything counted matches the stock list.": "Alles Gezählte stimmt mit der Bestandsliste überein.", "Back to counting": "Zurück zum Zählen", "No variances.": "Keine Differenzen.", "Download all variances (CSV)": "Alle Differenzen herunterladen (CSV)", "Add a supplier first, then record purchase orders against them.": "Fügen Sie zuerst einen Lieferanten hinzu und erfassen Sie dann Einkaufsbestellungen für ihn.", "Enter statement balance": "Kontoauszugssaldo eingeben", "Start tracking from current stock": "Nachverfolgung ab aktuellem Bestand starten", "Upload counts (CSV)": "Zählergebnisse hochladen (CSV)", "left": "übrig", "Sell and use the Point of sale": "Verkaufen und den Verkaufspunkt nutzen", "Open and close your own till": "Eigene Kasse öffnen und schließen", "See your own sales and records": "Eigene Verkäufe und Aufzeichnungen ansehen", "See stock levels": "Bestandsmengen ansehen", "Change stock or prices": "Bestand oder Preise ändern", "See reports, profit or other staff": "Berichte, Gewinn oder andere Mitarbeiter ansehen", "Open the team list or business settings": "Teamliste oder Geschäftseinstellungen öffnen", "See and update stock": "Bestand ansehen und aktualisieren", "Record wastage and shrinkage": "Schwund und Verluste erfassen", "See low stock alerts": "Warnungen bei niedrigem Bestand ansehen", "Sell or see sales": "Verkaufen oder Verkäufe ansehen", "See reports or profit": "Berichte oder Gewinn ansehen", "Everything except company legal details": "Alles außer rechtlichen Firmenangaben", "Add cashiers and stock clerks": "Kassierer und Lagermitarbeiter hinzufügen", "See reports, stock and cash ups": "Berichte, Bestand und Kassenabschlüsse ansehen", "Change company legal details": "Rechtliche Firmenangaben ändern", "Employees create their own accounts: the owner adds them and gets an invite code, and they sign up with it and choose their own PIN or password": "Mitarbeiter erstellen ihre eigenen Konten: Der Inhaber fügt sie hinzu und erhält einen Einladungscode, damit registrieren sie sich und wählen ihre eigene PIN oder ihr eigenes Passwort", "Jobs decide what an employee can open. New Stock clerk job, and cashiers only see what they need": "Stellen bestimmen, was ein Mitarbeiter öffnen kann. Neue Stelle Lagermitarbeiter, und Kassierer sehen nur, was sie brauchen", "A personal dashboard for each employee with their sales, till, recent sales, low stock and profile": "Eine persönliche Übersicht für jeden Mitarbeiter mit Verkäufen, Kasse, letzten Verkäufen, niedrigem Bestand und Profil", "Employee accounts: the owner invites each employee with a code, the employee signs up and creates their own PIN or password, and each job only opens the parts of the app it needs. Only the owner has the whole app": "Mitarbeiterkonten: Der Inhaber lädt jeden Mitarbeiter mit einem Code ein, der Mitarbeiter registriert sich und erstellt seine eigene PIN oder sein eigenes Passwort, und jede Stelle öffnet nur die Teile der App, die sie braucht. Nur der Inhaber hat die ganze App", "An invite code works for 7 days. Tap the employee in the Team list to make a new code or cancel the invite.": "Ein Einladungscode gilt 7 Tage. Tippen Sie in der Teamliste auf den Mitarbeiter, um einen neuen Code zu erstellen oder die Einladung zu stornieren.", "Team list": "Teamliste", "Sign in page → New employee sign up": "Anmeldeseite → Neuer Mitarbeiter registrieren", "Their phone must be connected to your business first, with Advanced Pesa Connection or nearby Wi-Fi. On the shop tablet it works straight away.": "Das Telefon der Person muss zuerst mit Ihrem Geschäft verbunden sein, mit Advanced Pesa Connection oder WLAN in der Nähe. Auf dem Tablet im Geschäft funktioniert es sofort.", "Open Settings and tap Team, then Add staff member.": "Öffnen Sie Einstellungen und tippen Sie auf Team, dann auf Mitarbeiter hinzufügen.", "Type their name, choose their job and an optional job title.": "Geben Sie den Namen ein, wählen Sie die Stelle und optional eine Berufsbezeichnung.", "Leave They create their own account selected and tap Add staff member.": "Lassen Sie Sie erstellen ihr eigenes Konto ausgewählt und tippen Sie auf Mitarbeiter hinzufügen.", "Send the invite code on WhatsApp, or read it out to them.": "Senden Sie den Einladungscode per WhatsApp oder lesen Sie ihn vor.", "Choose the job when you add the person. The screen lists what that job can and cannot do.": "Wählen Sie die Stelle, wenn Sie die Person hinzufügen. Der Bildschirm listet auf, was diese Stelle tun kann und was nicht.", "Each employee lands on their own dashboard with only what they need.": "Jeder Mitarbeiter landet auf seiner eigenen Übersicht mit nur dem, was er braucht.", "Open Pesa and tap New employee sign up.": "Öffnen Sie Pesa und tippen Sie auf Neuer Mitarbeiter registrieren.", "Enter the invite code.": "Geben Sie den Einladungscode ein.", "Choose a PIN (cashiers) or password and tap Create my account.": "Wählen Sie eine PIN (Kassierer) oder ein Passwort und tippen Sie auf Mein Konto erstellen."});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -2086,7 +2100,18 @@ function logAudit(action, entityType, entityId, summary, whenDate, extra){
 /* ============================== company / staff accounts / login / roles ============================== */
 var SESSION_KEY = 'pesa_session_v2' + (WS.id === 'default' ? '' : '_' + WS.id);
 var NAMIBIA_REGIONS = ['Erongo','Hardap','ǁKaras','Kavango East','Kavango West','Khomas','Kunene','Ohangwena','Omaheke','Omusati','Oshana','Oshikoto','Otjozondjupa','Zambezi'];
-var ROLE_LABELS = { owner:'Owner', manager:'Manager / Supervisor', cashier:'Cashier' };
+var ROLE_LABELS = { owner:'Owner', manager:'Manager / Supervisor', cashier:'Cashier', stockclerk:'Stock clerk' };
+// What each job can open. Only the owner has the whole app.
+var ROLE_INFO = {
+  cashier:{ desc:'Sells at the till and point of sale and runs their own till.',
+    can:['Sell and use the Point of sale','Open and close your own till','See your own sales and records','See stock levels'],
+    cannot:['Change stock or prices','See reports, profit or other staff','Open the team list or business settings'] },
+  stockclerk:{ desc:'Looks after stock: counts, adds products and records wastage.',
+    can:['See and update stock','Add products','Record wastage and shrinkage','See low stock alerts'],
+    cannot:['Sell or see sales','See reports or profit','Open the team list or business settings'] },
+  manager:{ desc:'Runs the shop day to day. Sees everything except the company legal details.',
+    can:['Everything except company legal details','Add cashiers and stock clerks','See reports, stock and cash ups'], cannot:['Change company legal details'] }
+};
 var introSplashPlayed = false;
 var suppressAuthRoute = false;
 var SPLASH_MS = 2150;
@@ -2585,11 +2610,13 @@ function sha256Hex(str){
   });
 }
 function roleTabs(role){
-  if(role === 'cashier') return ['sell','till'];
+  if(role === 'cashier') return ['me','sell','till'];
+  if(role === 'stockclerk') return ['me','stock'];
   return ['dashboard','sell','stock','credit','invoices','reports','expenses','till','reconcile'];
 }
 function isManagerOrOwner(){ return !!(State.session && (State.session.role==='owner' || State.session.role==='manager')); }
 function isOwner(){ return !!(State.session && State.session.role==='owner'); }
+function isRestricted(){ return !!(State.session && State.session.role !== 'owner' && State.session.role !== 'manager'); }
 function isCashier(){ return !!(State.session && State.session.role==='cashier'); }
 function saveSessionLocal(userId){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({userId:userId})); }catch(e){} }
 function clearSessionLocal(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
@@ -2615,12 +2642,13 @@ function checkAuthAndRoute(){
   if(!appEl || !authEl) return;
 
   if(!State.company){ showAuthScreen('register'); return; }
+  if(!State.session && empSignupActive) return;
 
   if(!State.session){
     var saved = null;
     try{ saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }catch(e){}
     if(saved && saved.userId){
-      var u = State.users.find(function(x){ return x.id===saved.userId && x.active!==false; });
+      var u = State.users.find(function(x){ return x.id===saved.userId && x.active!==false && !x.pending; });
       if(u) State.session = { userId:u.id, name:u.name, role:u.role };
     }
   }
@@ -2661,6 +2689,7 @@ function checkAuthAndRoute(){
 var _whatsNewChecked = false;
 
 function showAuthScreen(view){
+  empSignupActive = (view === 'employee');
   var authEl = document.getElementById('authScreen');
   if(view === 'register' && !introSplashPlayed){
     introSplashPlayed = true;
@@ -2684,6 +2713,11 @@ function showAuthScreen(view){
     wireSignedOut(authEl);
     return;
   }
+  if(view === 'employee'){
+    authEl.innerHTML = renderEmployeeSignupHtml();
+    wireEmployeeSignup(authEl);
+    return;
+  }
   if(view === 'forgot'){
     authEl.innerHTML = renderForgotHtml();
     wireForgot(authEl);
@@ -2700,6 +2734,7 @@ function renderSignedOutHtml(){
     '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
+      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soEmpBtn">'+tr('New employee sign up')+'</button></div>' +
       '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soRegisterBtn" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
       '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
@@ -2707,6 +2742,7 @@ function renderSignedOutHtml(){
   '</div>';
 }
 function wireSignedOut(root){
+  var se = root.querySelector('#soEmpBtn'); if(se) se.addEventListener('click', function(){ showAuthScreen('employee'); });
   root.querySelector('#soLoginBtn').addEventListener('click', function(){
     signedOutPending = false;
     showAuthScreen('login');
@@ -2899,10 +2935,171 @@ function wireRegisterCompany(root){
   });
 }
 
+/* ============================== EMPLOYEE ACCOUNTS: invite, sign up, personal dashboard ============================== */
+function newInviteCode(){ var c; do{ c = String(Math.floor(100000 + Math.random()*900000)); }while(State.users.some(function(u){ return u.inviteCode === c; })); return c; }
+function nextEmployeeNo(){ return 'E' + String(State.users.filter(function(u){ return u.employeeNo; }).length + 1).padStart(3,'0'); }
+function appUrl(){ return location.href.split('#')[0].split('?')[0]; }
+function inviteMessage(u){
+  var co = State.company || {};
+  return 'Hi '+u.name+', you have been added to '+(co.tradingName||co.companyName||'our shop')+' on Pesa as '+(u.jobTitle||ROLE_LABELS[u.role]||u.role)+'. To create your own account: open '+appUrl()+' , tap "New employee sign up" and enter this code: '+u.inviteCode+' (valid for 7 days).';
+}
+function openInviteSheet(u){
+  var cur = State.users.find(function(x){ return x.id === u.id; }) || u;
+  var expired = cur.inviteExpires && new Date(cur.inviteExpires) < new Date();
+  var msg = inviteMessage(cur);
+  var html = '<div class="sheet-head"><h2>'+tr('Invite')+' '+esc(cur.name)+'</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">'+esc(tr(ROLE_LABELS[cur.role]||cur.role))+(cur.jobTitle?' · '+esc(cur.jobTitle):'')+' · '+tr('Employee')+' '+esc(cur.employeeNo||'')+'</div>' +
+    (cur.pending ? '<div class="field"><label>'+tr('Invite code')+'</label><div class="num" style="font-size:32px;font-weight:700;letter-spacing:.14em;text-align:center;padding:12px;background:var(--surface-2);border-radius:12px;">'+esc(posFmtCode(cur.inviteCode))+'</div>' +
+      '<div style="font-size:12px;color:'+(expired?'var(--danger)':'var(--text-muted)')+';margin-top:6px;">'+(expired?tr('This code has expired. Make a new one.'):tr('Valid until')+' '+fmtDateTime(cur.inviteExpires))+'</div></div>' +
+      '<div class="banner">'+ICONS.info+'<span>'+tr('The employee signs up on their own phone. That phone must be connected to this business first (Advanced Pesa Connection or nearby Wi-Fi). On this same device it works straight away.')+'</span></div>' +
+      '<div class="actions"><button class="btn btn-accent btn-block" id="invWa" type="button">'+tr('Send on WhatsApp')+'</button><button class="btn btn-ghost btn-block" id="invCopy" type="button">'+tr('Copy message')+'</button></div>' +
+      '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="invNew" type="button">'+tr('New code')+'</button><button class="btn btn-ghost btn-block" id="invEdit" type="button">'+tr('Edit details')+'</button></div>' +
+      '<div class="actions" style="margin-top:8px;"><button class="btn btn-danger btn-block" id="invCancel" type="button">'+tr('Cancel invite')+'</button></div>'
+     : '<div class="banner">'+ICONS.check+'<span>'+tr('This employee has created their account.')+'</span></div>') +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="invBack" type="button">'+tr('Back to team')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#invBack').addEventListener('click', openTeamSheet);
+  if(!cur.pending) return;
+  ov.querySelector('#invWa').addEventListener('click', function(){ window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank'); });
+  ov.querySelector('#invCopy').addEventListener('click', function(){ try{ navigator.clipboard.writeText(msg).then(function(){ toast(tr('Message copied')); }); }catch(e){ toast(msg); } });
+  ov.querySelector('#invNew').addEventListener('click', function(){
+    var patch = { inviteCode:newInviteCode(), inviteExpires:new Date(Date.now()+7*86400000).toISOString() };
+    refs.users.doc(cur.id).update(patch); openInviteSheet(Object.assign({}, cur, patch));
+  });
+  ov.querySelector('#invEdit').addEventListener('click', function(){ openStaffSheet(cur); });
+  ov.querySelector('#invCancel').addEventListener('click', function(){ confirmSheet(tr('Cancel invite?'), tr('The code stops working and this employee is removed.'), tr('Cancel invite'), function(){
+    refs.users.doc(cur.id).delete(); logAudit('delete','staff',cur.id,'Cancelled invite for '+cur.name); openTeamSheet(); }, true); });
+}
+
+/* ---- employee sign up page ---- */
+var _empFails = 0, _empUntil = 0, empSignupActive = false;
+function renderEmployeeSignupHtml(){
+  var company = State.company || {};
+  return '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('New employee sign up')+'</p></div>' +
+    '<div class="authbox"><div id="empBox"></div><div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost" id="empBack" type="button">'+tr('Back to sign in')+'</button></div></div></div>';
+}
+function wireEmployeeSignup(root){
+  var box = root.querySelector('#empBox');
+  root.querySelector('#empBack').addEventListener('click', function(){ showAuthScreen(State.company ? 'login' : 'register'); });
+  function step1(){
+    box.innerHTML = '<div class="banner">'+ICONS.info+'<span>'+tr('Your employer gave you a 6 digit invite code. Enter it to create your own account.')+'</span></div>' +
+      '<div class="field"><label>'+tr('Invite code')+'</label><input id="empCode" inputmode="numeric" maxlength="7" placeholder="123 456" autocomplete="off"></div><div id="empErr"></div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="empNext" type="button">'+tr('Continue')+'</button></div>';
+    var inp = box.querySelector('#empCode'); inp.focus();
+    function go(){
+      var err = box.querySelector('#empErr');
+      function fail(m){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(m)+'</span></div>'; }
+      if(Date.now() < _empUntil){ fail(tr('Too many wrong tries. Try again in')+' '+Math.ceil((_empUntil-Date.now())/1000)+' '+tr('seconds')+'.'); return; }
+      var code = inp.value.replace(/\D/g,'');
+      var u = State.users.find(function(x){ return x.pending && x.inviteCode && x.inviteCode === code; });
+      if(!u){ _empFails++; if(_empFails >= 5){ _empUntil = Date.now()+60000; _empFails = 0; } fail(tr('That code was not found. Check it, or ask your employer for a new one. This phone must be connected to the business.')); return; }
+      if(u.inviteExpires && new Date(u.inviteExpires) < new Date()){ fail(tr('This code has expired. Ask your employer for a new one.')); return; }
+      _empFails = 0; step2(u);
+    }
+    box.querySelector('#empNext').addEventListener('click', go);
+    inp.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(); });
+  }
+  function step2(u){
+    var isCash = u.role === 'cashier', co = State.company || {};
+    box.innerHTML = '<div class="section-title" style="margin-top:0;">'+tr('Welcome')+', '+esc(u.name)+'</div>' +
+      '<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">'+tr('You are joining')+' '+esc(co.tradingName||co.companyName||'')+' '+tr('as')+' <b>'+esc(u.jobTitle||tr(ROLE_LABELS[u.role]||u.role))+'</b>.</div>' +
+      (ROLE_INFO[u.role] ? '<div class="banner" style="display:block;font-size:12.5px;"><b>'+tr('What this job can do')+'</b><br>'+ROLE_INFO[u.role].can.map(function(x){ return '✓ '+esc(tr(x)); }).join('<br>')+'</div>' : '') +
+      '<div class="field"><label>'+tr('Phone (optional)')+'</label><input id="empPhone" value="'+esc(u.phone||'')+'" placeholder="081 234 5678"></div>' +
+      '<div class="field"><label>'+tr('Email (optional)')+'</label><input id="empEmail" type="email" value="'+esc(u.email||'')+'" placeholder="name@example.com"></div>' +
+      '<div class="field"><label>'+(isCash?tr('Choose a 4-digit PIN'):tr('Choose a password'))+'</label><input id="empPw" type="password" '+(isCash?'inputmode="numeric" maxlength="4"':'')+' autocomplete="new-password"></div>' +
+      '<div class="field"><label>'+(isCash?tr('Confirm PIN'):tr('Confirm password'))+'</label><input id="empPw2" type="password" '+(isCash?'inputmode="numeric" maxlength="4"':'')+' autocomplete="new-password"></div><div id="empErr"></div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="empCreate" type="button">'+tr('Create my account')+'</button></div>';
+    box.querySelector('#empCreate').addEventListener('click', async function(){
+      var err = box.querySelector('#empErr');
+      function fail(m){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(m)+'</span></div>'; }
+      var pw = box.querySelector('#empPw').value, pw2 = box.querySelector('#empPw2').value;
+      if(isCash && !/^\d{4}$/.test(pw)) return fail(tr('PIN must be exactly 4 digits.'));
+      if(!isCash && pw.length < 4) return fail(tr('Choose a password of at least 4 characters.'));
+      if(pw !== pw2) return fail(tr('The two entries do not match.'));
+      var fresh = State.users.find(function(x){ return x.id === u.id; });
+      if(!fresh || !fresh.pending){ return fail(tr('This invite has already been used.')); }
+      var hash = await sha256Hex(pw);
+      var patch = { passHash:hash, pending:false, inviteCode:'', inviteExpires:'', joinedAt:new Date().toISOString(), phone:box.querySelector('#empPhone').value.trim(), email:box.querySelector('#empEmail').value.trim().toLowerCase(), active:true };
+      refs.users.doc(u.id).update(patch);
+      State.session = { userId:u.id, name:u.name, role:u.role };
+      saveSessionLocal(u.id);
+      logAudit('create','staff',u.id,u.name+' created their account');
+      toast(tr('Welcome')+', '+u.name+'!');
+      checkAuthAndRoute();
+    });
+  }
+  step1();
+}
+
+/* ---- personal dashboard ---- */
+function renderMe(){
+  var me = State.users.find(function(x){ return x.id === (State.session||{}).userId; }) || {};
+  var role = State.session.role, tk = todayKey(), co = State.company || {};
+  var h = new Date().getHours(), hi = h < 12 ? tr('Good morning') : (h < 18 ? tr('Good afternoon') : tr('Good evening'));
+  var out = '<div class="me-hero"><div class="hi">'+hi+'</div><div class="nm">'+esc(State.session.name)+'</div><div class="meta">'+esc(me.jobTitle || tr(ROLE_LABELS[role]||role))+(me.employeeNo?' · '+esc(me.employeeNo):'')+' · '+esc(co.tradingName||co.companyName||'')+'</div></div>';
+  var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); }).sort(function(a,b){ return a.stockQty - b.stockQty; });
+  var lowHtml = '<div class="section-title">'+tr('Running low')+' ('+low.length+')</div>' + (low.length ? '<div class="rowlist">'+low.slice(0,6).map(function(p){
+    return '<div class="row"><div class="main"><div class="title">'+esc(p.name)+'</div></div><div class="trail"><div class="amt num" style="color:'+(p.stockQty<=0?'var(--danger)':'inherit')+'">'+(p.stockQty<=0?tr('Out'):p.stockQty+' '+esc(p.unit||tr('left')))+'</div></div></div>'; }).join('')+'</div>' : '<div style="font-size:13px;color:var(--text-muted);">'+tr('Nothing is running low.')+'</div>');
+  if(role === 'stockclerk'){
+    var outN = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= 0; }).length;
+    out += '<div class="me-actions"><button class="me-act" data-me="stock">'+ICONS.box+tr('Open stock')+'</button><button class="me-act" data-me="waste">'+ICONS.trash+tr('Record wastage')+'</button>' +
+      '<button class="me-act" data-me="addprod">'+ICONS.plus+tr('Add a product')+'</button><button class="me-act" data-me="profile">'+ICONS.people+tr('My profile')+'</button></div>' +
+      '<div class="me-grid"><div class="me-stat"><div class="l">'+tr('Products')+'</div><div class="v num">'+State.products.length+'</div></div><div class="me-stat"><div class="l">'+tr('Running low')+'</div><div class="v num">'+low.length+'</div></div><div class="me-stat"><div class="l">'+tr('Out of stock')+'</div><div class="v num" style="color:var(--danger)">'+outN+'</div></div><div class="me-stat"><div class="l">'+tr('Wastage logged')+'</div><div class="v num">'+State.wastage.filter(function(w){ return w.userName === State.session.name || w.recordedBy === State.session.name; }).length+'</div></div></div>' + lowHtml;
+    return out;
+  }
+  // cashier
+  var all = State.sales.filter(function(s){ return s.cashierName === State.session.name; });
+  var mine = all.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk; });
+  var by = { cash:0, card:0, wallet:0, credit:0 }; mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + s.total; });
+  var till = State.till.current, tt = till ? tillTotals(till.id) : null;
+  out += '<div class="me-actions"><button class="me-act" data-me="pos">'+ICONS.till+tr('Point of sale')+'</button><button class="me-act" data-me="sell">'+ICONS.cart+tr('New sale')+'</button>' +
+    '<button class="me-act" data-me="'+(till?'till-close':'till-open')+'">'+ICONS.clock+(till?tr('Close till'):tr('Open till'))+'</button><button class="me-act" data-me="profile">'+ICONS.people+tr('My profile')+'</button></div>';
+  out += '<div class="section-title" style="margin-top:0;">'+tr('Your sales today')+'</div><div class="me-grid">' +
+    '<div class="me-stat"><div class="l">'+tr('Sales')+'</div><div class="v num">'+mine.length+'</div></div><div class="me-stat"><div class="l">'+tr('Total')+'</div><div class="v num">'+fmtMoney(posSum(mine))+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Cash')+'</div><div class="v num">'+fmtMoney(by.cash)+'</div></div><div class="me-stat"><div class="l">'+tr('Card')+'</div><div class="v num">'+fmtMoney(by.card)+'</div></div>' +
+    '<div class="me-stat"><div class="l">'+tr('Mobile wallet')+'</div><div class="v num">'+fmtMoney(by.wallet)+'</div></div><div class="me-stat"><div class="l">'+tr('Credit')+'</div><div class="v num">'+fmtMoney(by.credit)+'</div></div></div>';
+  out += '<div class="tillcard"><div class="section-title" style="margin-top:0;">'+tr('My till')+'</div>' + (till
+    ? '<div class="tillrow"><span class="l">'+tr('Open since')+'</span><span class="v">'+fmtDateTime(till.openedAt)+'</span></div><div class="tillrow"><span class="l">'+tr('Opening float')+'</span><span class="v num">'+fmtMoney(till.openingFloat||0)+'</span></div><div class="tillrow grand"><span class="l">'+tr('Cash expected in drawer')+'</span><span class="v num">'+fmtMoney((till.openingFloat||0)+tt.totals.cash-(tt.cashBack||0))+'</span></div>'
+    : '<div style="font-size:13px;color:var(--text-muted);">'+tr('Your till is closed. Open it before you start selling.')+'</div>') + '</div>';
+  // last 7 days
+  var days = [], mx = 1;
+  for(var i=6;i>=0;i--){ var d = new Date(); d.setDate(d.getDate()-i); var k = todayKey(d); var t = posSum(all.filter(function(s){ return todayKey(new Date(s.createdAt)) === k; })); days.push({ l:d.toLocaleDateString(uiLocale(),{weekday:'short'}).slice(0,2), t:t }); mx = Math.max(mx, t); }
+  out += '<div class="section-title">'+tr('My last 7 days')+'</div><div class="me-week">'+days.map(function(d){ return '<i style="height:'+Math.round(d.t/mx*100)+'%" title="'+fmtMoney(d.t)+'"></i>'; }).join('')+'</div><div class="me-weekl">'+days.map(function(d){ return '<span>'+esc(d.l)+'</span>'; }).join('')+'</div>';
+  out += '<div class="section-title">'+tr('My recent sales')+'</div>' + (all.length ? '<div class="rowlist">'+all.slice(0,5).map(function(s){ return '<div class="row" data-me-sale="'+s.id+'"><div class="main"><div class="title">'+esc(posSaleWho(s))+'</div><div class="sub">'+esc(fmtDateTime(s.createdAt))+' · '+tr(s.paymentMethod==='wallet'?'Mobile wallet':(s.paymentMethod||'cash').charAt(0).toUpperCase()+(s.paymentMethod||'cash').slice(1))+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(s.total)+'</div></div></div>'; }).join('')+'</div>' : '<div style="font-size:13px;color:var(--text-muted);">'+tr('No sales yet.')+'</div>');
+  return out + lowHtml;
+}
+function wireMe(root){
+  root.querySelectorAll('[data-me]').forEach(function(b){ b.addEventListener('click', function(){
+    var k = b.getAttribute('data-me');
+    if(k === 'pos') posOpen(); else if(k === 'sell') setTab('sell'); else if(k === 'stock') setTab('stock');
+    else if(k === 'waste') openWastageSheet(); else if(k === 'addprod'){ setTab('stock'); openProductSheet(null); }
+    else if(k === 'till-open') openStartTillSheet(); else if(k === 'till-close'){ if(State.till.current) openCloseTillSheet(State.till.current); }
+    else if(k === 'profile') openMyProfileSheet();
+  }); });
+  root.querySelectorAll('[data-me-sale]').forEach(function(b){ b.addEventListener('click', function(){ openPosSaleDetail(b.getAttribute('data-me-sale')); }); });
+}
+function openMyProfileSheet(){
+  var me = State.users.find(function(x){ return x.id === (State.session||{}).userId; }); if(!me) return;
+  var ri = ROLE_INFO[me.role] || { can:[], cannot:[] };
+  function line(a,b){ return b ? '<div class="sumline"><span>'+a+'</span><span style="text-align:right;">'+esc(b)+'</span></div>' : ''; }
+  var html = '<div class="sheet-head"><h2>'+tr('My profile')+'</h2></div>' +
+    line(tr('Name'), me.name) + line(tr('Job'), me.jobTitle || tr(ROLE_LABELS[me.role]||me.role)) + line(tr('Employee number'), me.employeeNo) + line(tr('Joined'), me.joinedAt ? fmtDateTime(me.joinedAt) : '') +
+    '<div class="field" style="margin-top:10px;"><label>'+tr('Phone')+'</label><input id="mpPhone" value="'+esc(me.phone||'')+'"></div>' +
+    '<div class="field"><label>'+tr('Email')+'</label><input id="mpEmail" type="email" value="'+esc(me.email||'')+'"></div>' +
+    '<div class="section-title">'+tr('What I can do')+'</div><div style="font-size:13px;line-height:1.7;">'+ri.can.map(function(x){ return '✓ '+esc(tr(x)); }).join('<br>')+'</div>' +
+    '<div class="section-title">'+tr('Not allowed')+'</div><div style="font-size:13px;line-height:1.7;color:var(--text-muted);">'+ri.cannot.map(function(x){ return '✗ '+esc(tr(x)); }).join('<br>')+'</div>' +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="mpSave" type="button">'+tr('Save details')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="mpPw" type="button">'+(me.role==='cashier'?tr('Change PIN'):tr('Change password'))+'</button><button class="btn btn-ghost btn-block" id="mpOut" type="button">'+tr('Log out')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#mpSave').addEventListener('click', function(){ refs.users.doc(me.id).update({ phone:ov.querySelector('#mpPhone').value.trim(), email:ov.querySelector('#mpEmail').value.trim().toLowerCase() }); toast(tr('Saved')); closeModal(); });
+  ov.querySelector('#mpPw').addEventListener('click', openChangePasswordSheet);
+  ov.querySelector('#mpOut').addEventListener('click', logout);
+}
+
 function renderLoginHtml(){
   var company = State.company || {};
-  var staff = State.users.filter(function(u){ return u.active !== false; })
-    .sort(function(a,b){ var order={owner:0,manager:1,cashier:2}; return (order[a.role]-order[b.role]) || a.name.localeCompare(b.name); });
+  var staff = State.users.filter(function(u){ return u.active !== false && !u.pending; })
+    .sort(function(a,b){ var order={owner:0,manager:1,cashier:2,stockclerk:3}; return (order[a.role]-order[b.role]) || a.name.localeCompare(b.name); });
   var tiles = staff.map(function(u){
     return '<button type="button" class="stafftile" data-staff="'+u.id+'">' +
       '<div class="avatar">'+esc(initials(u.name))+'</div>' +
@@ -2919,12 +3116,14 @@ function renderLoginHtml(){
       '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
     '</div>' +
-    '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
+    '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="empSignupBtn" type="button">'+tr('New employee sign up')+'</button></div>' +
+    '<div style="text-align:center;margin-top:4px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
   '</div>';
 }
 
 function wireLoginView(root){
   var selectedId = null;
+  var es = root.querySelector('#empSignupBtn'); if(es) es.addEventListener('click', function(){ showAuthScreen('employee'); });
   wireBusinessSwitcher(root);
   root.querySelectorAll('[data-staff]').forEach(function(tile){
     tile.addEventListener('click', function(){
@@ -3016,13 +3215,13 @@ function openTeamSheet(){
       return '<div class="staffrow'+(u.active===false?' inactive':'')+'" data-staffrow="'+u.id+'">' +
         '<div class="avatar" style="width:34px;height:34px;border-radius:9px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--primary-dim);font-weight:700;font-size:12px;flex-shrink:0;">'+esc(initials(u.name))+'</div>' +
         '<div class="main"><div class="n">'+esc(u.name)+(isMe?' ('+tr('you')+')':'')+'</div><div class="e">'+esc(u.email||'')+'</div></div>' +
-        '<span class="rolebadge '+u.role+'">'+esc(tr(ROLE_LABELS[u.role]||u.role))+'</span>' +
+        (u.pending ? '<span class="rolebadge pending">'+tr('Invited')+'</span>' : '<span class="rolebadge '+u.role+'">'+esc(tr(ROLE_LABELS[u.role]||u.role))+'</span>') +
       '</div>';
     }).join('');
     list.querySelectorAll('[data-staffrow]').forEach(function(row){
       row.addEventListener('click', function(){
         var u = State.users.find(function(x){ return x.id===row.getAttribute('data-staffrow'); });
-        if(u) openStaffSheet(u);
+        if(u && u.pending) openInviteSheet(u); else if(u) openStaffSheet(u);
       });
     });
   }
@@ -3036,10 +3235,16 @@ function openStaffSheet(user){
   var canPickManager = isOwner(); // only the Owner can create/change Managers
   var roleOpts =
     (canPickManager ? '<option value="manager" '+(user&&user.role==='manager'?'selected':'')+'>'+tr('Manager / Supervisor')+'</option>' : '') +
-    '<option value="cashier" '+(!user||user.role==='cashier'?'selected':'')+'>'+tr('Cashier')+'</option>';
+    '<option value="cashier" '+(!user||user.role==='cashier'?'selected':'')+'>'+tr('Cashier')+'</option>' +
+    '<option value="stockclerk" '+(user&&user.role==='stockclerk'?'selected':'')+'>'+tr('Stock clerk')+'</option>';
+  var sfMode = 'invite';
   var html = '<div class="sheet-head"><h2>'+(isEdit?tr('Edit staff member'):tr('Add staff member'))+'</h2></div>' +
     '<div class="field"><label>'+tr('Full name')+'</label><input id="sfName" value="'+esc(user?user.name:'')+'"></div>' +
     '<div class="field"><label>'+tr('Role')+'</label><select id="sfRole" '+(isMe?'disabled':'')+'>'+roleOpts+'</select></div>' +
+    '<div class="field"><label>'+tr('Job title (optional)')+'</label><input id="sfJob" placeholder="'+tr('e.g. Front till cashier')+'" value="'+esc(user&&user.jobTitle||'')+'"></div>' +
+    '<div id="sfRoleInfo"></div>' +
+    (!isEdit ? '<div class="field"><label>'+tr('How do they get access?')+'</label><div class="segbtns"><button type="button" class="segbtn active" data-sfmode="invite">'+tr('They create their own account')+'</button><button type="button" class="segbtn" data-sfmode="direct">'+tr('I set their PIN or password')+'</button></div></div>' +
+      '<div class="field" id="sfContactBox"><label>'+tr('Phone or email (optional)')+'</label><input id="sfContact" placeholder="081 234 5678 or name@example.com"></div>' : '') +
     '<div id="sfCredFields"></div>' +
     (isEdit ? '<div class="field"><label>'+tr('Reset password / PIN (leave blank to keep current)')+'</label><input id="sfNewPass" type="password" placeholder="New password or PIN"></div>' : '') +
     '<div id="sfError"></div>' +
@@ -3051,7 +3256,11 @@ function openStaffSheet(user){
   function renderCredFields(){
     var role = ov.querySelector('#sfRole').value;
     var f = ov.querySelector('#sfCredFields');
+    var ri = ROLE_INFO[role];
+    ov.querySelector('#sfRoleInfo').innerHTML = ri ? '<div class="banner" style="display:block;font-size:12.5px;"><b>'+tr('What this job can do')+'</b><br>'+ri.can.map(function(x){ return '✓ '+esc(tr(x)); }).join('<br>')+'<br><b>'+tr('Not allowed')+'</b><br>'+ri.cannot.map(function(x){ return '✗ '+esc(tr(x)); }).join('<br>')+'</div>' : '';
     if(isEdit){ f.innerHTML=''; return; }
+    var cb = ov.querySelector('#sfContactBox'); if(cb) cb.style.display = sfMode === 'invite' ? '' : 'none';
+    if(sfMode === 'invite'){ f.innerHTML = '<div class="banner">'+ICONS.info+'<span>'+tr('You get an invite code to give them. They open Pesa, tap New employee sign up, enter the code and choose their own PIN or password.')+'</span></div>'; return; }
     if(role === 'cashier'){
       f.innerHTML = '<div class="field"><label>'+tr('4-digit PIN (used to log in)')+'</label><input id="sfEmail" style="display:none;"><input id="sfPass" type="password" inputmode="numeric" maxlength="4" placeholder="e.g. 4821"></div>';
     } else {
@@ -3061,6 +3270,7 @@ function openStaffSheet(user){
   }
   renderCredFields();
   ov.querySelector('#sfRole').addEventListener('change', renderCredFields);
+  ov.querySelectorAll('[data-sfmode]').forEach(function(b){ b.addEventListener('click', function(){ sfMode = b.getAttribute('data-sfmode'); ov.querySelectorAll('[data-sfmode]').forEach(function(x){ x.classList.toggle('active', x===b); }); renderCredFields(); }); });
   if(isEdit && !isMe){
     ov.querySelector('#sfToggleActive').addEventListener('click', function(){
       var nowActive = user.active === false;
@@ -3079,7 +3289,7 @@ function openStaffSheet(user){
     if(!name) return fail(tr('Enter a name.'));
     (async function(){
       if(isEdit){
-        var patch = { name:name };
+        var patch = { name:name, jobTitle: ov.querySelector('#sfJob').value.trim() };
         if(!isMe) patch.role = role;
         var newPass = ov.querySelector('#sfNewPass') ? ov.querySelector('#sfNewPass').value : '';
         if(newPass){ patch.passHash = await sha256Hex(newPass); }
@@ -3089,6 +3299,17 @@ function openStaffSheet(user){
         if(isMe) State.session.name = name;
         openTeamSheet();
       } else {
+        if(sfMode === 'invite'){
+          var ct = (ov.querySelector('#sfContact').value||'').trim();
+          var invRef = refs.users.doc();
+          var rec = { name:name, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), email: ct.indexOf('@')>-1 ? ct.toLowerCase() : '', phone: ct.indexOf('@')>-1 ? '' : ct,
+            pending:true, active:true, passHash:'', inviteCode:newInviteCode(), inviteExpires:new Date(Date.now()+7*86400000).toISOString(),
+            employeeNo:nextEmployeeNo(), createdAt:new Date().toISOString() };
+          invRef.set(rec);
+          logAudit('create','staff',invRef.id,'Invited '+name+' as '+role);
+          openInviteSheet(Object.assign({id:invRef.id}, rec));
+          return;
+        }
         var email = (ov.querySelector('#sfEmail').value||'').trim().toLowerCase();
         var pass = ov.querySelector('#sfPass').value;
         // Contact details are optional for small teams — only the credential used
@@ -3096,7 +3317,7 @@ function openStaffSheet(user){
         if(role === 'cashier' && !/^\d{4}$/.test(pass)) return fail(tr('PIN must be exactly 4 digits.'));
         if(role !== 'cashier' && (!pass || pass.length<4)) return fail(tr('Choose a password of at least 4 characters.'));
         var passHash = await sha256Hex(pass);
-        refs.users.doc().set({ name:name, email:email, role:role, passHash:passHash, active:true, createdAt:new Date().toISOString() });
+        refs.users.doc().set({ name:name, email:email, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), employeeNo:nextEmployeeNo(), passHash:passHash, active:true, createdAt:new Date().toISOString() });
         logAudit('create','staff',null,'Added '+name+' as '+role);
         toast(name+' '+tr('added as')+' '+tr(ROLE_LABELS[role]||role));
         openTeamSheet();
@@ -4087,7 +4308,7 @@ function posLockHtml(d){
   if(d && d.status === 'blocked'){
     return h + '<div class="pos-body"><div class="banner" style="background:var(--danger-bg);color:var(--danger);">'+ICONS.warn+'<span>'+tr('This terminal has been blocked by the owner. Sales cannot be taken here.')+'</span></div></div></div>';
   }
-  var users = State.users.filter(function(u){ return u.active !== false; }).sort(function(a,b){ return (a.role==='cashier'?0:1) - (b.role==='cashier'?0:1) || (a.name||'').localeCompare(b.name||''); });
+  var users = State.users.filter(function(u){ return u.active !== false && !u.pending && u.role !== 'stockclerk'; }).sort(function(a,b){ return (a.role==='cashier'?0:1) - (b.role==='cashier'?0:1) || (a.name||'').localeCompare(b.name||''); });
   if(!POS.pick){
     h += '<div class="pos-body"><div class="pos-lock-title">'+tr('Who is selling?')+'</div><div class="pos-tiles">' + users.map(function(u){
       var left = posLockLeft(u.id);
@@ -7828,6 +8049,7 @@ function menuRowsHtml(){
   var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','invoices','reports','expenses','till'];
   var rows = '';
   rows += '<div class="drawer-sub">Main menu</div>';
+  if(allowedTabs.indexOf('me')!==-1) rows += drawerRowHtml('tab-me', ICONS.dashboard, 'My dashboard');
   if(allowedTabs.indexOf('dashboard')!==-1) rows += drawerRowHtml('tab-dashboard', ICONS.dashboard, 'Dashboard');
   if(allowedTabs.indexOf('sell')!==-1) rows += drawerRowHtml('tab-sell', ICONS.cart, 'Sell');
   if(allowedTabs.indexOf('stock')!==-1) rows += drawerRowHtml('tab-stock', ICONS.box, 'Stock');
@@ -7836,8 +8058,9 @@ function menuRowsHtml(){
   if(allowedTabs.indexOf('reports')!==-1) rows += drawerRowHtml('tab-reports', ICONS.chartbar, 'Reports');
   if(allowedTabs.indexOf('expenses')!==-1) rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
   if(allowedTabs.indexOf('till')!==-1) rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
-  rows += drawerRowHtml('terminal', ICONS.till, 'Point of sale');
-  if(!isCashier()){
+  if(State.session && State.session.role === 'stockclerk') rows += drawerRowHtml('wastage', ICONS.trash, 'Wastage & shrinkage');
+  else rows += drawerRowHtml('terminal', ICONS.till, 'Point of sale');
+  if(isManagerOrOwner()){
     rows += '<div class="drawer-sub">Insights</div>';
     rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
   }
@@ -7863,7 +8086,8 @@ function menuRowsHtml(){
 }
 // Shared destination for a menu row click, whichever surface it came from.
 function handleDrawerAction(key){
-  if(key==='tab-dashboard') setTab('dashboard');
+  if(key==='tab-me') setTab('me');
+  else if(key==='tab-dashboard') setTab('dashboard');
   else if(key==='tab-sell') setTab('sell');
   else if(key==='tab-stock') setTab('stock');
   else if(key==='tab-credit') setTab('credit');
@@ -7970,7 +8194,7 @@ function openCashierSettingsSheet(){
 }
 
 function openSettingsSheet(){
-  if(isCashier()) return openCashierSettingsSheet();
+  if(isRestricted()) return openCashierSettingsSheet();
   var s = State.settings;
   var html = '<div class="sheet-head"><h2>'+tr('Settings')+'</h2></div>' +
     accountSectionHtml() +
@@ -8250,10 +8474,12 @@ function updateHeader(){
   document.getElementById('shopDateEl').textContent = new Date().toLocaleDateString(uiLocale(), {weekday:'long', day:'numeric', month:'long'});
   var todayTotal = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt))===todayKey(); }).reduce(function(s,x){return s+x.total;},0);
   document.getElementById('todayTotalEl').textContent = fmtMoney(todayTotal);
+  var _tp = document.querySelector('.todaypill'); if(_tp) _tp.style.display = isRestricted() ? 'none' : '';
   updateSyncBadge();
 }
 
 function render(){
+  if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
   applyAppFont();
   updateHeader();
   // The hamburger lives in the persistent app-shell topbar, so it opens the
@@ -8265,7 +8491,8 @@ function render(){
   document.documentElement.setAttribute('lang', currentLangCode()==='en' ? 'en' : currentLangCode());
   var content = document.getElementById('content');
   var html = '';
-  if(State.tab === 'dashboard') html = renderDashboard();
+  if(State.tab === 'me') html = renderMe();
+  else if(State.tab === 'dashboard') html = renderDashboard();
   else if(State.tab === 'sell') html = renderSell();
   else if(State.tab === 'stock') html = renderStock();
   else if(State.tab === 'credit') html = renderCredit();
@@ -8276,6 +8503,7 @@ function render(){
   else if(State.tab === 'reconcile') html = isManagerOrOwner() ? renderReconcilePage() : '<div class="empty"><div class="t">Reconciliation is for owners and managers.</div></div>';
   content.innerHTML = html;
   wireContent();
+  if(State.tab === 'me') wireMe(content);
   renderCartBar();
   renderSidebar();
   if(!_reportsAutoFileDone) setTimeout(maybeAutoFileReports, 0);
@@ -9239,6 +9467,19 @@ function openVatSummarySheet(){
 // Narration uses the browser's own window.speechSynthesis — no account, no
 // API key, and it works fully offline.
 var LESSONS = [
+  { id:'employees', title:'Adding employees', icon:'people', who:'manager', slides:[
+    { title:'Invite an employee', text:'Employees create their own accounts, so you never have to know their PIN or password.',
+      where:'Settings → Team → Add staff member',
+      steps:['Open Settings and tap Team, then Add staff member.','Type their name, choose their job and an optional job title.','Leave They create their own account selected and tap Add staff member.','Send the invite code on WhatsApp, or read it out to them.'],
+      tip:'An invite code works for 7 days. Tap the employee in the Team list to make a new code or cancel the invite.' },
+    { title:'What each job can open', text:'A cashier sells and runs their own till. A stock clerk looks after stock and wastage. A manager sees everything except the company legal details. Only the owner has the whole app.',
+      where:'Team list',
+      steps:['Choose the job when you add the person. The screen lists what that job can and cannot do.','Each employee lands on their own dashboard with only what they need.'] },
+    { title:'Employee sign up', text:'The employee opens Pesa on their own phone, taps New employee sign up and enters the code.',
+      where:'Sign in page → New employee sign up',
+      steps:['Open Pesa and tap New employee sign up.','Enter the invite code.','Choose a PIN (cashiers) or password and tap Create my account.'],
+      tip:'Their phone must be connected to your business first, with Advanced Pesa Connection or nearby Wi-Fi. On the shop tablet it works straight away.' }
+  ]},
   { id:'terminal', title:'Point of sale terminal', icon:'till', who:'all', slides:[
     { title:'Selling on the terminal', text:'The Point of sale screen is a fast, full screen place to sell. Every staff member signs in with their own PIN or password.',
       where:'Menu → Point of sale',
@@ -9945,7 +10186,7 @@ function smartAlertCount(){ try{ return smartAlerts().length; }catch(e){ return 
 // Runs quietly: at most one device notification per alert per day.
 function smartTick(){
   try{
-    if(!State.session || isCashier()) return;
+    if(!State.session || isRestricted()) return;
     var al = smartAlerts();
     try{ if(navigator.setAppBadge){ if(al.length) navigator.setAppBadge(al.length).catch(function(){}); else if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){}); } }catch(e){}
     if(!notifyActive()) return;
@@ -10884,7 +11125,7 @@ function openStockTakeResultSheet(take){
    open (owner or manager login), keeping the latest 7. They live in the
    browser's own database on this device only. Clearing the browser's data
    removes them, so download a copy now and then. */
-var APP_VERSION = '2026.10.01';
+var APP_VERSION = '2026.10.02';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -10971,7 +11212,7 @@ var Backups = (function(){
   function ready(){ return State.ready.products && State.ready.customers && State.ready.sales && State.ready.expenses && State.ready.settings; }
   function auto(){
     try{
-      if(!State.session || isCashier() || !ready()) return;
+      if(!State.session || isRestricted() || !ready()) return;
       if(!State.products.length && !State.sales.length && !State.customers.length) return;
       if(Date.now() - lastAt() < 20*3600000) return;
       make('auto');
@@ -11069,6 +11310,11 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.02', items:[
+    'Employees create their own accounts: the owner adds them and gets an invite code, and they sign up with it and choose their own PIN or password',
+    'Jobs decide what an employee can open. New Stock clerk job, and cashiers only see what they need',
+    'A personal dashboard for each employee with their sales, till, recent sales, low stock and profile'
+  ]},
   { v:'2026.10.01', items:[
     'The till drawer opens when a customer pays cash or takes cash back (through a Bluetooth receipt printer), and cash back is deducted from the expected till cash',
     'Point of sale records kept on their own, with every payment method in its own category and who paid, card details and approval codes',
@@ -11444,6 +11690,7 @@ var ABOUT_PARAGRAPHS = [
 ];
 var ABOUT_FEATURES_TITLE = 'What Pesa can do';
 var ABOUT_FEATURES = [
+  'Employee accounts: the owner invites each employee with a code, the employee signs up and creates their own PIN or password, and each job only opens the parts of the app it needs. Only the owner has the whole app',
   'A point of sale terminal with its own staff login, card terminal linking, swipe limits and card batch settlement. Pesa records and controls card sales, but it does not process cards or connect to a bank card machine itself',
   'Sales and till management, including a fast checkout screen, a shopping cart, and printed or digital receipts',
   'Stock and inventory management, including barcode scanning to add or find products quickly',
