@@ -264,6 +264,39 @@
 
   /* product grid */
   .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+
+  /* ---- Point of sale terminal ---- */
+  #posRoot{ display:none; position:fixed; inset:0; z-index:30; background:var(--bg); color:var(--text); overflow:hidden; }
+  .pos-wrap{ display:flex; flex-direction:column; height:100%; }
+  .pos-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 14px; background:var(--primary); color:var(--primary-contrast); }
+  .pos-title{ font-weight:700; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pos-sub{ font-size:12px; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pos-head-btns{ display:flex; gap:8px; flex-shrink:0; }
+  .pos-head .btn{ padding:8px 12px; font-size:13px; background:rgba(255,255,255,.14); color:inherit; border-color:rgba(255,255,255,.3); }
+  .pos-body{ flex:1; overflow:auto; padding:12px 14px 16px; width:100%; max-width:760px; margin:0 auto; }
+  .pos-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .pos-chip{ font-size:11.5px; font-weight:600; padding:4px 9px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border); }
+  .pos-chip.ok{ color:var(--primary-dim,var(--primary)); } .pos-chip.warn{ color:var(--danger); }
+  .pos-lock-title{ font-size:20px; font-weight:700; text-align:center; margin:18px 0 14px; }
+  .pos-tiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+  .pos-tile{ display:flex; flex-direction:column; align-items:center; gap:6px; padding:16px 8px; background:var(--surface); border:1px solid var(--border); border-radius:14px; cursor:pointer; color:var(--text); }
+  .pos-tile .avatar{ width:46px; height:46px; }
+  .pos-tn{ font-weight:600; font-size:14px; } .pos-tr{ font-size:11.5px; color:var(--text-muted); }
+  .pos-dots{ display:flex; gap:12px; justify-content:center; margin:6px 0 8px; }
+  .pos-dots i{ width:14px; height:14px; border-radius:50%; border:2px solid var(--primary); display:block; }
+  .pos-dots i.on{ background:var(--primary); }
+  .pos-err{ color:var(--danger); font-size:13px; text-align:center; min-height:18px; margin-bottom:6px; }
+  .pos-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .pos-key{ padding:16px 0; font-size:22px; font-weight:600; border-radius:14px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; }
+  .pos-key:active{ background:var(--surface-2); }
+  .pos-amount{ font-size:40px; font-weight:700; text-align:center; padding:12px 0 16px; }
+  .pos-bar{ height:8px; background:var(--surface-2); border-radius:6px; overflow:hidden; margin-top:4px; }
+  .pos-bar i{ display:block; height:100%; background:var(--primary); }
+  .pos-cart{ border-top:1px solid var(--border); background:var(--surface); padding:8px 14px calc(8px + env(safe-area-inset-bottom)); }
+  .pos-cart-list{ max-height:28vh; overflow:auto; }
+  .pos-cart-empty{ text-align:center; color:var(--text-muted); font-size:13px; padding:10px 0; }
+  .pos-cart-bar{ display:flex; gap:8px; margin-top:8px; max-width:760px; margin-left:auto; margin-right:auto; }
+  .pos-grid{ grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); }
   .pcard{
     background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px;
     display:flex; flex-direction:column; gap:6px; cursor:pointer; text-align:left; position:relative;
@@ -1092,6 +1125,10 @@ Object.assign(LANGS.af.strings, {"Sale recorded — {0}":"Verkoop aangeteken —
 Object.assign(LANGS.de.strings, {"Sale recorded — {0}":"Verkauf erfasst — {0}","Payment recorded — {0}":"Zahlung erfasst — {0}","{0} products added":"{0} Produkte hinzugefügt","{0} product added":"{0} Produkt hinzugefügt","{0} sample items ready. Tap Add to save them.":"{0} Beispielartikel bereit. Tippen Sie auf Hinzufügen, um sie zu speichern.","All {0} deleted":"Alle {0} gelöscht","Only {0} of {1} in stock":"Nur {0} von {1} auf Lager","Till opened with {0}":"Kasse mit {0} geöffnet","Synced {0}":"Synchronisiert {0}","{0} sales gathered":"{0} Verkäufe zusammengestellt","{0} items":"{0} Artikel","Change due: {0}":"Wechselgeld: {0}","Change to give: {0}":"Wechselgeld herauszugeben: {0}","Balance still due: {0}":"Noch offener Betrag: {0}","Welcome back, {0}!":"Willkommen zurück, {0}!","Page {0} of {1}":"Seite {0} von {1}","Top {0} products by revenue shown. {1} smaller products are not listed.":"Die Top {0} Produkte nach Umsatz werden angezeigt. {1} kleinere Produkte sind nicht aufgeführt.","The {0} products with the highest stock value are listed, out of {1}.":"Die {0} Produkte mit dem höchsten Bestandswert sind aufgeführt, von insgesamt {1}.","Outstanding customer credit":"Ausstehender Kundenkredit","Stock on hand, valued at cost":"Lagerbestand, zu Einstandskosten bewertet","as at":"Stand","Wastage recorded, at cost":"Erfasster Schwund, zu Einstandskosten","entries":"Einträge","{0} deleted":"{0} gelöscht","{0} line(s) couldn’t be read and were skipped":"{0} Zeile(n) konnten nicht gelesen werden und wurden übersprungen","Sample stock is already in your list":"Der Beispielbestand ist bereits in Ihrer Liste"});
 Object.assign(LANGS.af.strings, {"Start on this device":"Begin op hierdie toestel","Join":"Sluit aan","Sync is ON":"Sinkronisering is AAN","Smart Tools":"Slimgereedskap","Nearby WiFi sync":"Nabye Wi-Fi-sinkronisering","Plenty of room left on this device.":"Daar is genoeg spasie oor op hierdie toestel.",". For example:":". Byvoorbeeld:",". You can check and change the list before anything is added.":". Jy kan die lys nagaan en verander voordat enigiets bygevoeg word.","Slide {0} of {1}":"Skyfie {0} van {1}","Thank you for your business. Payment is due within the terms agreed above.":"Dankie vir jou besigheid. Betaling is verskuldig binne die bepalings hierbo ooreengekom."});
 Object.assign(LANGS.de.strings, {"Start on this device":"Auf diesem Gerät starten","Join":"Beitreten","Sync is ON":"Synchronisierung ist AN","Smart Tools":"Smarte Werkzeuge","Nearby WiFi sync":"Synchronisierung über nahes Wi-Fi","Plenty of room left on this device.":"Auf diesem Gerät ist noch reichlich Platz.",". For example:":". Zum Beispiel:",". You can check and change the list before anything is added.":". Sie können die Liste prüfen und ändern, bevor etwas hinzugefügt wird.","Slide {0} of {1}":"Folie {0} von {1}","Thank you for your business. Payment is due within the terms agreed above.":"Vielen Dank für Ihren Auftrag. Die Zahlung ist innerhalb der oben vereinbarten Bedingungen fällig."});
+Object.assign(LANGS.af.strings, {"Enter the email address on your account and we will send you a 6-digit reset code.": "Voer die e-posadres op jou rekening in en ons stuur vir jou 'n 6-syfer terugstelkode.", "6-digit reset code": "6-syfer terugstelkode", "At least 4 characters": "Minstens 4 karakters", "If that email is on an account, a 6-digit code is on its way to": "As daardie e-pos op 'n rekening is, is 'n 6-syfer kode oppad na", "Enter the 6-digit code from the email.": "Voer die 6-syfer kode uit die e-pos in.", "Choose a password of at least 4 characters.": "Kies 'n wagwoord van minstens 4 karakters.", "New 4-digit PIN": "Nuwe 4-syfer PIN", "PIN must be exactly 4 digits.": "PIN moet presies 4 syfers wees.", "How to set this up (5 minutes, free)": "Hoe om dit op te stel (5 minute, gratis)", "The sync code must be at least 12 letters or digits. Tap Generate code.": "Die sinkronisasiekode moet minstens 12 letters of syfers wees. Tik Genereer kode.", "4-digit PIN": "4-syfer PIN", "4-digit PIN (used to log in)": "4-syfer PIN (gebruik om aan te meld)", "This terminal is blocked.": "Hierdie terminaal is geblokkeer.", "Card sales under": "Kaartverkope onder", "are not allowed on this terminal.": "word nie op hierdie terminaal toegelaat nie.", "Over the per swipe limit of": "Oor die limiet per vee van", "Over the tap limit of": "Oor die tik-limiet van", "Use chip and PIN instead.": "Gebruik eerder chip en PIN.", "This would take today’s card total to": "Dit sal vandag se kaarttotaal bring op", "over the daily limit of": "oor die daaglikse limiet van", "Daily swipe limit reached": "Daaglikse veelimiet bereik", "Hourly swipe limit reached": "Uurlikse veelimiet bereik", "Above": "Bo", "the customer must enter their PIN.": "moet die kliënt sy PIN invoer.", "Per swipe max": "Maks per vee", "Tap max": "Maks tik", "Swipes today": "Vee vandag", "This hour": "Hierdie uur", "No limits set on this terminal.": "Geen limiete vir hierdie terminaal gestel nie.", "Card terminal": "Kaartterminaal", "How was the card used?": "Hoe is die kaart gebruik?", "Card type": "Kaarttipe", "Last 4 digits of the card (optional)": "Laaste 4 syfers van die kaart (opsioneel)", "Approval code from the terminal": "Goedkeuringskode van die terminaal", "Approval code from the terminal (required)": "Goedkeuringskode van die terminaal (vereis)", "Approval code from the terminal (optional)": "Goedkeuringskode van die terminaal (opsioneel)", "Within this terminal’s limits.": "Binne hierdie terminaal se limiete.", "Last 4 digits must be 4 numbers": "Laaste 4 syfers moet 4 syfers wees", "Enter the approval code from the terminal": "Voer die goedkeuringskode van die terminaal in", "Approve over limit as": "Keur oor limiet goed as", "Manager approval: enter a manager or owner PIN or password": "Bestuurder se goedkeuring: voer 'n bestuurder- of eienaar-PIN of wagwoord in", "Approve": "Keur goed", "That code is not a manager or owner.": "Daardie kode is nie van 'n bestuurder of eienaar nie.", "Over the terminal limit. A manager must approve.": "Oor die terminaallimiet. 'n Bestuurder moet goedkeur.", "Blocked": "Geblokkeer", "Linked": "Gekoppel", "Not linked yet": "Nog nie gekoppel nie", "swipes today": "veë vandag", "No card terminals registered yet. Add your card machine or POS terminal to set swipe limits and track card sales per device.": "Nog geen kaartterminale geregistreer nie. Voeg jou kaartmasjien of POS-terminaal by om veelimiete te stel en kaartverkope per toestel na te spoor.", "Card terminals and limits": "Kaartterminale en limiete", "Add terminal": "Voeg terminaal by", "Pesa records and controls card sales. It does not process cards or connect directly to your bank’s card machine. Enter the sale on the machine, then record it here with the approval code.": "Pesa teken kaartverkope aan en beheer dit. Dit verwerk nie kaarte nie en koppel nie direk aan jou bank se kaartmasjien nie. Voer die verkoop op die masjien in, teken dit dan hier aan met die goedkeuringskode.", "Edit terminal": "Wysig terminaal", "Type": "Tipe", "Bank or provider": "Bank of verskaffer", "Any branch": "Enige tak", "Swipe limits": "Veelimiete", "Leave a limit empty or 0 for no limit.": "Los 'n limiet leeg of 0 vir geen limiet.", "Security": "Sekuriteit", "Require the approval code on every card sale": "Vereis die goedkeuringskode by elke kaartverkoop", "Give the terminal a name": "Gee die terminaal 'n naam", "Terminal added": "Terminaal bygevoeg", "Last seen": "Laas gesien", "Link code": "Koppelkode", "On the phone or tablet you want to use as this terminal, open Point of sale and enter this code. That device must already share this business (see Advanced Pesa Connection).": "Maak op die foon of tablet wat jy as hierdie terminaal wil gebruik, Verkooppunt oop en voer hierdie kode in. Daardie toestel moet reeds hierdie besigheid deel (kyk Gevorderde Pesa-koppeling).", "Blocked. No card sales can be recorded on this terminal.": "Geblokkeer. Geen kaartverkope kan op hierdie terminaal aangeteken word nie.", "Limits": "Limiete", "Card activity": "Kaartaktiwiteit", "Since last settlement": "Sedert laaste vereffening", "Last card sale": "Laaste kaartverkoop", "Settle card batch": "Vereffen kaartbondel", "Edit": "Wysig", "Unlink device": "Ontkoppel toestel", "New code": "Nuwe kode", "Unblock": "Deblokkeer", "Block terminal": "Blokkeer terminaal", "Back": "Terug", "Unlink device?": "Toestel ontkoppel?", "The phone or tablet linked to this terminal will stop being able to use it until it is linked again with a new code.": "Die foon of tablet wat aan hierdie terminaal gekoppel is, sal dit nie meer kan gebruik nie totdat dit weer met 'n nuwe kode gekoppel word.", "Unlink": "Ontkoppel", "Delete terminal?": "Terminaal skrap?", "Past card sales keep their record. This only removes the terminal and its limits.": "Vorige kaartverkope behou hul rekord. Dit verwyder net die terminaal en sy limiete.", "Run the end of day settlement on the card machine, then type in the totals it printed. Pesa compares them with the card sales recorded here.": "Doen die dageindvereffening op die kaartmasjien en tik dan die totale in wat dit gedruk het. Pesa vergelyk dit met die kaartverkope wat hier aangeteken is.", "Recorded in Pesa": "Aangeteken in Pesa", "Terminal batch total (N$)": "Terminaal se bondeltotaal (N$)", "Terminal transaction count": "Terminaal se transaksietelling", "Previous settlements": "Vorige vereffenings", "Save settlement": "Stoor vereffening", "Terminal is lower than Pesa by": "Terminaal is laer as Pesa met", "Terminal is higher than Pesa by": "Terminaal is hoër as Pesa met", "Count differs": "Telling verskil", "Enter the terminal batch total": "Voer die terminaal se bondeltotaal in", "Settlement saved": "Vereffening gestoor", "Terminal locked": "Terminaal gesluit", "Point of sale": "Verkooppunt", "This device is not linked to a card terminal": "Hierdie toestel is nie aan 'n kaartterminaal gekoppel nie", "Lock": "Sluit", "Close": "Maak toe", "This terminal has been blocked by the owner. Sales cannot be taken here.": "Hierdie terminaal is deur die eienaar geblokkeer. Verkope kan nie hier gedoen word nie.", "Who is selling?": "Wie verkoop?", "Too many wrong tries. Try again in": "Te veel verkeerde pogings. Probeer weer oor", "tries left.": "pogings oor.", "Till open": "Kassa oop", "Online": "Aanlyn", "Offline": "Vanlyn", "Card terminal linked": "Kaartterminaal gekoppel", "No card terminal": "Geen kaartterminaal", "This device is not linked to a card terminal yet. Cash, wallet and credit sales work normally.": "Hierdie toestel is nog nie aan 'n kaartterminaal gekoppel nie. Kontant-, beursie- en kredietverkope werk normaal.", "Link this device": "Koppel hierdie toestel", "Search products or scan a barcode": "Soek produkte of skandeer 'n strepieskode", "Clear": "Maak skoon", "Add to sale": "Voeg by verkoop", "Your sales today": "Jou verkope vandag", "Daily card total": "Daaglikse kaarttotaal", "Swipes this hour": "Veë hierdie uur", "Recent card sales": "Onlangse kaartverkope", "Unlink this device": "Ontkoppel hierdie toestel", "Charge": "Bereken", "Quick sale": "Vinnige verkoop", "Added to sale": "By verkoop gevoeg", "Unlink this device?": "Hierdie toestel ontkoppel?", "This phone or tablet will stop acting as the card terminal. You can link it again with a new code.": "Hierdie foon of tablet sal ophou om as kaartterminaal te dien. Jy kan dit weer met 'n nuwe kode koppel.", "The owner or a manager adds a terminal under Card terminals and limits and gets a 6 digit link code. Enter it here.": "Die eienaar of 'n bestuurder voeg 'n terminaal by onder Kaartterminale en limiete en kry 'n 6 syfer koppelkode. Voer dit hier in.", "Link": "Koppel", "That code was not found. Check it, or make sure this device is connected to the same business.": "Daardie kode is nie gevind nie. Kontroleer dit, of maak seker hierdie toestel is aan dieselfde besigheid gekoppel.", "Linked to": "Gekoppel aan", "Suggested from your stock levels and how fast each product sold over the last 30 days. Change any quantity before you order.": "Voorgestel uit jou voorraadvlakke en hoe vinnig elke produk oor die afgelope 30 dae verkoop het. Verander enige hoeveelheid voordat jy bestel.", "Best sellers, last 30 days": "Topverkopers, laaste 30 dae", "not sell at all in 30 days. About": "het glad nie in 30 dae verkoop nie. Ongeveer", "Every product in stock has sold in the last 30 days.": "Elke produk in voorraad het in die afgelope 30 dae verkoop.", "Forecast for the next 7 days": "Voorspelling vir die volgende 7 dae", "Based on the same weekdays over the last 4 weeks. It is a guide, not a promise.": "Gebaseer op dieselfde weekdae oor die afgelope 4 weke. Dit is 'n riglyn, nie 'n belofte nie.", "Nothing unusual found in the last 30 days.": "Niks ongewoons in die afgelope 30 dae gevind nie.", "Credit limit (0 = no limit)": "Kredietlimiet (0 = geen limiet)", "Pesa saves a backup on this device about once a day while it is open, and keeps the latest 7. They stay on this device only. If you clear your browser data or lose the device, they go too, so download a copy now and then.": "Pesa stoor ongeveer een keer per dag 'n rugsteun op hierdie toestel terwyl dit oop is, en hou die jongste 7. Hulle bly net op hierdie toestel. As jy jou blaaierdata uitvee of die toestel verloor, is hulle ook weg, so laai nou en dan 'n kopie af.", "1. Start on this device": "1. Begin op hierdie toestel", "2. Join a device that already started": "2. Sluit aan by 'n toestel wat reeds begin het", "On the first device tap 1. On the second device tap 2.": "Tik 1 op die eerste toestel. Tik 2 op die tweede toestel.", "Step 1": "Stap 1", "Step 2": "Stap 2", "Step 3": "Stap 3", "you@example.com": "you@example.com", "'+tr('At least 4 characters')+'": "'+tr('At least 4 characters')+'", "e.g. CC/2024/00123": "bv. CC/2024/00123", "shop@example.com": "shop@example.com", "081 234 5678 or you@example.com": "081 234 5678 of you@example.com", "081 234 5678 or name@example.com": "081 234 5678 of name@example.com", "'+total.toFixed(2)+'": "'+total.toFixed(2)+'", "e.g. TXN123456": "bv. TXN123456", "'+(ph||'')+'": "'+(ph||'')+'", "'+tr('Search products or scan a barcode')+'": "'+tr('Search products or scan a barcode')+'", "e.g. Omaere 500ml": "bv. Omaere 500ml", "Bread loaf, 9, 13, 20 Omaere 500ml, 8, 12, 24, Drinks, bottle Cooking oil 750ml, 22, 29, 10": "Bread loaf, 9, 13, 20 Omaere 500ml, 8, 12, 24, Drinks, bottle Cooking oil 750ml, 22, 29, 10", "name@example.com": "name@example.com", "e.g. Pay on the 25th": "bv. Betaal op die 25ste", "0.00 = no limit": "0.00 = geen limiet", "orders@supplier.com": "orders@supplier.com", "PN1.…": "PN1.…", "2kg Maize meal": "2kg Mieliemeel", "Cooking oil 750ml": "Kookolie 750ml", "Point of sale terminal": "Verkooppuntterminaal", "Selling on the terminal": "Verkoop op die terminaal", "The Point of sale screen is a fast, full screen place to sell. Every staff member signs in with their own PIN or password.": "Die Verkooppunt-skerm is 'n vinnige volskerm plek om te verkoop. Elke personeellid meld met sy eie PIN of wagwoord aan.", "Card terminals and swipe limits": "Kaartterminale en veelimiete", "Register each card machine to set limits and see its card sales. Pesa records card sales and checks the limits. It does not process the card itself, so take the payment on the machine first.": "Registreer elke kaartmasjien om limiete te stel en sy kaartverkope te sien. Pesa teken kaartverkope aan en kontroleer die limiete. Dit verwerk nie die kaart self nie, so neem eers die betaling op die masjien.", "Settling the card batch": "Die kaartbondel vereffen", "At the end of the day the card machine prints a batch total. Compare it with Pesa to catch missing sales.": "Aan die einde van die dag druk die kaartmasjien 'n bondeltotaal. Vergelyk dit met Pesa om ontbrekende verkope op te spoor.", "A till has been open for over 14 hours": "'n Kassa is vir meer as 14 uur oop", "Load sample test stock (37 items)": "Laai voorbeeld toetsvoorraad (37 items)", "at+1 && dot": "at+1 && dot", "Invoice INV-0001": "Faktuur INV-0001", "0 && it.unitPrice": "0 && it.unitPrice", "Bread loaf, 9, 13, 20": "Bread loaf, 9, 13, 20", "Your Mula, Your Pride. N$1,250.00 · 12 items · Windhoek, Namibia": "Jou Mula, Jou Trots. N$1,250.00 · 12 items · Windhoek, Namibia", "Chip": "Chip", "Tap": "Tik", "Swipe": "Vee", "Manual": "Handmatig", "Card machine": "Kaartmasjien", "POS terminal (phone or tablet)": "POS-terminaal (foon of tablet)", "Active": "Aktief", "Point of sale: a full screen sales terminal with its own staff login, PIN lockout and auto lock": "Verkooppunt: 'n volskerm verkoopterminaal met eie personeelaanmelding, PIN-sluiting en outomatiese sluiting", "Link a phone or tablet to a registered card terminal with a link code": "Koppel 'n foon of tablet aan 'n geregistreerde kaartterminaal met 'n koppelkode", "Swipe limits per terminal: per swipe, tap, daily total, swipes per day and per hour, with manager override": "Veelimiete per terminaal: per vee, tik, daaglikse totaal, veë per dag en per uur, met bestuurder-oorheersing", "Card sales record the card type, last 4 digits, approval code and how the card was used, plus card batch settlement against the terminal": "Kaartverkope teken die kaarttipe, laaste 4 syfers, goedkeuringskode en hoe die kaart gebruik is aan, plus kaartbondelvereffening teen die terminaal", "A point of sale terminal with its own staff login, card terminal linking, swipe limits and card batch settlement. Pesa records and controls card sales, but it does not process cards or connect to a bank card machine itself": "'n Verkooppuntterminaal met eie personeelaanmelding, kaartterminaalkoppeling, veelimiete en kaartbondelvereffening. Pesa teken kaartverkope aan en beheer dit, maar verwerk nie self kaarte nie en koppel nie self aan 'n bankkaartmasjien nie", "Menu → Point of sale": "Kieslys → Verkooppunt", "After three wrong tries the screen locks that person for a minute, then longer. It also locks itself when idle.": "Na drie verkeerde pogings sluit die skerm daardie persoon vir 'n minuut uit, daarna langer. Dit sluit ook self wanneer dit onaktief is.", "Point of sale → Summary → Card terminals and limits": "Verkooppunt → Opsomming → Kaartterminale en limiete", "A sale over a limit needs a manager or owner to approve it. The approval is written to the activity log.": "'n Verkoop oor 'n limiet moet deur 'n bestuurder of eienaar goedgekeur word. Die goedkeuring word in die aktiwiteitslogboek aangeteken.", "Point of sale → Summary → Settle card batch": "Verkooppunt → Opsomming → Vereffen kaartbondel", "Open the menu and tap Point of sale.": "Maak die kieslys oop en tik Verkooppunt.", "Tap your name, then type your PIN (owners and managers type their password).": "Tik jou naam en tik dan jou PIN (eienaars en bestuurders tik hul wagwoord).", "Tap products to add them, or use Amount to key in a price.": "Tik produkte om dit by te voeg, of gebruik Bedrag om 'n prys in te tik.", "Tap Charge, choose how the customer pays and confirm.": "Tik Bereken, kies hoe die kliënt betaal en bevestig.", "Tap Add terminal and fill in the name, bank and terminal ID.": "Tik Voeg terminaal by en vul die naam, bank en terminaal-ID in.", "Set the limits you want. Leave a limit empty or 0 for no limit.": "Stel die limiete wat jy wil hê. Los 'n limiet leeg of 0 vir geen limiet.", "Save. A 6 digit link code appears.": "Stoor. 'n 6 syfer koppelkode verskyn.", "On the phone or tablet that will be the terminal, open Point of sale, Summary, Link this device and type the code.": "Maak op die foon of tablet wat die terminaal gaan wees Verkooppunt, Opsomming, Koppel hierdie toestel oop en tik die kode.", "Run the end of day settlement on the card machine.": "Doen die dageindvereffening op die kaartmasjien.", "In Pesa tap Settle card batch.": "Tik in Pesa Vereffen kaartbondel.", "Type the machine batch total and count.": "Tik die masjien se bondeltotaal en telling.", "Pesa shows if the totals balance, and saves the result.": "Pesa wys of die totale klop, en stoor die resultaat."});
+Object.assign(LANGS.de.strings, {"Enter the email address on your account and we will send you a 6-digit reset code.": "Geben Sie die E-Mail-Adresse Ihres Kontos ein, und wir senden Ihnen einen 6-stelligen Code zum Zurücksetzen.", "6-digit reset code": "6-stelliger Code zum Zurücksetzen", "At least 4 characters": "Mindestens 4 Zeichen", "If that email is on an account, a 6-digit code is on its way to": "Falls diese E-Mail-Adresse zu einem Konto gehört, ist ein 6-stelliger Code unterwegs an", "Enter the 6-digit code from the email.": "Geben Sie den 6-stelligen Code aus der E-Mail ein.", "Choose a password of at least 4 characters.": "Wählen Sie ein Passwort mit mindestens 4 Zeichen.", "New 4-digit PIN": "Neue 4-stellige PIN", "PIN must be exactly 4 digits.": "Die PIN muss genau 4 Ziffern haben.", "How to set this up (5 minutes, free)": "So richten Sie es ein (5 Minuten, kostenlos)", "The sync code must be at least 12 letters or digits. Tap Generate code.": "Der Synchronisierungscode muss mindestens 12 Buchstaben oder Ziffern lang sein. Tippen Sie auf Code erzeugen.", "4-digit PIN": "4-stellige PIN", "4-digit PIN (used to log in)": "4-stellige PIN (zum Anmelden)", "This terminal is blocked.": "Dieses Terminal ist gesperrt.", "Card sales under": "Kartenverkäufe unter", "are not allowed on this terminal.": "sind an diesem Terminal nicht erlaubt.", "Over the per swipe limit of": "Über dem Limit pro Durchziehen von", "Over the tap limit of": "Über dem Antippen-Limit von", "Use chip and PIN instead.": "Verwenden Sie stattdessen Chip und PIN.", "This would take today’s card total to": "Damit würde die heutige Kartensumme steigen auf", "over the daily limit of": "über das Tageslimit von", "Daily swipe limit reached": "Tageslimit für Durchziehen erreicht", "Hourly swipe limit reached": "Stundenlimit für Durchziehen erreicht", "Above": "Über", "the customer must enter their PIN.": "muss der Kunde seine PIN eingeben.", "Per swipe max": "Max. pro Durchziehen", "Tap max": "Max. Antippen", "Swipes today": "Durchziehen heute", "This hour": "Diese Stunde", "No limits set on this terminal.": "Für dieses Terminal sind keine Limits festgelegt.", "Card terminal": "Kartenterminal", "How was the card used?": "Wie wurde die Karte verwendet?", "Card type": "Kartentyp", "Last 4 digits of the card (optional)": "Letzte 4 Ziffern der Karte (optional)", "Approval code from the terminal": "Genehmigungscode vom Terminal", "Approval code from the terminal (required)": "Genehmigungscode vom Terminal (erforderlik)", "Approval code from the terminal (optional)": "Genehmigungscode vom Terminal (optional)", "Within this terminal’s limits.": "Innerhalb der Limits dieses Terminals.", "Last 4 digits must be 4 numbers": "Die letzten 4 Ziffern müssen aus 4 Zahlen bestehen", "Enter the approval code from the terminal": "Geben Sie den Genehmigungscode vom Terminal ein", "Approve over limit as": "Über dem Limit genehmigen als", "Manager approval: enter a manager or owner PIN or password": "Genehmigung durch den Manager: Geben Sie die PIN oder das Passwort eines Managers oder Inhabers ein", "Approve": "Genehmigen", "That code is not a manager or owner.": "Dieser Code gehört weder einem Manager noch einem Inhaber.", "Over the terminal limit. A manager must approve.": "Über dem Limit des Terminals. Ein Manager muss genehmigen.", "Blocked": "Gesperrt", "Linked": "Verbunden", "Not linked yet": "Noch nicht verbunden", "swipes today": "Durchziehen heute", "No card terminals registered yet. Add your card machine or POS terminal to set swipe limits and track card sales per device.": "Noch keine Kartenterminals registriert. Fügen Sie Ihr Kartenterminal oder POS-Terminal hinzu, um Limits für das Durchziehen festzulegen und Kartenverkäufe pro Gerät zu verfolgen.", "Card terminals and limits": "Kartenterminals und Limits", "Add terminal": "Terminal hinzufügen", "Pesa records and controls card sales. It does not process cards or connect directly to your bank’s card machine. Enter the sale on the machine, then record it here with the approval code.": "Pesa erfasst und kontrolliert Kartenverkäufe. Es verarbeitet keine Karten und verbindet sich nicht direkt mit dem Kartenterminal Ihrer Bank. Geben Sie den Verkauf am Gerät ein und erfassen Sie ihn dann hier mit dem Genehmigungscode.", "Edit terminal": "Terminal bearbeiten", "Type": "Typ", "Bank or provider": "Bank oder Anbieter", "Any branch": "Jede Filiale", "Swipe limits": "Limits für Durchziehen", "Leave a limit empty or 0 for no limit.": "Lassen Sie ein Limit leer oder 0 für kein Limit.", "Security": "Sicherheit", "Require the approval code on every card sale": "Genehmigungscode bei jedem Kartenverkauf verlangen", "Give the terminal a name": "Geben Sie dem Terminal einen Namen", "Terminal added": "Terminal hinzugefügt", "Last seen": "Zuletzt gesehen", "Link code": "Verbindungscode", "On the phone or tablet you want to use as this terminal, open Point of sale and enter this code. That device must already share this business (see Advanced Pesa Connection).": "Öffnen Sie auf dem Smartphone oder Tablet, das Sie als dieses Terminal verwenden möchten, Verkaufsstelle und geben Sie diesen Code ein. Das Gerät muss bereits dieses Geschäft teilen (siehe Erweiterte Pesa-Verbindung).", "Blocked. No card sales can be recorded on this terminal.": "Gesperrt. An diesem Terminal können keine Kartenverkäufe erfasst werden.", "Limits": "Limits", "Card activity": "Kartenaktivität", "Since last settlement": "Seit der letzten Abrechnung", "Last card sale": "Letzter Kartenverkauf", "Settle card batch": "Kartenstapel abrechnen", "Edit": "Bearbeiten", "Unlink device": "Gerät trennen", "New code": "Neuer Code", "Unblock": "Entsperren", "Block terminal": "Terminal sperren", "Back": "Zurück", "Unlink device?": "Gerät trennen?", "The phone or tablet linked to this terminal will stop being able to use it until it is linked again with a new code.": "Das mit diesem Terminal verbundene Smartphone oder Tablet kann es nicht mehr verwenden, bis es erneut mit einem neuen Code verbunden wird.", "Unlink": "Trennen", "Delete terminal?": "Terminal löschen?", "Past card sales keep their record. This only removes the terminal and its limits.": "Frühere Kartenverkäufe bleiben erhalten. Dies entfernt nur das Terminal und seine Limits.", "Run the end of day settlement on the card machine, then type in the totals it printed. Pesa compares them with the card sales recorded here.": "Führen Sie die Tagesabrechnung am Kartenterminal durch und geben Sie dann die ausgedruckten Summen ein. Pesa vergleicht sie mit den hier erfassten Kartenverkäufen.", "Recorded in Pesa": "In Pesa erfasst", "Terminal batch total (N$)": "Stapelsumme des Terminals (N$)", "Terminal transaction count": "Transaktionsanzahl des Terminals", "Previous settlements": "Frühere Abrechnungen", "Save settlement": "Abrechnung speichern", "Terminal is lower than Pesa by": "Das Terminal liegt unter Pesa um", "Terminal is higher than Pesa by": "Das Terminal liegt über Pesa um", "Count differs": "Anzahl weicht ab", "Enter the terminal batch total": "Geben Sie die Stapelsumme des Terminals ein", "Settlement saved": "Abrechnung gespeichert", "Terminal locked": "Terminal gesperrt", "Point of sale": "Verkaufsstelle", "This device is not linked to a card terminal": "Dieses Gerät ist nicht mit einem Kartenterminal verbunden", "Lock": "Sperren", "Close": "Schließen", "This terminal has been blocked by the owner. Sales cannot be taken here.": "Dieses Terminal wurde vom Inhaber gesperrt. Hier können keine Verkäufe getätigt werden.", "Who is selling?": "Wer verkauft?", "Too many wrong tries. Try again in": "Zu viele falsche Versuche. Versuchen Sie es erneut in", "tries left.": "Versuche übrig.", "Till open": "Kasse offen", "Online": "Online", "Offline": "Offline", "Card terminal linked": "Kartenterminal verbunden", "No card terminal": "Kein Kartenterminal", "This device is not linked to a card terminal yet. Cash, wallet and credit sales work normally.": "Dieses Gerät ist noch nicht mit einem Kartenterminal verbunden. Verkäufe mit Bargeld, Wallet und Kredit funktionieren normal.", "Link this device": "Dieses Gerät verbinden", "Search products or scan a barcode": "Produkte suchen oder Barcode scannen", "Clear": "Leeren", "Add to sale": "Zum Verkauf hinzufügen", "Your sales today": "Ihre Verkäufe heute", "Daily card total": "Tägliche Kartensumme", "Swipes this hour": "Durchziehen diese Stunde", "Recent card sales": "Letzte Kartenverkäufe", "Unlink this device": "Dieses Gerät trennen", "Charge": "Kassieren", "Quick sale": "Schnellverkauf", "Added to sale": "Zum Verkauf hinzugefügt", "Unlink this device?": "Dieses Gerät trennen?", "This phone or tablet will stop acting as the card terminal. You can link it again with a new code.": "Dieses Smartphone oder Tablet dient nicht mehr als Kartenterminal. Sie können es mit einem neuen Code erneut verbinden.", "The owner or a manager adds a terminal under Card terminals and limits and gets a 6 digit link code. Enter it here.": "Der Inhaber oder ein Manager fügt unter Kartenterminals und Limits ein Terminal hinzu und erhält einen 6 stelligen Verbindungscode. Geben Sie ihn hier ein.", "Link": "Verbinden", "That code was not found. Check it, or make sure this device is connected to the same business.": "Dieser Code wurde nicht gefunden. Prüfen Sie ihn, oder stellen Sie sicher, dass dieses Gerät mit demselben Geschäft verbunden ist.", "Linked to": "Verbunden mit", "Suggested from your stock levels and how fast each product sold over the last 30 days. Change any quantity before you order.": "Vorschlag auf Basis Ihres Lagerbestands und der Verkaufsgeschwindigkeit jedes Produkts in den letzten 30 Tagen. Ändern Sie vor der Bestellung beliebige Mengen.", "Best sellers, last 30 days": "Bestseller, letzte 30 Tage", "not sell at all in 30 days. About": "wurden in 30 Tagen gar nicht verkauft. Ungefähr", "Every product in stock has sold in the last 30 days.": "Jedes Produkt im Bestand wurde in den letzten 30 Tagen verkauft.", "Forecast for the next 7 days": "Prognose für die nächsten 7 Tage", "Based on the same weekdays over the last 4 weeks. It is a guide, not a promise.": "Basierend auf denselben Wochentagen der letzten 4 Wochen. Es ist ein Richtwert, kein Versprechen.", "Nothing unusual found in the last 30 days.": "In den letzten 30 Tagen wurde nichts Ungewöhnliches gefunden.", "Credit limit (0 = no limit)": "Kreditlimit (0 = kein Limit)", "Pesa saves a backup on this device about once a day while it is open, and keeps the latest 7. They stay on this device only. If you clear your browser data or lose the device, they go too, so download a copy now and then.": "Pesa speichert etwa einmal täglich eine Sicherung auf diesem Gerät, solange es geöffnet ist, und behält die letzten 7. Sie bleiben nur auf diesem Gerät. Wenn Sie Ihre Browserdaten löschen oder das Gerät verlieren, sind sie ebenfalls weg. Laden Sie deshalb ab und zu eine Kopie herunter.", "1. Start on this device": "1. Auf diesem Gerät beginnen", "2. Join a device that already started": "2. Einem Gerät beitreten, das bereits gestartet hat", "On the first device tap 1. On the second device tap 2.": "Tippen Sie auf dem ersten Gerät auf 1. Tippen Sie auf dem zweiten Gerät auf 2.", "Step 1": "Schritt 1", "Step 2": "Schritt 2", "Step 3": "Schritt 3", "you@example.com": "you@example.com", "'+tr('At least 4 characters')+'": "'+tr('At least 4 characters')+'", "e.g. CC/2024/00123": "z. B. CC/2024/00123", "shop@example.com": "shop@example.com", "081 234 5678 or you@example.com": "081 234 5678 oder you@example.com", "081 234 5678 or name@example.com": "081 234 5678 oder name@example.com", "'+total.toFixed(2)+'": "'+total.toFixed(2)+'", "e.g. TXN123456": "z. B. TXN123456", "'+(ph||'')+'": "'+(ph||'')+'", "'+tr('Search products or scan a barcode')+'": "'+tr('Search products or scan a barcode')+'", "e.g. Omaere 500ml": "z. B. Omaere 500ml", "Bread loaf, 9, 13, 20 Omaere 500ml, 8, 12, 24, Drinks, bottle Cooking oil 750ml, 22, 29, 10": "Bread loaf, 9, 13, 20 Omaere 500ml, 8, 12, 24, Drinks, bottle Cooking oil 750ml, 22, 29, 10", "name@example.com": "name@example.com", "e.g. Pay on the 25th": "z. B. Zahlung am 25.", "0.00 = no limit": "0.00 = kein Limit", "orders@supplier.com": "orders@supplier.com", "PN1.…": "PN1.…", "2kg Maize meal": "2kg Maismehl", "Cooking oil 750ml": "Speiseöl 750ml", "Point of sale terminal": "Verkaufsstellen-Terminal", "Selling on the terminal": "Verkaufen am Terminal", "The Point of sale screen is a fast, full screen place to sell. Every staff member signs in with their own PIN or password.": "Der Bildschirm Verkaufsstelle ist ein schneller Vollbildbereich zum Verkaufen. Jeder Mitarbeiter meldet sich mit seiner eigenen PIN oder seinem eigenen Passwort an.", "Card terminals and swipe limits": "Kartenterminals und Limits für Durchziehen", "Register each card machine to set limits and see its card sales. Pesa records card sales and checks the limits. It does not process the card itself, so take the payment on the machine first.": "Registrieren Sie jedes Kartenterminal, um Limits festzulegen und seine Kartenverkäufe zu sehen. Pesa erfasst Kartenverkäufe und prüft die Limits. Es verarbeitet die Karte nicht selbst, nehmen Sie die Zahlung also zuerst am Gerät an.", "Settling the card batch": "Den Kartenstapel abrechnen", "At the end of the day the card machine prints a batch total. Compare it with Pesa to catch missing sales.": "Am Ende des Tages druckt das Kartenterminal eine Stapelsumme aus. Vergleichen Sie sie mit Pesa, um fehlende Verkäufe zu finden.", "A till has been open for over 14 hours": "Eine Kasse ist seit über 14 Stunden offen", "Load sample test stock (37 items)": "Beispiel-Testbestand laden (37 Artikel)", "at+1 && dot": "at+1 && dot", "Invoice INV-0001": "Rechnung INV-0001", "0 && it.unitPrice": "0 && it.unitPrice", "Bread loaf, 9, 13, 20": "Bread loaf, 9, 13, 20", "Your Mula, Your Pride. N$1,250.00 · 12 items · Windhoek, Namibia": "Ihr Mula, Ihr Stolz. N$1,250.00 · 12 Artikel · Windhoek, Namibia", "Chip": "Chip", "Tap": "Antippen", "Swipe": "Durchziehen", "Manual": "Manuell", "Card machine": "Kartenterminal", "POS terminal (phone or tablet)": "POS-Terminal (Smartphone oder Tablet)", "Active": "Aktiv", "Point of sale: a full screen sales terminal with its own staff login, PIN lockout and auto lock": "Verkaufsstelle: ein Vollbild-Verkaufsterminal mit eigener Mitarbeiteranmeldung, PIN-Sperre und automatischer Sperre", "Link a phone or tablet to a registered card terminal with a link code": "Verbinden Sie ein Smartphone oder Tablet mit einem registrierten Kartenterminal über einen Verbindungscode", "Swipe limits per terminal: per swipe, tap, daily total, swipes per day and per hour, with manager override": "Limits für Durchziehen pro Terminal: pro Durchziehen, Antippen, Tagessumme, Durchziehen pro Tag und pro Stunde, mit Manager-Freigabe", "Card sales record the card type, last 4 digits, approval code and how the card was used, plus card batch settlement against the terminal": "Kartenverkäufe erfassen Kartentyp, letzte 4 Ziffern, Genehmigungscode und die Art der Kartenverwendung, plus Kartenstapel-Abrechnung gegen das Terminal", "A point of sale terminal with its own staff login, card terminal linking, swipe limits and card batch settlement. Pesa records and controls card sales, but it does not process cards or connect to a bank card machine itself": "Ein Verkaufsstellen-Terminal mit eigener Mitarbeiteranmeldung, Kartenterminal-Verbindung, Limits für Durchziehen und Kartenstapel-Abrechnung. Pesa erfasst und kontrolliert Kartenverkäufe, verarbeitet aber selbst keine Karten und verbindet sich nicht selbst mit einem Bankkartenterminal", "Menu → Point of sale": "Menü → Verkaufsstelle", "After three wrong tries the screen locks that person for a minute, then longer. It also locks itself when idle.": "Nach drei falschen Versuchen sperrt der Bildschirm diese Person für eine Minute, danach länger. Er sperrt sich auch selbst, wenn er nicht benutzt wird.", "Point of sale → Summary → Card terminals and limits": "Verkaufsstelle → Zusammenfassung → Kartenterminals und Limits", "A sale over a limit needs a manager or owner to approve it. The approval is written to the activity log.": "Ein Verkauf über dem Limit muss von einem Manager oder Inhaber genehmigt werden. Die Genehmigung wird im Aktivitätsprotokoll festgehalten.", "Point of sale → Summary → Settle card batch": "Verkaufsstelle → Zusammenfassung → Kartenstapel abrechnen", "Open the menu and tap Point of sale.": "Öffnen Sie das Menü und tippen Sie auf Verkaufsstelle.", "Tap your name, then type your PIN (owners and managers type their password).": "Tippen Sie auf Ihren Namen und geben Sie dann Ihre PIN ein (Inhaber und Manager geben ihr Passwort ein).", "Tap products to add them, or use Amount to key in a price.": "Tippen Sie auf Produkte, um sie hinzuzufügen, oder verwenden Sie Betrag, um einen Preis einzugeben.", "Tap Charge, choose how the customer pays and confirm.": "Tippen Sie auf Kassieren, wählen Sie, wie der Kunde bezahlt, und bestätigen Sie.", "Tap Add terminal and fill in the name, bank and terminal ID.": "Tippen Sie auf Terminal hinzufügen und füllen Sie Name, Bank und Terminal-ID aus.", "Set the limits you want. Leave a limit empty or 0 for no limit.": "Legen Sie die gewünschten Limits fest. Lassen Sie ein Limit leer oder 0 für kein Limit.", "Save. A 6 digit link code appears.": "Speichern. Ein 6 stelliger Verbindungscode erscheint.", "On the phone or tablet that will be the terminal, open Point of sale, Summary, Link this device and type the code.": "Öffnen Sie auf dem Smartphone oder Tablet, das das Terminal sein soll, Verkaufsstelle, Zusammenfassung, Dieses Gerät verbinden und geben Sie den Code ein.", "Run the end of day settlement on the card machine.": "Führen Sie die Tagesabrechnung am Kartenterminal durch.", "In Pesa tap Settle card batch.": "Tippen Sie in Pesa auf Kartenstapel abrechnen.", "Type the machine batch total and count.": "Geben Sie die Stapelsumme und die Anzahl des Geräts ein.", "Pesa shows if the totals balance, and saves the result.": "Pesa zeigt, ob die Summen übereinstimmen, und speichert das Ergebnis."});
+Object.assign(LANGS.af.strings, {"seconds":"sekondes"});
+Object.assign(LANGS.de.strings, {"seconds":"Sekunden"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -1590,7 +1627,7 @@ var State = {
   cart: [], // {productId, name, unitPrice, cost, qty, unit}
   sellSearch: '',
   ready: { products:false, customers:false, sales:false, expenses:false, settings:false, company:false, users:false, tills:false,
-    branches:false, suppliers:false, purchaseOrders:false, wastage:false, auditLog:false, invoices:false, reports:false },
+    branches:false, suppliers:false, purchaseOrders:false, posDevices:false, posBatches:false, wastage:false, auditLog:false, invoices:false, reports:false },
   select: {
     stock: { active:false, ids:{} },
     credit: { active:false, ids:{} },
@@ -1603,6 +1640,8 @@ var State = {
   till: { current: null }, // this device's currently-open till session, if any
   branches: [],        // {id, name, address, createdAt}
   suppliers: [],       // {id, name, contact, phone, notes}
+  posDevices: [],  // registered card machines / POS terminals
+  posBatches: [],  // card batch settlements
   purchaseOrders: [],  // {id, supplierId, items:[{productId,name,qty,cost}], status, createdAt, receivedAt}
   invoices: [],        // {id, type:'invoice'|'receipt', number, billToName, items, total, dateStr, customerId, branchId, createdBy, createdAt}
   invFilter: { q:'', period:'all', client:'' },
@@ -1713,6 +1752,8 @@ function initRefs(){
   refs.branches = Store.collection('branches');
   refs.suppliers = Store.collection('suppliers');
   refs.purchaseOrders = Store.collection('purchaseOrders');
+  refs.posDevices = Store.collection('posDevices');
+  refs.posBatches = Store.collection('posBatches');
   refs.wastage = Store.collection('wastage');
   refs.auditLog = Store.collection('auditLog');
   refs.invoices = Store.collection('invoices');
@@ -1778,6 +1819,20 @@ function subscribeAll(){
     State.purchaseOrders = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
     State.ready.purchaseOrders = true;
     if(document.getElementById('app').style.display !== 'none') render();
+  });
+  refs.posDevices.onSnapshot(function(docs){
+    State.posDevices = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+    State.ready.posDevices = true;
+    var b = posBoundInfo();
+    if(b && Date.now()-(b.at||0) > 15000){
+      var mine = State.posDevices.find(function(x){ return x.id===b.deviceId; });
+      if(!mine || !mine.linkedAt){ posBind(null); }
+    }
+    if(typeof POS !== 'undefined' && POS.open) posRender();
+  });
+  refs.posBatches.onSnapshot(function(docs){
+    State.posBatches = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.settledAt)-new Date(a.settledAt); });
+    State.ready.posBatches = true;
   });
   refs.wastage.onSnapshot(function(docs){
     State.wastage = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
@@ -3235,6 +3290,7 @@ function setCartQty(productId, qty){
 }
 
 function renderCartBar(){
+  if(POS.open) posRenderCart();
   var slot = document.getElementById('cartbarSlot');
   if(!slot) return;
   if(State.tab !== 'sell' || State.cart.length === 0){ slot.innerHTML=''; return; }
@@ -3310,6 +3366,7 @@ function openChargeSheet(){
     '<div class="actions"><button class="btn btn-primary btn-block" id="confirmChargeBtn">'+tr('Confirm sale')+'</button></div>';
   var ov = openSheet(html, {center:true});
   var pm = 'cash';
+  var cardSt = { devId:null, mode:'Chip', override:null };
   function renderExtra(){
     var extra = ov.querySelector('#pmExtra');
     if(pm === 'cash'){
@@ -3323,7 +3380,12 @@ function openChargeSheet(){
         } else { cd.style.display='none'; }
       });
     } else if(pm === 'card'){
-      extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>';
+      if(State.posDevices.length){
+        extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>' + posCardHtml(total, cardSt);
+        posCardWire(ov, total, cardSt);
+      } else {
+        extra.innerHTML = '<div class="banner">Record once the card has been swiped, tapped or inserted and approved on your card machine.</div>';
+      }
     } else if(pm === 'wallet'){
       extra.innerHTML = '<div class="field"><label>'+tr('Wallet or transfer type')+'</label><select id="walletProv">' +
         WALLET_PROVIDERS.map(function(w){ return '<option value="'+esc(w)+'">'+esc(w)+'</option>'; }).join('') + '</select></div>' +
@@ -3363,6 +3425,8 @@ function openChargeSheet(){
       if(cr && cr.value !== '' && (isNaN(rv) || rv < total)){ toast('Cash received is less than the total'); return; }
       var got = (cr && cr.value !== '') ? rv : total;
       finalizeSale(pm, null, { cashReceived: got, changeGiven: Math.max(0, Math.round((got-total)*100)/100) });
+    } else if(pm === 'card'){
+      posCardSubmit(ov, total, cardSt).then(function(ex){ if(ex) finalizeSale('card', null, ex); });
     } else {
       finalizeSale(pm, null);
     }
@@ -3396,7 +3460,7 @@ function finalizeSale(method, customer, extra){
     createdAt: new Date().toISOString()
   };
   if(extra) Object.assign(sale, extra);
-  refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, (items.length)+' item(s), '+fmtMoney(total)); });
+  refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, (items.length)+' item(s), '+fmtMoney(total)); if(sale.overrideBy) logAudit('other','sale', ref&&ref.id, 'Card limit override approved by '+sale.overrideBy+' on '+(sale.posDeviceName||'terminal')+': '+(sale.overrideNote||'')); });
   // decrement stock
   var stockChanges = [];
   items.forEach(function(it){
@@ -3419,6 +3483,7 @@ function finalizeSale(method, customer, extra){
   renderCartBar();
   toast('Sale recorded — ' + fmtMoney(total));
   offerSaleReceipt(sale, customer);
+  if(POS.open) setTimeout(posRender, 60);
 }
 
 function offerSaleReceipt(sale, customer){
@@ -3467,6 +3532,544 @@ function offerSaleReceipt(sale, customer){
       if(ok) toast('Receipt downloaded');
       closeModal();
     });
+  });
+}
+
+/* ============================== POINT OF SALE (terminal) ==============================
+   A POS terminal screen with its own staff login, a link to registered card machines /
+   terminals, swipe limits and card batch settlement. Pesa records and controls card sales;
+   it does not process cards or talk to the bank's card machine itself. */
+var POS_PROVIDERS = ['FNB','Standard Bank','Bank Windhoek','Nedbank','PayToday','Other'];
+var POS_KINDS = ['Card machine','POS terminal (phone or tablet)'];
+var POS_MODES = ['Chip','Tap','Swipe','Manual'];
+var POS_BRANDS = ['Visa','Mastercard','Maestro','Other'];
+var POS = { open:false, user:null, orig:null, tab:'sell', search:'', key:'', idle:null, pick:null, typed:'' };
+
+function posBoundKey(){ return 'pesa_pos_device_' + WS.id; }
+function posBoundInfo(){ try{ return JSON.parse(localStorage.getItem(posBoundKey()) || 'null'); }catch(e){ return null; } }
+function posBind(id){
+  try{ if(id) localStorage.setItem(posBoundKey(), JSON.stringify({ deviceId:id, at:Date.now() })); else localStorage.removeItem(posBoundKey()); }catch(e){}
+}
+// The registered device this phone/tablet is linked to (or null).
+function posDevice(){
+  var b = posBoundInfo(); if(!b) return null;
+  var d = State.posDevices.find(function(x){ return x.id === b.deviceId; });
+  if(!d) return null;
+  if(!d.linkedAt && Date.now() - (b.at||0) > 15000) return null;
+  return d;
+}
+function posSum(list){ return list.reduce(function(s,x){ return s + (x.total||0); }, 0); }
+function posStats(dev){
+  var now = Date.now(), tk = todayKey();
+  var sales = State.sales.filter(function(s){ return s.paymentMethod === 'card' && s.posDeviceId === dev.id; });
+  var today = sales.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk; });
+  var hour = sales.filter(function(s){ return now - new Date(s.createdAt).getTime() < 3600000; });
+  var lastB = State.posBatches.filter(function(b){ return b.deviceId === dev.id; })[0];
+  var since = lastB ? new Date(lastB.settledAt).getTime() : 0;
+  var batch = sales.filter(function(s){ return new Date(s.createdAt).getTime() > since; });
+  return { todayTotal:posSum(today), todayCount:today.length, hourCount:hour.length,
+    batchTotal:posSum(batch), batchCount:batch.length, batchSince: lastB ? lastB.settledAt : null,
+    lastSale: sales[0] ? sales[0].createdAt : null, recent: sales.slice(0,8) };
+}
+function posLim(dev, k){ var v = dev && dev.limits ? parseFloat(dev.limits[k]) : 0; return v > 0 ? v : 0; }
+// Checks one card sale against the terminal's limits. Returns {blocked, issues[], notes[]}.
+function posLimitCheck(dev, amount, mode){
+  if(dev.status === 'blocked') return { blocked:true, issues:[tr('This terminal is blocked.')], notes:[] };
+  var st = posStats(dev), out = [], notes = [];
+  if(posLim(dev,'minCard') && amount < posLim(dev,'minCard')) out.push(tr('Card sales under')+' '+fmtMoney(posLim(dev,'minCard'))+' '+tr('are not allowed on this terminal.'));
+  if(posLim(dev,'perSwipe') && amount > posLim(dev,'perSwipe')) out.push(tr('Over the per swipe limit of')+' '+fmtMoney(posLim(dev,'perSwipe'))+'.');
+  if(mode === 'Tap' && posLim(dev,'tap') && amount > posLim(dev,'tap')) out.push(tr('Over the tap limit of')+' '+fmtMoney(posLim(dev,'tap'))+'. '+tr('Use chip and PIN instead.'));
+  if(posLim(dev,'daily') && st.todayTotal + amount > posLim(dev,'daily')) out.push(tr('This would take today’s card total to')+' '+fmtMoney(st.todayTotal+amount)+', '+tr('over the daily limit of')+' '+fmtMoney(posLim(dev,'daily'))+'.');
+  if(posLim(dev,'dailyCount') && st.todayCount + 1 > posLim(dev,'dailyCount')) out.push(tr('Daily swipe limit reached')+' ('+posLim(dev,'dailyCount')+').');
+  if(posLim(dev,'hourlyCount') && st.hourCount + 1 > posLim(dev,'hourlyCount')) out.push(tr('Hourly swipe limit reached')+' ('+posLim(dev,'hourlyCount')+').');
+  if(posLim(dev,'pinAbove') && amount > posLim(dev,'pinAbove') && (mode === 'Tap' || mode === 'Swipe')) notes.push(tr('Above')+' '+fmtMoney(posLim(dev,'pinAbove'))+' '+tr('the customer must enter their PIN.'));
+  return { blocked:false, issues:out, notes:notes, stats:st };
+}
+function posLimitSummaryHtml(dev){
+  var st = posStats(dev), bits = [];
+  if(posLim(dev,'perSwipe')) bits.push(tr('Per swipe max')+' '+fmtMoney(posLim(dev,'perSwipe')));
+  if(posLim(dev,'tap')) bits.push(tr('Tap max')+' '+fmtMoney(posLim(dev,'tap')));
+  if(posLim(dev,'daily')) bits.push(tr('Today')+' '+fmtMoney(st.todayTotal)+' / '+fmtMoney(posLim(dev,'daily')));
+  if(posLim(dev,'dailyCount')) bits.push(tr('Swipes today')+' '+st.todayCount+' / '+posLim(dev,'dailyCount'));
+  if(posLim(dev,'hourlyCount')) bits.push(tr('This hour')+' '+st.hourCount+' / '+posLim(dev,'hourlyCount'));
+  return bits.length ? bits.join(' · ') : tr('No limits set on this terminal.');
+}
+async function posVerifyManager(code){
+  var h = await sha256Hex(code);
+  return State.users.find(function(u){ return u.active !== false && (u.role === 'owner' || u.role === 'manager') && u.passHash === h; }) || null;
+}
+
+/* ---- card section of the charge sheet ---- */
+function posCardHtml(total, st){
+  var devs = State.posDevices;
+  var bound = posDevice();
+  if(!st.devId) st.devId = bound && bound.status !== 'blocked' ? bound.id : (devs.filter(function(d){ return d.status !== 'blocked'; })[0] || devs[0]).id;
+  return '<div class="field"><label>'+tr('Card terminal')+'</label><select id="posDev">' +
+      devs.map(function(d){ return '<option value="'+d.id+'"'+(d.id===st.devId?' selected':'')+'>'+esc(d.name)+(d.terminalId?' · '+esc(d.terminalId):'')+(d.status==='blocked'?' ('+tr('blocked')+')':'')+'</option>'; }).join('') +
+    '</select></div>' +
+    '<div class="field"><label>'+tr('How was the card used?')+'</label><div class="segbtns">' +
+      POS_MODES.map(function(m){ return '<button type="button" class="segbtn'+(m===st.mode?' active':'')+'" data-pmode="'+m+'">'+tr(m)+'</button>'; }).join('') +
+    '</div></div>' +
+    '<div class="field"><label>'+tr('Card type')+'</label><select id="posBrand">'+POS_BRANDS.map(function(b){ return '<option>'+b+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field"><label>'+tr('Last 4 digits of the card (optional)')+'</label><input id="posLast4" inputmode="numeric" maxlength="4" placeholder="1234"></div>' +
+    '<div class="field"><label id="posAuthLbl">'+tr('Approval code from the terminal')+'</label><input id="posAuth" placeholder="e.g. 045821" autocomplete="off"></div>' +
+    '<div id="posLimitInfo"></div><div id="posOverrideBox"></div>';
+}
+function posCardWire(ov, total, st){
+  function dev(){ return State.posDevices.find(function(d){ return d.id === st.devId; }); }
+  function refresh(){
+    var d = dev(); if(!d) return;
+    var chk = posLimitCheck(d, total, st.mode);
+    var box = ov.querySelector('#posLimitInfo'), h = '';
+    var lbl = ov.querySelector('#posAuthLbl');
+    if(lbl) lbl.textContent = d.requireAuthCode ? tr('Approval code from the terminal (required)') : tr('Approval code from the terminal (optional)');
+    if(chk.blocked || chk.issues.length){
+      h = '<div class="banner" style="background:var(--danger-bg);color:var(--danger);">'+ICONS.warn+'<span>' + chk.issues.map(esc).join('<br>') + '</span></div>';
+    } else {
+      h = '<div class="banner">'+ICONS.check+'<span>'+tr('Within this terminal’s limits.')+'</span></div>';
+    }
+    if(chk.notes && chk.notes.length) h += '<div class="banner">'+ICONS.info+'<span>'+chk.notes.map(esc).join('<br>')+'</span></div>';
+    h += '<div style="font-size:12px;color:var(--text-muted);margin:4px 2px 10px;">'+esc(posLimitSummaryHtml(d))+'</div>';
+    box.innerHTML = h;
+    st.override = null; ov.querySelector('#posOverrideBox').innerHTML = '';
+  }
+  ov.querySelector('#posDev').addEventListener('change', function(e){ st.devId = e.target.value; refresh(); });
+  ov.querySelectorAll('[data-pmode]').forEach(function(b){
+    b.addEventListener('click', function(){
+      ov.querySelectorAll('[data-pmode]').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active'); st.mode = b.getAttribute('data-pmode'); refresh();
+    });
+  });
+  refresh();
+}
+// Returns the extra sale fields, or null when the sale must not go ahead yet.
+async function posCardSubmit(ov, total, st){
+  if(!State.posDevices.length) return {};
+  var d = State.posDevices.find(function(x){ return x.id === st.devId; });
+  if(!d) return {};
+  var last4 = ov.querySelector('#posLast4').value.trim();
+  if(last4 && !/^\d{4}$/.test(last4)){ toast(tr('Last 4 digits must be 4 numbers')); return null; }
+  var auth = ov.querySelector('#posAuth').value.trim();
+  if(d.requireAuthCode && !auth){ toast(tr('Enter the approval code from the terminal')); return null; }
+  var chk = posLimitCheck(d, total, st.mode);
+  var extra = { posDeviceId:d.id, posDeviceName:d.name, terminalId:d.terminalId || '', cardBrand:ov.querySelector('#posBrand').value, cardLast4:last4, authCode:auth, entryMode:st.mode };
+  if(chk.blocked){ toast(tr('This terminal is blocked.')); return null; }
+  if(chk.issues.length){
+    if(st.override){ extra.overrideBy = st.override; extra.overrideNote = chk.issues.join(' '); return extra; }
+    var box = ov.querySelector('#posOverrideBox');
+    if(isManagerOrOwner()){
+      box.innerHTML = '<div class="actions"><button class="btn btn-danger btn-block" id="posOvBtn" type="button">'+tr('Approve over limit as')+' '+esc(State.session.name)+'</button></div>';
+      box.querySelector('#posOvBtn').addEventListener('click', function(){ st.override = State.session.name; ov.querySelector('#confirmChargeBtn').click(); });
+    } else {
+      box.innerHTML = '<div class="field"><label>'+tr('Manager approval: enter a manager or owner PIN or password')+'</label><input id="posOvCode" type="password" autocomplete="off"></div>' +
+        '<div class="actions"><button class="btn btn-danger btn-block" id="posOvBtn" type="button">'+tr('Approve')+'</button></div>';
+      box.querySelector('#posOvBtn').addEventListener('click', async function(){
+        var code = box.querySelector('#posOvCode').value; if(!code) return;
+        var m = await posVerifyManager(code);
+        if(!m){ toast(tr('That code is not a manager or owner.')); return; }
+        st.override = m.name; ov.querySelector('#confirmChargeBtn').click();
+      });
+    }
+    toast(tr('Over the terminal limit. A manager must approve.'));
+    return null;
+  }
+  return extra;
+}
+
+/* ---- registered devices (owner / manager) ---- */
+function posNewCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
+function posFmtCode(c){ return c ? String(c).slice(0,3)+' '+String(c).slice(3) : ''; }
+function openPosDevicesSheet(){
+  var rows = State.posDevices.length ? '<div class="rowlist">' + State.posDevices.map(function(d){
+    var st = posStats(d);
+    return '<div class="row" data-posd="'+d.id+'"><div class="avatar">'+ICONS.till+'</div><div class="main"><div class="title">'+esc(d.name)+'</div>' +
+      '<div class="sub">'+esc(d.provider||'')+(d.terminalId?' · '+esc(d.terminalId):'')+' · '+(d.status==='blocked'?tr('Blocked'):(d.linkedAt?tr('Linked'):tr('Not linked yet')))+'</div></div>' +
+      '<div class="trail"><div class="amt num">'+fmtMoney(st.todayTotal)+'</div><div class="note">'+st.todayCount+' '+tr('swipes today')+'</div></div></div>';
+  }).join('') + '</div>' : '<div class="empty" style="padding:14px 0;">'+tr('No card terminals registered yet. Add your card machine or POS terminal to set swipe limits and track card sales per device.')+'</div>';
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Card terminals and limits')+'</h2></div>' + rows +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="posAddBtn">'+tr('Add terminal')+'</button></div>' +
+    '<div class="banner" style="margin-top:12px;">'+ICONS.info+'<span>'+tr('Pesa records and controls card sales. It does not process cards or connect directly to your bank’s card machine. Enter the sale on the machine, then record it here with the approval code.')+'</span></div>');
+  ov.querySelector('#posAddBtn').addEventListener('click', function(){ openPosDeviceForm(null); });
+  ov.querySelectorAll('[data-posd]').forEach(function(r){ r.addEventListener('click', function(){ openPosDeviceDetail(r.getAttribute('data-posd')); }); });
+}
+function openPosDeviceForm(d){
+  d = d || {}; var L = d.limits || {};
+  function f(id, label, val, ph, num){ return '<div class="field"><label>'+tr(label)+'</label><input id="'+id+'" '+(num?'type="number" inputmode="decimal" step="0.01" ':'')+'placeholder="'+(ph||'')+'" value="'+esc(val==null?'':val)+'"></div>'; }
+  var html = '<div class="sheet-head"><h2>'+(d.id?tr('Edit terminal'):tr('Add terminal'))+'</h2></div>' +
+    f('pdName','Name','' + (d.name||''),'e.g. Front counter machine') +
+    '<div class="field"><label>'+tr('Type')+'</label><select id="pdKind">'+POS_KINDS.map(function(k){ return '<option value="'+k+'"'+(d.kind===k?' selected':'')+'>'+tr(k)+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field"><label>'+tr('Bank or provider')+'</label><select id="pdProv">'+POS_PROVIDERS.map(function(k){ return '<option'+(d.provider===k?' selected':'')+'>'+k+'</option>'; }).join('')+'</select></div>' +
+    f('pdTid','Terminal ID',d.terminalId,'') + f('pdMid','Merchant ID',d.merchantId,'') + f('pdSer','Serial number',d.serial,'') +
+    (State.branches.length ? '<div class="field"><label>'+tr('Branch')+'</label><select id="pdBranch"><option value="">'+tr('Any branch')+'</option>'+State.branches.map(function(b){ return '<option value="'+b.id+'"'+(d.branchId===b.id?' selected':'')+'>'+esc(b.name)+'</option>'; }).join('')+'</select></div>' : '') +
+    '<div class="section-title">'+tr('Swipe limits')+'</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">'+tr('Leave a limit empty or 0 for no limit.')+'</div>' +
+    f('pdPer','Max per swipe (N$)',L.perSwipe,'0',1) + f('pdTap','Max per tap (contactless) (N$)',L.tap,'0',1) +
+    f('pdMin','Minimum card sale (N$)',L.minCard,'0',1) + f('pdPin','Ask for PIN above (N$)',L.pinAbove,'0',1) +
+    f('pdDay','Max card total per day (N$)',L.daily,'0',1) + f('pdDayN','Max swipes per day',L.dailyCount,'0',1) + f('pdHrN','Max swipes per hour',L.hourlyCount,'0',1) +
+    '<div class="section-title">'+tr('Security')+'</div>' +
+    f('pdLock','Auto lock after (minutes, 0 = never)',d.autoLockMin==null?5:d.autoLockMin,'5',1) +
+    '<div class="field"><label><input type="checkbox" id="pdAuthReq"'+(d.requireAuthCode?' checked':'')+' style="width:auto;margin-right:8px;">'+tr('Require the approval code on every card sale')+'</label></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pdCancel">'+tr('Cancel')+'</button><button class="btn btn-primary btn-block" id="pdSave">'+tr('Save')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#pdCancel').addEventListener('click', function(){ d.id ? openPosDeviceDetail(d.id) : openPosDevicesSheet(); });
+  ov.querySelector('#pdSave').addEventListener('click', function(){
+    var name = ov.querySelector('#pdName').value.trim();
+    if(!name){ toast(tr('Give the terminal a name')); return; }
+    function n(id){ var v = parseFloat(ov.querySelector(id).value); return v > 0 ? v : 0; }
+    var rec = { name:name, kind:ov.querySelector('#pdKind').value, provider:ov.querySelector('#pdProv').value,
+      terminalId:ov.querySelector('#pdTid').value.trim(), merchantId:ov.querySelector('#pdMid').value.trim(), serial:ov.querySelector('#pdSer').value.trim(),
+      branchId: ov.querySelector('#pdBranch') ? ov.querySelector('#pdBranch').value : '',
+      limits:{ perSwipe:n('#pdPer'), tap:n('#pdTap'), minCard:n('#pdMin'), pinAbove:n('#pdPin'), daily:n('#pdDay'), dailyCount:n('#pdDayN'), hourlyCount:n('#pdHrN') },
+      autoLockMin: n('#pdLock'), requireAuthCode: ov.querySelector('#pdAuthReq').checked };
+    if(d.id){
+      refs.posDevices.doc(d.id).update(rec); logAudit('update','posDevice',d.id,'Terminal '+name+' updated');
+      toast(tr('Saved')); setTimeout(function(){ openPosDeviceDetail(d.id); }, 50);
+    } else {
+      Object.assign(rec, { status:'active', linkCode:posNewCode(), linkedAt:'', createdAt:new Date().toISOString() });
+      refs.posDevices.add(rec).then(function(ref){ logAudit('create','posDevice',ref&&ref.id,'Terminal '+name+' added'); toast(tr('Terminal added')); openPosDeviceDetail(ref.id); });
+    }
+  });
+}
+function openPosDeviceDetail(id){
+  var d = State.posDevices.find(function(x){ return x.id === id; });
+  if(!d){ openPosDevicesSheet(); return; }
+  var st = posStats(d);
+  function line(a,b){ return '<div class="sumline"><span>'+a+'</span><span class="num">'+b+'</span></div>'; }
+  var linkBlock = d.linkedAt
+    ? '<div class="banner">'+ICONS.check+'<span>'+tr('Linked')+' · '+fmtDateTime(d.linkedAt)+(d.linkedInfo?' · '+esc(d.linkedInfo):'')+(d.lastSeen?'<br>'+tr('Last seen')+' '+fmtDateTime(d.lastSeen):'')+'</span></div>'
+    : '<div class="field"><label>'+tr('Link code')+'</label><div style="font-size:30px;font-weight:700;letter-spacing:.12em;text-align:center;padding:10px;background:var(--surface-2);border-radius:12px;" class="num">'+esc(posFmtCode(d.linkCode))+'</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:6px;">'+tr('On the phone or tablet you want to use as this terminal, open Point of sale and enter this code. That device must already share this business (see Advanced Pesa Connection).')+'</div></div>';
+  var html = '<div class="sheet-head"><h2>'+esc(d.name)+'</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">'+esc([d.provider,d.kind&&tr(d.kind),d.terminalId&&('TID '+d.terminalId),d.merchantId&&('MID '+d.merchantId),d.serial&&('S/N '+d.serial)].filter(Boolean).join(' · '))+'</div>' +
+    (d.status==='blocked'?'<div class="banner" style="background:var(--danger-bg);color:var(--danger);">'+ICONS.warn+'<span>'+tr('Blocked. No card sales can be recorded on this terminal.')+'</span></div>':'') +
+    linkBlock +
+    '<div class="section-title">'+tr('Limits')+'</div>' +
+    '<div style="font-size:13px;margin-bottom:6px;">'+esc(posLimitSummaryHtml(d))+'</div>' +
+    '<div class="section-title">'+tr('Card activity')+'</div>' +
+    line(tr('Today'), fmtMoney(st.todayTotal)+' · '+st.todayCount) +
+    line(tr('Since last settlement'), fmtMoney(st.batchTotal)+' · '+st.batchCount) +
+    (st.lastSale ? line(tr('Last card sale'), fmtDateTime(st.lastSale)) : '') +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-accent btn-block" id="pdSettle">'+tr('Settle card batch')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="pdEdit">'+tr('Edit')+'</button>' +
+      (d.linkedAt ? '<button class="btn btn-ghost btn-block" id="pdUnlink">'+tr('Unlink device')+'</button>' : '<button class="btn btn-ghost btn-block" id="pdNewCode">'+tr('New code')+'</button>') + '</div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="pdBlock">'+(d.status==='blocked'?tr('Unblock'):tr('Block terminal'))+'</button>' +
+      '<button class="btn btn-danger btn-block" id="pdDel">'+tr('Delete')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="pdBack">'+tr('Back')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#pdBack').addEventListener('click', openPosDevicesSheet);
+  ov.querySelector('#pdEdit').addEventListener('click', function(){ openPosDeviceForm(d); });
+  ov.querySelector('#pdSettle').addEventListener('click', function(){ openPosSettleSheet(d.id); });
+  var un = ov.querySelector('#pdUnlink');
+  if(un) un.addEventListener('click', function(){ confirmSheet(tr('Unlink device?'), tr('The phone or tablet linked to this terminal will stop being able to use it until it is linked again with a new code.'), tr('Unlink'), function(){
+    refs.posDevices.doc(d.id).update({ linkedAt:'', linkedInfo:'', linkCode:posNewCode() }); logAudit('update','posDevice',d.id,'Terminal '+d.name+' unlinked'); setTimeout(function(){ openPosDeviceDetail(d.id); }, 80);
+  }, true); });
+  var nc = ov.querySelector('#pdNewCode');
+  if(nc) nc.addEventListener('click', function(){ refs.posDevices.doc(d.id).update({ linkCode:posNewCode() }); setTimeout(function(){ openPosDeviceDetail(d.id); }, 80); });
+  ov.querySelector('#pdBlock').addEventListener('click', function(){
+    var b = d.status === 'blocked' ? 'active' : 'blocked';
+    refs.posDevices.doc(d.id).update({ status:b }); logAudit('update','posDevice',d.id,'Terminal '+d.name+(b==='blocked'?' blocked':' unblocked'));
+    setTimeout(function(){ openPosDeviceDetail(d.id); }, 80);
+  });
+  ov.querySelector('#pdDel').addEventListener('click', function(){ confirmSheet(tr('Delete terminal?'), tr('Past card sales keep their record. This only removes the terminal and its limits.'), tr('Delete'), function(){
+    refs.posDevices.doc(d.id).delete(); logAudit('delete','posDevice',d.id,'Terminal '+d.name+' deleted'); setTimeout(openPosDevicesSheet, 80);
+  }, true); });
+}
+function openPosSettleSheet(id){
+  var d = State.posDevices.find(function(x){ return x.id === id; }); if(!d) return;
+  var st = posStats(d);
+  var past = State.posBatches.filter(function(b){ return b.deviceId === id; }).slice(0,4);
+  var html = '<div class="sheet-head"><h2>'+tr('Settle card batch')+'</h2></div>' +
+    '<div class="banner">'+ICONS.info+'<span>'+tr('Run the end of day settlement on the card machine, then type in the totals it printed. Pesa compares them with the card sales recorded here.')+'</span></div>' +
+    '<div class="sumline"><span>'+tr('Recorded in Pesa')+'</span><span class="num">'+fmtMoney(st.batchTotal)+' · '+st.batchCount+' '+tr('sales')+'</span></div>' +
+    '<div class="field"><label>'+tr('Terminal batch total (N$)')+'</label><input id="sbTotal" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
+    '<div class="field"><label>'+tr('Terminal transaction count')+'</label><input id="sbCount" type="number" inputmode="numeric" placeholder="0"></div>' +
+    '<div id="sbRes"></div>' +
+    (past.length ? '<div class="section-title">'+tr('Previous settlements')+'</div>' + past.map(function(b){
+      return '<div class="sumline"><span>'+fmtDateTime(b.settledAt)+'</span><span class="num '+(Math.abs(b.variance)<0.01?'variance-ok':'variance-bad')+'">'+(Math.abs(b.variance)<0.01?tr('Balanced'):fmtMoney(b.variance))+'</span></div>';
+    }).join('') : '') +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="sbBack">'+tr('Back')+'</button><button class="btn btn-primary btn-block" id="sbSave">'+tr('Save settlement')+'</button></div>';
+  var ov = openSheet(html);
+  function calc(){
+    var t = parseFloat(ov.querySelector('#sbTotal').value), c = parseInt(ov.querySelector('#sbCount').value, 10);
+    var res = ov.querySelector('#sbRes');
+    if(isNaN(t)){ res.innerHTML = ''; return null; }
+    var v = Math.round((t - st.batchTotal)*100)/100;
+    res.innerHTML = '<div class="banner" '+(Math.abs(v)<0.01?'':'style="background:var(--danger-bg);color:var(--danger);"')+'>'+(Math.abs(v)<0.01?ICONS.check:ICONS.warn)+'<span>' +
+      (Math.abs(v)<0.01 ? tr('Balanced') : (v<0 ? tr('Terminal is lower than Pesa by')+' ' : tr('Terminal is higher than Pesa by')+' ')+(Math.abs(v)<0.01?'':fmtMoney(Math.abs(v)))) +
+      (!isNaN(c) && c !== st.batchCount ? '<br>'+tr('Count differs')+': '+c+' vs '+st.batchCount : '') + '</span></div>';
+    return { v:v, t:t, c:isNaN(c)?null:c };
+  }
+  ov.querySelector('#sbTotal').addEventListener('input', calc); ov.querySelector('#sbCount').addEventListener('input', calc);
+  ov.querySelector('#sbBack').addEventListener('click', function(){ openPosDeviceDetail(id); });
+  ov.querySelector('#sbSave').addEventListener('click', function(){
+    var r = calc(); if(!r){ toast(tr('Enter the terminal batch total')); return; }
+    refs.posBatches.add({ deviceId:id, deviceName:d.name, terminalId:d.terminalId||'', settledAt:new Date().toISOString(), by:State.session?State.session.name:'',
+      systemTotal:st.batchTotal, systemCount:st.batchCount, terminalTotal:r.t, terminalCount:r.c, variance:r.v, fromAt:st.batchSince||null });
+    logAudit('other','posDevice',id,'Card batch settled on '+d.name+': '+fmtMoney(r.t)+(Math.abs(r.v)<0.01?' balanced':' variance '+fmtMoney(r.v)));
+    toast(tr('Settlement saved')); setTimeout(function(){ openPosDeviceDetail(id); }, 80);
+  });
+}
+
+/* ---- POS terminal screen ---- */
+function posLockKey(){ return 'pesa_pos_lock_' + WS.id; }
+function posLockData(){ try{ return JSON.parse(localStorage.getItem(posLockKey()) || '{}'); }catch(e){ return {}; } }
+function posLockSave(o){ try{ localStorage.setItem(posLockKey(), JSON.stringify(o)); }catch(e){} }
+function posLockLeft(uid){ var o = posLockData()[uid]; return o && o.until && o.until > Date.now() ? Math.ceil((o.until - Date.now())/1000) : 0; }
+function posRootEl(){
+  var r = document.getElementById('posRoot');
+  if(!r){ r = document.createElement('div'); r.id = 'posRoot'; var host = document.getElementById('app'), mr = document.getElementById('modalRoot'); if(host && mr && mr.parentNode === host) host.insertBefore(r, mr); else document.body.appendChild(r);
+    ['pointerdown','keydown'].forEach(function(ev){ r.addEventListener(ev, posTouch, true); }); }
+  return r;
+}
+function posTouch(){
+  clearTimeout(POS.idle);
+  if(!POS.open || !POS.user) return;
+  var d = posDevice(), mins = d && d.autoLockMin != null ? d.autoLockMin : 5;
+  if(mins > 0) POS.idle = setTimeout(function(){ if(POS.open && POS.user){ closeModal(); posLock(); toast(tr('Terminal locked')); } }, mins*60000);
+}
+function posOpen(){
+  POS.open = true; POS.user = null; POS.orig = State.session ? { userId:State.session.userId, name:State.session.name, role:State.session.role } : null;
+  POS.tab = 'sell'; POS.search = ''; POS.pick = null; POS.typed = '';
+  var b = posBoundInfo();
+  if(b && State.ready.posDevices && !State.posDevices.some(function(x){ return x.id === b.deviceId; })) posBind(null);
+  posRootEl().style.display = 'block';
+  posRender();
+}
+function posLock(){ POS.user = null; POS.pick = null; POS.typed = ''; clearTimeout(POS.idle); posRender(); }
+function posClose(){
+  POS.open = false; clearTimeout(POS.idle);
+  if(POS.orig && State.session && State.session.userId !== POS.orig.userId){
+    State.session = POS.orig; saveSessionLocal(POS.orig.userId);
+    var mine = State.tillSessions.find(function(t){ return t.cashierId === POS.orig.userId && t.status === 'open'; });
+    State.till.current = mine || null;
+  }
+  var r = posRootEl(); r.style.display = 'none'; r.innerHTML = '';
+  closeModal(); render();
+}
+function posHead(sub){
+  var d = posDevice(), co = State.company || {};
+  return '<div class="pos-head"><div style="min-width:0;"><div class="pos-title">'+esc(co.tradingName||co.companyName||'Pesa')+' · '+tr('Point of sale')+'</div>' +
+    '<div class="pos-sub">'+esc(d ? d.name+(d.terminalId?' · '+d.terminalId:'') : tr('This device is not linked to a card terminal'))+(sub?' · '+esc(sub):'')+'</div></div>' +
+    '<div class="pos-head-btns">' + (POS.user ? '<button class="btn btn-ghost" id="posLockBtn">'+tr('Lock')+'</button>' : '') + '<button class="btn btn-ghost" id="posExitBtn">'+tr('Close')+'</button></div></div>';
+}
+function posRender(){
+  var r = posRootEl();
+  if(!POS.open) return;
+  var d = posDevice();
+  if(!POS.user){ r.innerHTML = posLockHtml(d); posWireLock(r, d); return; }
+  r.innerHTML = posMainHtml(d);
+  posWireMain(r, d);
+  posTouch();
+}
+function posLockHtml(d){
+  var h = '<div class="pos-wrap">' + posHead('');
+  if(d && d.status === 'blocked'){
+    return h + '<div class="pos-body"><div class="banner" style="background:var(--danger-bg);color:var(--danger);">'+ICONS.warn+'<span>'+tr('This terminal has been blocked by the owner. Sales cannot be taken here.')+'</span></div></div></div>';
+  }
+  var users = State.users.filter(function(u){ return u.active !== false; }).sort(function(a,b){ return (a.role==='cashier'?0:1) - (b.role==='cashier'?0:1) || (a.name||'').localeCompare(b.name||''); });
+  if(!POS.pick){
+    h += '<div class="pos-body"><div class="pos-lock-title">'+tr('Who is selling?')+'</div><div class="pos-tiles">' + users.map(function(u){
+      var left = posLockLeft(u.id);
+      return '<button class="pos-tile" data-pu="'+u.id+'"><div class="avatar">'+esc(initials(u.name))+'</div><div class="pos-tn">'+esc(u.name)+'</div><div class="pos-tr">'+tr(u.role.charAt(0).toUpperCase()+u.role.slice(1))+(left?' · '+tr('locked'):'')+'</div></button>';
+    }).join('') + '</div></div></div>';
+    return h;
+  }
+  var u = users.find(function(x){ return x.id === POS.pick; }) || {};
+  var left = posLockLeft(u.id), isCash = u.role === 'cashier';
+  h += '<div class="pos-body" style="max-width:360px;margin:0 auto;"><div class="pos-lock-title">'+esc(u.name)+'</div>';
+  if(left){
+    h += '<div class="banner" style="background:var(--danger-bg);color:var(--danger);">'+ICONS.warn+'<span>'+tr('Too many wrong tries. Try again in')+' <b id="posLeft">'+left+'</b> '+tr('seconds')+'.</span></div>';
+  } else if(isCash){
+    h += '<div class="pos-dots" id="posDots"><i></i><i></i><i></i><i></i></div><div id="posLockErr" class="pos-err"></div>' +
+      '<div class="pos-pad">' + ['1','2','3','4','5','6','7','8','9','C','0','OK'].map(function(k){ return '<button class="pos-key" data-k="'+k+'">'+(k==='C'?'⌫':k)+'</button>'; }).join('') + '</div>';
+  } else {
+    h += '<div class="field"><label>'+tr('Password')+'</label><input id="posPw" type="password" autocomplete="off"></div><div id="posLockErr" class="pos-err"></div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="posPwOk">'+tr('Unlock')+'</button></div>';
+  }
+  h += '<div class="actions" style="margin-top:12px;"><button class="btn btn-ghost btn-block" id="posBackTiles">'+tr('Back')+'</button></div></div></div>';
+  return h;
+}
+function posWireLock(r, d){
+  var ex = r.querySelector('#posExitBtn'); if(ex) ex.addEventListener('click', posClose);
+  r.querySelectorAll('[data-pu]').forEach(function(b){ b.addEventListener('click', function(){ POS.pick = b.getAttribute('data-pu'); POS.typed = ''; posRender(); }); });
+  var bk = r.querySelector('#posBackTiles'); if(bk) bk.addEventListener('click', function(){ POS.pick = null; POS.typed = ''; posRender(); });
+  var lf = r.querySelector('#posLeft');
+  if(lf){ var iv = setInterval(function(){ var n = posLockLeft(POS.pick); if(!document.getElementById('posLeft') || !POS.open){ clearInterval(iv); return; } if(n<=0){ clearInterval(iv); posRender(); } else lf.textContent = n; }, 1000); }
+  var u = State.users.find(function(x){ return x.id === POS.pick; });
+  function dots(){
+    var el = r.querySelector('#posDots');
+    if(el) el.innerHTML = Array.apply(null, Array(Math.max(4, POS.typed.length))).map(function(_,i){ return '<i class="'+(i<POS.typed.length?'on':'')+'"></i>'; }).join('');
+  }
+  async function attempt(code){
+    if(!u || !code) return;
+    if(posLockLeft(u.id)){ posRender(); return; }
+    var h = await sha256Hex(code), err = r.querySelector('#posLockErr');
+    if(h === u.passHash){
+      var all = posLockData(); delete all[u.id]; posLockSave(all);
+      posSignIn(u);
+    } else {
+      var all2 = posLockData(), o = all2[u.id] || { fails:0, rounds:0 };
+      o.fails++;
+      if(o.fails >= 3){ var secs = [60,300,900][Math.min(o.rounds,2)]; o.until = Date.now() + secs*1000; o.rounds++; o.fails = 0; }
+      all2[u.id] = o; posLockSave(all2);
+      POS.typed = '';
+      if(o.until && o.until > Date.now()){ posRender(); return; }
+      if(err) err.textContent = (u.role==='cashier'?tr('Incorrect PIN.'):tr('Incorrect password.'))+' '+(3-o.fails)+' '+tr('tries left.');
+      dots();
+      var pw = r.querySelector('#posPw'); if(pw){ pw.value = ''; pw.focus(); }
+    }
+  }
+  r.querySelectorAll('[data-k]').forEach(function(b){
+    b.addEventListener('click', function(){
+      var k = b.getAttribute('data-k');
+      if(k === 'C'){ POS.typed = POS.typed.slice(0,-1); }
+      else if(k === 'OK'){ attempt(POS.typed); return; }
+      else if(POS.typed.length < 8){ POS.typed += k; }
+      dots();
+      // cashier PINs are 4 digits: submit as soon as the fourth is typed
+      if(k !== 'C' && k !== 'OK' && POS.typed.length === 4 && u && u.role === 'cashier') attempt(POS.typed);
+    });
+  });
+  var pw = r.querySelector('#posPw');
+  if(pw){ pw.focus(); pw.addEventListener('keydown', function(e){ if(e.key === 'Enter') attempt(pw.value); }); r.querySelector('#posPwOk').addEventListener('click', function(){ attempt(pw.value); }); }
+}
+function posSignIn(u){
+  POS.user = { id:u.id, name:u.name, role:u.role }; POS.pick = null; POS.typed = '';
+  State.session = { userId:u.id, name:u.name, role:u.role };
+  var mine = State.tillSessions.find(function(t){ return t.cashierId === u.id && t.status === 'open'; });
+  State.till.current = mine || null;
+  var d = posDevice();
+  logAudit('other','staff',u.id,'POS sign in'+(d?' on '+d.name:''));
+  if(d) refs.posDevices.doc(d.id).update({ lastSeen:new Date().toISOString() });
+  POS.tab = 'sell';
+  posRender();
+}
+function posMainHtml(d){
+  var till = State.till.current;
+  var chips = '<div class="pos-chips"><span class="pos-chip '+(till?'ok':'warn')+'">'+(till?tr('Till open'):tr('Till closed'))+'</span>' +
+    '<span class="pos-chip '+(navigator.onLine?'ok':'warn')+'">'+(navigator.onLine?tr('Online'):tr('Offline'))+'</span>' +
+    (d ? '<span class="pos-chip ok">'+tr('Card terminal linked')+'</span>' : '<span class="pos-chip warn">'+tr('No card terminal')+'</span>') + '</div>';
+  var tabs = ['sell','keypad','summary'].map(function(t){ return '<button class="segbtn'+(POS.tab===t?' active':'')+'" data-ptab="'+t+'">'+tr(t==='sell'?'Sell':(t==='keypad'?'Amount':'Summary'))+'</button>'; }).join('');
+  return '<div class="pos-wrap">' + posHead(POS.user.name) + '<div class="pos-body">' + chips + '<div class="segbtns" style="margin-bottom:10px;">'+tabs+'</div><div id="posTabBody">'+posTabHtml(d)+'</div></div><div id="posCart" class="pos-cart"></div></div>';
+}
+function posGridHtml(){
+  var q = POS.search.trim().toLowerCase();
+  var list = State.products.filter(function(p){ return !q || (p.name||'').toLowerCase().indexOf(q) > -1 || (p.category||'').toLowerCase().indexOf(q) > -1 || (p.barcode && String(p.barcode) === q); });
+  if(!State.products.length) return '<div class="empty"><div class="t">'+tr('No products yet')+'</div><div class="s">'+tr('Add stock first, then come back to sell.')+'</div></div>';
+  if(!list.length) return '<div class="empty"><div class="t">'+tr('No matches')+'</div></div>';
+  return '<div class="grid pos-grid">' + list.map(function(p){
+    var out = (p.stockQty!=null) && p.stockQty <= 0;
+    return '<button class="pcard" data-padd="'+p.id+'" '+(out?'disabled style="opacity:.5"':'')+'><div class="pname">'+esc(p.name)+'</div><div class="pprice num">'+fmtMoney(p.sellPrice)+'</div></button>';
+  }).join('') + '</div>';
+}
+function posTabHtml(d){
+  if(POS.tab === 'sell'){
+    var h = '';
+    if(!d) h += '<div class="banner">'+ICONS.info+'<span>'+tr('This device is not linked to a card terminal yet. Cash, wallet and credit sales work normally.')+' <a href="#" id="posLinkLink">'+tr('Link this device')+'</a></span></div>';
+    return h + '<div class="searchbar">'+ICONS.search+'<input id="posSearch" placeholder="'+tr('Search products or scan a barcode')+'" value="'+esc(POS.search)+'"></div><div id="posGrid" style="margin-top:10px;">'+posGridHtml()+'</div>';
+  }
+  if(POS.tab === 'keypad'){
+    var keys = ['1','2','3','4','5','6','7','8','9','.','0','C'];
+    return '<div class="pos-amount num" id="posAmt">'+fmtMoney(parseFloat(POS.key)||0)+'</div><div class="pos-pad" style="max-width:340px;margin:0 auto;">' +
+      keys.map(function(k){ return '<button class="pos-key" data-ak="'+k+'">'+(k==='C'?'⌫':k)+'</button>'; }).join('') + '</div>' +
+      '<div class="actions" style="max-width:340px;margin:12px auto 0;"><button class="btn btn-ghost btn-block" id="posAmtClear">'+tr('Clear')+'</button><button class="btn btn-accent btn-block" id="posAmtAdd">'+tr('Add to sale')+'</button></div>';
+  }
+  // summary
+  var till = State.till.current, tk = todayKey();
+  var mine = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk && s.cashierName === POS.user.name; });
+  var by = { cash:0, card:0, wallet:0, credit:0 };
+  mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + s.total; });
+  function line(a,b){ return '<div class="sumline"><span>'+a+'</span><span class="num">'+b+'</span></div>'; }
+  var h2 = '<div class="section-title" style="margin-top:0;">'+tr('Your sales today')+'</div>' + line(tr('Sales'), mine.length) + line(tr('Cash'), fmtMoney(by.cash)) + line(tr('Card'), fmtMoney(by.card)) + line(tr('Mobile wallet'), fmtMoney(by.wallet)) + line(tr('Credit'), fmtMoney(by.credit)) +
+    '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num">'+fmtMoney(posSum(mine))+'</span></div>' +
+    '<div class="actions" style="margin-top:10px;">' + (till ? '<button class="btn btn-ghost btn-block" id="posCloseTill">'+tr('Close till')+'</button>' : '<button class="btn btn-primary btn-block" id="posOpenTill">'+tr('Open till')+'</button>') + '</div>';
+  if(d){
+    var st = posStats(d);
+    function bar(label, val, max, fmt){ if(!max) return ''; var pct = Math.min(100, Math.round(val/max*100)); return '<div style="margin:8px 0;"><div style="display:flex;justify-content:space-between;font-size:12.5px;"><span>'+label+'</span><span class="num">'+fmt(val)+' / '+fmt(max)+'</span></div><div class="pos-bar"><i style="width:'+pct+'%;'+(pct>=90?'background:var(--danger);':'')+'"></i></div></div>'; }
+    h2 += '<div class="section-title">'+esc(d.name)+'</div>' +
+      bar(tr('Daily card total'), st.todayTotal, posLim(d,'daily'), fmtMoney) + bar(tr('Swipes today'), st.todayCount, posLim(d,'dailyCount'), String) + bar(tr('Swipes this hour'), st.hourCount, posLim(d,'hourlyCount'), String) +
+      '<div style="font-size:12px;color:var(--text-muted);margin:4px 0 8px;">'+esc(posLimitSummaryHtml(d))+'</div>' +
+      line(tr('Since last settlement'), fmtMoney(st.batchTotal)+' · '+st.batchCount) +
+      (st.recent.length ? '<div class="section-title">'+tr('Recent card sales')+'</div>' + st.recent.slice(0,5).map(function(s){
+        return line(new Date(s.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+' · '+esc(s.cardBrand||'')+(s.cardLast4?' ····'+esc(s.cardLast4):'')+' · '+esc(s.entryMode||''), fmtMoney(s.total)); }).join('') : '') +
+      '<div class="actions" style="margin-top:10px;"><button class="btn btn-accent btn-block" id="posSettle">'+tr('Settle card batch')+'</button></div>';
+  }
+  if(isManagerOrOwner()){
+    h2 += '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="posMgr">'+tr('Card terminals and limits')+'</button></div>' +
+      (d ? '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="posUnbind">'+tr('Unlink this device')+'</button></div>' : '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="posLinkBtn">'+tr('Link this device')+'</button></div>');
+  } else if(!d){
+    h2 += '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="posLinkBtn">'+tr('Link this device')+'</button></div>';
+  }
+  return h2;
+}
+function posRenderCart(){
+  var c = document.getElementById('posCart'); if(!c || !POS.open || !POS.user) return;
+  if(!State.cart.length){ c.innerHTML = '<div class="pos-cart-empty">'+tr('Cart is empty')+'</div>'; return; }
+  c.innerHTML = '<div class="pos-cart-list">' + State.cart.map(function(i){
+    return '<div class="cartitem"><div style="flex:1;min-width:0;"><div class="ci-name">'+esc(i.name)+'</div><div class="ci-price num">'+fmtMoney(i.unitPrice)+'</div></div>' +
+      '<div class="stepper"><button data-pdec="'+i.productId+'">−</button><div class="qv">'+i.qty+'</div><button data-pinc="'+i.productId+'">+</button></div>' +
+      '<div class="ci-line num">'+fmtMoney(i.unitPrice*i.qty)+'</div></div>'; }).join('') + '</div>' +
+    '<div class="pos-cart-bar"><button class="btn btn-ghost" id="posClr">'+tr('Clear')+'</button><button class="btn btn-accent" id="posCharge" style="flex:1;">'+tr('Charge')+' '+fmtMoney(cartTotal())+'</button></div>';
+  c.querySelectorAll('[data-pinc]').forEach(function(b){ b.addEventListener('click', function(){ var id=b.getAttribute('data-pinc'); var it=State.cart.find(function(x){return x.productId===id;}); if(it) setCartQty(id, it.qty+1); }); });
+  c.querySelectorAll('[data-pdec]').forEach(function(b){ b.addEventListener('click', function(){ var id=b.getAttribute('data-pdec'); var it=State.cart.find(function(x){return x.productId===id;}); if(it) setCartQty(id, it.qty-1); }); });
+  c.querySelector('#posClr').addEventListener('click', function(){ State.cart = []; renderCartBar(); });
+  c.querySelector('#posCharge').addEventListener('click', openChargeSheet);
+}
+function posWireMain(r, d){
+  r.querySelector('#posExitBtn').addEventListener('click', posClose);
+  r.querySelector('#posLockBtn').addEventListener('click', function(){ closeModal(); posLock(); });
+  r.querySelectorAll('[data-ptab]').forEach(function(b){ b.addEventListener('click', function(){ POS.tab = b.getAttribute('data-ptab'); posRender(); }); });
+  posRenderCart();
+  var body = r.querySelector('#posTabBody');
+  var ll = body.querySelector('#posLinkLink'); if(ll) ll.addEventListener('click', function(e){ e.preventDefault(); openPosLinkSheet(); });
+  var sr = body.querySelector('#posSearch');
+  if(sr){
+    sr.addEventListener('input', function(){ POS.search = sr.value; var g = body.querySelector('#posGrid'); g.innerHTML = posGridHtml(); posWireGrid(g); });
+    sr.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ var m = State.products.filter(function(p){ return p.barcode && String(p.barcode) === sr.value.trim(); })[0]; if(m){ addToCart(m.id); POS.search=''; sr.value=''; var g = body.querySelector('#posGrid'); g.innerHTML = posGridHtml(); posWireGrid(g); } } });
+    posWireGrid(body.querySelector('#posGrid'));
+  }
+  body.querySelectorAll('[data-ak]').forEach(function(b){ b.addEventListener('click', function(){
+    var k = b.getAttribute('data-ak');
+    if(k === 'C') POS.key = POS.key.slice(0,-1);
+    else if(k === '.'){ if(POS.key.indexOf('.') === -1) POS.key += POS.key ? '.' : '0.'; }
+    else if(!/\.\d\d$/.test(POS.key) && POS.key.length < 9) POS.key += k;
+    body.querySelector('#posAmt').textContent = fmtMoney(parseFloat(POS.key)||0);
+  }); });
+  var ac = body.querySelector('#posAmtClear'); if(ac) ac.addEventListener('click', function(){ POS.key = ''; body.querySelector('#posAmt').textContent = fmtMoney(0); });
+  var aa = body.querySelector('#posAmtAdd');
+  if(aa) aa.addEventListener('click', function(){
+    var v = parseFloat(POS.key); if(!(v > 0)){ toast(tr('Enter an amount')); return; }
+    State.cart.push({ productId:'quick-'+Date.now().toString(36), name:tr('Quick sale'), unitPrice:Math.round(v*100)/100, cost:0, qty:1, unit:'', maxQty:Infinity });
+    POS.key = ''; body.querySelector('#posAmt').textContent = fmtMoney(0); renderCartBar(); toast(tr('Added to sale'));
+  });
+  function on(id, fn){ var el = body.querySelector(id); if(el) el.addEventListener('click', fn); }
+  on('#posOpenTill', openStartTillSheet);
+  on('#posCloseTill', function(){ if(State.till.current) openCloseTillSheet(State.till.current); });
+  on('#posSettle', function(){ openPosSettleSheet(d.id); });
+  on('#posMgr', openPosDevicesSheet);
+  on('#posLinkBtn', openPosLinkSheet);
+  on('#posUnbind', function(){ confirmSheet(tr('Unlink this device?'), tr('This phone or tablet will stop acting as the card terminal. You can link it again with a new code.'), tr('Unlink'), function(){
+    var dd = posDevice(); if(dd) refs.posDevices.doc(dd.id).update({ linkedAt:'', linkedInfo:'', linkCode:posNewCode() });
+    posBind(null); closeModal(); posRender();
+  }, true); });
+}
+function posWireGrid(g){ if(!g) return; g.querySelectorAll('[data-padd]').forEach(function(b){ b.addEventListener('click', function(){ addToCart(b.getAttribute('data-padd')); }); }); }
+function openPosLinkSheet(){
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Link this device')+'</h2></div>' +
+    '<div class="banner">'+ICONS.info+'<span>'+tr('The owner or a manager adds a terminal under Card terminals and limits and gets a 6 digit link code. Enter it here.')+'</span></div>' +
+    '<div class="field"><label>'+tr('Link code')+'</label><input id="plCode" inputmode="numeric" maxlength="7" placeholder="123 456" autocomplete="off"></div><div id="plErr" class="pos-err"></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="plCancel">'+tr('Cancel')+'</button><button class="btn btn-primary btn-block" id="plOk">'+tr('Link')+'</button></div>', {center:true});
+  ov.querySelector('#plCancel').addEventListener('click', closeModal);
+  ov.querySelector('#plOk').addEventListener('click', function(){
+    var code = ov.querySelector('#plCode').value.replace(/\D/g,'');
+    var d = State.posDevices.find(function(x){ return x.linkCode && x.linkCode === code && !x.linkedAt; });
+    var err = ov.querySelector('#plErr');
+    if(!d){ err.textContent = tr('That code was not found. Check it, or make sure this device is connected to the same business.'); return; }
+    if(d.status === 'blocked'){ err.textContent = tr('This terminal is blocked.'); return; }
+    var info = (navigator.userAgentData && navigator.userAgentData.platform) || (navigator.platform || 'device');
+    refs.posDevices.doc(d.id).update({ linkedAt:new Date().toISOString(), linkedInfo:String(info).slice(0,40), lastSeen:new Date().toISOString(), linkCode:'' });
+    posBind(d.id); logAudit('update','posDevice',d.id,'Device linked to terminal '+d.name);
+    closeModal(); toast(tr('Linked to')+' '+d.name); setTimeout(posRender, 120);
   });
 }
 
@@ -6825,6 +7428,7 @@ function menuRowsHtml(){
   if(allowedTabs.indexOf('reports')!==-1) rows += drawerRowHtml('tab-reports', ICONS.chartbar, 'Reports');
   if(allowedTabs.indexOf('expenses')!==-1) rows += drawerRowHtml('tab-expenses', ICONS.receipt, 'Expenses');
   if(allowedTabs.indexOf('till')!==-1) rows += drawerRowHtml('tab-till', ICONS.till, 'Till');
+  rows += drawerRowHtml('terminal', ICONS.till, 'Point of sale');
   if(!isCashier()){
     rows += '<div class="drawer-sub">Insights</div>';
     rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
@@ -6866,6 +7470,7 @@ function handleDrawerAction(key){
       if(t) t.scrollIntoView({behavior:'smooth', block:'start'});
     }, 60);
   } else if(key==='suppliers') openSuppliersSheet();
+  else if(key==='terminal') posOpen();
   else if(key==='pos') openPurchaseOrdersSheet();
   else if(key==='wastage') openWastageSheet();
   else if(key==='branches') openBranchesSheet();
@@ -8159,6 +8764,19 @@ function openVatSummarySheet(){
 // Narration uses the browser's own window.speechSynthesis — no account, no
 // API key, and it works fully offline.
 var LESSONS = [
+  { id:'terminal', title:'Point of sale terminal', icon:'till', who:'all', slides:[
+    { title:'Selling on the terminal', text:'The Point of sale screen is a fast, full screen place to sell. Every staff member signs in with their own PIN or password.',
+      where:'Menu → Point of sale',
+      steps:['Open the menu and tap Point of sale.','Tap your name, then type your PIN (owners and managers type their password).','Tap products to add them, or use Amount to key in a price.','Tap Charge, choose how the customer pays and confirm.'],
+      tip:'After three wrong tries the screen locks that person for a minute, then longer. It also locks itself when idle.' },
+    { title:'Card terminals and swipe limits', text:'Register each card machine to set limits and see its card sales. Pesa records card sales and checks the limits. It does not process the card itself, so take the payment on the machine first.',
+      where:'Point of sale → Summary → Card terminals and limits',
+      steps:['Tap Add terminal and fill in the name, bank and terminal ID.','Set the limits you want. Leave a limit empty or 0 for no limit.','Save. A 6 digit link code appears.','On the phone or tablet that will be the terminal, open Point of sale, Summary, Link this device and type the code.'],
+      tip:'A sale over a limit needs a manager or owner to approve it. The approval is written to the activity log.' },
+    { title:'Settling the card batch', text:'At the end of the day the card machine prints a batch total. Compare it with Pesa to catch missing sales.',
+      where:'Point of sale → Summary → Settle card batch',
+      steps:['Run the end of day settlement on the card machine.','In Pesa tap Settle card batch.','Type the machine batch total and count.','Pesa shows if the totals balance, and saves the result.'] }
+  ]},
   { id:'start', title:'Getting started', icon:'info', who:'all', slides:[
     { title:'Welcome to Pesa', text:'Pesa is your shop in your pocket. It records every sale, keeps count of your stock, tracks who owes you money, and shows you your profit. This training walks you through every part of the app, one small step at a time.',
       where:'Training → any lesson',
@@ -9164,7 +9782,7 @@ function openReconcileSheet(){
    open (owner or manager login), keeping the latest 7. They live in the
    browser's own database on this device only. Clearing the browser's data
    removes them, so download a copy now and then. */
-var APP_VERSION = '2026.09.30b';
+var APP_VERSION = '2026.10.01';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -9172,7 +9790,8 @@ function backupPayload(){
     shop: State.settings,
     products: State.products, customers: State.customers, sales: State.sales, expenses: State.expenses,
     invoices: State.invoices, reports: State.reports, suppliers: State.suppliers, purchaseOrders: State.purchaseOrders,
-    branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions
+    branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
+    posDevices: State.posDevices, posBatches: State.posBatches
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -9201,6 +9820,7 @@ async function restoreBackupData(data){
   await put(refs.expenses, data.expenses); await put(refs.invoices, data.invoices); await put(refs.reports, data.reports);
   await put(refs.suppliers, data.suppliers); await put(refs.purchaseOrders, data.purchaseOrders);
   await put(refs.branches, data.branches); await put(refs.wastage, data.wastage); await put(refs.tills, data.tillSessions);
+  await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
@@ -9344,6 +9964,12 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.01', items:[
+    'Point of sale: a full screen sales terminal with its own staff login, PIN lockout and auto lock',
+    'Link a phone or tablet to a registered card terminal with a link code',
+    'Swipe limits per terminal: per swipe, tap, daily total, swipes per day and per hour, with manager override',
+    'Card sales record the card type, last 4 digits, approval code and how the card was used, plus card batch settlement against the terminal'
+  ]},
   { v:'2026.09.30b', items:[
     'Reports for any dates: pick a start and end date, or a shortcut like this week, and Pesa gathers everything for those days',
     'Invoices can gather sales for a chosen date, range and customer and fill in the items for you',
@@ -9710,6 +10336,7 @@ var ABOUT_PARAGRAPHS = [
 ];
 var ABOUT_FEATURES_TITLE = 'What Pesa can do';
 var ABOUT_FEATURES = [
+  'A point of sale terminal with its own staff login, card terminal linking, swipe limits and card batch settlement. Pesa records and controls card sales, but it does not process cards or connect to a bank card machine itself',
   'Sales and till management, including a fast checkout screen, a shopping cart, and printed or digital receipts',
   'Stock and inventory management, including barcode scanning to add or find products quickly',
   'Customer credit tracking, so a shop can sell on account and record repayments over time',
