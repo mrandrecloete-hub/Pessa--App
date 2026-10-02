@@ -794,13 +794,14 @@
   .mv-chat{ display:flex; flex-direction:column; gap:10px; max-height:46vh; min-height:140px; overflow:auto; padding:12px 2px; scroll-behavior:smooth; }
   .mv-subject{ align-self:center; background:var(--surface-2); color:var(--text-muted); font-weight:800; font-size:12px; border-radius:999px; padding:4px 12px; }
   .mv-row{ display:flex; gap:8px; align-items:flex-end; } .mv-row.me{ justify-content:flex-end; } .mv-row .mv-av{ width:30px; height:30px; font-size:11px; }
-  .mv-bub{ max-width:78%; background:var(--surface-2); border-radius:18px 18px 18px 4px; padding:9px 13px; animation:pesaUp .25s ease both; } .mv-bub.me{ background:linear-gradient(135deg,#0B7A5C,#14A37A); color:#fff; border-radius:18px 18px 4px 18px; }
+  .mv-bub{ max-width:78%; background:var(--surface-2); border-radius:18px 18px 18px 4px; padding:9px 13px; } .mv-bub.me{ background:linear-gradient(135deg,#0B7A5C,#14A37A); color:#fff; border-radius:18px 18px 4px 18px; }
   .mv-bub.inst{ border:2px solid #F59E0B; } .mv-who{ font-size:11.5px; font-weight:800; opacity:.75; margin-bottom:2px; } .mv-txt{ font-size:14.5px; line-height:1.45; white-space:pre-wrap; word-break:break-word; } .mv-meta{ font-size:10.5px; opacity:.7; margin-top:3px; text-align:right; font-weight:600; }
   .mv-compose{ border-top:1.5px solid var(--border); padding-top:10px; } .mv-to{ font-size:12.5px; font-weight:700; margin-bottom:6px; } .mv-to select{ margin-left:6px; padding:4px 8px; border-radius:8px; }
   .mv-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; } .mv-chip{ border:1.5px solid var(--primary); color:var(--primary); background:transparent; font-weight:700; font-size:12.5px; border-radius:999px; padding:6px 12px; cursor:pointer; } .mv-chip:hover{ background:var(--primary); color:#fff; }
   .mv-box{ display:flex; gap:8px; align-items:flex-end; } .mv-box textarea{ flex:1; resize:none; border:1.5px solid var(--border); border-radius:20px; padding:10px 14px; font:inherit; font-size:14.5px; background:var(--surface); color:var(--text); max-height:110px; }
   .mv-send{ width:44px; height:44px; border-radius:50%; border:0; background:linear-gradient(135deg,#F59E0B,#FBBF24); color:#2A1A02; font-size:18px; font-weight:800; cursor:pointer; flex:none; } .mv-send:active{ transform:scale(.93); }
   .mv-del, .mv-trash{ border:0; background:transparent; color:var(--text-muted); cursor:pointer; padding:6px; border-radius:10px; display:inline-flex; flex:none; } .mv-del svg, .mv-trash svg{ width:20px; height:20px; } .mv-del:hover, .mv-trash:hover{ color:var(--danger); background:var(--danger-bg); } .mv-trash{ margin-left:auto; }
+  .mv-cardwrap{ display:flex; align-items:center; gap:8px; } .mv-cardwrap .mv-card{ flex:1; min-width:0; } .tick.mv-tick{ position:static; flex:none; } .mv-trash.on{ color:var(--danger); background:var(--danger-bg); } .mv-row .mv-tick{ align-self:center; }
   .mv-wait{ text-align:center; color:var(--text-muted); font-size:13px; font-weight:600; padding:10px; border-top:1.5px solid var(--border); }
 
   /* tick boxes and pickers */
@@ -1262,6 +1263,8 @@ Object.assign(LANGS.af.strings, {"Delete this conversation?": "Skrap hierdie ges
 Object.assign(LANGS.de.strings, {"Delete this conversation?": "Diese Unterhaltung löschen?", "It will be removed from your messages.": "Sie wird aus Ihren Nachrichten entfernt.", "You can also remove it for everyone.": "Sie können sie auch für alle entfernen.", "Delete for me": "Für mich löschen", "Delete for everyone": "Für alle löschen", "Conversation deleted": "Unterhaltung gelöscht", "Conversation deleted for everyone": "Unterhaltung für alle gelöscht"});
 Object.assign(LANGS.af.strings, {"selected": "gekies", "Pick items from stock": "Kies items uit voorraad", "items added": "items bygevoeg", "more, search to narrow down": "meer, soek om te verklein", "Add selected": "Voeg geselekteerde by", "Tick boxes and Select all or Deselect all now appear wherever you pick stock: the sell page, the point of sale, invoices and purchase orders": "Merkblokkies en Kies alles of Ontkies alles verskyn nou oral waar jy voorraad kies: die verkoopblad, die verkooppunt, fakture en bestelorders"});
 Object.assign(LANGS.de.strings, {"selected": "ausgewählt", "Pick items from stock": "Artikel aus dem Bestand wählen", "items added": "Artikel hinzugefügt", "more, search to narrow down": "weitere, Suche eingrenzen", "Add selected": "Ausgewählte hinzufügen", "Tick boxes and Select all or Deselect all now appear wherever you pick stock: the sell page, the point of sale, invoices and purchase orders": "Kontrollkästchen und Alle auswählen oder Alle abwählen erscheinen jetzt überall, wo Bestand gewählt wird: Verkaufsseite, Kasse, Rechnungen und Bestellungen"});
+Object.assign(LANGS.af.strings, {"Delete selected?": "Skrap geselekteerde?", "They will be removed from your messages.": "Hulle sal uit jou boodskappe verwyder word.", "You can also remove them for everyone.": "Jy kan hulle ook vir almal verwyder.", "Deleted": "Geskrap", "Deleted for everyone": "Vir almal geskrap", "Select messages to delete": "Kies boodskappe om te skrap"});
+Object.assign(LANGS.de.strings, {"Delete selected?": "Ausgewählte löschen?", "They will be removed from your messages.": "Sie werden aus Ihren Nachrichten entfernt.", "You can also remove them for everyone.": "Sie können sie auch für alle entfernen.", "Deleted": "Gelöscht", "Deleted for everyone": "Für alle gelöscht", "Select messages to delete": "Nachrichten zum Löschen auswählen"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -3401,24 +3404,27 @@ function msgVisible(m, me){
 }
 // "Delete for me" hides a conversation from this person only. "Delete for everyone" (the sender, owner or a manager)
 // removes it for all. Hiding keeps the employer's records safe when an employee clears their inbox.
-function deleteThreadSheet(rootId, done){
-  var me = State.session.userId, root = State.messages.find(function(x){ return x.id === rootId; }); if(!root) return;
-  var canAll = isManagerOrOwner() && root.fromId === me;
-  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Delete this conversation?')+'</h2></div><div style="font-size:14px;color:var(--text-muted);line-height:1.5;margin-bottom:14px;">'+tr('It will be removed from your messages.')+(canAll ? ' '+tr('You can also remove it for everyone.') : '')+'</div>' +
+function deleteMessagesSheet(ids, canAll, done){
+  var me = State.session.userId; if(!ids.length) return;
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Delete selected?')+'</h2></div><div style="font-size:14px;color:var(--text-muted);line-height:1.5;margin-bottom:14px;"><b>'+ids.length+'</b> '+tr('selected')+'. '+tr('They will be removed from your messages.')+(canAll ? ' '+tr('You can also remove them for everyone.') : '')+'</div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="dmNo" type="button">'+tr('Cancel')+'</button><button class="btn btn-danger btn-block" id="dmMe" type="button">'+tr('Delete for me')+'</button></div>' +
     (canAll ? '<div class="actions" style="margin-top:8px;"><button class="btn btn-danger btn-block" id="dmAll" type="button">'+tr('Delete for everyone')+'</button></div>' : ''), {center:true});
   ov.querySelector('#dmNo').addEventListener('click', function(){ closeModal(); if(done) done(false); });
   ov.querySelector('#dmMe').addEventListener('click', function(){
-    State.messages.filter(function(x){ return x.id === rootId || x.threadId === rootId; }).forEach(function(x){ var hb = Object.assign({}, x.hiddenBy||{}); hb[me] = true; x.hiddenBy = hb; refs.messages.doc(x.id).update({ hiddenBy:hb }); });
-    syncNowSafe(); closeModal(); toast(tr('Conversation deleted')); if(done) done(true);
+    State.messages.filter(function(x){ return ids.indexOf(x.id) > -1; }).forEach(function(x){ var hb = Object.assign({}, x.hiddenBy||{}); hb[me] = true; x.hiddenBy = hb; refs.messages.doc(x.id).update({ hiddenBy:hb }); });
+    syncNowSafe(); closeModal(); toast(tr('Deleted')); if(done) done(true);
   });
   var all = ov.querySelector('#dmAll');
   if(all) all.addEventListener('click', function(){
-    var ids = State.messages.filter(function(x){ return x.id === rootId || x.threadId === rootId; }).map(function(x){ return x.id; });
     ids.forEach(function(id){ refs.messages.doc(id).delete(); });
-    logAudit('delete','message',rootId,'Deleted a message conversation for everyone');
-    syncNowSafe(); closeModal(); toast(tr('Conversation deleted for everyone')); if(done) done(true);
+    logAudit('delete','message',ids[0],'Deleted '+ids.length+' message(s) for everyone');
+    syncNowSafe(); closeModal(); toast(tr('Deleted for everyone')); if(done) done(true);
   });
+}
+function deleteThreadsSheet(rootIds, done){
+  var me = State.session.userId, ids = [], canAll = isManagerOrOwner();
+  rootIds.forEach(function(rid){ var r = State.messages.find(function(x){ return x.id === rid; }); if(!r || r.fromId !== me) canAll = false; State.messages.forEach(function(x){ if(x.id === rid || x.threadId === rid) ids.push(x.id); }); });
+  deleteMessagesSheet(ids, canAll, done);
 }
 function myMessages(){
   var me = State.session ? State.session.userId : null;
@@ -3449,19 +3455,29 @@ function openInboxSheet(){
   var me = State.session.userId, threads = msgThreads(), tot = threads.reduce(function(a,t){ return a + t.unread; }, 0);
   var canSend = isManagerOrOwner();
   var html = '<div class="mv-head"><div><h2>'+tr('Messages')+'</h2><div class="mv-sub">'+(tot ? tot+' '+tr('unread') : tr('All caught up'))+'</div></div>'+(canSend ? '<button class="btn btn-accent" id="mvNew" type="button">+ '+tr('New message')+'</button>' : '')+'</div>' +
+    (threads.length ? '<div class="tickbar"><span class="tc"><b data-mcount>0</b> '+tr('selected')+'</span><button class="btn btn-ghost" type="button" data-mall>'+tr('Select all')+'</button><button class="btn btn-ghost" type="button" data-mnone>'+tr('Deselect all')+'</button><button class="btn btn-danger" type="button" data-mdel disabled>'+ICONS.trash+' '+tr('Delete')+'</button></div>' : '') +
     (threads.length ? '<div class="mv-list">'+threads.map(function(t){
       var r = t.root, l = t.last, mine = l.fromId === me;
       var other = r.fromId === me ? (r.to === 'all' ? tr('All employees') : r.toName) : r.fromName;
       var prev = (mine ? tr('You')+': ' : (l.fromId !== r.fromId || l.threadId ? l.fromName+': ' : '')) + l.body;
-      return '<button type="button" class="mv-card'+(t.unread?' unread':'')+'" data-thread="'+r.id+'">' + msgAvatar(other, r.fromId === me && r.to === 'all' ? 'all' : '') +
+      return '<div class="mv-cardwrap"><span class="tick mv-tick" data-mtick="'+r.id+'" role="checkbox" aria-checked="false" aria-label="'+tr('Select')+'"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><button type="button" class="mv-card'+(t.unread?' unread':'')+'" data-thread="'+r.id+'">' + msgAvatar(other, r.fromId === me && r.to === 'all' ? 'all' : '') +
         '<div class="mv-main"><div class="mv-top"><span class="mv-name">'+esc(other)+'</span><span class="mv-time">'+esc(msgTime(l.createdAt))+'</span></div>' +
         '<div class="mv-title">'+(r.urgent?'<span class="mv-pill urgent">'+tr('Urgent')+'</span>':'')+(r.kind==='instruction'?'<span class="mv-pill inst">'+tr('Instruction')+'</span>':'')+esc(r.title || '')+'</div>' +
         '<div class="mv-prev">'+esc(prev.slice(0,110))+'</div></div>' +
-        (t.unread ? '<span class="mv-badge">'+t.unread+'</span>' : '') + '<span class="mv-del" data-del="'+r.id+'" role="button" aria-label="'+tr('Delete')+'">'+ICONS.trash+'</span></button>';
+        (t.unread ? '<span class="mv-badge">'+t.unread+'</span>' : '') + '</button></div>';
     }).join('')+'</div>' : '<div class="mv-empty"><div class="e">💬</div><div class="t">'+tr('No messages yet.')+'</div>'+(canSend ? '<div class="s">'+tr('Send a message or instruction to your team.')+'</div>' : '<div class="s">'+tr('Messages from your employer will show here.')+'</div>')+'</div>');
   var ov = openSheet(html);
   ov.querySelectorAll('[data-thread]').forEach(function(b){ b.addEventListener('click', function(){ openThreadSheet(b.getAttribute('data-thread')); }); });
-  ov.querySelectorAll('[data-del]').forEach(function(d){ d.addEventListener('click', function(e){ e.stopPropagation(); deleteThreadSheet(d.getAttribute('data-del'), function(){ openInboxSheet(); }); }); });
+  var picked = {};
+  function msync(){
+    ov.querySelectorAll('[data-mtick]').forEach(function(t){ var on = !!picked[t.getAttribute('data-mtick')]; t.classList.toggle('on', on); t.setAttribute('aria-checked', on); });
+    var n = Object.keys(picked).length, c = ov.querySelector('[data-mcount]'); if(c) c.textContent = n;
+    var d = ov.querySelector('[data-mdel]'); if(d) d.disabled = !n;
+  }
+  ov.querySelectorAll('[data-mtick]').forEach(function(t){ t.addEventListener('click', function(e){ e.stopPropagation(); var id = t.getAttribute('data-mtick'); if(picked[id]) delete picked[id]; else picked[id] = 1; msync(); }); });
+  var ma = ov.querySelector('[data-mall]'); if(ma) ma.addEventListener('click', function(){ threads.forEach(function(t){ picked[t.root.id] = 1; }); msync(); });
+  var mn = ov.querySelector('[data-mnone]'); if(mn) mn.addEventListener('click', function(){ picked = {}; msync(); });
+  var md = ov.querySelector('[data-mdel]'); if(md) md.addEventListener('click', function(){ deleteThreadsSheet(Object.keys(picked), function(done){ openInboxSheet(); }); });
   var nb = ov.querySelector('#mvNew'); if(nb) nb.addEventListener('click', function(){ openComposeMessageSheet('all'); });
 }
 var _openThread = null;
@@ -3470,7 +3486,7 @@ function openThreadSheet(rootId){
   var me = State.session.userId, staffN = staffList().filter(function(u){ return u.active !== false; }).length;
   var ov = openSheet('<div id="mvThread"></div>');
   _openThread = { id:rootId, paint:null };
-  var target = null, picked = null;
+  var target = null, picked = null, selMode = false, bsel = {};
   function markRead(items){
     items.forEach(function(x){ if(x.fromId !== me && !(x.readBy && x.readBy[me])){ var rb = Object.assign({}, x.readBy||{}); rb[me] = new Date().toISOString(); x.readBy = rb; refs.messages.doc(x.id).update({ readBy:rb }); } });
   }
@@ -3488,10 +3504,11 @@ function openThreadSheet(rootId){
     var reads = Object.keys(r.readBy||{}).length, of = r.to === 'all' ? staffN : 1;
     var other = iAmSender ? (r.to === 'all' ? tr('All employees') : r.toName) : r.fromName;
     var h = '<div class="mv-thead"><button type="button" class="mv-back" id="mvBack" aria-label="'+tr('Back')+'">‹</button>' + msgAvatar(other, iAmSender && r.to === 'all' ? 'all' : '') +
-      '<div class="mv-main"><div class="mv-name">'+esc(other)+'</div><div class="mv-sub">'+(r.urgent?'⚠ '+tr('Urgent')+' · ':'')+esc(tr(r.kind==='instruction'?'Instruction':'Message'))+(iAmSender ? ' · '+tr('Read by')+' '+reads+' / '+of : '')+'</div></div><button type="button" class="mv-trash" id="mvTrash" aria-label="'+tr('Delete')+'">'+ICONS.trash+'</button></div>';
+      '<div class="mv-main"><div class="mv-name">'+esc(other)+'</div><div class="mv-sub">'+(r.urgent?'⚠ '+tr('Urgent')+' · ':'')+esc(tr(r.kind==='instruction'?'Instruction':'Message'))+(iAmSender ? ' · '+tr('Read by')+' '+reads+' / '+of : '')+'</div></div><button type="button" class="mv-trash'+(selMode?' on':'')+'" id="mvTrash" aria-label="'+tr('Select messages to delete')+'">'+ICONS.trash+'</button></div>' +
+      (selMode ? '<div class="tickbar"><span class="tc"><b>'+Object.keys(bsel).length+'</b> '+tr('selected')+'</span><button class="btn btn-ghost" type="button" id="mvAll">'+tr('Select all')+'</button><button class="btn btn-ghost" type="button" id="mvNone">'+tr('Deselect all')+'</button><button class="btn btn-danger" type="button" id="mvDelSel"'+(Object.keys(bsel).length?'':' disabled')+'>'+ICONS.trash+' '+tr('Delete')+'</button></div>' : '');
     h += '<div class="mv-chat" id="mvChat">' + (r.title ? '<div class="mv-subject">'+esc(r.title)+'</div>' : '') + t.items.map(function(x){
       var mine = x.fromId === me;
-      return '<div class="mv-row'+(mine?' me':'')+'">'+(mine?'':msgAvatar(x.fromName))+'<div class="mv-bub'+(mine?' me':'')+(x.kind==='instruction'?' inst':'')+'">' + (mine?'':'<div class="mv-who">'+esc(x.fromName)+'</div>') + '<div class="mv-txt">'+esc(x.body)+'</div><div class="mv-meta">'+esc(msgTime(x.createdAt))+(mine && x.threadId==null ? ' · '+tr('Read by')+' '+reads : '')+'</div></div></div>';
+      return '<div class="mv-row'+(mine?' me':'')+'">'+(selMode ? '<span class="tick mv-tick'+(bsel[x.id]?' on':'')+'" data-btick="'+x.id+'" role="checkbox" aria-checked="'+(!!bsel[x.id])+'"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' : '')+(mine?'':msgAvatar(x.fromName))+'<div class="mv-bub'+(mine?' me':'')+(x.kind==='instruction'?' inst':'')+'">' + (mine?'':'<div class="mv-who">'+esc(x.fromName)+'</div>') + '<div class="mv-txt">'+esc(x.body)+'</div><div class="mv-meta">'+esc(msgTime(x.createdAt))+(mine && x.threadId==null ? ' · '+tr('Read by')+' '+reads : '')+'</div></div></div>';
     }).join('') + '</div>';
     if(replyTo){
       h += '<div class="mv-compose">' + (target && target.length > 1 ? '<div class="mv-to">'+tr('Reply to')+' <select id="mvTo">'+target.map(function(c){ return '<option value="'+c.id+'"'+(c.id===replyTo.id?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select></div>' : '') +
@@ -3504,7 +3521,16 @@ function openThreadSheet(rootId){
     box.innerHTML = h;
     var chat = box.querySelector('#mvChat'); chat.scrollTop = chat.scrollHeight;
     box.querySelector('#mvBack').addEventListener('click', openInboxSheet);
-    box.querySelector('#mvTrash').addEventListener('click', function(){ deleteThreadSheet(rootId, function(done){ if(done) openInboxSheet(); else openThreadSheet(rootId); }); });
+    box.querySelector('#mvTrash').addEventListener('click', function(){ selMode = !selMode; bsel = {}; paint(); });
+    box.querySelectorAll('[data-btick]').forEach(function(tk){ tk.addEventListener('click', function(){ var id = tk.getAttribute('data-btick'); if(bsel[id]) delete bsel[id]; else bsel[id] = 1; paint(); }); });
+    var sa = box.querySelector('#mvAll'); if(sa) sa.addEventListener('click', function(){ t.items.forEach(function(x){ bsel[x.id] = 1; }); paint(); });
+    var sn = box.querySelector('#mvNone'); if(sn) sn.addEventListener('click', function(){ bsel = {}; paint(); });
+    var sd = box.querySelector('#mvDelSel'); if(sd) sd.addEventListener('click', function(){
+      var ids = Object.keys(bsel);
+      if(ids.indexOf(rootId) > -1){ deleteThreadsSheet([rootId], function(done){ if(done) openInboxSheet(); else openThreadSheet(rootId); }); return; }
+      var canAll = isManagerOrOwner() && ids.every(function(id){ var m = State.messages.find(function(x){ return x.id === id; }); return m && m.fromId === me; });
+      deleteMessagesSheet(ids, canAll, function(done){ openThreadSheet(rootId); });
+    });
     var txt = box.querySelector('#mvText');
     if(txt){
       txt.value = keep;
