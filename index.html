@@ -664,6 +664,13 @@
     .content{ max-width:1600px; }
   }
   /* ---------- persistent sidebar contents (reuses .drawer-row/.drawer-sub etc.) ---------- */
+  /* ---------- coming soon strip (bottom of the menu) ---------- */
+  .soon{ margin:14px 4px 4px; padding:12px 10px 10px; border-radius:16px; border:1px dashed var(--border); background:linear-gradient(160deg,var(--surface-2),transparent); }
+  .soon-t{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 2px 8px; }
+  .soon-g{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .soon-c{ display:flex; align-items:center; gap:7px; padding:8px 9px; border-radius:12px; background:var(--surface); border:1px solid var(--border); color:var(--text); min-width:0; }
+  .soon-i{ flex:none; display:inline-flex; color:var(--primary); }
+  .soon-n{ font-size:12px; font-weight:700; line-height:1.15; min-width:0; }
   .sidebar-head{ display:flex; align-items:center; gap:10px; margin-bottom:8px; padding:2px 8px 12px; border-bottom:1px solid var(--border); }
   .sidebar-head h2{ font-size:16px; flex:1; }
   .drawer-row.active{ background:var(--surface-2); color:var(--primary); }
@@ -1290,8 +1297,10 @@ Object.assign(LANGS.af.strings, {"selected": "gekies", "Pick items from stock": 
 Object.assign(LANGS.de.strings, {"selected": "ausgewählt", "Pick items from stock": "Artikel aus dem Bestand wählen", "items added": "Artikel hinzugefügt", "more, search to narrow down": "weitere, Suche eingrenzen", "Add selected": "Ausgewählte hinzufügen", "Tick boxes and Select all or Deselect all now appear wherever you pick stock: the sell page, the point of sale, invoices and purchase orders": "Kontrollkästchen und Alle auswählen oder Alle abwählen erscheinen jetzt überall, wo Bestand gewählt wird: Verkaufsseite, Kasse, Rechnungen und Bestellungen"});
 Object.assign(LANGS.af.strings, {"Delete selected?": "Skrap geselekteerde?", "They will be removed from your messages.": "Hulle sal uit jou boodskappe verwyder word.", "You can also remove them for everyone.": "Jy kan hulle ook vir almal verwyder.", "Deleted": "Geskrap", "Deleted for everyone": "Vir almal geskrap", "Select messages to delete": "Kies boodskappe om te skrap"});
 Object.assign(LANGS.af.strings, {"Logo and templates": "Logo en sjablone", "Logo updated": "Logo opgedateer", "Logo removed": "Logo verwyder", "With your logo uploaded, your logo sits at the top left of every invoice, receipt and report and the Pesa mark at the top right, both the same size. Without a logo, the small Pesa mark is used at the top left.": "Met jou logo opgelaai verskyn jou logo bo links op elke faktuur, kwitansie en verslag en die Pesa-merk bo regs, albei ewe groot. Sonder logo word die klein Pesa-merk bo links gebruik.", "Your logo prints at the top left of documents and the Pesa mark at the top right, at the same size.": "Jou logo druk bo links op dokumente en die Pesa-merk bo regs, ewe groot.", "Letterhead removed from Settings. With a company logo uploaded, your logo prints at the top left of invoices, receipts and reports and the Pesa mark at the top right, both the same size": "Briefhoof is uit Instellings verwyder. Met 'n maatskappylogo opgelaai druk jou logo bo links op fakture, kwitansies en verslae en die Pesa-merk bo regs, albei ewe groot"});
+Object.assign(LANGS.af.strings, {"Coming soon to": "Binnekort beskikbaar op"});
 Object.assign(LANGS.de.strings, {"Delete selected?": "Ausgewählte löschen?", "They will be removed from your messages.": "Sie werden aus Ihren Nachrichten entfernt.", "You can also remove them for everyone.": "Sie können sie auch für alle entfernen.", "Deleted": "Gelöscht", "Deleted for everyone": "Für alle gelöscht", "Select messages to delete": "Nachrichten zum Löschen auswählen"});
 Object.assign(LANGS.de.strings, {"Logo and templates": "Logo und Vorlagen", "Logo updated": "Logo aktualisiert", "Logo removed": "Logo entfernt", "With your logo uploaded, your logo sits at the top left of every invoice, receipt and report and the Pesa mark at the top right, both the same size. Without a logo, the small Pesa mark is used at the top left.": "Mit hochgeladenem Logo steht Ihr Logo oben links auf jeder Rechnung, Quittung und jedem Bericht und das Pesa-Zeichen oben rechts, beide gleich groß. Ohne Logo wird das kleine Pesa-Zeichen oben links verwendet.", "Your logo prints at the top left of documents and the Pesa mark at the top right, at the same size.": "Ihr Logo wird oben links auf Dokumenten gedruckt und das Pesa-Zeichen oben rechts, in gleicher Größe.", "Letterhead removed from Settings. With a company logo uploaded, your logo prints at the top left of invoices, receipts and reports and the Pesa mark at the top right, both the same size": "Briefkopf aus den Einstellungen entfernt. Mit hochgeladenem Firmenlogo wird Ihr Logo oben links auf Rechnungen, Quittungen und Berichten gedruckt und das Pesa-Zeichen oben rechts, beide gleich groß"});
+Object.assign(LANGS.de.strings, {"Coming soon to": "Bald verfügbar auf"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -8833,7 +8842,21 @@ function menuRowsHtml(){
   if(!isInstalledApp()) rows += drawerRowHtml('install', ICONS.info, 'Install Pesa on this device');
   rows += drawerRowHtml('training', ICONS.book, 'Training');
   rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
+  rows += comingSoonHtml();
   return rows;
+}
+// "Coming soon" strip at the bottom of the menu: plain store names with simple original
+// device icons (no third party brand artwork is drawn here).
+function comingSoonHtml(){
+  var G = function(p){ return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'; };
+  var phone = G('<rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M10.5 18.5h3"/>');
+  var tablet = G('<rect x="4" y="3" width="16" height="18" rx="2.6"/><path d="M10.5 18h3"/>');
+  var desk = G('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>');
+  var chips = [['Google Play',phone,'Android phones and tablets'],['App Store',tablet,'iPhone and iPad'],['Microsoft Store',desk,'Windows computers'],['Mac App Store',desk,'Mac computers']];
+  return '<div class="soon" aria-label="'+esc(tr('Coming soon to'))+'">' +
+    '<div class="soon-t">'+esc(tr('Coming soon to'))+'</div>' +
+    '<div class="soon-g">' + chips.map(function(c){ return '<div class="soon-c" title="'+esc(c[2])+'"><span class="soon-i">'+c[1]+'</span><span class="soon-n">'+esc(c[0])+'</span></div>'; }).join('') + '</div>' +
+  '</div>';
 }
 // Shared destination for a menu row click, whichever surface it came from.
 function handleDrawerAction(key){
@@ -12118,6 +12141,7 @@ function openHealthSheet(){
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
   { v:'2026.10.03', items:[
+    'A Coming soon strip at the bottom of the menu for the Google Play, App Store, Microsoft Store and Mac App Store',
     'Letterhead removed from Settings. With a company logo uploaded, your logo prints at the top left of invoices, receipts and reports and the Pesa mark at the top right, both the same size',
     'Employee tracking for the owner and managers: every employee\'s sales, payment methods, till, cash expected in the drawer, cash ups, wastage and activity in one place, by day, week or month',
     'Send a message or an instruction to one employee or to everyone at once. Employees get it on their computer or device and you can see who has read it',
