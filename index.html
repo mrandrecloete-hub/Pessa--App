@@ -184,6 +184,27 @@
   }
   .todaypill .lbl{ font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; opacity:0.75; }
   .todaypill .val{ font-size:14px; font-weight:600; }
+
+  /* ---------- glass clock (iPhone style) in the top right corner ---------- */
+  .glassclock, .todaypill{
+    position:relative; overflow:hidden; isolation:isolate;
+    background:linear-gradient(135deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.14) 55%, rgba(255,255,255,.26) 100%);
+    -webkit-backdrop-filter:blur(18px) saturate(190%); backdrop-filter:blur(18px) saturate(190%);
+    border:1px solid rgba(255,255,255,.55);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.75), inset 0 -1px 0 rgba(255,255,255,.18), 0 10px 22px -10px rgba(0,30,20,.55);
+    color:#fff; text-shadow:0 1px 2px rgba(0,40,25,.35);
+  }
+  .glassclock::before, .todaypill::before{ content:''; position:absolute; left:-20%; top:-60%; width:140%; height:90%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.55), rgba(255,255,255,0)); opacity:.55; z-index:-1; pointer-events:none; }
+  .glassclock{ flex:none; border-radius:18px; padding:5px 11px 6px; text-align:center; min-width:74px; line-height:1; }
+  .gc-time{ font-family:var(--font-sans); font-size:19px; font-weight:800; letter-spacing:.01em; font-variant-numeric:tabular-nums; }
+  .gc-colon{ display:inline-block; margin:0 1px; animation:gcBlink 1s steps(1) infinite; }
+  .gc-date{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; opacity:.95; margin-top:3px; white-space:nowrap; }
+  @keyframes gcBlink{ 0%{ opacity:1; } 50%{ opacity:.25; } }
+  @media (prefers-reduced-motion:reduce){ .gc-colon{ animation:none; } }
+  .topbar .shopdate{ display:none; }
+  .todaypill{ border-radius:18px; padding:5px 10px 6px; }
+  .todaypill .lbl, .todaypill .val{ text-shadow:0 1px 2px rgba(0,40,25,.35); }
+  @media (max-width:430px){ .glassclock{ min-width:64px; padding:4px 8px 5px; border-radius:16px; } .gc-time{ font-size:16px; } .gc-date{ font-size:9px; } .todaypill{ padding:4px 8px 5px; } .todaypill .val{ font-size:12.5px; } .topbar{ gap:7px; padding-left:12px; padding-right:12px; } }
   .icon-btn{
     width:34px; height:34px; border-radius:10px; border:1px solid rgba(255,255,255,0.22);
     background:rgba(255,255,255,0.1); color:var(--primary-contrast);
@@ -905,6 +926,10 @@
       <div class="todaypill">
         <div class="lbl">Today</div>
         <div class="val num" id="todayTotalEl">N$0.00</div>
+      </div>
+      <div class="glassclock" id="glassClock" aria-live="off" title="">
+        <div class="gc-time num"><span id="gcH">--</span><span class="gc-colon">:</span><span id="gcM">--</span></div>
+        <div class="gc-date" id="gcDate"></div>
       </div>
       <button class="icon-btn" id="settingsBtn" aria-label="Settings">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path></svg>
@@ -9213,8 +9238,22 @@ function applyBrandLogo(){
   }catch(e){}
 }
 
+var _gcTimer = null;
+function tickGlassClock(){
+  var h = document.getElementById('gcH'); if(!h) return;
+  var d = new Date(), loc = uiLocale();
+  var parts = d.toLocaleTimeString(loc, { hour:'2-digit', minute:'2-digit', hour12:false });
+  var m = parts.match(/(\d{1,2})\D+(\d{2})/);
+  h.textContent = m ? m[1].padStart(2,'0') : parts;
+  document.getElementById('gcM').textContent = m ? m[2] : '';
+  var ds = d.toLocaleDateString(loc, { weekday:'short', day:'numeric', month:'short' }).replace(/,/g,'');
+  var de = document.getElementById('gcDate'); if(de && de.textContent !== ds) de.textContent = ds;
+  var gc = document.getElementById('glassClock'); if(gc) gc.title = d.toLocaleDateString(loc, { weekday:'long', day:'numeric', month:'long', year:'numeric' }) + ' ' + d.toLocaleTimeString(loc);
+}
+function startGlassClock(){ tickGlassClock(); if(_gcTimer) return; _gcTimer = setInterval(tickGlassClock, 1000); document.addEventListener('visibilitychange', function(){ if(!document.hidden) tickGlassClock(); }); }
 function updateHeader(){
   applyBrandLogo();
+  startGlassClock();
   document.getElementById('shopNameEl').textContent = State.settings.shopName;
   document.getElementById('shopDateEl').textContent = new Date().toLocaleDateString(uiLocale(), {weekday:'long', day:'numeric', month:'long'});
   var todayTotal = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt))===todayKey(); }).reduce(function(s,x){return s+x.total;},0);
