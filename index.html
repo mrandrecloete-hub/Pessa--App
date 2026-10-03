@@ -1,4 +1,16 @@
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
+<script>
+/* Browser security policy for the live website and the installed app: only Pesa's own files and the PDF library may run,
+   nothing can be embedded as a plugin, forms and links cannot be redirected, and data only leaves over https. It is not
+   applied inside a preview frame, where the host page controls the rules. */
+(function(){ try{
+  if(window.top !== window.self || !/^https?:$/.test(location.protocol)) return;
+  var m = document.createElement('meta'); m.httpEquiv = 'Content-Security-Policy';
+  m.content = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+  document.head.appendChild(m);
+}catch(e){} })();
+</script>
 <title>Pesa</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B7A5C">
@@ -1300,10 +1312,12 @@ Object.assign(LANGS.af.strings, {"Delete selected?": "Skrap geselekteerde?", "Th
 Object.assign(LANGS.af.strings, {"Logo and templates": "Logo en sjablone", "Logo updated": "Logo opgedateer", "Logo removed": "Logo verwyder", "With your logo uploaded, your logo sits at the top left of every invoice, receipt and report and the Pesa mark at the top right, both the same size. Without a logo, the small Pesa mark is used at the top left.": "Met jou logo opgelaai verskyn jou logo bo links op elke faktuur, kwitansie en verslag en die Pesa-merk bo regs, albei ewe groot. Sonder logo word die klein Pesa-merk bo links gebruik.", "Your logo prints at the top left of documents and the Pesa mark at the top right, at the same size.": "Jou logo druk bo links op dokumente en die Pesa-merk bo regs, ewe groot.", "Letterhead removed from Settings. With a company logo uploaded, your logo prints at the top left of invoices, receipts and reports and the Pesa mark at the top right, both the same size": "Briefhoof is uit Instellings verwyder. Met 'n maatskappylogo opgelaai druk jou logo bo links op fakture, kwitansies en verslae en die Pesa-merk bo regs, albei ewe groot"});
 Object.assign(LANGS.af.strings, {"Coming soon to": "Binnekort beskikbaar op"});
 Object.assign(LANGS.af.strings, {"Applies to everyone who has set it up on their device. Anyone else uses their password or PIN as before.": "Geld vir almal wat dit op hul toestel opgestel het. Almal anders gebruik soos voorheen hul wagwoord of PIN.", "Ask for fingerprint or face before deleting or restoring records": "Vra vir vingerafdruk of gesig voor rekords geskrap of herstel word", "Ask for it when Pesa opens or after 5 minutes away": "Vra daarvoor wanneer Pesa oopmaak of na 5 minute weg", "Cancelled or not recognised. Try again, or use your password or PIN.": "Gekanselleer of nie herken nie. Probeer weer, of gebruik jou wagwoord of PIN.", "Confirm": "Bevestig", "Confirm with your password or PIN": "Bevestig met jou wagwoord of PIN", "Could not use fingerprint or face just now. Use your password or PIN.": "Kon nou nie vingerafdruk of gesig gebruik nie. Gebruik jou wagwoord of PIN.", "Fingerprint or face": "Vingerafdruk of gesig", "Fingerprint or face is already set up on this device.": "Vingerafdruk of gesig is reeds op hierdie toestel opgestel.", "Fingerprint or face is set up": "Vingerafdruk of gesig is opgestel", "Fingerprint or face is set up on this device.": "Vingerafdruk of gesig is op hierdie toestel opgestel.", "Fingerprint or face unlock does not work from this web address. Open Pesa from its own website or the installed app.": "Vingerafdruk- of gesigontsluiting werk nie vanaf hierdie webadres nie. Maak Pesa oop vanaf sy eie webwerf of die geïnstalleerde toepassing.", "Fingerprint or face unlock is not available here. It needs Windows Hello, Touch ID, Face ID or a fingerprint reader on this computer or device, and Pesa opened from its own website or the installed app.": "Vingerafdruk- of gesigontsluiting is nie hier beskikbaar nie. Dit het Windows Hello, Touch ID, Face ID of 'n vingerafdruklesers op hierdie rekenaar of toestel nodig, en Pesa moet vanaf sy eie webwerf of die geïnstalleerde toepassing oopgemaak word.", "Not verified": "Nie geverifieer nie", "Pesa is locked": "Pesa is gesluit", "Remove from this device": "Verwyder van hierdie toestel", "Removed from this device": "Van hierdie toestel verwyder", "Set up fingerprint or face on this device": "Stel vingerafdruk of gesig op hierdie toestel op", "Test it": "Toets dit", "Unlock with fingerprint or face": "Ontsluit met vingerafdruk of gesig", "Use password or PIN instead": "Gebruik eerder wagwoord of PIN", "Use the fingerprint or face unlock of this computer or device to sign in and to approve important actions. Pesa never sees or stores your fingerprint or face.": "Gebruik die vingerafdruk- of gesigontsluiting van hierdie rekenaar of toestel om aan te meld en belangrike dade goed te keur. Pesa sien of stoor nooit jou vingerafdruk of gesig nie.", "Verified. It works.": "Geverifieer. Dit werk.", "Use fingerprint or face": "Gebruik vingerafdruk of gesig", "or use your PIN": "of gebruik jou PIN", "or use your password": "of gebruik jou wagwoord", "Fingerprint or face unlock": "Vingerafdruk- of gesigontsluiting", "Sign in quickly and approve important actions with the unlock your computer or device already has.": "Meld vinnig aan en keur belangrike dade goed met die ontsluiting wat jou rekenaar of toestel reeds het.", "Settings → Account → Fingerprint or face": "Instellings → Rekening → Vingerafdruk of gesig", "Open Settings and find Fingerprint or face under Account.": "Maak Instellings oop en vind Vingerafdruk of gesig onder Rekening.", "Tap Set up fingerprint or face on this device and follow the prompt from Windows Hello, Touch ID, Face ID or your Android fingerprint.": "Tik Stel vingerafdruk of gesig op hierdie toestel op en volg die aanwyser van Windows Hello, Touch ID, Face ID of jou Android-vingerafdruk.", "On the sign in screen, tap your name and tap Use fingerprint or face. Your password or PIN still works.": "Tik op die aanmeldskerm op jou naam en tik Gebruik vingerafdruk of gesig. Jou wagwoord of PIN werk steeds.", "Tick Ask for it when Pesa opens or after 5 minutes away to lock Pesa when nobody is using it.": "Merk Vra daarvoor wanneer Pesa oopmaak of na 5 minute weg om Pesa te sluit wanneer niemand dit gebruik nie.", "Owners can tick Ask for fingerprint or face before deleting or restoring records, to protect important data.": "Eienaars kan Vra vir vingerafdruk of gesig voor rekords geskrap of herstel word merk om belangrike data te beskerm.", "Set it up on each computer or device you use. If several people share one computer login, the computer cannot tell them apart, so use it on your own computer or device.": "Stel dit op elke rekenaar of toestel op wat jy gebruik. As verskeie mense een rekenaar-aanmelding deel, kan die rekenaar hulle nie uitmekaar ken nie, so gebruik dit op jou eie rekenaar of toestel.", "Fingerprint and face unlock use the lock of your own computer or device, such as Windows Hello, Touch ID, Face ID or an Android fingerprint. Pesa never sees, stores or sends your fingerprint or face. The device only tells Pesa yes or no": "Vingerafdruk- en gesigontsluiting gebruik die slot van jou eie rekenaar of toestel, soos Windows Hello, Touch ID, Face ID of 'n Android-vingerafdruk. Pesa sien, stoor of stuur nooit jou vingerafdruk of gesig nie. Die toestel sê net vir Pesa ja of nee", "Fingerprint or face unlock: set it up per computer or device in Settings, sign in with it, lock Pesa when you are away, and let owners require it before deleting or restoring records. Pesa never sees your fingerprint or face": "Vingerafdruk- of gesigontsluiting: stel dit per rekenaar of toestel in Instellings op, meld daarmee aan, sluit Pesa wanneer jy weg is, en laat eienaars dit vereis voor rekords geskrap of herstel word. Pesa sien nooit jou vingerafdruk of gesig nie"});
+Object.assign(LANGS.af.strings, {"That password is too easy to guess. Choose a different one.": "Daardie wagwoord is te maklik om te raai. Kies ’n ander een.", "Choose a password of at least 8 characters.": "Kies ’n wagwoord van minstens 8 karakters.", "Signed out because Pesa was not used for a while.": "Afgemeld omdat Pesa ’n rukkie nie gebruik is nie.", "Security check": "Sekuriteitskontrole", "Secure connection": "Veilige verbinding", "Pesa is open on a secure address (HTTPS). Information moving to your cloud project is encrypted on the way.": "Pesa is op ’n veilige adres (HTTPS) oop. Inligting wat na jou wolkprojek beweeg, word onderweg geënkripteer.", "This address is not secure. Open Pesa from its https website or the installed app.": "Hierdie adres is nie veilig nie. Maak Pesa oop vanaf sy https-webwerf of die geïnstalleerde toepassing.", "Guessing is limited": "Raai is beperk", "After 3 wrong passwords or PINs, signing in locks for 1 minute, then 5, then 15. Every lock is written to the Activity log.": "Ná 3 verkeerde wagwoorde of PIN’s sluit aanmelding vir 1 minuut, dan 5, dan 15. Elke sluiting word in die Aktiwiteitslogboek geskryf.", "lock(s) in the last 30 days. Check the Activity log.": "sluiting(s) in die laaste 30 dae. Kyk in die Aktiwiteitslogboek.", "Strong passwords": "Sterk wagwoorde", "New passwords need at least 8 characters and cannot be a common password. Cashiers use a 4 digit PIN, so keep them on a device you trust.": "Nuwe wagwoorde moet minstens 8 karakters wees en mag nie ’n algemene wagwoord wees nie. Kassiers gebruik ’n 4-syfer-PIN, hou hulle dus op ’n toestel wat jy vertrou.", "Automatic sign out": "Outomatiese afmelding", "Pesa signs people out after": "Pesa meld mense af ná", "minutes without use.": "minute sonder gebruik.", "Off. Turn it on so a computer left open does not stay signed in.": "Af. Skakel dit aan sodat ’n rekenaar wat oop gelaat is nie aangemeld bly nie.", "After": "Na", "minutes": "minute", "Off": "Af", "Set up on this device.": "Op hierdie toestel opgestel.", "Not set up on this device. Add it under Settings → Account.": "Nie op hierdie toestel opgestel nie. Voeg dit by onder Instellings → Rekening.", "Approval before deleting": "Goedkeuring voor skrap", "On. Deleting or restoring records asks for fingerprint or face, or the password.": "Aan. Skrap of herstel van rekords vra vir vingerafdruk of gesig, of die wagwoord.", "Off. Turn it on under Settings → Account.": "Af. Skakel dit aan onder Instellings → Rekening.", "Cloud sync": "Wolksinkronisering", "On. Use your own cloud project, keep its sync code private, and turn on its access rules (Row Level Security) so only your business can read the data.": "Aan. Gebruik jou eie wolkprojek, hou sy sinkkode privaat, en skakel sy toegangsreëls (Row Level Security) aan sodat net jou besigheid die data kan lees.", "Off. Your records stay on this device.": "Af. Jou rekords bly op hierdie toestel.", "Backups": "Rugsteun", "A backup was made in the last week.": "’n Rugsteun is in die laaste week gemaak.", "No recent backup. Make one from Settings so a lost or damaged device does not lose your records.": "Geen onlangse rugsteun nie. Maak een vanaf Instellings sodat ’n verlore of beskadigde toestel nie jou rekords laat verlore gaan nie.", "About a firewall": "Oor ’n brandmuur", "A firewall protects a server. Your Pesa website is only files, so for a firewall and protection against floods of traffic, put the website behind a free service such as Cloudflare. Ask the person who looks after your website to set it up.": "’n Brandmuur beskerm ’n bediener. Jou Pesa-webwerf is net lêers, so sit die webwerf agter ’n gratis diens soos Cloudflare vir ’n brandmuur en beskerming teen vloede van verkeer. Vra die persoon wat jou webwerf versorg om dit op te stel.", "Open Activity log": "Maak Aktiwiteitslogboek oop", "Pesa runs on your own computers and devices, so there is no server of ours to put a firewall on. These are the protections that apply to your business and what you can still do.": "Pesa loop op jou eie rekenaars en toestelle, so daar is geen bediener van ons om ’n brandmuur op te sit nie. Dit is die beskermings wat op jou besigheid van toepassing is en wat jy nog kan doen.", "Security: wrong password limits at sign in, stronger password rules (8 characters), automatic sign out, failed sign ins in the Activity log, a browser security policy, and a Security check for owners": "Sekuriteit: perke op verkeerde wagwoorde by aanmelding, sterker wagwoordreëls (8 karakters), outomatiese afmelding, mislukte aanmeldings in die Aktiwiteitslogboek, ’n blaaier-sekuriteitsbeleid, en ’n Sekuriteitskontrole vir eienaars", "See how your business is protected and switch on automatic sign out.": "Kyk hoe jou besigheid beskerm word en skakel outomatiese afmelding aan.", "Menu → Security check (Owner)": "Kieslys → Sekuriteitskontrole (Eienaar)", "Open the menu and tap Security check.": "Maak die kieslys oop en tik Sekuriteitskontrole.", "Read each line. A green tick means it is protected, an exclamation mark means there is something to do.": "Lees elke reël. ’n Groen regmerkie beteken dit is beskerm, ’n uitroepteken beteken daar is iets om te doen.", "Under Automatic sign out choose how long Pesa waits before it signs people out.": "Kies onder Outomatiese afmelding hoe lank Pesa wag voor dit mense afmeld.", "If sign in locks after wrong tries, look in the Activity log to see who was trying.": "As aanmelding ná verkeerde pogings sluit, kyk in die Aktiwiteitslogboek om te sien wie probeer het.", "Make a backup from Settings now and then.": "Maak nou en dan ’n rugsteun vanaf Instellings.", "Passwords need at least 8 characters. Cashiers use a 4 digit PIN, so only let them use Pesa on devices you trust.": "Wagwoorde moet minstens 8 karakters wees. Kassiers gebruik ’n 4-syfer-PIN, laat hulle dus net Pesa op toestelle gebruik wat jy vertrou.", "After three wrong tries at signing in, the sign in locks for a while, and every lock is written to the Activity log so the owner can see it": "Ná drie verkeerde pogings by aanmelding sluit die aanmelding vir ’n rukkie, en elke sluiting word in die Aktiwiteitslogboek geskryf sodat die eienaar dit kan sien"});
 Object.assign(LANGS.de.strings, {"Delete selected?": "Ausgewählte löschen?", "They will be removed from your messages.": "Sie werden aus Ihren Nachrichten entfernt.", "You can also remove them for everyone.": "Sie können sie auch für alle entfernen.", "Deleted": "Gelöscht", "Deleted for everyone": "Für alle gelöscht", "Select messages to delete": "Nachrichten zum Löschen auswählen"});
 Object.assign(LANGS.de.strings, {"Logo and templates": "Logo und Vorlagen", "Logo updated": "Logo aktualisiert", "Logo removed": "Logo entfernt", "With your logo uploaded, your logo sits at the top left of every invoice, receipt and report and the Pesa mark at the top right, both the same size. Without a logo, the small Pesa mark is used at the top left.": "Mit hochgeladenem Logo steht Ihr Logo oben links auf jeder Rechnung, Quittung und jedem Bericht und das Pesa-Zeichen oben rechts, beide gleich groß. Ohne Logo wird das kleine Pesa-Zeichen oben links verwendet.", "Your logo prints at the top left of documents and the Pesa mark at the top right, at the same size.": "Ihr Logo wird oben links auf Dokumenten gedruckt und das Pesa-Zeichen oben rechts, in gleicher Größe.", "Letterhead removed from Settings. With a company logo uploaded, your logo prints at the top left of invoices, receipts and reports and the Pesa mark at the top right, both the same size": "Briefkopf aus den Einstellungen entfernt. Mit hochgeladenem Firmenlogo wird Ihr Logo oben links auf Rechnungen, Quittungen und Berichten gedruckt und das Pesa-Zeichen oben rechts, beide gleich groß"});
 Object.assign(LANGS.de.strings, {"Coming soon to": "Bald verfügbar auf"});
 Object.assign(LANGS.de.strings, {"Applies to everyone who has set it up on their device. Anyone else uses their password or PIN as before.": "Gilt für alle, die es auf ihrem Gerät eingerichtet haben. Alle anderen verwenden wie bisher ihr Passwort oder ihre PIN.", "Ask for fingerprint or face before deleting or restoring records": "Vor dem Löschen oder Wiederherstellen von Datensätzen nach Fingerabdruck oder Gesicht fragen", "Ask for it when Pesa opens or after 5 minutes away": "Beim Öffnen von Pesa oder nach 5 Minuten Abwesenheit danach fragen", "Cancelled or not recognised. Try again, or use your password or PIN.": "Abgebrochen oder nicht erkannt. Versuchen Sie es erneut oder verwenden Sie Ihr Passwort oder Ihre PIN.", "Confirm": "Bestätigen", "Confirm with your password or PIN": "Mit Passwort oder PIN bestätigen", "Could not use fingerprint or face just now. Use your password or PIN.": "Fingerabdruck oder Gesicht konnte gerade nicht verwendet werden. Verwenden Sie Ihr Passwort oder Ihre PIN.", "Fingerprint or face": "Fingerabdruck oder Gesicht", "Fingerprint or face is already set up on this device.": "Fingerabdruck oder Gesicht ist auf diesem Gerät bereits eingerichtet.", "Fingerprint or face is set up": "Fingerabdruck oder Gesicht ist eingerichtet", "Fingerprint or face is set up on this device.": "Fingerabdruck oder Gesicht ist auf diesem Gerät eingerichtet.", "Fingerprint or face unlock does not work from this web address. Open Pesa from its own website or the installed app.": "Die Entsperrung per Fingerabdruck oder Gesicht funktioniert von dieser Webadresse aus nicht. Öffnen Sie Pesa über die eigene Website oder die installierte App.", "Fingerprint or face unlock is not available here. It needs Windows Hello, Touch ID, Face ID or a fingerprint reader on this computer or device, and Pesa opened from its own website or the installed app.": "Die Entsperrung per Fingerabdruck oder Gesicht ist hier nicht verfügbar. Sie benötigt Windows Hello, Touch ID, Face ID oder einen Fingerabdruckleser auf diesem Computer oder Gerät, und Pesa muss über die eigene Website oder die installierte App geöffnet sein.", "Not verified": "Nicht verifiziert", "Pesa is locked": "Pesa ist gesperrt", "Remove from this device": "Von diesem Gerät entfernen", "Removed from this device": "Von diesem Gerät entfernt", "Set up fingerprint or face on this device": "Fingerabdruck oder Gesicht auf diesem Gerät einrichten", "Test it": "Testen", "Unlock with fingerprint or face": "Mit Fingerabdruck oder Gesicht entsperren", "Use password or PIN instead": "Stattdessen Passwort oder PIN verwenden", "Use the fingerprint or face unlock of this computer or device to sign in and to approve important actions. Pesa never sees or stores your fingerprint or face.": "Nutzen Sie die Entsperrung per Fingerabdruck oder Gesicht dieses Computers oder Geräts, um sich anzumelden und wichtige Aktionen zu bestätigen. Pesa sieht oder speichert Ihren Fingerabdruck oder Ihr Gesicht nie.", "Verified. It works.": "Verifiziert. Es funktioniert.", "Use fingerprint or face": "Fingerabdruck oder Gesicht verwenden", "or use your PIN": "oder verwenden Sie Ihre PIN", "or use your password": "oder verwenden Sie Ihr Passwort", "Fingerprint or face unlock": "Entsperrung per Fingerabdruck oder Gesicht", "Sign in quickly and approve important actions with the unlock your computer or device already has.": "Melden Sie sich schnell an und bestätigen Sie wichtige Aktionen mit der Entsperrung, die Ihr Computer oder Gerät bereits hat.", "Settings → Account → Fingerprint or face": "Einstellungen → Konto → Fingerabdruck oder Gesicht", "Open Settings and find Fingerprint or face under Account.": "Öffnen Sie die Einstellungen und suchen Sie unter Konto Fingerabdruck oder Gesicht.", "Tap Set up fingerprint or face on this device and follow the prompt from Windows Hello, Touch ID, Face ID or your Android fingerprint.": "Tippen Sie auf Fingerabdruck oder Gesicht auf diesem Gerät einrichten und folgen Sie der Aufforderung von Windows Hello, Touch ID, Face ID oder Ihrem Android-Fingerabdruck.", "On the sign in screen, tap your name and tap Use fingerprint or face. Your password or PIN still works.": "Tippen Sie auf dem Anmeldebildschirm auf Ihren Namen und dann auf Fingerabdruck oder Gesicht verwenden. Ihr Passwort oder Ihre PIN funktioniert weiterhin.", "Tick Ask for it when Pesa opens or after 5 minutes away to lock Pesa when nobody is using it.": "Aktivieren Sie Beim Öffnen von Pesa oder nach 5 Minuten Abwesenheit danach fragen, um Pesa zu sperren, wenn es niemand benutzt.", "Owners can tick Ask for fingerprint or face before deleting or restoring records, to protect important data.": "Inhaber können Vor dem Löschen oder Wiederherstellen von Datensätzen nach Fingerabdruck oder Gesicht fragen aktivieren, um wichtige Daten zu schützen.", "Set it up on each computer or device you use. If several people share one computer login, the computer cannot tell them apart, so use it on your own computer or device.": "Richten Sie es auf jedem Computer oder Gerät ein, das Sie verwenden. Wenn mehrere Personen ein Computerkonto teilen, kann der Computer sie nicht unterscheiden. Nutzen Sie es daher auf Ihrem eigenen Computer oder Gerät.", "Fingerprint and face unlock use the lock of your own computer or device, such as Windows Hello, Touch ID, Face ID or an Android fingerprint. Pesa never sees, stores or sends your fingerprint or face. The device only tells Pesa yes or no": "Die Entsperrung per Fingerabdruck und Gesicht nutzt die Sperre Ihres eigenen Computers oder Geräts, etwa Windows Hello, Touch ID, Face ID oder einen Android-Fingerabdruck. Pesa sieht, speichert oder sendet Ihren Fingerabdruck oder Ihr Gesicht nie. Das Gerät sagt Pesa nur Ja oder Nein", "Fingerprint or face unlock: set it up per computer or device in Settings, sign in with it, lock Pesa when you are away, and let owners require it before deleting or restoring records. Pesa never sees your fingerprint or face": "Entsperrung per Fingerabdruck oder Gesicht: richten Sie sie pro Computer oder Gerät in den Einstellungen ein, melden Sie sich damit an, sperren Sie Pesa bei Abwesenheit und lassen Sie Inhaber sie vor dem Löschen oder Wiederherstellen von Datensätzen verlangen. Pesa sieht nie Ihren Fingerabdruck oder Ihr Gesicht"});
+Object.assign(LANGS.de.strings, {"That password is too easy to guess. Choose a different one.": "Dieses Passwort ist zu leicht zu erraten. Wählen Sie ein anderes.", "Choose a password of at least 8 characters.": "Wählen Sie ein Passwort mit mindestens 8 Zeichen.", "Signed out because Pesa was not used for a while.": "Abgemeldet, weil Pesa eine Weile nicht benutzt wurde.", "Security check": "Sicherheitsprüfung", "Secure connection": "Sichere Verbindung", "Pesa is open on a secure address (HTTPS). Information moving to your cloud project is encrypted on the way.": "Pesa ist über eine sichere Adresse (HTTPS) geöffnet. Informationen auf dem Weg zu Ihrem Cloud-Projekt werden verschlüsselt.", "This address is not secure. Open Pesa from its https website or the installed app.": "Diese Adresse ist nicht sicher. Öffnen Sie Pesa über die https-Website oder die installierte App.", "Guessing is limited": "Raten ist begrenzt", "After 3 wrong passwords or PINs, signing in locks for 1 minute, then 5, then 15. Every lock is written to the Activity log.": "Nach 3 falschen Passwörtern oder PINs ist die Anmeldung 1 Minute gesperrt, dann 5, dann 15. Jede Sperre wird im Aktivitätsprotokoll festgehalten.", "lock(s) in the last 30 days. Check the Activity log.": "Sperre in den letzten 30 Tagen. Prüfen Sie das Aktivitätsprotokoll.", "Strong passwords": "Starke Passwörter", "New passwords need at least 8 characters and cannot be a common password. Cashiers use a 4 digit PIN, so keep them on a device you trust.": "Neue Passwörter brauchen mindestens 8 Zeichen und dürfen kein häufiges Passwort sein. Kassierer verwenden eine 4-stellige PIN, nutzen Sie sie daher auf einem Gerät, dem Sie vertrauen.", "Automatic sign out": "Automatische Abmeldung", "Pesa signs people out after": "Pesa meldet Personen ab nach", "minutes without use.": "Minuten ohne Nutzung.", "Off. Turn it on so a computer left open does not stay signed in.": "Aus. Schalten Sie es ein, damit ein offen gelassener Computer nicht angemeldet bleibt.", "After": "Nach", "minutes": "Minuten", "Off": "Aus", "Set up on this device.": "Auf diesem Gerät eingerichtet.", "Not set up on this device. Add it under Settings → Account.": "Auf diesem Gerät nicht eingerichtet. Fügen Sie es unter Einstellungen → Konto hinzu.", "Approval before deleting": "Bestätigung vor dem Löschen", "On. Deleting or restoring records asks for fingerprint or face, or the password.": "Ein. Beim Löschen oder Wiederherstellen von Datensätzen wird nach Fingerabdruck oder Gesicht oder dem Passwort gefragt.", "Off. Turn it on under Settings → Account.": "Aus. Schalten Sie es unter Einstellungen → Konto ein.", "Cloud sync": "Cloud-Synchronisierung", "On. Use your own cloud project, keep its sync code private, and turn on its access rules (Row Level Security) so only your business can read the data.": "Ein. Nutzen Sie Ihr eigenes Cloud-Projekt, halten Sie den Sync-Code geheim und aktivieren Sie die Zugriffsregeln (Row Level Security), damit nur Ihr Geschäft die Daten lesen kann.", "Off. Your records stay on this device.": "Aus. Ihre Datensätze bleiben auf diesem Gerät.", "Backups": "Sicherungen", "A backup was made in the last week.": "In der letzten Woche wurde eine Sicherung erstellt.", "No recent backup. Make one from Settings so a lost or damaged device does not lose your records.": "Keine aktuelle Sicherung. Erstellen Sie eine in den Einstellungen, damit ein verlorenes oder beschädigtes Gerät nicht Ihre Datensätze kostet.", "About a firewall": "Über eine Firewall", "A firewall protects a server. Your Pesa website is only files, so for a firewall and protection against floods of traffic, put the website behind a free service such as Cloudflare. Ask the person who looks after your website to set it up.": "Eine Firewall schützt einen Server. Ihre Pesa-Website besteht nur aus Dateien. Für eine Firewall und Schutz vor Datenverkehrsfluten stellen Sie die Website hinter einen kostenlosen Dienst wie Cloudflare. Bitten Sie die Person, die Ihre Website betreut, es einzurichten.", "Open Activity log": "Aktivitätsprotokoll öffnen", "Pesa runs on your own computers and devices, so there is no server of ours to put a firewall on. These are the protections that apply to your business and what you can still do.": "Pesa läuft auf Ihren eigenen Computern und Geräten, daher gibt es keinen Server von uns für eine Firewall. Dies sind die Schutzmaßnahmen für Ihr Geschäft und was Sie noch tun können.", "Security: wrong password limits at sign in, stronger password rules (8 characters), automatic sign out, failed sign ins in the Activity log, a browser security policy, and a Security check for owners": "Sicherheit: Begrenzung falscher Passwörter bei der Anmeldung, strengere Passwortregeln (8 Zeichen), automatische Abmeldung, fehlgeschlagene Anmeldungen im Aktivitätsprotokoll, eine Browser-Sicherheitsrichtlinie und eine Sicherheitsprüfung für Inhaber", "See how your business is protected and switch on automatic sign out.": "Sehen Sie, wie Ihr Geschäft geschützt ist, und aktivieren Sie die automatische Abmeldung.", "Menu → Security check (Owner)": "Menü → Sicherheitsprüfung (Inhaber)", "Open the menu and tap Security check.": "Öffnen Sie das Menü und tippen Sie auf Sicherheitsprüfung.", "Read each line. A green tick means it is protected, an exclamation mark means there is something to do.": "Lesen Sie jede Zeile. Ein grüner Haken bedeutet geschützt, ein Ausrufezeichen bedeutet, dass etwas zu tun ist.", "Under Automatic sign out choose how long Pesa waits before it signs people out.": "Wählen Sie unter Automatische Abmeldung, wie lange Pesa wartet, bevor es Personen abmeldet.", "If sign in locks after wrong tries, look in the Activity log to see who was trying.": "Wenn die Anmeldung nach Fehlversuchen gesperrt wird, sehen Sie im Aktivitätsprotokoll nach, wer es versucht hat.", "Make a backup from Settings now and then.": "Erstellen Sie ab und zu eine Sicherung in den Einstellungen.", "Passwords need at least 8 characters. Cashiers use a 4 digit PIN, so only let them use Pesa on devices you trust.": "Passwörter brauchen mindestens 8 Zeichen. Kassierer verwenden eine 4-stellige PIN, lassen Sie sie Pesa daher nur auf Geräten nutzen, denen Sie vertrauen.", "After three wrong tries at signing in, the sign in locks for a while, and every lock is written to the Activity log so the owner can see it": "Nach drei falschen Anmeldeversuchen wird die Anmeldung für eine Weile gesperrt, und jede Sperre wird im Aktivitätsprotokoll festgehalten, damit der Inhaber sie sehen kann"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -2521,7 +2535,7 @@ function wireForgot(root){
     if(!/^\d{6}$/.test(code)) return banner(err, tr('Enter the 6-digit code from the email.'));
     if(!r || Date.now() > r.exp) return banner(err, tr('That code has expired or was never sent. Tap Resend code to get a new one.'));
     if(r.tries >= 5){ try{ localStorage.removeItem(RESET_KEY); }catch(e){} return banner(err, tr('Too many wrong attempts. Tap Resend code to get a new one.')); }
-    if(!pw || pw.length < 4) return banner(err, tr('Choose a password of at least 4 characters.'));
+    var _pp = pwProblem(pw); if(_pp) return banner(err, _pp);
     if(pw !== pw2) return banner(err, tr('Passwords don’t match.'));
     r.tries++; try{ localStorage.setItem(RESET_KEY, JSON.stringify(r)); }catch(e){}
     var hash = await sha256Hex(code + ':' + r.userId);
@@ -2559,8 +2573,10 @@ function openChangePasswordSheet(){
     var emailEl = ov.querySelector('#cpEmail'), email = emailEl ? emailEl.value.trim().toLowerCase() : null;
     err.innerHTML = '';
     if(!oldv) return fail(isCash ? tr('Enter your current PIN.') : tr('Enter your current password.'));
-    if((await sha256Hex(oldv)) !== me.passHash) return fail(isCash ? tr('Current PIN is incorrect.') : tr('Current password is incorrect.'));
-    if(isCash ? !/^\d{4}$/.test(nv) : (!nv || nv.length < 4)) return fail(isCash ? tr('PIN must be exactly 4 digits.') : tr('Choose a password of at least 4 characters.'));
+    var _lt = authLockText(me.id); if(_lt) return fail(_lt);
+    if((await sha256Hex(oldv)) !== me.passHash){ var _f = authFailed(me.id, me.name); return fail(_f.locked ? authLockText(me.id) : (isCash ? tr('Current PIN is incorrect.') : tr('Current password is incorrect.'))); }
+    authOk(me.id);
+    if(isCash ? !/^\d{4}$/.test(nv) : !!pwProblem(nv)) return fail(isCash ? tr('PIN must be exactly 4 digits.') : pwProblem(nv));
     if(nv !== nv2) return fail(isCash ? tr('PINs don’t match.') : tr('Passwords don’t match.'));
     if(email && !isEmail(email)) return fail(tr('Enter a valid email address'));
     var patch = { passHash: await sha256Hex(nv) };
@@ -2858,9 +2874,10 @@ function askPasswordSheet(title, onOk){
   var inp = ov.querySelector('#apPass'); inp.focus();
   function go(){
     if(!inp.value || !u) return;
+    var lt = authLockText(u.id); if(lt){ ov.querySelector('#apErr').innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(lt)+'</span></div>'; inp.value = ''; return; }
     sha256Hex(inp.value).then(function(h){
-      if(h === u.passHash){ closeModal(); onOk(); }
-      else { ov.querySelector('#apErr').innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+(isCash ? tr('Incorrect PIN.') : tr('Incorrect password.'))+'</span></div>'; inp.value = ''; inp.focus(); }
+      if(h === u.passHash){ authOk(u.id); closeModal(); onOk(); }
+      else { var f = authFailed(u.id, u.name); ov.querySelector('#apErr').innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(f.locked ? authLockText(u.id) : (isCash ? tr('Incorrect PIN.') : tr('Incorrect password.'))+' '+f.triesLeft+' '+tr('tries left.'))+'</span></div>'; inp.value = ''; inp.focus(); }
     });
   }
   ov.querySelector('#apOk').addEventListener('click', go);
@@ -2968,6 +2985,90 @@ function wireBioBox(ov){
   bioPlatformReady().then(paint);
 }
 
+/* ============================== SECURITY: guess limits, password rules, auto sign-out, security check ==============================
+ * Pesa runs on your own computers and devices, so there is no server of ours to put a firewall on. What protects it:
+ * the browser's own sandbox and HTTPS, the limits and rules below, a content security policy for the website, and,
+ * for your own cloud project, the access rules you set there. */
+var SEC_SHIELD = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.6c0 4.6 3.1 8.1 7.5 9.4 4.4-1.3 7.5-4.8 7.5-9.4V6L12 3Z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/></svg>';
+var COMMON_PW = ['password','12345678','123456789','1234567890','qwertyui','qwerty123','password1','password123','11111111','00000000','iloveyou','abcd1234','admin123','letmein1','welcome1','pesa1234','namibia1','windhoek1'];
+// '' when the password is acceptable, otherwise the reason (already translated)
+function pwProblem(pw){
+  if(!pw || pw.length < 8) return tr('Choose a password of at least 8 characters.');
+  if(COMMON_PW.indexOf(String(pw).toLowerCase()) > -1 || /^(.)\1+$/.test(pw)) return tr('That password is too easy to guess. Choose a different one.');
+  return '';
+}
+// Wrong password / PIN limit, shared by every place a secret is typed (sign in, point of sale, confirmations).
+function authLeft(uid){ return posLockLeft(uid); }
+function authOk(uid){ var all = posLockData(); if(all[uid]){ delete all[uid]; posLockSave(all); } }
+function authFailed(uid, name){
+  var all = posLockData(), o = all[uid] || { fails:0, rounds:0 }, locked = 0;
+  o.fails++;
+  if(o.fails >= 3){ locked = [60,300,900][Math.min(o.rounds,2)]; o.until = Date.now() + locked*1000; o.rounds++; o.fails = 0;
+    logAudit('other','staff',uid,'Sign in locked for '+locked+' seconds after wrong password or PIN tries ('+(name||'')+')'); }
+  all[uid] = o; posLockSave(all);
+  return { locked:locked, triesLeft: locked ? 0 : 3 - o.fails };
+}
+function authLockText(uid){ var s = authLeft(uid); return s ? tr('Too many wrong tries. Try again in')+' '+s+' '+tr('seconds')+'.' : ''; }
+
+// Automatic sign out when nobody uses Pesa for a while (the owner chooses how long in Security check).
+var _lastActive = Date.now(), _idleStarted = false;
+function idleMinutes(){ var m = Number(State.settings && State.settings.autoLogoutMin); return m > 0 ? m : 0; }
+function startIdleWatch(){
+  if(_idleStarted) return; _idleStarted = true;
+  ['pointerdown','keydown','touchstart','wheel'].forEach(function(ev){ document.addEventListener(ev, function(){ _lastActive = Date.now(); }, { capture:true, passive:true }); });
+  setInterval(function(){
+    try{
+      var mins = idleMinutes();
+      if(!mins || !State.session || (typeof POS !== 'undefined' && POS.open)) return;
+      if(Date.now() - _lastActive < mins*60000) return;
+      idleSignOut(mins);
+    }catch(e){}
+  }, 15000);
+}
+function idleSignOut(mins){
+  _lastActive = Date.now(); closeModal();
+  var uid = State.session.userId;
+  try{ State.cart = []; renderCartBar(); }catch(e){}
+  logAudit('other','staff',uid,'Signed out automatically after '+mins+' minutes without use');
+  if(bioEnrolled(uid) && bioLockOn(uid) && bioSupported()){ _bioLockPending = true; checkAuthAndRoute(); return; }
+  signedOutPending = true; State.session = null; State.till.current = null; State.tab = 'dashboard'; clearSessionLocal();
+  checkAuthAndRoute(); toast(tr('Signed out because Pesa was not used for a while.'));
+}
+
+// The owner's Security check: what is protecting the business, and what to do next.
+function openSecuritySheet(){
+  var secure = !!window.isSecureContext, uid = State.session && State.session.userId;
+  var cloud = false; try{ var st = Sync.status(); cloud = st && st.state !== 'off'; }catch(e){}
+  var d30 = Date.now() - 30*86400000, locks = State.auditLog.filter(function(a){ return /Sign in locked/.test(a.summary||'') && new Date(a.createdAt).getTime() > d30; });
+  var last = (typeof Backups !== 'undefined') ? Backups.lastAt() : 0, backupOk = last && (Date.now() - last) < 8*86400000;
+  var mins = idleMinutes();
+  function row(ok, title, text){
+    return '<div class="staffrow" style="align-items:flex-start;gap:10px;cursor:default;"><div style="flex:none;margin-top:2px;width:24px;display:flex;justify-content:center;color:'+(ok===true?'var(--success,#0a7)':(ok===false?'var(--danger,#c33)':'var(--text-muted)'))+';">'+(ok===true?ICONS.check:(ok===false?ICONS.warn:ICONS.info))+'</div>' +
+      '<div class="main"><div class="n">'+esc(title)+'</div><div class="e" style="white-space:normal;line-height:1.5;">'+esc(text)+'</div></div></div>';
+  }
+  var html = '<div class="sheet-head"><h2>'+tr('Security check')+'</h2></div>' +
+    '<div class="banner">'+SEC_SHIELD+'<span>'+tr('Pesa runs on your own computers and devices, so there is no server of ours to put a firewall on. These are the protections that apply to your business and what you can still do.')+'</span></div>' +
+    row(secure, tr('Secure connection'), secure ? tr('Pesa is open on a secure address (HTTPS). Information moving to your cloud project is encrypted on the way.') : tr('This address is not secure. Open Pesa from its https website or the installed app.')) +
+    row(true, tr('Guessing is limited'), tr('After 3 wrong passwords or PINs, signing in locks for 1 minute, then 5, then 15. Every lock is written to the Activity log.')+(locks.length ? ' '+locks.length+' '+tr('lock(s) in the last 30 days. Check the Activity log.') : '')) +
+    row(true, tr('Strong passwords'), tr('New passwords need at least 8 characters and cannot be a common password. Cashiers use a 4 digit PIN, so keep them on a device you trust.')) +
+    row(mins > 0, tr('Automatic sign out'), mins > 0 ? tr('Pesa signs people out after')+' '+mins+' '+tr('minutes without use.') : tr('Off. Turn it on so a computer left open does not stay signed in.')) +
+    '<div class="field" style="margin:4px 0 10px 34px;"><select id="secIdle">' +
+      [0,5,15,30,60].map(function(m){ return '<option value="'+m+'"'+(m===mins?' selected':'')+'>'+(m ? tr('After')+' '+m+' '+tr('minutes') : tr('Off'))+'</option>'; }).join('') + '</select></div>' +
+    row(uid && bioEnrolled(uid) ? true : null, tr('Fingerprint or face'), uid && bioEnrolled(uid) ? tr('Set up on this device.') : tr('Not set up on this device. Add it under Settings → Account.')) +
+    row(bioApproveOn() ? true : null, tr('Approval before deleting'), bioApproveOn() ? tr('On. Deleting or restoring records asks for fingerprint or face, or the password.') : tr('Off. Turn it on under Settings → Account.')) +
+    row(cloud ? null : true, tr('Cloud sync'), cloud ? tr('On. Use your own cloud project, keep its sync code private, and turn on its access rules (Row Level Security) so only your business can read the data.') : tr('Off. Your records stay on this device.')) +
+    row(backupOk ? true : false, tr('Backups'), backupOk ? tr('A backup was made in the last week.') : tr('No recent backup. Make one from Settings so a lost or damaged device does not lose your records.')) +
+    '<div class="section-title" style="margin-top:14px;">'+tr('About a firewall')+'</div>' +
+    '<div class="banner">'+ICONS.info+'<span>'+tr('A firewall protects a server. Your Pesa website is only files, so for a firewall and protection against floods of traffic, put the website behind a free service such as Cloudflare. Ask the person who looks after your website to set it up.')+'</span></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="secLog" type="button">'+tr('Open Activity log')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#secIdle').addEventListener('change', function(e){
+    State.settings = Object.assign({}, State.settings, { autoLogoutMin: Number(e.target.value) }); refs.settings.set(State.settings);
+    toast(tr('Settings saved')); closeModal(); openSecuritySheet();
+  });
+  ov.querySelector('#secLog').addEventListener('click', function(){ closeModal(); openAuditLogSheet(); });
+}
+
 function roleTabs(role){
   if(role === 'cashier') return ['me','sell','till','records'];
   if(role === 'stockclerk') return ['me','stock','records'];
@@ -3046,7 +3147,7 @@ function checkAuthAndRoute(){
   var allowed = roleTabs(State.session.role);
   if(allowed.indexOf(State.tab) === -1) State.tab = allowed[0];
   render();
-  touchUserActive(); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
+  startIdleWatch(); touchUserActive(); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
 }
 var _whatsNewChecked = false;
@@ -3263,7 +3364,7 @@ function wireRegisterCompany(root){
     // once the business has it, from Settings → Company details.
     if(!companyName) return fail(tr('Enter your business name.'));
     if(!ownerName) return fail(tr('Enter the owner’s full name.'));
-    if(!pw || pw.length<4) return fail(tr('Choose a password of at least 4 characters.'));
+    if(pwProblem(pw)) return fail(pwProblem(pw));
     if(pw !== pw2) return fail(tr('Passwords don’t match.'));
     var btn = root.querySelector('#rcSubmit');
     btn.disabled = true; btn.textContent = tr('Setting up…');
@@ -3377,7 +3478,7 @@ function wireEmployeeSignup(root){
       function fail(m){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(m)+'</span></div>'; }
       var pw = box.querySelector('#empPw').value, pw2 = box.querySelector('#empPw2').value;
       if(isCash && !/^\d{4}$/.test(pw)) return fail(tr('PIN must be exactly 4 digits.'));
-      if(!isCash && pw.length < 4) return fail(tr('Choose a password of at least 4 characters.'));
+      if(!isCash && pwProblem(pw)) return fail(pwProblem(pw));
       if(pw !== pw2) return fail(tr('The two entries do not match.'));
       var fresh = State.users.find(function(x){ return x.id === u.id; });
       if(!fresh || !fresh.pending){ return fail(tr('This invite has already been used.')); }
@@ -4066,9 +4167,12 @@ function wireLoginView(root){
         if(!val){ return; }
         var errEl = box.querySelector('#loginError');
         var unlockBtn = box.querySelector('#loginUnlockBtn');
+        var lockTxt = authLockText(u.id);
+        if(lockTxt){ errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(lockTxt)+'</span></div>'; passInput.value=''; return; }
         unlockBtn.disabled = true;
         sha256Hex(val).then(function(hash){
           if(hash === u.passHash){
+            authOk(u.id);
             State.session = { userId:u.id, name:u.name, role:u.role };
             _bioLockPending = false;
             saveSessionLocal(u.id);
@@ -4076,7 +4180,8 @@ function wireLoginView(root){
             checkAuthAndRoute();
           } else {
             unlockBtn.disabled = false;
-            errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+(isCash?tr('Incorrect PIN.'):tr('Incorrect password.'))+' '+tr('Ask an Owner or Manager to reset it from Settings → Team if you’ve forgotten it.')+'</span></div>';
+            var af = authFailed(u.id, u.name);
+            errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+(af.locked ? esc(authLockText(u.id)) : (isCash?tr('Incorrect PIN.'):tr('Incorrect password.'))+' '+af.triesLeft+' '+tr('tries left.')+' '+tr('Ask an Owner or Manager to reset it from Settings → Team if you’ve forgotten it.'))+'</span></div>';
             passInput.value=''; passInput.focus();
           }
         });
@@ -4217,7 +4322,10 @@ function openStaffSheet(user){
         var patch = { name:name, jobTitle: ov.querySelector('#sfJob').value.trim(), posAccess: (isMe ? user.posAccess !== false : (role !== 'stockclerk' && ov.querySelector('#sfPos').checked)) };
         if(!isMe) patch.role = role;
         var newPass = ov.querySelector('#sfNewPass') ? ov.querySelector('#sfNewPass').value : '';
-        if(newPass){ patch.passHash = await sha256Hex(newPass); }
+        if(newPass){
+          if(role === 'cashier' ? !/^\d{4}$/.test(newPass) : !!pwProblem(newPass)) return fail(role === 'cashier' ? tr('PIN must be exactly 4 digits.') : pwProblem(newPass));
+          patch.passHash = await sha256Hex(newPass);
+        }
         refs.users.doc(user.id).update(patch);
         logAudit('update','staff',user.id,'Edited '+name);
         toast(tr('Staff member updated'));
@@ -4240,7 +4348,7 @@ function openStaffSheet(user){
         // Contact details are optional for small teams — only the credential used
         // to unlock the till/account (PIN for cashiers, password for everyone else) is required.
         if(role === 'cashier' && !/^\d{4}$/.test(pass)) return fail(tr('PIN must be exactly 4 digits.'));
-        if(role !== 'cashier' && (!pass || pass.length<4)) return fail(tr('Choose a password of at least 4 characters.'));
+        if(role !== 'cashier' && pwProblem(pass)) return fail(pwProblem(pass));
         var passHash = await sha256Hex(pass);
         refs.users.doc().set({ name:name, email:email, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), employeeNo:nextEmployeeNo(), passHash:passHash, active:true, createdAt:new Date().toISOString(), approvedBy:State.session.name, approvedAt:new Date().toISOString(), posAccess: role !== 'stockclerk' && ov.querySelector('#sfPos').checked });
         logAudit('create','staff',null,'Added '+name+' as '+role);
@@ -5098,9 +5206,10 @@ async function posCardSubmit(ov, total, st){
         '<div class="actions"><button class="btn btn-danger btn-block" id="posOvBtn" type="button">'+tr('Approve')+'</button></div>';
       box.querySelector('#posOvBtn').addEventListener('click', async function(){
         var code = box.querySelector('#posOvCode').value; if(!code) return;
+        if(authLeft('posmgr')){ toast(authLockText('posmgr')); return; }
         var m = await posVerifyManager(code);
-        if(!m){ toast(tr('That code is not a manager or owner.')); return; }
-        st.override = m.name; ov.querySelector('#confirmChargeBtn').click();
+        if(!m){ var fm = authFailed('posmgr', 'manager approval at the point of sale'); toast(fm.locked ? authLockText('posmgr') : tr('That code is not a manager or owner.')); return; }
+        authOk('posmgr'); st.override = m.name; ov.querySelector('#confirmChargeBtn').click();
       });
     }
     toast(tr('Over the terminal limit. A manager must approve.'));
@@ -9068,6 +9177,7 @@ function menuRowsHtml(){
     if(isOwner()) rows += drawerRowHtml('branches', ICONS.branch, 'Branches', State.branches.length+1);
     rows += drawerRowHtml('vat', ICONS.percent, 'NamRA VAT summary');
     rows += drawerRowHtml('audit', ICONS.clock, 'Activity log');
+    if(isOwner()) rows += drawerRowHtml('security', ICONS.info, 'Security check');
   }
   rows += '<div class="drawer-sub">Help</div>';
   if(!isInstalledApp()) rows += drawerRowHtml('install', ICONS.info, 'Install Pesa on this device');
@@ -9120,6 +9230,7 @@ function handleDrawerAction(key){
   else if(key==='branches') openBranchesSheet();
   else if(key==='vat') openVatSummarySheet();
   else if(key==='audit') openAuditLogSheet();
+  else if(key==='security') openSecuritySheet();
   else if(key==='training') openTrainingSheet();
   else if(key==='smart') openSmartToolsSheet();
   else if(key==='about') openAboutSheet();
@@ -10777,7 +10888,11 @@ var LESSONS = [
     { title:'Fingerprint or face unlock', text:'Sign in quickly and approve important actions with the unlock your computer or device already has.',
       where:'Settings → Account → Fingerprint or face',
       steps:['Open Settings and find Fingerprint or face under Account.','Tap Set up fingerprint or face on this device and follow the prompt from Windows Hello, Touch ID, Face ID or your Android fingerprint.','On the sign in screen, tap your name and tap Use fingerprint or face. Your password or PIN still works.','Tick Ask for it when Pesa opens or after 5 minutes away to lock Pesa when nobody is using it.','Owners can tick Ask for fingerprint or face before deleting or restoring records, to protect important data.'],
-      tip:'Set it up on each computer or device you use. If several people share one computer login, the computer cannot tell them apart, so use it on your own computer or device.' }
+      tip:'Set it up on each computer or device you use. If several people share one computer login, the computer cannot tell them apart, so use it on your own computer or device.' },
+    { title:'Security check', text:'See how your business is protected and switch on automatic sign out.',
+      where:'Menu → Security check (Owner)',
+      steps:['Open the menu and tap Security check.','Read each line. A green tick means it is protected, an exclamation mark means there is something to do.','Under Automatic sign out choose how long Pesa waits before it signs people out.','If sign in locks after wrong tries, look in the Activity log to see who was trying.','Make a backup from Settings now and then.'],
+      tip:'Passwords need at least 8 characters. Cashiers use a 4 digit PIN, so only let them use Pesa on devices you trust.' }
   ]},
   { id:'backup', title:'Keeping your data safe', icon:'bolt', who:'manager', slides:[
     { title:'Where your data lives', text:'On a normal website, Pesa saves your information on your own device only. That is private, but it also means you must protect it.',
@@ -12375,6 +12490,7 @@ function openHealthSheet(){
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
   { v:'2026.10.03', items:[
+    'Security: wrong password limits at sign in, stronger password rules (8 characters), automatic sign out, failed sign ins in the Activity log, a browser security policy, and a Security check for owners',
     'Fingerprint or face unlock: set it up per computer or device in Settings, sign in with it, lock Pesa when you are away, and let owners require it before deleting or restoring records. Pesa never sees your fingerprint or face',
     'A Coming soon picture at the bottom of the menu for the Google Play, App Store, Microsoft Store and Mac App Store',
     'Letterhead removed from Settings. With a company logo uploaded, your logo prints at the top left of invoices, receipts and reports and the Pesa mark at the top right, both the same size',
@@ -12691,6 +12807,7 @@ var PRIVACY_SECTIONS = [
   ]},
   { h:'5. Passwords and access', items:[
     'Passwords and PINs are stored in a scrambled form, so nobody, including the developer, can read them',
+    'After three wrong tries at signing in, the sign in locks for a while, and every lock is written to the Activity log so the owner can see it',
     'Fingerprint and face unlock use the lock of your own computer or device, such as Windows Hello, Touch ID, Face ID or an Android fingerprint. Pesa never sees, stores or sends your fingerprint or face. The device only tells Pesa yes or no',
     'Keep your password, sync code and connection details private. Anyone who has them can reach your data',
     'Owners decide which staff can use the app and what each role can see'
