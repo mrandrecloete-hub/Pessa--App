@@ -713,6 +713,15 @@
     .content{ max-width:1600px; }
   }
   /* ---------- simpler look for older or slower computers (automatic, or switched on in Settings) ---------- */
+  html[style*="--uiz"] .app{ height:calc(100vh / var(--uiz)); height:calc(100dvh / var(--uiz)); min-height:0; }
+  html[style*="--uiz"] .sheet{ max-height:calc(88vh / var(--uiz)); }
+  html[style*="--uiz"] .overlay.center .sheet{ max-height:calc(82vh / var(--uiz)); }
+  @media (min-width:1024px){ html[style*="--uiz"] .sheet{ max-height:calc(86vh / var(--uiz)); } }
+  html.hc{ --text:#000; --text-muted:#1c2a23; --border:#4d5f55; --surface-3:#b9d6c6; }
+  html.hc .sub, html.hc .banner{ color:var(--text) !important; }
+  html.hc .row, html.hc input, html.hc select, html.hc textarea, html.hc .btn-ghost, html.hc .segbtn{ border:1.5px solid var(--border) !important; }
+  @media (prefers-color-scheme: dark){ html.hc:not([data-theme="light"]){ --text:#fff; --text-muted:#eef4f0; --border:#a7bbb0; --surface-3:#2d4a3d; } }
+  html.hc[data-theme="dark"]{ --text:#fff; --text-muted:#eef4f0; --border:#a7bbb0; --surface-3:#2d4a3d; }
   .lite *, .lite *::before, .lite *::after{ animation-duration:0.001s !important; animation-iteration-count:1 !important; animation-delay:0s !important; transition-duration:0.001s !important; scroll-behavior:auto !important; }
   .lite .glassclock, .lite .todaypill, .lite .overlay, .lite .drawer-overlay{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
   .lite .glassclock, .lite .todaypill{ background:rgba(255,255,255,.2) !important; }
@@ -2037,6 +2046,9 @@ var State = {
   posBatches: [],  // card batch settlements
   messages: [],    // {to:'all'|userId, fromId, kind, title, body, readBy, createdAt}
   workReports: [], // read only work report snapshots per employee
+  quotes: [],          // {id, number, billToName, items, total, validUntil, status}
+  recurring: [],       // {id, billToName, items, every, nextDue, active}
+  loyaltyLog: [],      // {id, customerId, type:'earn'|'redeem'|'adjust', points}
   purchaseOrders: [],  // {id, supplierId, items:[{productId,name,qty,cost}], status, createdAt, receivedAt}
   invoices: [],        // {id, type:'invoice'|'receipt', number, billToName, items, total, dateStr, customerId, branchId, createdBy, createdAt}
   invFilter: { q:'', period:'all', client:'' },
@@ -2166,6 +2178,9 @@ function initRefs(){
   refs.supplierInvoices = Store.collection('supplierInvoices');
   refs.supplierPayments = Store.collection('supplierPayments');
   refs.supplierStatements = Store.collection('supplierStatements');
+  refs.quotes = Store.collection('quotes');
+  refs.recurring = Store.collection('recurring');
+  refs.loyaltyLog = Store.collection('loyaltyLog');
 }
 
 function subscribeAll(){
@@ -2274,6 +2289,11 @@ function subscribeAll(){
     refs[c[0]].onSnapshot(function(docs){
       State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b[c[2]]||'').localeCompare(String(a[c[2]]||'')); });
       if(State.tab === 'reconcile' && document.getElementById('app').style.display !== 'none') render();
+    });
+  });
+  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog']].forEach(function(c){
+    refs[c[0]].onSnapshot(function(docs){
+      State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
     });
   });
   refs.auditLog.onSnapshot(function(docs){
@@ -2640,6 +2660,7 @@ function wireAccountSection(ov){
   try{ wireBioBox(ov); }catch(e){}
   var pl = ov.querySelector('#perfLite'); if(pl) pl.addEventListener('change', function(){ setLite(pl.checked); toast(tr('Settings saved')); });
   var ac = ov.querySelector('#acctCompat'); if(ac) ac.addEventListener('click', function(){ closeModal(); openCompatSheet(); });
+  var ad = ov.querySelector('#acctDisplay'); if(ad) ad.addEventListener('click', function(){ closeModal(); openDisplaySheet(); });
 }
 
 /* ---- Settings (Owner): email service used for reset codes ---- */
@@ -3208,6 +3229,1440 @@ function openCompatSheet(){
   });
 }
 
+/* ============================== BUSINESS TOOLS ==============================
+ * A hub of owner and manager tools: end of day summary, profit and targets, staff performance,
+ * stock and expiry, debtors, loyalty, quotes and recurring invoices, barcode labels, imports,
+ * currency and the setup guide. Everything runs on this device from the shop's own records. */
+function btSave(patch){ State.settings = Object.assign({}, State.settings, patch); refs.settings.set(State.settings); }
+function btShop(){ return (State.company && (State.company.tradingName||State.company.companyName)) || State.settings.shopName || 'our shop'; }
+function btBack(){ return '<div class="actions"><button class="btn btn-ghost btn-block" id="btBack" type="button">'+tr('Back to Business tools')+'</button></div>'; }
+function btWireBack(ov){ var b = ov.querySelector('#btBack'); if(b) b.addEventListener('click', function(){ closeModal(); openBizHub(); }); }
+function btAddDays(key, n){ var d = new Date(key+'T12:00:00'); d.setDate(d.getDate()+n); return todayKey(d); }
+function btDiffDays(fromKey, toKey){ return Math.round((new Date(toKey+'T00:00:00') - new Date(fromKey+'T00:00:00')) / DAY_MS); }
+function btBar(pct, color){ return smartBar(pct, color); }
+function btRow(l, r, bar, color){
+  return '<div style="margin:8px 0;"><div style="display:flex;justify-content:space-between;font-size:13px;gap:8px;"><span>'+esc(l)+'</span><span class="num">'+r+'</span></div>'+(bar!=null?btBar(bar, color):'')+'</div>';
+}
+function btSalesBetween(fromKey, toKey){
+  return State.sales.filter(function(s){ var k = todayKey(new Date(s.createdAt)); return k >= fromKey && k <= toKey; });
+}
+function btExpensesBetween(fromKey, toKey){
+  return State.expenses.filter(function(x){ var k = todayKey(new Date(x.createdAt)); return k >= fromKey && k <= toKey; });
+}
+function btCsvCell(v){ var s = String(v==null?'':v); return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function btSaveCsv(filename, rows){
+  var csv = rows.map(function(r){ return r.map(btCsvCell).join(','); }).join('\r\n');
+  return saveBlobFile(filename, new Blob([csv], {type:'text/csv;charset=utf-8'}));
+}
+
+/* ---- the hub ---- */
+function btSetupProgress(){
+  var steps = btSetupSteps(), done = steps.filter(function(s){ return s.done; }).length;
+  return { done:done, total:steps.length };
+}
+function openBizHub(){
+  var debt = State.customers.reduce(function(a,c){ return a + (c.balance > 0 ? c.balance : 0); }, 0);
+  var sx = btStockAttention();
+  var due = btRecurringDue().length;
+  var sp = btSetupProgress();
+  var tiles = [
+    ['eod','End of day summary','Takings, cash, top sellers and a message to send'],
+    ['profit','Profit and targets', 'Profit per product, busy times, daily and monthly goals'],
+    ['staff','Staff performance','Sales per person and bonus goals'],
+    ['stockx','Stock and expiry', sx ? sx+' need attention' : 'Low stock, expiry dates, orders by supplier'],
+    ['debtors','Who owes me', debt > 0 ? fmtMoney(debt)+' outstanding' : 'Ageing list and payment reminders'],
+    ['loyalty','Loyalty rewards', loyOn() ? 'On: customers earn points' : 'Reward your regular customers'],
+    ['quotes','Quotes and recurring invoices', due ? due+' recurring invoice'+(due===1?'':'s')+' due' : 'Send a quote, turn it into an invoice'],
+    ['labels','Barcode labels','Print shelf and price labels'],
+    ['import','Import customers and products','From a spreadsheet saved as CSV'],
+    ['currency','Currency and converter','Show and accept rand (ZAR) or another currency'],
+    ['setup','Setup guide', sp.done+' of '+sp.total+' steps done']
+  ];
+  var html = '<div class="sheet-head"><h2>'+tr('Business tools')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Tools to help you run and grow the business. They work from your own shop records on this device.')+'</div>' +
+    '<div class="rowlist">' + tiles.map(function(t){
+      return '<button class="row" type="button" data-bt="'+t[0]+'" style="width:100%;text-align:left;">' +
+        '<div class="main"><div class="title">'+tr(t[1])+'</div><div class="sub">'+tr(t[2])+'</div></div></button>';
+    }).join('') + '</div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-bt]').forEach(function(b){
+    b.addEventListener('click', function(){ var k = b.getAttribute('data-bt'); closeModal(); openBizSection(k); });
+  });
+}
+function openBizSection(k){
+  if(k==='eod') openEodSheet();
+  else if(k==='profit') openProfitSheet();
+  else if(k==='staff') openStaffPerfSheet();
+  else if(k==='stockx') openStockxSheet();
+  else if(k==='debtors') openDebtorsSheet();
+  else if(k==='loyalty') openLoyaltySheet();
+  else if(k==='quotes') openQuotesSheet();
+  else if(k==='labels') openLabelsSheet();
+  else if(k==='import') openImportSheet();
+  else if(k==='currency') openCurrencySheet();
+  else if(k==='setup') openSetupSheet();
+}
+
+/* ---- stock and expiry ---- */
+function btWarnDays(){ var n = Number(State.settings.expiryWarnDays); return (isFinite(n) && n >= 0 && State.settings.expiryWarnDays != null && State.settings.expiryWarnDays !== '') ? n : 14; }
+function btExpiryDays(p){
+  if(!p || !p.expiryDate) return null;
+  return btDiffDays(todayKey(), p.expiryDate);
+}
+function btExpiryList(){
+  var w = btWarnDays();
+  return State.products.filter(function(p){ return p.expiryDate && (Number(p.stockQty)||0) > 0; })
+    .map(function(p){ return { p:p, days:btExpiryDays(p) }; })
+    .filter(function(x){ return x.days <= w; })
+    .sort(function(a,b){ return a.days - b.days; });
+}
+function btLowList(){
+  return State.products.filter(function(p){ var q = Number(p.stockQty); return p.stockQty != null && q > 0 && q <= (lowThresholdOf(p)||0); }).sort(function(a,b){ return a.stockQty - b.stockQty; });
+}
+function btOutList(){
+  return State.products.filter(function(p){ return p.stockQty != null && Number(p.stockQty) <= 0; });
+}
+function btStockAttention(){
+  try{ return btLowList().length + btOutList().length + btExpiryList().length; }catch(e){ return 0; }
+}
+function btOrderGroups(){
+  var re = reorderSuggestions(), g = {}, order = [];
+  re.forEach(function(r){
+    var k = (r.product.supplierId && State.suppliers.some(function(s){ return s.id === r.product.supplierId; })) ? r.product.supplierId : '';
+    if(!g[k]){ g[k] = { supplierId:k, rows:[] }; order.push(k); }
+    g[k].rows.push(r);
+  });
+  order.sort(function(a,b){ return (a==='' ? 1 : 0) - (b==='' ? 1 : 0); });
+  return order.map(function(k){ return g[k]; });
+}
+function btOrderText(sup, items){
+  var who = sup && (sup.contact || sup.name) ? (sup.contact || sup.name) : 'there';
+  return 'Hello '+who+', this is '+btShop()+'. We would like to order:\n' +
+    items.map(function(i){ return '- '+i.qty+' x '+i.name; }).join('\n') +
+    '\nPlease confirm the price and delivery date. Thank you.';
+}
+var _stockxTab = 'order';
+function openStockxSheet(tab){
+  if(tab) _stockxTab = tab;
+  var low = btLowList(), out = btOutList(), exp = btExpiryList();
+  var tabs = [['order','Order'], ['low','Low ('+low.length+')'], ['out','Out ('+out.length+')'], ['exp','Expiry ('+exp.length+')']];
+  var html = '<div class="sheet-head"><h2>'+tr('Stock and expiry')+'</h2></div>' +
+    '<div class="segbtns" style="margin-bottom:10px;">' + tabs.map(function(t){ return '<button class="segbtn'+(_stockxTab===t[0]?' active':'')+'" type="button" data-sxt="'+t[0]+'">'+esc(tr(t[1].split(' (')[0]) + (t[1].indexOf(' (')>-1 ? ' ('+t[1].split(' (')[1] : ''))+'</button>'; }).join('') + '</div>' +
+    '<div id="sxBody"></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelectorAll('[data-sxt]').forEach(function(b){ b.addEventListener('click', function(){ _stockxTab = b.getAttribute('data-sxt'); closeModal(); openStockxSheet(); }); });
+  var body = ov.querySelector('#sxBody');
+  function productRow(p, sub, tone){
+    return '<button class="row" type="button" data-sxp="'+esc(p.id)+'" style="width:100%;text-align:left;"><div class="main"><div class="title">'+esc(p.name)+'</div><div class="sub">'+sub+'</div></div>' +
+      '<div class="trail num"'+(tone?' style="color:'+tone+';font-weight:700;"':'')+'>'+(Number(p.stockQty)||0)+'</div></button>';
+  }
+  function wireProductRows(){
+    body.querySelectorAll('[data-sxp]').forEach(function(b){ b.addEventListener('click', function(){
+      var p = State.products.find(function(x){ return x.id === b.getAttribute('data-sxp'); }); if(p){ closeModal(); openProductSheet(p); }
+    }); });
+  }
+  if(_stockxTab === 'low'){
+    body.innerHTML = low.length ? '<div class="rowlist">'+low.map(function(p){ return productRow(p, tr('Alert at')+' '+(lowThresholdOf(p)||0), 'var(--warn, #d98e2b)'); }).join('')+'</div>' :
+      '<div class="empty"><div class="t">'+tr('No low stock')+'</div><div class="s">'+tr('Everything is above its alert level.')+'</div></div>';
+    wireProductRows();
+  } else if(_stockxTab === 'out'){
+    body.innerHTML = out.length ? '<div class="rowlist">'+out.map(function(p){ return productRow(p, esc(p.category||''), 'var(--danger)'); }).join('')+'</div>' :
+      '<div class="empty"><div class="t">'+tr('Nothing is out of stock')+'</div></div>';
+    wireProductRows();
+  } else if(_stockxTab === 'exp'){
+    var w = btWarnDays();
+    body.innerHTML = '<div class="banner" style="display:block;">'+tr('Add an expiry date when you add or edit a product. Pesa warns you before it passes so you can sell it first.')+'</div>' +
+      '<div class="field"><label>'+tr('Warn me this many days before')+'</label><div style="display:flex;gap:8px;"><input id="sxWarn" type="number" inputmode="numeric" min="0" value="'+w+'" style="flex:1;"><button class="btn btn-ghost" id="sxWarnSave" type="button">'+tr('Save')+'</button></div></div>' +
+      (exp.length ? '<div class="rowlist">'+exp.map(function(x){
+        var tone = x.days < 0 ? 'var(--danger)' : (x.days <= 7 ? 'var(--warn, #d98e2b)' : 'var(--text-muted)');
+        var lab = x.days < 0 ? tr('Expired')+' '+(-x.days)+' '+tr(x.days === -1 ? 'day ago' : 'days ago') : (x.days === 0 ? tr('Expires today') : tr('Expires in')+' '+x.days+' '+tr(x.days === 1 ? 'day' : 'days'));
+        return productRow(x.p, '<span style="color:'+tone+';font-weight:700;">'+esc(lab)+'</span> · '+esc(x.p.expiryDate), null);
+      }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('Nothing is close to expiring')+'</div></div>');
+    wireProductRows();
+    ov.querySelector('#sxWarnSave').addEventListener('click', function(){ var v = parseInt(ov.querySelector('#sxWarn').value,10); if(!(v >= 0)) return toast(tr('Enter a number of days')); btSave({ expiryWarnDays:v }); toast(tr('Saved')); closeModal(); openStockxSheet(); });
+  } else {
+    var groups = btOrderGroups();
+    var supOpts = '<option value="">'+tr('Choose a supplier')+'</option>' + State.suppliers.map(function(s){ return '<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>'; }).join('');
+    body.innerHTML = '<div class="banner" style="display:block;">'+tr('Suggested from your stock levels and how fast each product sold in the last 30 days. Set a usual supplier on a product and its orders group together here.')+'</div>' +
+      (groups.length ? groups.map(function(g, gi){
+        var sup = g.supplierId ? State.suppliers.find(function(s){ return s.id === g.supplierId; }) : null;
+        return '<div class="section-title" style="margin-top:12px;">'+(sup ? esc(sup.name) : tr('No usual supplier set'))+'</div>' +
+          (sup ? '' : '<div class="field"><select data-sxs="'+gi+'">'+supOpts+'</select><label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:400;"><input type="checkbox" data-sxr="'+gi+'" checked style="width:16px;height:16px;"> '+tr('Remember this supplier for these products')+'</label></div>') +
+          '<div class="rowlist">' + g.rows.slice(0, 200).map(function(r, ri){
+            var left = r.daysLeft === Infinity ? '' : ' · '+(r.daysLeft < 1 ? tr('less than a day') : Math.floor(r.daysLeft)+' '+tr('days'))+' '+tr('left');
+            return '<div class="row"><div class="main"><div class="title">'+esc(r.product.name)+'</div><div class="sub">'+r.stock+' '+tr('in stock')+left+'</div></div>' +
+              '<div class="trail" style="display:flex;gap:8px;align-items:center;"><input type="checkbox" data-sxo="'+gi+'-'+ri+'" checked style="width:18px;height:18px;"><input type="number" inputmode="numeric" min="1" data-sxq="'+gi+'-'+ri+'" value="'+r.qty+'" style="width:64px;"></div></div>';
+          }).join('') + '</div>' +
+          '<div class="actions"><button class="btn btn-primary" data-sxa="po" data-g="'+gi+'" type="button">'+tr('Save as order')+'</button><button class="btn btn-ghost" data-sxa="wa" data-g="'+gi+'" type="button">'+tr('WhatsApp')+'</button><button class="btn btn-ghost" data-sxa="em" data-g="'+gi+'" type="button">'+tr('Email')+'</button></div>';
+      }).join('') : '<div class="empty"><div class="t">'+tr('Nothing to order')+'</div><div class="s">'+tr('Every product has enough stock for now.')+'</div></div>');
+    function chosen(gi){
+      var g = groups[gi], out2 = [];
+      g.rows.slice(0, 200).forEach(function(r, ri){
+        var on = body.querySelector('[data-sxo="'+gi+'-'+ri+'"]').checked, q = parseInt(body.querySelector('[data-sxq="'+gi+'-'+ri+'"]').value, 10);
+        if(on && q > 0) out2.push({ productId:r.product.id, name:r.product.name, qty:q, cost:r.product.costPrice||0 });
+      });
+      return out2;
+    }
+    function supplierFor(gi){
+      var g = groups[gi];
+      if(g.supplierId) return State.suppliers.find(function(s){ return s.id === g.supplierId; }) || null;
+      var sel = body.querySelector('[data-sxs="'+gi+'"]');
+      return sel && sel.value ? State.suppliers.find(function(s){ return s.id === sel.value; }) || null : null;
+    }
+    function remember(gi, sup, items){
+      var cb = body.querySelector('[data-sxr="'+gi+'"]');
+      if(sup && cb && cb.checked) items.forEach(function(i){ refs.products.doc(i.productId).update({ supplierId:sup.id }); });
+    }
+    body.querySelectorAll('[data-sxa]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var gi = +b.getAttribute('data-g'), act = b.getAttribute('data-sxa'), items = chosen(gi), sup = supplierFor(gi);
+        if(!items.length) return toast(tr('Tick at least one product'));
+        if(!sup) return toast(tr('Choose a supplier first'));
+        if(act === 'po'){
+          refs.purchaseOrders.doc().set({ supplierId:sup.id, items:items, status:'draft', createdAt:new Date().toISOString() }).then(function(ref){
+            logAudit('create','purchaseOrder', ref&&ref.id, 'Purchase order draft from stock and expiry, '+items.length+' item(s)');
+          });
+          remember(gi, sup, items);
+          toast(tr('Purchase order saved as a draft'));
+          closeModal(); openStockxSheet();
+        } else if(act === 'wa'){
+          if(!sup.phone) return toast(tr('This supplier has no phone number yet'));
+          remember(gi, sup, items);
+          window.open(buildWhatsAppUrl(sup.phone, btOrderText(sup, items)), '_blank');
+          logAudit('po_shared','supplier', sup.id, 'Order sent to '+sup.name+' by WhatsApp');
+        } else {
+          if(!sup.email) return toast(tr('This supplier has no email address yet'));
+          remember(gi, sup, items);
+          window.location.href = buildMailtoUrl(sup.email, 'Order from '+btShop(), btOrderText(sup, items));
+          logAudit('po_shared','supplier', sup.id, 'Order sent to '+sup.name+' by email');
+        }
+      });
+    });
+  }
+}
+/* Extra smart alerts (stock, expiry, recurring invoices, end of day). Added to the alert centre and the device badge. */
+function btExtraAlerts(){
+  var al = [];
+  var ex = btExpiryList(), expired = ex.filter(function(x){ return x.days < 0; }), soon = ex.filter(function(x){ return x.days >= 0; });
+  if(expired.length) al.push({ id:'expired', level:'high', title: expired.length+' '+(expired.length===1?'product has':'products have')+' expired', body: expired.slice(0,3).map(function(x){ return x.p.name; }).join(', '), go:'biz:stockx', label:'Open stock and expiry' });
+  if(soon.length) al.push({ id:'expiring', level:'med', title: soon.length+' '+(soon.length===1?'product expires':'products expire')+' within '+btWarnDays()+' days', body: soon.slice(0,3).map(function(x){ return x.p.name+' ('+x.days+'d)'; }).join(', '), go:'biz:stockx', label:'Open stock and expiry' });
+  var due = btRecurringDue();
+  if(due.length) al.push({ id:'recurring', level:'med', title: due.length+' recurring '+(due.length===1?'invoice is':'invoices are')+' due', body: due.slice(0,3).map(function(r){ return r.billToName; }).join(', '), go:'biz:quotes', label:'Open quotes and invoices' });
+  var eod = btEodDue();
+  if(eod) al.push({ id:'eod', level:'info', notify:true, title:'Your end of day summary is ready', body:'Today so far: '+fmtMoney(eod.revenue)+' from '+eod.count+' '+(eod.count===1?'sale':'sales')+'.', go:'biz:eod', label:'Open summary' });
+  var cu = btCashupAlert();
+  if(cu) al.push({ id:'cashup', level:'info', notify:true, title:'Time to count the cash and close the till', body:cu.map(function(t){ return t.cashierName || 'A cashier'; }).join(', ')+(cu.length===1?' still has':' still have')+' a till open.', go:'biz:eod', label:'Open end of day' });
+  return al;
+}
+
+/* ---- who owes me ---- */
+var _debtFilter = 'all';
+var DEBT_BUCKETS = [['all','All'], ['cur','Up to 30 days'], ['b31','31 to 60'], ['b61','61 to 90'], ['b90','Over 90']];
+function btDebtRows(){
+  return State.customers.filter(function(c){ return c.balance > 0; }).map(function(c){ return { c:c, days:customerDaysLate(c) }; }).sort(function(a,b){ return b.days - a.days || b.c.balance - a.c.balance; });
+}
+function btBucketOf(days){ return days <= 30 ? 'cur' : (days <= 60 ? 'b31' : (days <= 90 ? 'b61' : 'b90')); }
+function btReminderText(c, days){
+  var amt = fmtMoney(c.balance);
+  if(days >= 60) return 'Hello '+c.name+', this is '+btShop()+'. Your account of '+amt+' is now '+days+' days overdue. Please arrange payment this week or call us so we can agree a plan. Thank you.';
+  return 'Hello '+c.name+', this is a friendly reminder from '+btShop()+' that '+amt+' is outstanding on your account. Please let us know when you can pay. Thank you.';
+}
+function openDebtorsSheet(){
+  var rows = btDebtRows(), total = rows.reduce(function(a,r){ return a + r.c.balance; }, 0), sums = { all:total, cur:0, b31:0, b61:0, b90:0 };
+  rows.forEach(function(r){ sums[btBucketOf(r.days)] += r.c.balance; });
+  var shown = rows.filter(function(r){ return _debtFilter === 'all' || btBucketOf(r.days) === _debtFilter; });
+  var html = '<div class="sheet-head"><h2>'+tr('Who owes me')+'</h2></div>' +
+    '<div class="banner" style="display:block;"><b style="font-size:20px;">'+fmtMoney(total)+'</b><br>'+tr('owed by')+' '+rows.length+' '+tr(rows.length===1?'customer':'customers')+'</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;">' + DEBT_BUCKETS.map(function(b){ return '<button class="segbtn'+(_debtFilter===b[0]?' active':'')+'" type="button" data-df="'+b[0]+'" style="flex:0 0 auto;">'+tr(b[1])+' · '+fmtMoney(sums[b[0]])+'</button>'; }).join('') + '</div>' +
+    (shown.length ? '<div class="rowlist">' + shown.map(function(r){
+      var col = r.days > 60 ? 'var(--danger)' : (r.days > 30 ? 'var(--warn, #d98e2b)' : 'var(--text-muted)');
+      return '<div class="row"><div class="main"><div class="title">'+esc(r.c.name)+'</div><div class="sub"><span style="color:'+col+';font-weight:700;">'+r.days+' '+tr('days')+'</span>'+(r.c.phone?' · '+esc(r.c.phone):'')+'</div></div>' +
+        '<div class="trail" style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><b class="num">'+fmtMoney(r.c.balance)+'</b><span style="display:flex;gap:6px;">' +
+        (r.c.phone ? '<button class="btn btn-ghost" style="padding:4px 10px;min-height:0;" data-dwa="'+esc(r.c.id)+'" type="button">WhatsApp</button>' : '') +
+        '<button class="btn btn-ghost" style="padding:4px 10px;min-height:0;" data-dpay="'+esc(r.c.id)+'" type="button">'+tr('Payment')+'</button></span></div></div>';
+    }).join('') + '</div>' : '<div class="empty"><div class="t">'+tr('Nobody owes you anything here')+'</div></div>') +
+    '<div class="actions"><button class="btn btn-primary" id="dbAll" type="button"'+(shown.some(function(r){ return r.c.phone; })?'':' disabled')+'>'+tr('Remind everyone shown')+'</button><button class="btn btn-ghost" id="dbCsv" type="button"'+(rows.length?'':' disabled')+'>'+tr('Download list (CSV)')+'</button></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelectorAll('[data-df]').forEach(function(b){ b.addEventListener('click', function(){ _debtFilter = b.getAttribute('data-df'); closeModal(); openDebtorsSheet(); }); });
+  ov.querySelectorAll('[data-dwa]').forEach(function(b){ b.addEventListener('click', function(){
+    var r = rows.find(function(x){ return x.c.id === b.getAttribute('data-dwa'); }); if(!r) return;
+    window.open(buildWhatsAppUrl(r.c.phone, btReminderText(r.c, r.days)), '_blank');
+    logAudit('reminder_shared','customer', r.c.id, 'Payment reminder sent to '+r.c.name+' by WhatsApp');
+  }); });
+  ov.querySelectorAll('[data-dpay]').forEach(function(b){ b.addEventListener('click', function(){
+    var c = State.customers.find(function(x){ return x.id === b.getAttribute('data-dpay'); }); if(c){ closeModal(); openPaymentSheet(c); }
+  }); });
+  ov.querySelector('#dbCsv').addEventListener('click', function(){
+    btSaveCsv('pesa-who-owes-me.csv', [['Customer','Phone','Owes','Days since last payment or first credit']].concat(rows.map(function(r){ return [r.c.name, r.c.phone||'', r.c.balance.toFixed(2), r.days]; })));
+  });
+  ov.querySelector('#dbAll').addEventListener('click', function(){
+    var queue = shown.filter(function(r){ return r.c.phone; });
+    closeModal(); btRemindQueue(queue, 0);
+  });
+}
+function btRemindQueue(queue, i){
+  if(i >= queue.length){ toast(tr('All reminders opened')); openDebtorsSheet(); return; }
+  var r = queue[i];
+  var html = '<div class="sheet-head"><h2>'+tr('Send reminders')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Pesa opens WhatsApp with the message ready. You press send. Then come back here for the next one.')+'</div>' +
+    '<div style="text-align:center;margin:12px 0;"><div style="font-size:12px;color:var(--text-muted);">'+(i+1)+' '+tr('of')+' '+queue.length+'</div><div style="font-size:18px;font-weight:700;">'+esc(r.c.name)+'</div><div class="num" style="font-size:16px;">'+fmtMoney(r.c.balance)+' · '+r.days+' '+tr('days')+'</div></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="rqOpen" type="button">'+tr('Open WhatsApp')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="rqSkip" type="button">'+tr('Skip')+'</button><button class="btn btn-ghost" id="rqStop" type="button">'+tr('Stop')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#rqOpen').addEventListener('click', function(){
+    window.open(buildWhatsAppUrl(r.c.phone, btReminderText(r.c, r.days)), '_blank');
+    logAudit('reminder_shared','customer', r.c.id, 'Payment reminder sent to '+r.c.name+' by WhatsApp');
+    closeModal(); btRemindQueue(queue, i+1);
+  });
+  ov.querySelector('#rqSkip').addEventListener('click', function(){ closeModal(); btRemindQueue(queue, i+1); });
+  ov.querySelector('#rqStop').addEventListener('click', function(){ closeModal(); openDebtorsSheet(); });
+}
+
+/* ---- loyalty rewards ---- */
+var LOY = { custId:null, keep:false };
+function loyCfg(){
+  var c = State.settings.loyalty || {};
+  var ee = Number(c.earnEvery), pv = Number(c.pointValue), mr = Number(c.minRedeem);
+  return { on: !!c.on, earnEvery: ee > 0 ? ee : 10, pointValue: pv > 0 ? pv : 0.5, minRedeem: (c.minRedeem != null && c.minRedeem !== '' && mr >= 0) ? mr : 20 };
+}
+function loyOn(){ return loyCfg().on; }
+function loyPoints(c){ return Math.max(0, Math.floor(Number(c && c.points) || 0)); }
+function loyTier(c){ var life = Number(c && c.pointsEarnedTotal) || 0; return life >= 1500 ? 'Gold' : (life >= 500 ? 'Silver' : 'Bronze'); }
+function loyEarnFor(total){ return Math.max(0, Math.floor((Number(total)||0) / loyCfg().earnEvery)); }
+/* shown inside the Charge sheet */
+function loyaltyBoxHtml(){
+  if(!loyOn()) return '';
+  if(!LOY.keep) LOY.custId = null;
+  LOY.keep = false;
+  var opts = '<option value="">'+tr('No loyalty customer')+'</option>' + State.customers.map(function(c){
+    return '<option value="'+esc(c.id)+'"'+(LOY.custId===c.id?' selected':'')+'>'+esc(c.name)+' · '+loyPoints(c)+' '+tr('points')+'</option>';
+  }).join('');
+  return '<div class="field"><label>'+tr('Loyalty customer (optional)')+'</label><select id="loyCust">'+opts+'</select></div><div id="loyInfo"></div>';
+}
+function loyaltyWire(ov){
+  var sel = ov.querySelector('#loyCust'); if(!sel) return;
+  var info = ov.querySelector('#loyInfo');
+  function paint(){
+    var id = sel.value; LOY.custId = id || null;
+    if(!id){ info.innerHTML = ''; return; }
+    var c = State.customers.find(function(x){ return x.id === id; }); if(!c){ info.innerHTML = ''; return; }
+    var cfg = loyCfg(), pts = loyPoints(c), total = cartTotal(), earn = loyEarnFor(total);
+    var used = State.cart.some(function(i){ return i.loyaltyPts; });
+    var can = !used && pts > 0 && pts >= cfg.minRedeem && total > 0;
+    info.innerHTML = '<div class="banner" style="display:block;margin-bottom:10px;"><b>'+esc(c.name)+'</b> · '+tr(loyTier(c))+' · <b>'+pts+'</b> '+tr('points')+' ('+tr('worth')+' '+fmtMoney(pts*cfg.pointValue)+')<br>' +
+      tr('This sale earns')+' <b>'+earn+'</b> '+tr('points')+'. '+tr('Points are not earned on credit sales.') +
+      (can ? '<div style="margin-top:8px;"><button class="btn btn-ghost" id="loyUse" type="button">'+tr('Use points as a discount')+'</button></div>' : '') +
+      (used ? '<div style="margin-top:6px;color:var(--success);">'+tr('Points discount applied')+'</div>' : '') + '</div>';
+    var u = info.querySelector('#loyUse');
+    if(u) u.addEventListener('click', function(){
+      var use = Math.min(pts, Math.floor(total / cfg.pointValue)), value = r2(use * cfg.pointValue);
+      if(use <= 0 || value <= 0) return;
+      State.cart.push({ productId:'loyalty-'+Date.now().toString(36), name:tr('Loyalty discount')+' ('+use+' '+tr('points')+')', unitPrice:-value, cost:0, qty:1, unit:'', maxQty:1, loyaltyPts:use, loyaltyCustId:c.id });
+      LOY.custId = c.id; LOY.keep = true;
+      closeModal(); renderCartBar(); try{ if(POS.open) posRender(); }catch(e){}
+      openChargeSheet();
+    });
+  }
+  sel.addEventListener('change', paint); paint();
+}
+/* called at the start of finalizeSale, before the totals are worked out */
+function loyaltyNormalize(){
+  State.cart.forEach(function(i){ if(i.loyaltyPts) i.qty = 1; });
+}
+function loyaltyStamp(sale, customer){
+  try{
+    if(!loyOn()) return;
+    var red = State.cart.filter(function(i){ return i.loyaltyPts; })[0];
+    var id = red ? red.loyaltyCustId : (LOY.custId || (customer ? customer.id : null));
+    if(!id) return;
+    sale.loyaltyCustomerId = id;
+    sale.pointsEarned = sale.paymentMethod === 'credit' ? 0 : loyEarnFor(sale.total);
+    sale.pointsRedeemed = red ? red.loyaltyPts : 0;
+  }catch(e){}
+}
+function loyaltyApply(sale){
+  try{
+    if(!sale.loyaltyCustomerId) return;
+    var c = State.customers.find(function(x){ return x.id === sale.loyaltyCustomerId; });
+    if(!c) return;
+    var pts = Math.max(0, loyPoints(c) - (sale.pointsRedeemed||0) + (sale.pointsEarned||0));
+    refs.customers.doc(c.id).update({ points:pts, pointsEarnedTotal:(Number(c.pointsEarnedTotal)||0) + (sale.pointsEarned||0) });
+    var now = new Date().toISOString();
+    if(sale.pointsEarned) refs.loyaltyLog.doc().set({ customerId:c.id, customerName:c.name, type:'earn', points:sale.pointsEarned, amount:sale.total, note:'Sale', createdAt:now });
+    if(sale.pointsRedeemed) refs.loyaltyLog.doc().set({ customerId:c.id, customerName:c.name, type:'redeem', points:-sale.pointsRedeemed, amount:0, note:'Discount at the till', createdAt:now });
+    sale.loyaltyBalance = pts;
+  }catch(e){}
+  LOY.custId = null; LOY.keep = false;
+}
+function loyaltyNote(sale){
+  if(!sale || !sale.loyaltyCustomerId) return '';
+  var parts = [];
+  if(sale.pointsRedeemed) parts.push('Points used: '+sale.pointsRedeemed);
+  if(sale.pointsEarned) parts.push('Points earned: '+sale.pointsEarned);
+  if(sale.loyaltyBalance != null) parts.push('Points balance: '+sale.loyaltyBalance);
+  return parts.join('. ');
+}
+function openLoyaltySheet(){
+  var cfg = loyCfg();
+  var tot = State.customers.reduce(function(a,c){ return a + loyPoints(c); }, 0);
+  var board = State.customers.filter(function(c){ return loyPoints(c) > 0 || (c.pointsEarnedTotal||0) > 0; }).sort(function(a,b){ return loyPoints(b) - loyPoints(a); });
+  var html = '<div class="sheet-head"><h2>'+tr('Loyalty rewards')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Customers earn points on every sale you pick them for at the till, and spend them as a discount on a later sale. Points are not earned on credit sales.')+'</div>' +
+    '<label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-weight:600;"><input type="checkbox" id="loyOnBox" '+(cfg.on?'checked':'')+' style="width:20px;height:20px;"> '+tr('Loyalty rewards are on')+'</label>' +
+    '<div id="loyCfg" style="'+(cfg.on?'':'display:none;')+'">' +
+      '<div class="field-row"><div class="field"><label>'+tr('Spend this much to earn 1 point')+' (N$)</label><input id="loyEvery" type="number" inputmode="decimal" min="1" step="0.5" value="'+cfg.earnEvery+'"></div>' +
+      '<div class="field"><label>'+tr('Each point is worth')+' (N$)</label><input id="loyValue" type="number" inputmode="decimal" min="0.05" step="0.05" value="'+cfg.pointValue+'"></div></div>' +
+      '<div class="field"><label>'+tr('Smallest number of points that can be used')+'</label><input id="loyMin" type="number" inputmode="numeric" min="0" value="'+cfg.minRedeem+'"></div>' +
+      '<div class="banner" style="display:block;">'+tr('With these settings a customer who spends N$100 earns')+' <b id="loyEg">'+Math.floor(100/cfg.earnEvery)+'</b> '+tr('points, which give back')+' <b id="loyEg2">'+fmtMoney(Math.floor(100/cfg.earnEvery)*cfg.pointValue)+'</b> (<span id="loyEg3">'+Math.round(Math.floor(100/cfg.earnEvery)*cfg.pointValue)+'%</span>).</div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="loySave" type="button">'+tr('Save settings')+'</button></div>' +
+      '<div class="section-title" style="margin-top:14px;">'+tr('Members')+' · '+tr('points held')+' '+tot+'</div>' +
+      (board.length ? '<div class="rowlist">'+board.slice(0,100).map(function(c){
+        return '<button class="row" type="button" data-lc="'+esc(c.id)+'" style="width:100%;text-align:left;"><div class="main"><div class="title">'+esc(c.name)+'</div><div class="sub">'+tr(loyTier(c))+(c.phone?' · '+esc(c.phone):'')+'</div></div><div class="trail num"><b>'+loyPoints(c)+'</b></div></button>';
+      }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('No members yet')+'</div><div class="s">'+tr('Pick a customer in the Charge window at the till and they start earning.')+'</div></div>') +
+      '<div class="actions"><button class="btn btn-ghost btn-block" id="loyAdd" type="button">'+tr('Add a customer')+'</button></div>' +
+    '</div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  var box = ov.querySelector('#loyOnBox');
+  box.addEventListener('change', function(){
+    var c2 = loyCfg(); State.settings = Object.assign({}, State.settings, { loyalty:{ on:box.checked, earnEvery:c2.earnEvery, pointValue:c2.pointValue, minRedeem:c2.minRedeem } });
+    refs.settings.set(State.settings); closeModal(); openLoyaltySheet();
+  });
+  if(!cfg.on) return;
+  function eg(){ var e = parseFloat(ov.querySelector('#loyEvery').value)||10, v = parseFloat(ov.querySelector('#loyValue').value)||0.5, p = Math.floor(100/e); ov.querySelector('#loyEg').textContent = p; ov.querySelector('#loyEg2').textContent = fmtMoney(p*v); ov.querySelector('#loyEg3').textContent = Math.round(p*v)+'%'; }
+  ov.querySelector('#loyEvery').addEventListener('input', eg); ov.querySelector('#loyValue').addEventListener('input', eg);
+  ov.querySelector('#loySave').addEventListener('click', function(){
+    var e = parseFloat(ov.querySelector('#loyEvery').value), v = parseFloat(ov.querySelector('#loyValue').value), m = parseInt(ov.querySelector('#loyMin').value, 10);
+    if(!(e > 0) || !(v > 0)) return toast(tr('Enter amounts above zero'));
+    btSave({ loyalty:{ on:true, earnEvery:e, pointValue:v, minRedeem:(m >= 0 ? m : 0) } });
+    toast(tr('Settings saved')); closeModal(); openLoyaltySheet();
+  });
+  ov.querySelectorAll('[data-lc]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openLoyaltyCustomerSheet(b.getAttribute('data-lc')); }); });
+  ov.querySelector('#loyAdd').addEventListener('click', function(){ closeModal(); openCustomerSheet(); });
+}
+function openLoyaltyCustomerSheet(id){
+  var c = State.customers.find(function(x){ return x.id === id; });
+  if(!c){ openLoyaltySheet(); return; }
+  var cfg = loyCfg(), pts = loyPoints(c);
+  var log = State.loyaltyLog.filter(function(l){ return l.customerId === c.id; }).slice(0, 30);
+  var card = 'Pesa loyalty card\n'+btShop()+'\n'+c.name+'\nPoints: '+pts;
+  var qr = ''; try{ qr = nbQrSvg(card); }catch(e){}
+  var html = '<div class="sheet-head"><h2>'+esc(c.name)+'</h2></div>' +
+    '<div class="banner" style="display:block;text-align:center;"><div style="font-size:30px;font-weight:800;" class="num">'+pts+'</div>'+tr('points')+' · '+tr('worth')+' '+fmtMoney(pts*cfg.pointValue)+' · '+tr(loyTier(c))+'</div>' +
+    (qr ? '<div style="width:140px;margin:10px auto;">'+qr+'</div><div style="text-align:center;font-size:12px;color:var(--text-muted);">'+tr('Points card. The customer can screenshot this.')+'</div>' : '') +
+    '<div class="section-title" style="margin-top:12px;">'+tr('History')+'</div>' +
+    (log.length ? '<div class="rowlist">'+log.map(function(l){
+      return '<div class="row"><div class="main"><div class="title">'+esc(tr(l.type==='earn'?'Earned':(l.type==='redeem'?'Used':'Adjusted')))+'</div><div class="sub">'+fmtDateTime(l.createdAt)+(l.note&&l.type==='adjust'?' · '+esc(l.note):'')+'</div></div><div class="trail num" style="color:'+(l.points<0?'var(--danger)':'var(--success)')+';font-weight:700;">'+(l.points>0?'+':'')+l.points+'</div></div>';
+    }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('No history yet')+'</div></div>') +
+    '<div class="section-title" style="margin-top:12px;">'+tr('Add or remove points')+'</div>' +
+    '<div class="field-row"><div class="field"><input id="lcAdj" type="number" inputmode="numeric" placeholder="'+tr('e.g. 50 or -20')+'"></div><div class="field"><input id="lcNote" placeholder="'+tr('Reason')+'"></div></div>' +
+    '<div class="actions"><button class="btn btn-primary" id="lcApply" type="button">'+tr('Apply')+'</button>' + (c.phone ? '<button class="btn btn-ghost" id="lcWa" type="button">'+tr('Send balance by WhatsApp')+'</button>' : '') + '</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="lcBack" type="button">'+tr('Back to loyalty')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#lcBack').addEventListener('click', function(){ closeModal(); openLoyaltySheet(); });
+  ov.querySelector('#lcApply').addEventListener('click', function(){
+    var n = parseInt(ov.querySelector('#lcAdj').value, 10);
+    if(!n) return toast(tr('Enter a number of points'));
+    var note = ov.querySelector('#lcNote').value.trim();
+    var np = Math.max(0, pts + n);
+    refs.customers.doc(c.id).update({ points:np, pointsEarnedTotal:(Number(c.pointsEarnedTotal)||0) + (n > 0 ? n : 0) });
+    refs.loyaltyLog.doc().set({ customerId:c.id, customerName:c.name, type:'adjust', points:np - pts, amount:0, note:note || 'Adjusted by '+(State.session?State.session.name:''), createdAt:new Date().toISOString() });
+    logAudit('update','customer', c.id, 'Loyalty points changed by '+(np-pts)+' for '+c.name);
+    toast(tr('Points updated')); closeModal();
+    setTimeout(function(){ openLoyaltyCustomerSheet(c.id); }, 250);
+  });
+  var wa = ov.querySelector('#lcWa');
+  if(wa) wa.addEventListener('click', function(){
+    window.open(buildWhatsAppUrl(c.phone, 'Hello '+c.name+', you have '+pts+' loyalty points at '+btShop()+', worth '+fmtMoney(pts*cfg.pointValue)+'. Show this message at the till to use them. Thank you for being a loyal customer.'), '_blank');
+  });
+}
+
+/* ---- quotes and recurring invoices ---- */
+function btItemsTotal(items){ return r2((items||[]).reduce(function(a,it){ return a + (Number(it.qty)||0) * (Number(it.unitPrice)||0); }, 0)); }
+/* A small editor for lines (description, quantity, price) used by quotes and recurring invoices. */
+function btItemsEditor(box, items, onTotal){
+  var list = (items && items.length) ? items.map(function(i){ return { desc:i.desc||'', qty:i.qty==null?1:i.qty, unitPrice:i.unitPrice||0 }; }) : [{ desc:'', qty:1, unitPrice:0 }];
+  var dl = '<datalist id="btProdList">' + State.products.slice(0, 400).map(function(p){ return '<option value="'+esc(p.name)+'"></option>'; }).join('') + '</datalist>';
+  function total(){ var t = btItemsTotal(list); if(onTotal) onTotal(t); }
+  function paint(){
+    box.innerHTML = list.map(function(it, i){
+      return '<div class="row" style="align-items:flex-start;"><div class="main" style="min-width:0;">' +
+        '<input data-ie="d" data-i="'+i+'" list="btProdList" placeholder="'+tr('Item or service')+'" value="'+esc(it.desc)+'">' +
+        '<div style="display:flex;gap:6px;margin-top:6px;"><input data-ie="q" data-i="'+i+'" type="number" inputmode="decimal" min="0" step="any" placeholder="'+tr('Qty')+'" value="'+it.qty+'" style="width:80px;">' +
+        '<input data-ie="p" data-i="'+i+'" type="number" inputmode="decimal" min="0" step="0.01" placeholder="'+tr('Price each')+'" value="'+it.unitPrice+'" style="flex:1;"></div></div>' +
+        '<div class="trail"><button class="btn btn-ghost" data-ie="x" data-i="'+i+'" type="button" aria-label="'+tr('Remove line')+'">✕</button></div></div>';
+    }).join('') + '<button class="btn btn-ghost btn-block" data-ie="add" type="button" style="margin-top:8px;">+ '+tr('Add a line')+'</button>' + dl;
+    box.querySelectorAll('[data-ie]').forEach(function(el){
+      var k = el.getAttribute('data-ie'), i = +el.getAttribute('data-i');
+      if(k === 'add') el.addEventListener('click', function(){ list.push({ desc:'', qty:1, unitPrice:0 }); paint(); total(); });
+      else if(k === 'x') el.addEventListener('click', function(){ list.splice(i,1); if(!list.length) list.push({ desc:'', qty:1, unitPrice:0 }); paint(); total(); });
+      else el.addEventListener('input', function(){
+        if(k === 'd') list[i].desc = el.value; else if(k === 'q') list[i].qty = parseFloat(el.value)||0; else list[i].unitPrice = parseFloat(el.value)||0;
+        total();
+      });
+      if(k === 'd') el.addEventListener('change', function(){
+        var nm = el.value.trim().toLowerCase(); if(!nm) return;
+        var p = State.products.find(function(x){ return (x.name||'').toLowerCase() === nm; });
+        if(p && !(list[i].unitPrice > 0)){ list[i].unitPrice = Number(p.sellPrice)||0; var pe = box.querySelector('[data-ie="p"][data-i="'+i+'"]'); if(pe) pe.value = list[i].unitPrice; total(); }
+      });
+    });
+  }
+  paint(); total();
+  return { get:function(){ return list.filter(function(i){ return String(i.desc).trim() && (Number(i.qty)||0) > 0; }).map(function(i){ return { desc:String(i.desc).trim(), qty:Number(i.qty)||0, unitPrice:Number(i.unitPrice)||0 }; }); } };
+}
+function btAdvance(key, every){
+  var d = new Date(key+'T12:00:00');
+  if(every === 'week') d.setDate(d.getDate()+7);
+  else if(every === '2weeks') d.setDate(d.getDate()+14);
+  else {
+    var day = d.getDate(), add = every === 'quarter' ? 3 : (every === 'year' ? 12 : 1);
+    d.setDate(1); d.setMonth(d.getMonth()+add);
+    var last = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    d.setDate(Math.min(day, last));
+  }
+  return todayKey(d);
+}
+var BT_EVERY = [['week','Every week'], ['2weeks','Every 2 weeks'], ['month','Every month'], ['quarter','Every 3 months'], ['year','Every year']];
+function btRecurringDue(){
+  var t = todayKey();
+  return State.recurring.filter(function(r){ return r.active !== false && r.nextDue && r.nextDue <= t; });
+}
+function btQuoteStatus(q){
+  if(q.status === 'open' && q.validUntil && q.validUntil < todayKey()) return 'expired';
+  return q.status || 'open';
+}
+var BT_QSTAT = { open:['Open','var(--primary)'], expired:['Expired','var(--warn, #d98e2b)'], accepted:['Accepted','var(--success)'], declined:['Declined','var(--danger)'], invoiced:['Invoiced','var(--text-muted)'] };
+var _quotesTab = 'quotes';
+function openQuotesSheet(tab){
+  if(tab) _quotesTab = tab;
+  var due = btRecurringDue();
+  var html = '<div class="sheet-head"><h2>'+tr('Quotes and recurring invoices')+'</h2></div>' +
+    '<div class="segbtns" style="margin-bottom:10px;"><button class="segbtn'+(_quotesTab==='quotes'?' active':'')+'" type="button" data-qt="quotes">'+tr('Quotes')+' ('+State.quotes.length+')</button><button class="segbtn'+(_quotesTab==='rec'?' active':'')+'" type="button" data-qt="rec">'+tr('Recurring')+(due.length?' · '+due.length+' '+tr('due'):'')+'</button></div><div id="qBody"></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelectorAll('[data-qt]').forEach(function(b){ b.addEventListener('click', function(){ _quotesTab = b.getAttribute('data-qt'); closeModal(); openQuotesSheet(); }); });
+  var body = ov.querySelector('#qBody');
+  if(_quotesTab === 'quotes'){
+    body.innerHTML = '<div class="banner" style="display:block;">'+tr('Send a customer a price first. When they say yes, turn the quote into an invoice in one tap.')+'</div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="qNew" type="button">+ '+tr('New quote')+'</button></div>' +
+      (State.quotes.length ? '<div class="rowlist">'+State.quotes.slice(0,150).map(function(q){
+        var st = BT_QSTAT[btQuoteStatus(q)] || BT_QSTAT.open;
+        return '<button class="row" type="button" data-qv="'+esc(q.id)+'" style="width:100%;text-align:left;"><div class="main"><div class="title">'+esc(q.number)+' · '+esc(q.billToName||tr('Customer'))+'</div><div class="sub"><span style="color:'+st[1]+';font-weight:700;">'+tr(st[0])+'</span> · '+esc(q.dateStr||'')+'</div></div><div class="trail num"><b>'+fmtMoney(q.total||0)+'</b></div></button>';
+      }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('No quotes yet')+'</div></div>');
+    body.querySelector('#qNew').addEventListener('click', function(){ closeModal(); openDocForm('quote'); });
+    body.querySelectorAll('[data-qv]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openQuoteView(b.getAttribute('data-qv')); }); });
+  } else {
+    body.innerHTML = '<div class="banner" style="display:block;">'+tr('For customers you bill again and again, like rent or a monthly service. Pesa reminds you when each one is due and prepares the invoice. Nothing is sent without you.')+'</div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="rNew" type="button">+ '+tr('New recurring invoice')+'</button></div>' +
+      (State.recurring.length ? '<div class="rowlist">'+State.recurring.map(function(r){
+        var isDue = r.active !== false && r.nextDue && r.nextDue <= todayKey();
+        var ev = BT_EVERY.find(function(e){ return e[0] === r.every; });
+        return '<div class="row"><div class="main"><div class="title">'+esc(r.billToName||tr('Customer'))+' · '+fmtMoney(r.total||0)+'</div><div class="sub">'+tr(ev?ev[1]:'Every month')+' · '+(r.active===false?tr('Paused'):'<span style="'+(isDue?'color:var(--danger);font-weight:700;':'')+'">'+tr('Next')+': '+esc(r.nextDue||'')+(isDue?' ('+tr('due')+')':'')+'</span>')+'</div></div>' +
+          '<div class="trail" style="display:flex;gap:6px;">'+(isDue?'<button class="btn btn-primary" style="padding:6px 12px;min-height:0;" data-rmk="'+esc(r.id)+'" type="button">'+tr('Create invoice')+'</button>':'')+'<button class="btn btn-ghost" style="padding:6px 12px;min-height:0;" data-red="'+esc(r.id)+'" type="button">'+tr('Edit')+'</button></div></div>';
+      }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('No recurring invoices yet')+'</div></div>');
+    body.querySelector('#rNew').addEventListener('click', function(){ closeModal(); openDocForm('recurring'); });
+    body.querySelectorAll('[data-red]').forEach(function(b){ b.addEventListener('click', function(){ var r = State.recurring.find(function(x){ return x.id === b.getAttribute('data-red'); }); if(r){ closeModal(); openDocForm('recurring', r); } }); });
+    body.querySelectorAll('[data-rmk]').forEach(function(b){ b.addEventListener('click', function(){
+      var r = State.recurring.find(function(x){ return x.id === b.getAttribute('data-rmk'); }); if(!r) return;
+      var nxt = btAdvance(r.nextDue, r.every);
+      confirmSheet(tr('Create this invoice?'), tr('Pesa opens a new invoice with the lines filled in. The next one will then be due on')+' '+nxt+'.', tr('Create invoice'), function(){
+        refs.recurring.doc(r.id).update({ nextDue:nxt, lastIssuedAt:new Date().toISOString() });
+        logAudit('update','invoice', r.id, 'Recurring invoice prepared for '+r.billToName);
+        openInvoiceSheet({ billToName:r.billToName, billToContact:r.billToContact||'', items:r.items, customerId:r.customerId||null, notes:r.notes||'' });
+      });
+    }); });
+  }
+}
+function openDocForm(kind, rec){
+  var isQ = kind === 'quote', isEdit = !!rec;
+  rec = rec || {};
+  var number = isQ ? (isEdit ? rec.number : 'QUO-'+String(State.settings.quoteNextNumber||1).padStart(4,'0')) : '';
+  var custOpts = '<option value="">'+tr('Someone new, or type below')+'</option>' + State.customers.map(function(c){ return '<option value="'+esc(c.id)+'"'+(rec.customerId===c.id?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('');
+  var html = '<div class="sheet-head"><h2>'+(isQ ? (isEdit?tr('Edit quote'):tr('New quote')) : (isEdit?tr('Edit recurring invoice'):tr('New recurring invoice')))+'</h2></div>' +
+    (isQ ? '<div class="banner">'+esc(number)+'</div>' : '') +
+    '<div class="field"><label>'+tr('Customer')+'</label><select id="dfCust">'+custOpts+'</select></div>' +
+    '<div class="field"><label>'+tr('Name')+'</label><input id="dfName" value="'+esc(rec.billToName||'')+'"></div>' +
+    '<div class="field"><label>'+tr('Phone, email or address (optional)')+'</label><textarea id="dfContact" rows="2">'+esc(rec.billToContact||'')+'</textarea></div>' +
+    (isQ ? '<div class="field"><label>'+tr('Valid until')+'</label><input id="dfValid" type="date" value="'+esc(rec.validUntil||btAddDays(todayKey(), 14))+'"></div>' :
+      '<div class="field-row"><div class="field"><label>'+tr('How often')+'</label><select id="dfEvery">'+BT_EVERY.map(function(e){ return '<option value="'+e[0]+'"'+((rec.every||'month')===e[0]?' selected':'')+'>'+tr(e[1])+'</option>'; }).join('')+'</select></div><div class="field"><label>'+tr('Next due date')+'</label><input id="dfNext" type="date" value="'+esc(rec.nextDue||btAddDays(todayKey(), 30))+'"></div></div>') +
+    '<div class="section-title">'+tr('Items')+'</div><div id="dfItems"></div>' +
+    '<div class="field" style="margin-top:12px;"><label>'+tr('Notes (optional)')+'</label><textarea id="dfNotes" rows="2">'+esc(rec.notes||'')+'</textarea></div>' +
+    '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num" id="dfTotal">N$0.00</span></div>' +
+    (isQ ? '' : '<label style="display:flex;gap:8px;align-items:center;margin:10px 0;"><input type="checkbox" id="dfActive" '+(rec.active===false?'':'checked')+' style="width:18px;height:18px;"> '+tr('Active')+'</label>') +
+    '<div class="actions">' + (isEdit ? '<button class="btn btn-danger" id="dfDel" type="button">'+tr('Delete')+'</button>' : '') + '<button class="btn btn-primary btn-block" id="dfSave" type="button">'+tr('Save')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="dfBack" type="button">'+tr('Back')+'</button></div>';
+  var ov = openSheet(html);
+  var ed = btItemsEditor(ov.querySelector('#dfItems'), rec.items, function(t){ ov.querySelector('#dfTotal').textContent = fmtMoney(t); });
+  function back(){ closeModal(); if(isQ && isEdit) openQuoteView(rec.id); else openQuotesSheet(isQ ? 'quotes' : 'rec'); }
+  ov.querySelector('#dfBack').addEventListener('click', back);
+  ov.querySelector('#dfCust').addEventListener('change', function(e){
+    var c = State.customers.find(function(x){ return x.id === e.target.value; });
+    if(c){ ov.querySelector('#dfName').value = c.name || ''; ov.querySelector('#dfContact').value = [c.phone, c.email, c.address].filter(Boolean).join('\n'); }
+  });
+  ov.querySelector('#dfSave').addEventListener('click', function(){
+    var name = ov.querySelector('#dfName').value.trim(), items = ed.get();
+    if(!name) return toast(tr('Enter a name'));
+    if(!items.length) return toast(tr('Add at least one item with a quantity'));
+    var data = { billToName:name, billToContact:ov.querySelector('#dfContact').value.trim(), customerId:ov.querySelector('#dfCust').value || null, items:items, total:btItemsTotal(items), notes:ov.querySelector('#dfNotes').value.trim() };
+    if(isQ){
+      data.validUntil = ov.querySelector('#dfValid').value || '';
+      if(isEdit){ refs.quotes.doc(rec.id).update(data); logAudit('update','quote', rec.id, 'Edited quote '+rec.number); toast(tr('Quote saved')); closeModal(); setTimeout(function(){ openQuoteView(rec.id); }, 250); return; }
+      var n = State.settings.quoteNextNumber || 1;
+      data.number = number; data.status = 'open'; data.dateStr = todayKey(); data.createdAt = new Date().toISOString(); data.createdBy = State.session ? State.session.name : '';
+      var d = refs.quotes.doc(); d.set(data); btSave({ quoteNextNumber:n+1 });
+      logAudit('create','quote', d.id, 'Created quote '+number+' for '+name+', '+fmtMoney(data.total));
+      toast(tr('Quote saved')); closeModal(); setTimeout(function(){ openQuoteView(d.id, data); }, 300);
+    } else {
+      data.every = ov.querySelector('#dfEvery').value; data.nextDue = ov.querySelector('#dfNext').value || todayKey(); data.active = ov.querySelector('#dfActive').checked;
+      if(isEdit) refs.recurring.doc(rec.id).update(data); else { data.createdAt = new Date().toISOString(); refs.recurring.doc().set(data); }
+      toast(tr('Saved')); closeModal(); openQuotesSheet('rec');
+    }
+  });
+  var del = ov.querySelector('#dfDel');
+  if(del) del.addEventListener('click', function(){
+    confirmSheet(tr(isQ ? 'Delete this quote?' : 'Delete this recurring invoice?'), tr('This cannot be undone.'), tr('Delete'), function(){
+      (isQ ? refs.quotes : refs.recurring).doc(rec.id).delete();
+      logAudit('delete', isQ ? 'quote' : 'invoice', rec.id, 'Deleted '+(isQ ? 'quote '+rec.number : 'recurring invoice for '+rec.billToName));
+      openQuotesSheet(isQ ? 'quotes' : 'rec');
+    }, true, true);
+  });
+}
+function btQuoteText(q){
+  return 'Quotation '+q.number+' from '+btShop()+'\n' + (q.items||[]).map(function(i){ return '- '+i.qty+' x '+i.desc+': '+fmtMoney(i.qty*i.unitPrice); }).join('\n') +
+    '\nTotal: '+fmtMoney(q.total) + (q.validUntil ? '\nValid until: '+q.validUntil : '') + (q.notes ? '\n'+q.notes : '') + '\nReply to accept this quote. Thank you.';
+}
+async function btQuotePdf(q){
+  var ready = await ensureJsPDF();
+  if(!ready){ toast(tr('Couldn’t load the PDF engine — check your connection and try again')); return null; }
+  var C = getJsPDF(), doc = newPdfDoc(C, { unit:'mm', format:'a4' });
+  var h = drawDocHeader(doc), t = h.t, m = h.margin, W = h.contentW, y = h.y;
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(t.primary[0], t.primary[1], t.primary[2]);
+  doc.text('QUOTATION', m, y+6);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(t.dark[0], t.dark[1], t.dark[2]);
+  doc.text('Number: '+q.number, m+W, y+2, { align:'right' });
+  doc.text('Date: '+(q.dateStr||todayKey()), m+W, y+7, { align:'right' });
+  if(q.validUntil) doc.text('Valid until: '+q.validUntil, m+W, y+12, { align:'right' });
+  y += 18;
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.text(State.settings.shopName || btShop(), m, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(t.muted[0], t.muted[1], t.muted[2]);
+  var cy = y+5;
+  (State.settings.businessContact||'').split('\n').filter(Boolean).forEach(function(line){ doc.text(line, m, cy); cy += 4.2; });
+  if(State.company && State.company.vatNumber){ doc.text('VAT no: '+State.company.vatNumber, m, cy); cy += 4.2; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.text('PREPARED FOR', m+W-70, y);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(t.dark[0], t.dark[1], t.dark[2]);
+  doc.text(String(q.billToName||'Customer'), m+W-70, y+5);
+  doc.setFontSize(8.5); doc.setTextColor(t.muted[0], t.muted[1], t.muted[2]);
+  var by = y+10; (q.billToContact||'').split('\n').filter(Boolean).slice(0,4).forEach(function(line){ doc.text(line, m+W-70, by); by += 4.2; });
+  y = Math.max(cy, by) + 6;
+  var rows = (q.items||[]).map(function(i){ return [i.desc, String(i.qty), fmtMoney(i.unitPrice), fmtMoney(i.qty*i.unitPrice)]; });
+  y = pdfTable(doc, { x:m, y:y, width:W, rowHeight:7, zebra:true, headerFill:t.primary, columns:[ {label:'Description', width:W-92}, {label:'Qty', width:20, align:'right'}, {label:'Unit price', width:36, align:'right'}, {label:'Amount', width:36, align:'right'} ], rows:rows });
+  if(y > 255){ doc.addPage(); y = 20; }
+  y += 6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(t.primary[0], t.primary[1], t.primary[2]);
+  doc.text('TOTAL', m+W-70, y); doc.text(fmtMoney(q.total), m+W, y, { align:'right' });
+  y += 10;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(t.muted[0], t.muted[1], t.muted[2]);
+  var note = (q.notes ? q.notes+'\n' : '') + 'This is a quotation, not a tax invoice. Prices are valid until the date shown above.';
+  doc.splitTextToSize(note, W).forEach(function(line){ doc.text(line, m, y); y += 4.2; });
+  return doc;
+}
+function openQuoteView(id, fallback){
+  var q = State.quotes.find(function(x){ return x.id === id; }) || fallback;
+  if(!q){ openQuotesSheet('quotes'); return; }
+  q = Object.assign({ id:id }, q);
+  var st = btQuoteStatus(q), s = BT_QSTAT[st] || BT_QSTAT.open;
+  var html = '<div class="sheet-head"><h2>'+esc(q.number)+'</h2></div>' +
+    '<div class="rowlist"><div class="row"><div class="main"><div class="title">'+esc(q.billToName||'')+'</div><div class="sub">'+esc(q.dateStr||'')+(q.validUntil?' · '+tr('valid until')+' '+esc(q.validUntil):'')+'</div></div><div class="trail"><b style="color:'+s[1]+';">'+tr(s[0])+'</b></div></div>' +
+    (q.items||[]).map(function(i){ return '<div class="row"><div class="main"><div class="title">'+esc(i.desc)+'</div><div class="sub">'+i.qty+' × '+fmtMoney(i.unitPrice)+'</div></div><div class="trail num">'+fmtMoney(i.qty*i.unitPrice)+'</div></div>'; }).join('') +
+    '<div class="row"><div class="main"><div class="title"><b>'+tr('Total')+'</b></div></div><div class="trail num"><b>'+fmtMoney(q.total||0)+'</b></div></div></div>' +
+    (q.notes ? '<div class="banner" style="display:block;margin-top:8px;">'+esc(q.notes)+'</div>' : '') +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-accent" id="qvInv" type="button"'+(st==='invoiced'?' disabled':'')+'>'+tr('Turn into invoice')+'</button><button class="btn btn-ghost" id="qvPdf" type="button">'+tr('Download PDF')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="qvWa" type="button">WhatsApp</button><button class="btn btn-ghost" id="qvEm" type="button">'+tr('Email')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="qvAcc" type="button"'+(st==='accepted'||st==='invoiced'?' disabled':'')+'>'+tr('Mark accepted')+'</button><button class="btn btn-ghost" id="qvDec" type="button"'+(st==='declined'||st==='invoiced'?' disabled':'')+'>'+tr('Mark declined')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="qvEdit" type="button"'+(st==='invoiced'?' disabled':'')+'>'+tr('Edit')+'</button><button class="btn btn-ghost" id="qvBack" type="button">'+tr('Back to quotes')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#qvBack').addEventListener('click', function(){ closeModal(); openQuotesSheet('quotes'); });
+  ov.querySelector('#qvEdit').addEventListener('click', function(){ closeModal(); openDocForm('quote', q); });
+  ov.querySelector('#qvAcc').addEventListener('click', function(){ refs.quotes.doc(q.id).update({ status:'accepted' }); toast(tr('Marked as accepted')); closeModal(); setTimeout(function(){ openQuoteView(q.id, Object.assign({}, q, { status:'accepted' })); }, 250); });
+  ov.querySelector('#qvDec').addEventListener('click', function(){ refs.quotes.doc(q.id).update({ status:'declined' }); toast(tr('Marked as declined')); closeModal(); setTimeout(function(){ openQuoteView(q.id, Object.assign({}, q, { status:'declined' })); }, 250); });
+  ov.querySelector('#qvPdf').addEventListener('click', async function(){ var d = await btQuotePdf(q); if(d) saveGeneratedPdf(d, q.number+'.pdf'); });
+  ov.querySelector('#qvWa').addEventListener('click', function(){
+    var phone = (contactFromText(q.billToContact||'')||{}).phone || '';
+    window.open(buildWhatsAppUrl(phone, btQuoteText(q)), '_blank');
+    logAudit('invoice_shared','quote', q.id, 'Quote '+q.number+' sent by WhatsApp');
+  });
+  ov.querySelector('#qvEm').addEventListener('click', function(){
+    var email = (contactFromText(q.billToContact||'')||{}).email || '';
+    window.location.href = buildMailtoUrl(email, 'Quotation '+q.number+' from '+btShop(), btQuoteText(q));
+    logAudit('invoice_shared','quote', q.id, 'Quote '+q.number+' sent by email');
+  });
+  ov.querySelector('#qvInv').addEventListener('click', function(){
+    refs.quotes.doc(q.id).update({ status:'invoiced', invoicedAt:new Date().toISOString() });
+    closeModal();
+    openInvoiceSheet({ billToName:q.billToName, billToContact:q.billToContact||'', items:q.items, customerId:q.customerId||null, notes:q.notes||'' });
+  });
+}
+
+/* ---- barcode labels ---- */
+var BT_C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213','221312','231212','112232','122132','122231','113222','123122','123221','223211','221132','221231','213212','223112','312131','311222','321122','321221','312212','322112','322211','212123','212321','232121','111323','131123','131321','112313','132113','132311','211313','231113','231311','112133','112331','132131','113123','113321','133121','313121','211331','231131','213113','213311','213131','311123','311321','331121','312113','312311','332111','314111','221411','431111','111224','111422','121124','121421','141122','141221','112214','112412','122114','122411','142112','142211','241211','221114','413111','241112','134111','111242','121142','121241','114212','124112','124211','411212','421112','421211','212141','214121','412121','111143','111341','131141','114113','114311','411113','411311','113141','114131','311141','411131','211412','211214','211232'];
+var BT_C128_STOP = '2331112';
+/* Returns a string of 1 (bar) and 0 (space) modules for Code 128 (set B), or '' if the text has characters it cannot hold. */
+function btCode128Bits(text){
+  text = String(text||'');
+  if(!text.length) return '';
+  var vals = [104], sum = 104;
+  for(var i=0;i<text.length;i++){
+    var c = text.charCodeAt(i); if(c < 32 || c > 126) return '';
+    var v = c - 32; vals.push(v); sum += v*(i+1);
+  }
+  vals.push(sum % 103);
+  var bits = '', bar = true;
+  function emit(pat){ bar = true; for(var k=0;k<pat.length;k++){ var w = +pat.charAt(k); for(var j=0;j<w;j++) bits += bar ? '1' : '0'; bar = !bar; } }
+  vals.forEach(function(v){ emit(BT_C128[v]); });
+  emit(BT_C128_STOP);
+  return bits;
+}
+var BT_EAN_L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+var BT_EAN_G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+var BT_EAN_R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+var BT_EAN_P = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+function btEanCheck(d12){ var s = 0; for(var i=0;i<12;i++) s += (+d12.charAt(i)) * (i%2 ? 3 : 1); return (10 - s%10) % 10; }
+function btIsEan13(code){ return /^\d{13}$/.test(code) && btEanCheck(code.slice(0,12)) === +code.charAt(12); }
+function btEan13Bits(code){
+  if(!btIsEan13(code)) return '';
+  var par = BT_EAN_P[+code.charAt(0)], bits = '101';
+  for(var i=1;i<=6;i++){ var d = +code.charAt(i); bits += (par.charAt(i-1) === 'L' ? BT_EAN_L : BT_EAN_G)[d]; }
+  bits += '01010';
+  for(var j=7;j<=12;j++) bits += BT_EAN_R[+code.charAt(j)];
+  return bits + '101';
+}
+function btBarcodeBits(code){ code = String(code||'').trim(); return btIsEan13(code) ? btEan13Bits(code) : btCode128Bits(code); }
+/* The next unused in-store code (EAN-13 starting with 2, which is reserved for shops to use themselves). */
+function btNextInternalCode(seed){
+  var max = seed || 0;
+  State.products.forEach(function(p){ var b = String(p.barcode||''); if(/^2\d{12}$/.test(b) && btIsEan13(b)){ var n = parseInt(b.slice(1,12), 10); if(n > max) max = n; } });
+  var n2 = max + 1, base = '2' + String(n2).padStart(11, '0');
+  return { code: base + btEanCheck(base), n: n2 };
+}
+var BT_LABEL_LAYOUTS = {
+  l24: { name:'Medium, 24 per A4 sheet (3 by 8)', cols:3, rows:8, w:64, h:34 },
+  l65: { name:'Small, 65 per A4 sheet (5 by 13)', cols:5, rows:13, w:38, h:21 },
+  l12: { name:'Large, 12 per A4 sheet (2 by 6)', cols:2, rows:6, w:95, h:42 }
+};
+async function btLabelsPdf(list, layoutKey, opts){
+  var ready = await ensureJsPDF();
+  if(!ready){ toast(tr('Couldn’t load the PDF engine — check your connection and try again')); return null; }
+  var L = BT_LABEL_LAYOUTS[layoutKey] || BT_LABEL_LAYOUTS.l24;
+  var C = getJsPDF(), doc = newPdfDoc(C, { unit:'mm', format:'a4' });
+  var mx = (210 - L.cols*L.w) / 2, my = (297 - L.rows*L.h) / 2, per = L.cols*L.rows, n = 0;
+  var small = L.w < 45, big = L.w > 80;
+  list.forEach(function(it){
+    var p = it.p, code = String(p.barcode||'').trim(), bits = btBarcodeBits(code);
+    for(var c=0;c<it.copies;c++){
+      if(n > 0 && n % per === 0) doc.addPage();
+      var idx = n % per, col = idx % L.cols, row = Math.floor(idx / L.cols), x = mx + col*L.w, y = my + row*L.h;
+      n++;
+      if(opts.border){ doc.setDrawColor(200); doc.setLineWidth(0.1); doc.rect(x+0.5, y+0.5, L.w-1, L.h-1); }
+      var pad = small ? 2 : 3, inner = L.w - pad*2;
+      doc.setTextColor(20,20,20);
+      var ty = y + pad + (small ? 2.2 : 3.2);
+      if(opts.shop){ doc.setFont('helvetica','normal'); doc.setFontSize(small ? 4.5 : 6); doc.setTextColor(110); doc.text(String(btShop()).slice(0, 40), x+pad, ty); doc.setTextColor(20,20,20); ty += small ? 2.6 : 3.4; }
+      var pr = opts.price ? fmtMoney(Number(p.sellPrice)||0) : '', prW = 0;
+      if(opts.price){
+        doc.setFont('helvetica','bold'); doc.setFontSize(small ? 7.5 : (big ? 15 : 11));
+        prW = doc.getTextWidth(pr) + 2;
+        doc.text(pr, x + L.w - pad, ty + (small ? 0.2 : (big ? 1.2 : 0.6)), { align:'right' });
+      }
+      doc.setFont('helvetica','bold'); doc.setFontSize(small ? 6.5 : (big ? 11 : 8.5));
+      var lines = doc.splitTextToSize(String(p.name||''), Math.max(10, inner - prW)).slice(0, small ? 1 : 2);
+      lines.forEach(function(ln){ doc.text(ln, x+pad, ty); ty += small ? 2.8 : (big ? 4.6 : 3.6); });
+      var codeTop = ty - 0.5, codeBottom = y + L.h - pad - (small ? 2.4 : 3.2);
+      var barH = Math.max(4, codeBottom - codeTop);
+      if(bits){
+        var mod = Math.min(0.5, inner / (bits.length + 8)), tw = bits.length * mod, bx = x + pad + Math.max(0, (inner - tw) / 2);
+        doc.setFillColor(0,0,0);
+        var i = 0;
+        while(i < bits.length){
+          if(bits.charAt(i) === '1'){ var j = i; while(j < bits.length && bits.charAt(j) === '1') j++; doc.rect(bx + i*mod, codeTop, (j-i)*mod, barH, 'F'); i = j; } else i++;
+        }
+        doc.setFont('helvetica','normal'); doc.setFontSize(small ? 5 : 6.5);
+        doc.text(code, x + pad + inner/2, codeTop + barH + (small ? 2.3 : 3), { align:'center' });
+      } else {
+        doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(150); doc.text('No barcode', x+pad, codeTop + 4); doc.setTextColor(20,20,20);
+      }
+    }
+  });
+  return doc;
+}
+function openLabelsSheet(){
+  var q = '', onlyLow = false, copiesMode = '1', custom = 1, layout = 'l24', price = true, shop = false, border = true, sel = {};
+  var html = '<div class="sheet-head"><h2>'+tr('Barcode labels')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Print labels on a sheet of sticky labels, or on plain paper and cut them out. Products without a barcode can be given one.')+'</div>' +
+    '<div class="searchbar" style="margin:10px 0;">'+ICONS.search+'<input id="lbQ" placeholder="'+tr('Search products…')+'"></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><button class="btn btn-ghost" id="lbAll" type="button">'+tr('Tick all shown')+'</button><button class="btn btn-ghost" id="lbNone" type="button">'+tr('Clear ticks')+'</button><label style="display:flex;gap:6px;align-items:center;font-size:13px;"><input type="checkbox" id="lbLow" style="width:16px;height:16px;"> '+tr('Low stock only')+'</label></div>' +
+    '<div id="lbList" style="max-height:34vh;overflow:auto;"></div><div id="lbInfo" style="margin:8px 0;font-size:13px;"></div>' +
+    '<div class="field"><label>'+tr('Labels per product')+'</label><select id="lbCopies"><option value="1">'+tr('One each')+'</option><option value="stock">'+tr('As many as we have in stock')+'</option><option value="custom">'+tr('A number I choose')+'</option></select></div>' +
+    '<div class="field" id="lbCustomBox" style="display:none;"><input id="lbCustom" type="number" min="1" max="200" value="1" inputmode="numeric"></div>' +
+    '<div class="field"><label>'+tr('Label size')+'</label><select id="lbLayout">'+Object.keys(BT_LABEL_LAYOUTS).map(function(k){ return '<option value="'+k+'">'+tr(BT_LABEL_LAYOUTS[k].name)+'</option>'; }).join('')+'</select></div>' +
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;"><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="lbPrice" checked style="width:16px;height:16px;"> '+tr('Show price')+'</label><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="lbShop" style="width:16px;height:16px;"> '+tr('Show shop name')+'</label><label style="display:flex;gap:6px;align-items:center;"><input type="checkbox" id="lbBorder" checked style="width:16px;height:16px;"> '+tr('Cutting lines')+'</label></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="lbPdf" type="button">'+tr('Make labels (PDF)')+'</button></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  function shown(){
+    var qq = q.toLowerCase();
+    return State.products.filter(function(p){ return (!qq || (p.name||'').toLowerCase().indexOf(qq) > -1 || String(p.barcode||'').indexOf(qq) > -1 || (p.category||'').toLowerCase().indexOf(qq) > -1) && (!onlyLow || (p.stockQty != null && Number(p.stockQty) <= (lowThresholdOf(p)||0))); });
+  }
+  function paintInfo(){
+    var ids = Object.keys(sel).filter(function(k){ return sel[k]; });
+    var noCode = State.products.filter(function(p){ return sel[p.id] && !String(p.barcode||'').trim(); });
+    ov.querySelector('#lbInfo').innerHTML = '<b>'+ids.length+'</b> '+tr('ticked')+(noCode.length ? ' · <span style="color:var(--warn, #d98e2b);">'+noCode.length+' '+tr('without a barcode')+'</span> <button class="btn btn-ghost" id="lbGive" type="button" style="padding:3px 10px;min-height:0;">'+tr('Give them barcodes')+'</button>' : '');
+    var g = ov.querySelector('#lbGive');
+    if(g) g.addEventListener('click', function(){
+      confirmSheet(tr('Give barcodes?'), noCode.length+' '+tr('products will get a new in-store barcode. They are saved on the product, so scanning at the till works.'), tr('Give barcodes'), function(){
+        var seed = 0;
+        noCode.forEach(function(p){ var nx = btNextInternalCode(seed); seed = nx.n; p.barcode = nx.code; refs.products.doc(p.id).update({ barcode:nx.code }); });
+        toast(tr('Barcodes added')); paintList(); paintInfo();
+      });
+    });
+  }
+  function paintList(){
+    var list = shown().slice(0, 300);
+    ov.querySelector('#lbList').innerHTML = list.length ? '<div class="rowlist">'+list.map(function(p){
+      return '<label class="row" style="cursor:pointer;"><div class="trail" style="margin-right:10px;"><input type="checkbox" data-lbp="'+esc(p.id)+'" '+(sel[p.id]?'checked':'')+' style="width:18px;height:18px;"></div><div class="main"><div class="title">'+esc(p.name)+'</div><div class="sub">'+(p.barcode?esc(p.barcode):'<span style="color:var(--warn, #d98e2b);">'+tr('No barcode')+'</span>')+' · '+(Number(p.stockQty)||0)+' '+tr('in stock')+'</div></div><div class="trail num">'+fmtMoney(p.sellPrice||0)+'</div></label>';
+    }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('No products found')+'</div></div>';
+    ov.querySelectorAll('[data-lbp]').forEach(function(cb){ cb.addEventListener('change', function(){ sel[cb.getAttribute('data-lbp')] = cb.checked; paintInfo(); }); });
+  }
+  ov.querySelector('#lbQ').addEventListener('input', function(e){ q = e.target.value; paintList(); });
+  ov.querySelector('#lbLow').addEventListener('change', function(e){ onlyLow = e.target.checked; paintList(); });
+  ov.querySelector('#lbAll').addEventListener('click', function(){ shown().forEach(function(p){ sel[p.id] = true; }); paintList(); paintInfo(); });
+  ov.querySelector('#lbNone').addEventListener('click', function(){ sel = {}; paintList(); paintInfo(); });
+  ov.querySelector('#lbCopies').addEventListener('change', function(e){ copiesMode = e.target.value; ov.querySelector('#lbCustomBox').style.display = copiesMode === 'custom' ? '' : 'none'; });
+  ov.querySelector('#lbPdf').addEventListener('click', async function(){
+    var chosen = State.products.filter(function(p){ return sel[p.id]; });
+    if(!chosen.length) return toast(tr('Tick at least one product'));
+    var cust = Math.max(1, Math.min(200, parseInt(ov.querySelector('#lbCustom').value, 10) || 1));
+    var list = chosen.map(function(p){ return { p:p, copies: copiesMode === 'stock' ? Math.max(1, Math.min(200, Math.floor(Number(p.stockQty)||1))) : (copiesMode === 'custom' ? cust : 1) }; });
+    var total = list.reduce(function(a,x){ return a + x.copies; }, 0);
+    if(total > 2000) return toast(tr('That is too many labels at once. Choose fewer products.'));
+    var d = await btLabelsPdf(list, ov.querySelector('#lbLayout').value, { price:ov.querySelector('#lbPrice').checked, shop:ov.querySelector('#lbShop').checked, border:ov.querySelector('#lbBorder').checked });
+    if(d){ saveGeneratedPdf(d, 'pesa-labels.pdf'); toast(total+' '+tr('labels ready')); }
+  });
+  paintList(); paintInfo();
+}
+
+/* ---- import customers and products ---- */
+function btSplitCsv(text){
+  text = String(text||'').replace(/^﻿/, '');
+  var firstLine = text.split(/\r?\n/)[0] || '';
+  var delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : (firstLine.indexOf('\t') > -1 && firstLine.split('\t').length > firstLine.split(',').length ? '\t' : ',');
+  var rows = [], row = [], cur = '', inQ = false;
+  for(var i=0;i<text.length;i++){
+    var c = text.charAt(i);
+    if(inQ){ if(c === '"'){ if(text.charAt(i+1) === '"'){ cur += '"'; i++; } else inQ = false; } else cur += c; }
+    else if(c === '"') inQ = true;
+    else if(c === delim){ row.push(cur); cur = ''; }
+    else if(c === '\n' || c === '\r'){ if(c === '\r' && text.charAt(i+1) === '\n') i++; row.push(cur); cur = ''; rows.push(row); row = []; }
+    else cur += c;
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(function(r){ return r.some(function(x){ return String(x).trim() !== ''; }); }).map(function(r){ return r.map(function(x){ return String(x).trim(); }); });
+}
+function btMoneyNum(raw){
+  var t = String(raw||'').replace(/[^0-9.,\-]/g,'');
+  if(!t) return 0;
+  var lc = t.lastIndexOf(','), ld = t.lastIndexOf('.');
+  if(lc > -1 && ld > -1) t = lc > ld ? t.replace(/\./g,'').replace(',','.') : t.replace(/,/g,'');
+  else if(lc > -1) t = /^-?\d{1,3}(,\d{3})+$/.test(t) ? t.replace(/,/g,'') : t.replace(',','.');
+  return parseFloat(t) || 0;
+}
+function btParseCustomers(text){
+  var rows = btSplitCsv(text);
+  if(!rows.length) return { rows:[], skipped:0 };
+  var head = rows[0].map(function(h){ return h.toLowerCase(); });
+  var idx = { name:-1, phone:-1, email:-1, address:-1, balance:-1, limit:-1 };
+  var hasHeader = head.some(function(h){ return /name|phone|cell|mobile|email|balance|owe|limit|address/.test(h); });
+  if(hasHeader){
+    head.forEach(function(h,i){
+      if(idx.name < 0 && /name|customer|client/.test(h)) idx.name = i;
+      else if(idx.phone < 0 && /phone|cell|mobile|tel|whatsapp/.test(h)) idx.phone = i;
+      else if(idx.email < 0 && /mail/.test(h)) idx.email = i;
+      else if(idx.address < 0 && /address|town|city/.test(h)) idx.address = i;
+      else if(idx.limit < 0 && /limit/.test(h)) idx.limit = i;
+      else if(idx.balance < 0 && /balance|owe|outstanding|debt/.test(h)) idx.balance = i;
+    });
+    if(idx.name < 0) idx.name = 0;
+    rows = rows.slice(1);
+  } else { idx = { name:0, phone:1, email:2, address:3, balance:4, limit:5 }; }
+  var out = [], skipped = 0;
+  rows.forEach(function(r){
+    var nm = (r[idx.name]||'').trim(); if(!nm){ skipped++; return; }
+    function num(i){ var v = i > -1 ? btMoneyNum(r[i]) : 0; return isFinite(v) ? v : 0; }
+    out.push({ name:nm, phone: idx.phone > -1 ? (r[idx.phone]||'') : '', email: idx.email > -1 ? (r[idx.email]||'') : '', address: idx.address > -1 ? (r[idx.address]||'') : '', balance:Math.max(0, num(idx.balance)), creditLimit:Math.max(0, num(idx.limit)) });
+  });
+  return { rows:out, skipped:skipped };
+}
+function openImportSheet(){
+  var html = '<div class="sheet-head"><h2>'+tr('Import customers and products')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('In Excel or Google Sheets choose Save as, then CSV. Then pick that file here. Nothing is deleted. You see a preview before anything is added.')+'</div>' +
+    '<div class="rowlist"><button class="row" type="button" id="imPro" style="width:100%;text-align:left;"><div class="main"><div class="title">'+tr('Import products')+'</div><div class="sub">'+tr('Names, prices, stock, barcodes')+'</div></div></button>' +
+    '<button class="row" type="button" id="imCus" style="width:100%;text-align:left;"><div class="main"><div class="title">'+tr('Import customers')+'</div><div class="sub">'+tr('Names, phone numbers, amounts owed, credit limits')+'</div></div></button></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelector('#imPro').addEventListener('click', function(){ closeModal(); openBulkAddSheet(); });
+  ov.querySelector('#imCus').addEventListener('click', function(){ closeModal(); openImportCustomersSheet(); });
+}
+function openImportCustomersSheet(){
+  var parsed = null;
+  var html = '<div class="sheet-head"><h2>'+tr('Import customers')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Columns can be in any order: name, phone, email, address, amount owed, credit limit. A header row helps. Only the name is needed.')+'</div>' +
+    '<label class="btn btn-ghost btn-block" for="imFile" style="cursor:pointer;">'+ICONS.fileup+' '+tr('Choose a .csv file')+'</label><input type="file" id="imFile" accept=".csv,text/csv,text/plain" style="display:none;">' +
+    '<button class="btn btn-ghost btn-block" id="imTpl" type="button" style="margin-top:8px;">'+tr('Download a template')+'</button>' +
+    '<div id="imPrev" style="margin-top:10px;"></div>' +
+    '<div class="field" id="imDupBox" style="display:none;"><label>'+tr('If a customer with the same phone number or name already exists')+'</label><select id="imDup"><option value="skip">'+tr('Skip it')+'</option><option value="update">'+tr('Update their details')+'</option></select></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="imGo" type="button" disabled>'+tr('Add customers')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="imBack" type="button">'+tr('Back')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#imBack').addEventListener('click', function(){ closeModal(); openImportSheet(); });
+  ov.querySelector('#imTpl').addEventListener('click', function(){ btSaveCsv('pesa-customers-template.csv', [['Name','Phone','Email','Address','Amount owed','Credit limit'],['Example Customer','0811234567','example@mail.com','Windhoek','0','500']]); });
+  ov.querySelector('#imFile').addEventListener('change', function(e){
+    var f = e.target.files && e.target.files[0]; if(!f) return;
+    var rd = new FileReader();
+    rd.onload = function(){
+      parsed = btParseCustomers(String(rd.result||''));
+      var prev = ov.querySelector('#imPrev');
+      if(!parsed.rows.length){ prev.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('No customers found in that file.')+'</span></div>'; ov.querySelector('#imGo').disabled = true; return; }
+      var byPhone = {}, byName = {};
+      State.customers.forEach(function(c){ var p = normalizeNamPhone(c.phone); if(p) byPhone[p] = c; byName[String(c.name||'').trim().toLowerCase()] = c; });
+      var dups = parsed.rows.filter(function(r){ var p = normalizeNamPhone(r.phone); return (p && byPhone[p]) || byName[r.name.toLowerCase()]; }).length;
+      prev.innerHTML = '<div class="banner" style="display:block;"><b>'+parsed.rows.length+'</b> '+tr('customers found')+(dups?' · '+dups+' '+tr('already exist'):'')+(parsed.skipped?' · '+parsed.skipped+' '+tr('rows without a name skipped'):'')+'</div>' +
+        '<div class="rowlist">'+parsed.rows.slice(0,5).map(function(r){ return '<div class="row"><div class="main"><div class="title">'+esc(r.name)+'</div><div class="sub">'+esc([r.phone, r.email].filter(Boolean).join(' · '))+'</div></div><div class="trail num">'+(r.balance>0?fmtMoney(r.balance):'')+'</div></div>'; }).join('')+(parsed.rows.length>5?'<div class="row"><div class="main"><div class="sub">+ '+(parsed.rows.length-5)+' '+tr('more')+'</div></div></div>':'')+'</div>';
+      ov.querySelector('#imDupBox').style.display = dups ? '' : 'none';
+      ov.querySelector('#imGo').disabled = false;
+    };
+    rd.readAsText(f);
+  });
+  ov.querySelector('#imGo').addEventListener('click', function(){
+    if(!parsed || !parsed.rows.length) return;
+    var mode = ov.querySelector('#imDup').value, added = 0, updated = 0, skipped = 0, now = new Date().toISOString();
+    var byPhone = {}, byName = {};
+    State.customers.forEach(function(c){ var p = normalizeNamPhone(c.phone); if(p) byPhone[p] = c; byName[String(c.name||'').trim().toLowerCase()] = c; });
+    parsed.rows.forEach(function(r){
+      var p = normalizeNamPhone(r.phone), ex = (p && byPhone[p]) || byName[r.name.toLowerCase()];
+      if(ex){
+        if(mode === 'update'){ var patch = {}; if(r.phone) patch.phone = r.phone; if(r.email) patch.email = r.email; if(r.address) patch.address = r.address; if(r.creditLimit) patch.creditLimit = r.creditLimit; refs.customers.doc(ex.id).update(patch); updated++; } else skipped++;
+        return;
+      }
+      var d = refs.customers.doc();
+      d.set({ name:r.name, phone:r.phone, email:r.email, address:r.address, idNumber:'', notes:'Imported', creditLimit:r.creditLimit, balance:r.balance, createdAt:now });
+      if(r.balance > 0) refs.customers.doc(d.id).collection('ledger').add({ type:'charge', amount:r.balance, note:'Opening balance (imported)', createdAt:now, balanceAfter:r.balance });
+      byName[r.name.toLowerCase()] = { id:d.id, name:r.name }; if(p) byPhone[p] = { id:d.id };
+      added++;
+    });
+    logAudit('create','customer', null, 'Imported customers: '+added+' added, '+updated+' updated, '+skipped+' skipped');
+    toast(added+' '+tr('added')+(updated?', '+updated+' '+tr('updated'):'')+(skipped?', '+skipped+' '+tr('skipped'):''));
+    closeModal(); openImportSheet();
+  });
+}
+
+/* ---- setup guide ---- */
+function btSetupSteps(){
+  var s = State.settings, co = State.company || {};
+  var uidNow = State.session ? State.session.userId : null;
+  var bioOn = false; try{ bioOn = State.users.some(function(u){ return bioEnrolled(u.id); }); }catch(e){}
+  var backup = 0; try{ backup = (typeof Backups !== 'undefined') ? Backups.lastAt() : 0; }catch(e){}
+  return [
+    { k:'co',  t:'Add your business details', d:'Name, address and VAT number for your documents.', done: !!(co.companyName || co.tradingName) && !!(co.address || co.town || co.region || co.vatNumber || co.phone), go:'company' },
+    { k:'logo',t:'Upload your logo', d:'It appears on invoices, receipts and reports.', done: !!s.logoDataUrl, go:'settings' },
+    { k:'pro', t:'Add your products', d:'Add them one by one, or import a spreadsheet.', done: State.products.length > 0, go:'products' },
+    { k:'sup', t:'Add a supplier', d:'So you can order stock quickly.', done: State.suppliers.length > 0, go:'supplier' },
+    { k:'cus', t:'Add or import customers', d:'For credit sales and loyalty points.', done: State.customers.length > 0, go:'customers' },
+    { k:'team',t:'Add your staff', d:'Give cashiers and stock clerks their own logins.', done: State.users.filter(function(u){ return u.role !== 'owner' && u.active !== false; }).length > 0, go:'team' },
+    { k:'sale',t:'Make your first sale', d:'Try the till so you know how it works.', done: State.sales.length > 0, go:'sell' },
+    { k:'tgt', t:'Set a sales target', d:'A daily and monthly goal to aim for.', done: !!(s.targets && (s.targets.daily > 0 || s.targets.monthly > 0)), go:'profit' },
+    { k:'bak', t:'Make sure backups are working', d:'Pesa backs up daily. You can also save copies to a folder.', done: backup > 0, go:'backups' },
+    { k:'bio', t:'Turn on fingerprint or face unlock', d:'Optional. Faster and safer sign in on this device.', done: bioOn, go:'account' }
+  ];
+}
+function btSetupGo(k){
+  if(k === 'company') openCompanyDetailsSheet();
+  else if(k === 'settings') openSettingsSheet();
+  else if(k === 'products') openBulkAddSheet();
+  else if(k === 'supplier') openSupplierFormSheet(null, function(){ openSetupSheet(); });
+  else if(k === 'customers') openImportSheet();
+  else if(k === 'team') openTeamSheet();
+  else if(k === 'sell') setTab('sell');
+  else if(k === 'profit') openProfitSheet();
+  else if(k === 'backups') openBackupsSheet();
+  else if(k === 'account') { try{ openSettingsSheet(); }catch(e){} }
+}
+function openSetupSheet(){
+  var steps = btSetupSteps(), done = steps.filter(function(x){ return x.done; }).length, pct = Math.round(done / steps.length * 100);
+  var html = '<div class="sheet-head"><h2>'+tr('Setup guide')+'</h2></div>' +
+    '<div class="banner" style="display:block;"><b>'+done+' '+tr('of')+' '+steps.length+' '+tr('steps done')+'</b>'+btBar(pct, done === steps.length ? 'var(--success)' : 'var(--primary)')+(done === steps.length ? '<div style="margin-top:6px;">'+tr('Everything is set up. Well done!')+'</div>' : '')+'</div>' +
+    '<div class="rowlist" style="margin-top:10px;">' + steps.map(function(s){
+      return '<div class="row"><div class="main"><div class="title" style="'+(s.done?'color:var(--text-muted);text-decoration:line-through;':'')+'">'+(s.done?'✓ ':'')+tr(s.t)+'</div><div class="sub">'+tr(s.d)+'</div></div>' +
+        '<div class="trail">'+(s.done ? '' : '<button class="btn btn-primary" style="padding:6px 14px;min-height:0;" data-sg="'+s.go+'" type="button">'+tr('Do this')+'</button>')+'</div></div>';
+    }).join('') + '</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="sgHide" type="button">'+tr(State.settings.setupHidden ? 'Show this guide when I sign in' : 'Do not show this guide automatically')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="sgClose" type="button">'+tr('Close')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#sgClose').addEventListener('click', closeModal);
+  ov.querySelector('#sgHide').addEventListener('click', function(){ btSave({ setupHidden: !State.settings.setupHidden }); toast(tr('Saved')); closeModal(); });
+  ov.querySelectorAll('[data-sg]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); btSetupGo(b.getAttribute('data-sg')); }); });
+}
+var _setupPrompted = false;
+function btMaybeSetupPrompt(){
+  try{
+    if(_setupPrompted || !State.session || State.session.role !== 'owner' || State.settings.setupHidden) return;
+    if(!State.ready.products || !State.ready.sales) return;
+    _setupPrompted = true;
+    if(State.products.length === 0 && State.sales.length === 0 && !document.getElementById('modalRoot').innerHTML.trim()) openSetupSheet();
+  }catch(e){}
+}
+
+/* ---- end of day summary ---- */
+function btEodFigures(day){
+  var sales = btSalesBetween(day, day), exps = btExpensesBetween(day, day);
+  var by = { cash:0, card:0, wallet:0, credit:0 }, revenue = 0, cost = 0, items = {};
+  sales.forEach(function(s){
+    var t = Number(s.total)||0; revenue += t; cost += Number(s.cost)||0;
+    by[by[s.paymentMethod] != null ? s.paymentMethod : 'cash'] += t;
+    (s.items||[]).forEach(function(it){ var k = it.productId || it.name; var m = items[k] || (items[k] = { name:it.name, qty:0, revenue:0 }); m.qty += it.qty||0; m.revenue += it.lineTotal||0; });
+  });
+  var expTotal = exps.reduce(function(a,x){ return a + (Number(x.amount)||0); }, 0);
+  var top = Object.keys(items).map(function(k){ return items[k]; }).filter(function(x){ return x.revenue > 0; }).sort(function(a,b){ return b.revenue - a.revenue; }).slice(0,5);
+  var tills = State.tillSessions.filter(function(t){ return t.closedAt && todayKey(new Date(t.closedAt)) === day; });
+  var openTills = State.tillSessions.filter(function(t){ return t.status === 'open'; });
+  var variance = tills.reduce(function(a,t){ return a + (Number(t.variance)||0); }, 0);
+  return { day:day, count:sales.length, revenue:revenue, cost:cost, gross:revenue-cost, by:by, expenses:expTotal, net:revenue-cost-expTotal, top:top, tills:tills, openTills:openTills, variance:variance };
+}
+function btEodText(f){
+  var d = new Date(f.day+'T12:00:00').toLocaleDateString(uiLocale(), { weekday:'long', day:'numeric', month:'long' });
+  var owed = State.customers.reduce(function(a,c){ return a + (c.balance > 0 ? c.balance : 0); }, 0);
+  return btShop()+' end of day, '+d+'\n' +
+    'Sales: '+fmtMoney(f.revenue)+' ('+f.count+')\nCash: '+fmtMoney(f.by.cash)+'\nCard: '+fmtMoney(f.by.card)+'\nWallet: '+fmtMoney(f.by.wallet)+'\nCredit: '+fmtMoney(f.by.credit)+'\n' +
+    'Profit on sales: '+fmtMoney(f.gross)+'\nExpenses: '+fmtMoney(f.expenses)+'\nProfit after expenses: '+fmtMoney(f.net)+'\n' +
+    (f.tills.length ? 'Cash up variance: '+fmtMoney(f.variance)+'\n' : '') +
+    (f.top.length ? 'Top sellers: '+f.top.slice(0,3).map(function(t){ return t.name+' ('+t.qty+')'; }).join(', ')+'\n' : '') +
+    'Still owed by customers: '+fmtMoney(owed)+'\nStock needing attention: '+btStockAttention();
+}
+function btEodSeenKey(){ return 'pesa_eod_seen_'+WS.id; }
+function btEodDue(){
+  try{
+    if(!State.settings.eodOn || !State.session || isRestricted()) return null;
+    var t = State.settings.eodTime || '18:00', now = new Date(), hm = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    if(hm < t) return null;
+    var seen = ''; try{ seen = localStorage.getItem(btEodSeenKey()) || ''; }catch(e){}
+    if(seen === todayKey()) return null;
+    var f = btEodFigures(todayKey());
+    return f.count > 0 ? f : null;
+  }catch(e){ return null; }
+}
+function btCashupAlert(){
+  try{
+    if(!State.settings.eodOn || !State.session || isRestricted()) return null;
+    var t = State.settings.eodTime || '18:00', now = new Date(), hm = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    if(hm < t) return null;
+    var open = State.tillSessions.filter(function(x){ return x.status === 'open'; });
+    return open.length ? open : null;
+  }catch(e){ return null; }
+}
+function openEodSheet(day0){
+  var day = (typeof day0 === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day0)) ? day0 : todayKey();
+  if(day === todayKey()){ try{ localStorage.setItem(btEodSeenKey(), day); }catch(e){} }
+  var f = btEodFigures(day);
+  var methods = [['Cash', f.by.cash], ['Card', f.by.card], ['Mobile wallet', f.by.wallet], ['Credit (not paid yet)', f.by.credit]];
+  var maxM = Math.max.apply(null, methods.map(function(m){ return m[1]; })) || 1;
+  var html = '<div class="sheet-head"><h2>'+tr('End of day summary')+'</h2></div>' +
+    '<div class="field"><label>'+tr('Date')+'</label><input id="eodDay" type="date" value="'+day+'"></div>' +
+    (f.count === 0 && f.expenses === 0 ? '<div class="empty"><div class="t">'+tr('Nothing was recorded on this day')+'</div></div>' :
+      '<div class="banner" style="display:block;text-align:center;"><div style="font-size:12px;color:var(--text-muted);">'+tr('Total sales')+' · '+f.count+' '+tr(f.count===1?'sale':'sales')+'</div><div class="num" style="font-size:28px;font-weight:800;">'+fmtMoney(f.revenue)+'</div></div>' +
+      '<div class="section-title">'+tr('How customers paid')+'</div>' + methods.map(function(m){ return btRow(tr(m[0]), fmtMoney(m[1]), m[1]/maxM*100); }).join('') +
+      '<div class="section-title">'+tr('Profit')+'</div><div class="rowlist">' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Profit on sales')+'</div></div><div class="trail num">'+fmtMoney(f.gross)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Expenses')+'</div></div><div class="trail num">'+fmtMoney(f.expenses)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title"><b>'+tr('Profit after expenses')+'</b></div></div><div class="trail num"><b style="color:'+(f.net<0?'var(--danger)':'var(--success)')+';">'+fmtMoney(f.net)+'</b></div></div></div>' +
+      (f.tills.length ? '<div class="section-title">'+tr('Cash up')+'</div><div class="rowlist">'+f.tills.map(function(t){ return '<div class="row"><div class="main"><div class="title">'+esc(t.cashierName||tr('Cashier'))+'</div><div class="sub">'+tr('Counted')+' '+fmtMoney(t.countedCash||0)+'</div></div><div class="trail num" style="color:'+(Math.abs(t.variance||0)<0.01?'var(--success)':'var(--danger)')+';">'+(Math.abs(t.variance||0)<0.01?tr('Balanced'):fmtMoney(t.variance))+'</div></div>'; }).join('')+'</div>' : '') +
+      (f.top.length ? '<div class="section-title">'+tr('Top sellers')+'</div>' + f.top.map(function(t){ return btRow(t.name+' ('+t.qty+')', fmtMoney(t.revenue), t.revenue/f.top[0].revenue*100); }).join('') : '')) +
+    (day === todayKey() && f.openTills.length ? '<div class="banner" style="display:block;margin-top:8px;">'+ICONS.warn+' '+f.openTills.length+' '+tr(f.openTills.length===1?'till is still open. Close it and count the cash before you leave.':'tills are still open. Close them and count the cash before you leave.')+'</div>' : '') +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary" id="eodWa" type="button">WhatsApp</button><button class="btn btn-ghost" id="eodEm" type="button">'+tr('Email')+'</button><button class="btn btn-ghost" id="eodCp" type="button">'+tr('Copy')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="eodPdf" type="button">'+tr('Download full report (PDF)')+'</button></div>' +
+    '<div class="section-title" style="margin-top:14px;">'+tr('Daily reminder')+'</div>' +
+    '<div class="banner" style="display:block;">'+tr('Pesa checks the time while it is open. After the time you choose it shows this summary as an alert, and reminds you to close the tills. It cannot send anything by itself, you press send.')+'</div>' +
+    '<label style="display:flex;gap:10px;align-items:center;margin:10px 0;"><input type="checkbox" id="eodOn" '+(State.settings.eodOn?'checked':'')+' style="width:20px;height:20px;"> '+tr('Remind me every day at')+' <input id="eodTime" type="time" value="'+esc(State.settings.eodTime||'18:00')+'" style="width:auto;"></label>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelector('#eodDay').addEventListener('change', function(e){ closeModal(); openEodSheet(e.target.value); });
+  var text = btEodText(f);
+  var owner = State.users.find(function(u){ return u.role === 'owner'; }) || {};
+  ov.querySelector('#eodWa').addEventListener('click', function(){ window.open(buildWhatsAppUrl(owner.phone || '', text), '_blank'); });
+  ov.querySelector('#eodEm').addEventListener('click', function(){ window.location.href = buildMailtoUrl(owner.email || '', btShop()+' end of day', text); });
+  ov.querySelector('#eodCp').addEventListener('click', function(){ copyText(text, tr('Summary copied')); });
+  ov.querySelector('#eodPdf').addEventListener('click', async function(){ var d = await customReportPdf(day, day, 'all'); if(d) saveGeneratedPdf(d, 'pesa-day-'+day+'.pdf'); });
+  function saveRem(){ var t = ov.querySelector('#eodTime').value || '18:00'; btSave({ eodOn:ov.querySelector('#eodOn').checked, eodTime:t }); toast(tr('Saved')); }
+  ov.querySelector('#eodOn').addEventListener('change', saveRem); ov.querySelector('#eodTime').addEventListener('change', saveRem);
+}
+
+/* ---- profit and targets ---- */
+var _profitRange = '30';
+var BT_RANGES = [['today','Today'],['7','Last 7 days'],['30','Last 30 days'],['month','This month'],['lastmonth','Last month'],['year','This year']];
+function btTargets(){ var t = State.settings.targets || {}; return { daily:Number(t.daily)||0, monthly:Number(t.monthly)||0 }; }
+function btProfitFigures(from, to){
+  var sales = btSalesBetween(from, to), exps = btExpensesBetween(from, to);
+  var rev = 0, cost = 0, prod = {}, cat = {}, hours = new Array(24).fill(0), wd = [0,0,0,0,0,0,0];
+  var catOf = {}; State.products.forEach(function(p){ catOf[p.id] = p.category || 'Other'; });
+  sales.forEach(function(s){
+    var t = Number(s.total)||0; rev += t; cost += Number(s.cost)||0;
+    var d = new Date(s.createdAt); hours[d.getHours()] += t; wd[d.getDay()] += t;
+    (s.items||[]).forEach(function(it){
+      if(String(it.productId||'').indexOf('loyalty-') === 0) return;
+      var line = Number(it.lineTotal) || ((Number(it.unitPrice)||0) * (Number(it.qty)||0)), pr = line - (Number(it.cost)||0)*(Number(it.qty)||0);
+      var k = it.productId || it.name, m = prod[k] || (prod[k] = { name:it.name, qty:0, revenue:0, profit:0, below:0 });
+      m.qty += Number(it.qty)||0; m.revenue += line; m.profit += pr;
+      if((Number(it.cost)||0) > 0 && (Number(it.unitPrice)||0) < (Number(it.cost)||0)) m.below += Number(it.qty)||0;
+      var c = catOf[it.productId] || 'Other', cm = cat[c] || (cat[c] = { name:c, revenue:0, profit:0 });
+      cm.revenue += line; cm.profit += pr;
+    });
+  });
+  var expTotal = exps.reduce(function(a,x){ return a + (Number(x.amount)||0); }, 0);
+  var prods = Object.keys(prod).map(function(k){ var m = prod[k]; m.margin = m.revenue > 0 ? m.profit / m.revenue * 100 : 0; return m; });
+  return { count:sales.length, revenue:rev, cost:cost, gross:rev-cost, margin: rev > 0 ? (rev-cost)/rev*100 : 0, expenses:expTotal, net:rev-cost-expTotal, prods:prods, cats:Object.keys(cat).map(function(k){ return cat[k]; }), hours:hours, wd:wd };
+}
+function btProgressBlock(label, value, target, extra){
+  if(!(target > 0)) return '<div class="row"><div class="main"><div class="title">'+esc(label)+'</div><div class="sub">'+tr('No target set')+'</div></div><div class="trail num">'+fmtMoney(value)+'</div></div>';
+  var pct = Math.round(value / target * 100), hit = value >= target;
+  return '<div style="margin:10px 0;"><div style="display:flex;justify-content:space-between;font-size:13px;gap:8px;"><b>'+esc(label)+'</b><span class="num">'+fmtMoney(value)+' / '+fmtMoney(target)+' · '+pct+'%</span></div>' +
+    btBar(Math.min(100, pct), hit ? 'var(--success)' : 'var(--primary)') + (hit ? '<div style="font-size:12.5px;color:var(--success);margin-top:4px;font-weight:700;">'+tr('Target reached! Well done.')+'</div>' : (extra ? '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+extra+'</div>' : '')) + '</div>';
+}
+function openProfitSheet(range){
+  if(range) _profitRange = range;
+  var r = reportPresetRange(_profitRange) || reportPresetRange('30');
+  var f = btProfitFigures(r.from, r.to), tg = btTargets();
+  var today = btProfitFigures(todayKey(), todayKey()), mr = reportPresetRange('month'), mon = btProfitFigures(mr.from, mr.to);
+  var now = new Date(), dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate(), dom = now.getDate();
+  var pace = dom > 0 ? mon.revenue / dom * dim : 0;
+  var byProfit = f.prods.slice().sort(function(a,b){ return b.profit - a.profit; });
+  var lowMargin = f.prods.filter(function(p){ return p.revenue > 0 && p.margin < 15 && p.qty >= 2; }).sort(function(a,b){ return a.margin - b.margin; }).slice(0,6);
+  var below = f.prods.filter(function(p){ return p.below > 0; });
+  var cats = f.cats.slice().sort(function(a,b){ return b.profit - a.profit; }).slice(0,6);
+  var hMax = Math.max.apply(null, f.hours) || 1, wMax = Math.max.apply(null, f.wd) || 1;
+  var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var html = '<div class="sheet-head"><h2>'+tr('Profit and targets')+'</h2></div>' +
+    '<div class="section-title">'+tr('Targets')+'</div>' +
+    btProgressBlock(tr('Today'), today.revenue, tg.daily) +
+    btProgressBlock(tr('This month'), mon.revenue, tg.monthly, tg.monthly > 0 ? tr('At this pace you will finish the month on')+' <b>'+fmtMoney(pace)+'</b>' : '') +
+    '<div class="field-row"><div class="field"><label>'+tr('Daily sales target')+' (N$)</label><input id="pfDaily" type="number" inputmode="decimal" min="0" value="'+(tg.daily||'')+'"></div><div class="field"><label>'+tr('Monthly sales target')+' (N$)</label><input id="pfMonthly" type="number" inputmode="decimal" min="0" value="'+(tg.monthly||'')+'"></div></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pfSaveT" type="button">'+tr('Save targets')+'</button></div>' +
+    '<div class="section-title" style="margin-top:14px;">'+tr('Profit')+'</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+BT_RANGES.map(function(x){ return '<button class="segbtn'+(_profitRange===x[0]?' active':'')+'" type="button" data-pr="'+x[0]+'" style="flex:0 0 auto;">'+tr(x[1])+'</button>'; }).join('')+'</div>' +
+    (f.count === 0 ? '<div class="empty"><div class="t">'+tr('No sales in this period')+'</div></div>' :
+      '<div class="rowlist">' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Sales')+'</div><div class="sub">'+f.count+' '+tr(f.count===1?'sale':'sales')+'</div></div><div class="trail num">'+fmtMoney(f.revenue)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Profit on sales')+'</div><div class="sub">'+tr('Margin')+' '+f.margin.toFixed(1)+'%</div></div><div class="trail num">'+fmtMoney(f.gross)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title">'+tr('Expenses')+'</div></div><div class="trail num">'+fmtMoney(f.expenses)+'</div></div>' +
+        '<div class="row"><div class="main"><div class="title"><b>'+tr('Profit after expenses')+'</b></div></div><div class="trail num"><b style="color:'+(f.net<0?'var(--danger)':'var(--success)')+';">'+fmtMoney(f.net)+'</b></div></div></div>' +
+      '<div class="section-title">'+tr('Most profit by product')+'</div>' + byProfit.slice(0,10).map(function(p){ return btRow(p.name+' · '+p.qty+' '+tr('sold'), fmtMoney(p.profit)+' <span style="color:var(--text-muted);font-size:11.5px;">'+p.margin.toFixed(0)+'%</span>', byProfit[0].profit > 0 ? Math.max(0, p.profit/byProfit[0].profit*100) : 0); }).join('') +
+      (lowMargin.length ? '<div class="section-title">'+tr('Thin margins')+'</div><div class="banner" style="display:block;">'+tr('These sell but leave very little profit. Consider raising the price.')+'</div>' + lowMargin.map(function(p){ return btRow(p.name, p.margin.toFixed(1)+'%', null); }).join('') : '') +
+      (below.length ? '<div class="banner" style="display:block;margin-top:8px;color:var(--danger);">'+ICONS.warn+' '+below.length+' '+tr(below.length===1?'product was sold below cost':'products were sold below cost')+': '+below.slice(0,3).map(function(p){ return esc(p.name); }).join(', ')+'</div>' : '') +
+      (cats.length > 1 ? '<div class="section-title">'+tr('Profit by category')+'</div>' + cats.map(function(c){ return btRow(c.name, fmtMoney(c.profit), cats[0].profit > 0 ? Math.max(0, c.profit/cats[0].profit*100) : 0); }).join('') : '') +
+      '<div class="section-title">'+tr('Busiest hours')+'</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:2px;height:70px;">'+f.hours.map(function(v,h){ return '<div title="'+h+':00 '+fmtMoney(v)+'" style="flex:1;background:var(--primary);opacity:'+(v?0.35+0.65*v/hMax:0.12)+';height:'+Math.max(3, v/hMax*100)+'%;border-radius:2px;"></div>'; }).join('')+'</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-muted);"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>' +
+      '<div class="section-title">'+tr('Busiest days')+'</div>' + dayNames.map(function(n,i){ return btRow(tr(n), fmtMoney(f.wd[i]), f.wd[i]/wMax*100); }).join('') +
+      '<div class="actions"><button class="btn btn-ghost btn-block" id="pfCsv" type="button">'+tr('Download product profit (CSV)')+'</button></div>') + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelectorAll('[data-pr]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openProfitSheet(b.getAttribute('data-pr')); }); });
+  ov.querySelector('#pfSaveT').addEventListener('click', function(){
+    btSave({ targets:{ daily:parseFloat(ov.querySelector('#pfDaily').value)||0, monthly:parseFloat(ov.querySelector('#pfMonthly').value)||0 } });
+    toast(tr('Targets saved')); closeModal(); openProfitSheet();
+  });
+  var cs = ov.querySelector('#pfCsv');
+  if(cs) cs.addEventListener('click', function(){
+    btSaveCsv('pesa-product-profit-'+r.from+'-to-'+r.to+'.csv', [['Product','Units sold','Sales','Profit','Margin %']].concat(byProfit.map(function(p){ return [p.name, p.qty, p.revenue.toFixed(2), p.profit.toFixed(2), p.margin.toFixed(1)]; })));
+  });
+}
+
+/* ---- staff performance ---- */
+var _staffRange = 'month';
+function btStaffGoals(){ return State.settings.staffGoals || {}; }
+function btStaffStats(from, to){
+  var by = {};
+  btSalesBetween(from, to).forEach(function(s){
+    var k = s.cashierName || 'Unknown', m = by[k] || (by[k] = { name:k, count:0, revenue:0, profit:0, items:0, credit:0 });
+    m.count++; m.revenue += Number(s.total)||0; m.profit += (Number(s.total)||0) - (Number(s.cost)||0); m.credit += s.paymentMethod === 'credit' ? 1 : 0;
+    (s.items||[]).forEach(function(it){ m.items += Number(it.qty)||0; });
+  });
+  State.tillSessions.forEach(function(t){
+    if(!t.closedAt) return; var d = todayKey(new Date(t.closedAt)); if(d < from || d > to) return;
+    var k = t.cashierName || 'Unknown', m = by[k] || (by[k] = { name:k, count:0, revenue:0, profit:0, items:0, credit:0 });
+    m.tills = (m.tills||0) + 1; m.variance = (m.variance||0) + (Number(t.variance)||0); if((t.variance||0) < -0.009) m.short = (m.short||0) + 1;
+  });
+  return Object.keys(by).map(function(k){ var m = by[k]; m.avg = m.count ? m.revenue / m.count : 0; return m; }).sort(function(a,b){ return b.revenue - a.revenue; });
+}
+function openStaffPerfSheet(range){
+  if(range) _staffRange = range;
+  var r = reportPresetRange(_staffRange) || reportPresetRange('month');
+  var stats = btStaffStats(r.from, r.to), max = stats.length ? (stats[0].revenue || 1) : 1;
+  var mr = reportPresetRange('month'), mstats = btStaffStats(mr.from, mr.to), goals = btStaffGoals();
+  var html = '<div class="sheet-head"><h2>'+tr('Staff performance')+'</h2></div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+BT_RANGES.map(function(x){ return '<button class="segbtn'+(_staffRange===x[0]?' active':'')+'" type="button" data-sr="'+x[0]+'" style="flex:0 0 auto;">'+tr(x[1])+'</button>'; }).join('')+'</div>' +
+    (stats.length ? stats.map(function(m, i){
+      var short = m.short ? '<span style="color:var(--danger);">'+m.short+' '+tr(m.short===1?'short till':'short tills')+'</span>' : (m.tills ? '<span style="color:var(--success);">'+tr('Tills balanced')+'</span>' : '');
+      return '<div style="margin:12px 0;"><div style="display:flex;justify-content:space-between;gap:8px;"><b>'+(i+1)+'. '+esc(m.name)+'</b><b class="num">'+fmtMoney(m.revenue)+'</b></div>'+btBar(m.revenue/max*100, i===0?'var(--success)':'var(--primary)') +
+        '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">'+m.count+' '+tr(m.count===1?'sale':'sales')+' · '+tr('average')+' '+fmtMoney(m.avg)+' · '+m.items+' '+tr('items')+(short?' · '+short:'')+'</div></div>';
+    }).join('') : '<div class="empty"><div class="t">'+tr('No sales in this period')+'</div></div>') +
+    '<div class="section-title" style="margin-top:14px;">'+tr('Bonus goals this month')+'</div>' +
+    '<div class="banner" style="display:block;">'+tr('Set a monthly sales goal and a bonus for each person. Pesa shows who is on track and what each person has earned. Pesa does not pay anyone, it only tracks the goal.')+'</div>' +
+    (function(){
+      var names = {}; State.users.forEach(function(u){ if(u.active !== false && u.role !== 'stockclerk' && u.pending !== true) names[u.name] = true; }); mstats.forEach(function(m){ names[m.name] = true; });
+      var list = Object.keys(names).filter(function(n){ return n && n !== 'Unknown'; });
+      if(!list.length) return '<div class="empty"><div class="t">'+tr('No staff yet')+'</div></div>';
+      return '<div class="rowlist">'+list.map(function(n){
+        var g = goals[n] || {}, m = mstats.find(function(x){ return x.name === n; }) || { revenue:0 }, hit = g.goal > 0 && m.revenue >= g.goal;
+        return '<button class="row" type="button" data-sg="'+esc(n)+'" style="width:100%;text-align:left;"><div class="main"><div class="title">'+esc(n)+'</div><div class="sub">'+(g.goal > 0 ? fmtMoney(m.revenue)+' / '+fmtMoney(g.goal)+' · '+Math.round(m.revenue/g.goal*100)+'%' : tr('No goal set. Tap to set one.'))+'</div></div><div class="trail" style="font-weight:700;color:'+(hit?'var(--success)':'var(--text-muted)')+';">'+(hit ? tr('Bonus')+' '+fmtMoney(g.bonus||0) : (g.bonus > 0 ? fmtMoney(g.bonus) : ''))+'</div></button>';
+      }).join('')+'</div>';
+    })() + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelectorAll('[data-sr]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openStaffPerfSheet(b.getAttribute('data-sr')); }); });
+  ov.querySelectorAll('[data-sg]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openStaffGoalSheet(b.getAttribute('data-sg')); }); });
+}
+function openStaffGoalSheet(name){
+  var g = btStaffGoals()[name] || {};
+  var html = '<div class="sheet-head"><h2>'+esc(name)+'</h2></div>' +
+    '<div class="field"><label>'+tr('Monthly sales goal')+' (N$)</label><input id="sgGoal" type="number" inputmode="decimal" min="0" value="'+(g.goal||'')+'"></div>' +
+    '<div class="field"><label>'+tr('Bonus when the goal is reached')+' (N$)</label><input id="sgBonus" type="number" inputmode="decimal" min="0" value="'+(g.bonus||'')+'"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="sgSave" type="button">'+tr('Save')+'</button></div><div class="actions"><button class="btn btn-ghost btn-block" id="sgBack" type="button">'+tr('Back')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  ov.querySelector('#sgBack').addEventListener('click', function(){ closeModal(); openStaffPerfSheet(); });
+  ov.querySelector('#sgSave').addEventListener('click', function(){
+    var all = Object.assign({}, btStaffGoals()); all[name] = { goal:parseFloat(ov.querySelector('#sgGoal').value)||0, bonus:parseFloat(ov.querySelector('#sgBonus').value)||0 };
+    btSave({ staffGoals:all }); toast(tr('Saved')); closeModal(); openStaffPerfSheet();
+  });
+}
+
+/* ---- currency ---- */
+var BT_CURRENCIES = [['ZAR','R','South African rand',1], ['USD','$','US dollar',0.055], ['EUR','€','Euro',0.05], ['GBP','£','British pound',0.043], ['BWP','P','Botswana pula',0.75], ['AOA','Kz','Angolan kwanza',50], ['OTHER','','Other currency',1]];
+function btFx(){
+  var c = State.settings.currency || {};
+  var code = c.code || 'ZAR', def = BT_CURRENCIES.find(function(x){ return x[0] === code; }) || BT_CURRENCIES[0];
+  var rate = Number(c.rate); if(!(rate > 0)) rate = def[3];
+  return { on: !!c.show, code:code, symbol: c.symbol != null && c.symbol !== '' ? c.symbol : def[1], rate:rate };
+}
+function btFxFormat(nad){ var f = btFx(); var v = (Number(nad)||0) * f.rate; return (f.symbol ? f.symbol+' ' : f.code+' ') + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function btFxChargeHtml(total){
+  var f = btFx(); if(!f.on) return '';
+  return '<div id="fxTotal" style="text-align:center;font-size:13px;color:var(--text-muted);margin:-6px 0 10px;">≈ '+esc(btFxFormat(total))+'</div>';
+}
+/* adds a box for cash received in the other currency; the change is always given in N$ */
+function btFxCash(ov, pm, total){
+  var f = btFx(); if(!f.on || pm !== 'cash') return;
+  var rec = ov.querySelector('#cashRecv'); if(!rec || ov.querySelector('#cashFx')) return;
+  var box = document.createElement('div'); box.className = 'field';
+  box.innerHTML = '<label>'+tr('Or cash received in')+' '+esc(f.code)+'</label><input id="cashFx" type="number" inputmode="decimal" step="0.01" placeholder="'+esc(btFxFormat(total))+'">';
+  rec.parentNode.parentNode.insertBefore(box, rec.parentNode.nextSibling);
+  box.querySelector('#cashFx').addEventListener('input', function(e){
+    var v = parseFloat(e.target.value);
+    rec.value = isFinite(v) && v > 0 ? (Math.round(v / f.rate * 100) / 100).toFixed(2) : '';
+    rec.dispatchEvent(new Event('input', { bubbles:true }));
+  });
+}
+function openCurrencySheet(){
+  var f = btFx();
+  var html = '<div class="sheet-head"><h2>'+tr('Currency and converter')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Pesa always records money in Namibian dollars. Here you can also show the amount in another currency at the till, and take cash in that currency. The Namibian dollar is tied one to one to the South African rand. Other rates change daily, so type today’s rate yourself.')+'</div>' +
+    '<label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-weight:600;"><input type="checkbox" id="fxOn" '+(f.on?'checked':'')+' style="width:20px;height:20px;"> '+tr('Show the second currency at the till')+'</label>' +
+    '<div class="field"><label>'+tr('Currency')+'</label><select id="fxCode">'+BT_CURRENCIES.map(function(c){ return '<option value="'+c[0]+'"'+(f.code===c[0]?' selected':'')+'>'+(c[0]==='OTHER'?tr(c[2]):c[0]+' · '+tr(c[2]))+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field-row"><div class="field"><label>'+tr('Symbol')+'</label><input id="fxSym" value="'+esc(f.symbol)+'" maxlength="4"></div><div class="field"><label>'+tr('N$ 1 equals')+'</label><input id="fxRate" type="number" inputmode="decimal" step="any" min="0" value="'+f.rate+'"></div></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="fxSave" type="button">'+tr('Save')+'</button></div>' +
+    '<div class="section-title" style="margin-top:14px;">'+tr('Converter')+'</div>' +
+    '<div class="field-row"><div class="field"><label>N$</label><input id="fxN" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div><div class="field"><label id="fxFL">'+esc(f.code)+'</label><input id="fxF" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  var codeSel = ov.querySelector('#fxCode');
+  codeSel.addEventListener('change', function(){
+    var c = BT_CURRENCIES.find(function(x){ return x[0] === codeSel.value; });
+    if(c && c[0] !== 'OTHER'){ ov.querySelector('#fxSym').value = c[1]; ov.querySelector('#fxRate').value = c[3]; }
+  });
+  function rate(){ var v = parseFloat(ov.querySelector('#fxRate').value); return v > 0 ? v : 1; }
+  ov.querySelector('#fxN').addEventListener('input', function(e){ var v = parseFloat(e.target.value); ov.querySelector('#fxF').value = isFinite(v) ? (v * rate()).toFixed(2) : ''; });
+  ov.querySelector('#fxF').addEventListener('input', function(e){ var v = parseFloat(e.target.value); ov.querySelector('#fxN').value = isFinite(v) ? (v / rate()).toFixed(2) : ''; });
+  ov.querySelector('#fxSave').addEventListener('click', function(){
+    var rt = parseFloat(ov.querySelector('#fxRate').value);
+    if(!(rt > 0)) return toast(tr('Enter a rate above zero'));
+    btSave({ currency:{ show:ov.querySelector('#fxOn').checked, code:codeSel.value === 'OTHER' ? 'OTH' : codeSel.value, symbol:ov.querySelector('#fxSym').value.trim(), rate:rt } });
+    toast(tr('Saved'));
+  });
+}
+
+/* ---- display: text size and contrast (this device only) ---- */
+var BT_UI_KEY = 'pesa_ui_prefs';
+function uiPrefs(){ var p = {}; try{ p = JSON.parse(localStorage.getItem(BT_UI_KEY) || '{}') || {}; }catch(e){} return { scale: [1, 1.15, 1.3, 1.5].indexOf(Number(p.scale)) > -1 ? Number(p.scale) : 1, contrast: !!p.contrast }; }
+function uiPrefsApply(){
+  var p = uiPrefs(), root = document.documentElement;
+  try{ if(window.innerWidth < 480 && p.scale > 1.3) p.scale = 1.3; }catch(e){}
+  try{ root.style.zoom = p.scale === 1 ? '' : String(p.scale); if(p.scale === 1) root.style.removeProperty('--uiz'); else root.style.setProperty('--uiz', String(p.scale)); }catch(e){}
+  if(p.contrast) root.classList.add('hc'); else root.classList.remove('hc');
+}
+function uiPrefsSave(patch){ var p = Object.assign(uiPrefs(), patch); try{ localStorage.setItem(BT_UI_KEY, JSON.stringify(p)); }catch(e){} uiPrefsApply(); }
+function openDisplaySheet(){
+  var p = uiPrefs();
+  var sizes = [[1,'Normal'],[1.15,'Large'],[1.3,'Larger'],[1.5,'Largest']];
+  var html = '<div class="sheet-head"><h2>'+tr('Text size and contrast')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Make everything on screen bigger and easier to read. This only changes this computer or device, not other people’s.')+'</div>' +
+    '<div class="field" style="margin-top:10px;"><label>'+tr('Text size')+'</label><div class="segbtns">'+sizes.map(function(s){ return '<button class="segbtn'+(p.scale===s[0]?' active':'')+'" type="button" data-ts="'+s[0]+'">'+tr(s[1])+'</button>'; }).join('')+'</div></div>' +
+    '<label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-weight:600;"><input type="checkbox" id="uiHc" '+(p.contrast?'checked':'')+' style="width:20px;height:20px;"> '+tr('High contrast (stronger text and borders)')+'</label>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="uiClose" type="button">'+tr('Done')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-ts]').forEach(function(b){ b.addEventListener('click', function(){ uiPrefsSave({ scale:parseFloat(b.getAttribute('data-ts')) }); closeModal(); openDisplaySheet(); }); });
+  ov.querySelector('#uiHc').addEventListener('change', function(e){ uiPrefsSave({ contrast:e.target.checked }); });
+  ov.querySelector('#uiClose').addEventListener('click', closeModal);
+}
+try{ uiPrefsApply(); }catch(e){}
+
+/* ---- search help ---- */
+var BT_HELP_TOPICS = [
+  ['Make a sale', 'sell sale till checkout cash card', function(){ setTab('sell'); }],
+  ['Add a product', 'add new product item stock create', function(){ setTab('stock'); setTimeout(function(){ openProductSheet(); }, 120); }],
+  ['Import products from a spreadsheet', 'import csv excel upload bulk products', function(){ openBulkAddSheet(); }, true],
+  ['Change a price or stock count', 'edit price change stock quantity update', function(){ setTab('stock'); }],
+  ['Add a customer', 'add customer client new', function(){ setTab('credit'); setTimeout(function(){ openCustomerSheet(); }, 120); }],
+  ['Record a payment from a customer', 'payment customer owes paid credit receive', function(){ setTab('credit'); }],
+  ['See who owes me money', 'debtors owe owing overdue late reminder', function(){ openDebtorsSheet(); }, true],
+  ['Send a quote', 'quote quotation estimate price offer', function(){ openQuotesSheet(); }, true],
+  ['Make an invoice', 'invoice bill create', function(){ openInvoiceSheet(); }],
+  ['Find or print a receipt', 'receipt print invoice copy find', function(){ setTab('invoices'); }],
+  ['Add an employee', 'staff employee cashier worker add team invite', function(){ openTeamSheet(); }, true],
+  ['Close the till and count cash', 'till close cash up count drawer float', function(){ setTab('till'); }],
+  ['See reports and profit', 'report profit monthly figures', function(){ setTab('reports'); }, true],
+  ['Record an expense', 'expense cost spend rent electricity', function(){ setTab('expenses'); }],
+  ['Back up my data', 'backup restore save copy folder drive', function(){ openBackupsSheet(); }, true],
+  ['Change my password', 'password change pin forgot', function(){ openSettingsSheet(); }],
+  ['Fingerprint or face unlock', 'fingerprint face biometric unlock passkey', function(){ openSettingsSheet(); }],
+  ['Print barcode labels', 'barcode label print sticker price tag', function(){ openLabelsSheet(); }, true],
+  ['Loyalty points for customers', 'loyalty points rewards discount regular', function(){ openLoyaltySheet(); }, true],
+  ['Make the text bigger', 'large text bigger font size zoom contrast see read', function(){ openDisplaySheet(); }],
+  ['Show prices in rand', 'currency rand zar dollar converter exchange', function(){ openCurrencySheet(); }, true],
+  ['Low stock and expiry dates', 'low stock expiry expire reorder order supplier', function(){ openStockxSheet(); }, true],
+  ['End of day summary', 'end of day summary closing daily report', function(){ openEodSheet(); }, true],
+  ['Set a sales target', 'target goal sales daily monthly', function(){ openProfitSheet(); }, true],
+  ['Staff performance and bonuses', 'staff performance bonus goal cashier ranking', function(){ openStaffPerfSheet(); }, true],
+  ['Setup guide', 'setup guide start begin new getting started', function(){ openSetupSheet(); }, true],
+  ['Install Pesa on this device', 'install app home screen shortcut', function(){ installPesa(); }],
+  ['Slow or older computer', 'slow old computer lag compatibility check', function(){ openCompatSheet(); }],
+  ['Security check', 'security protect safe hack secure', function(){ openSecuritySheet(); }, true]
+];
+function btHelpIndex(){
+  var out = [], mgr = isManagerOrOwner();
+  BT_HELP_TOPICS.forEach(function(t){ if(t[3] && !mgr) return; out.push({ kind:'topic', title:t[0], hay:(t[0]+' '+t[1]).toLowerCase(), titleLow:t[0].toLowerCase(), run:t[2] }); });
+  try{
+    lessonsForRole().forEach(function(l){
+      var hay = [l.title].concat((l.slides||[]).map(function(s){ return [s.title, s.text, s.where, s.tip, (s.steps||[]).join(' ')].join(' '); })).join(' ').toLowerCase();
+      out.push({ kind:'lesson', title:l.title, hay:hay, titleLow:l.title.toLowerCase(), id:l.id });
+    });
+  }catch(e){}
+  return out;
+}
+function btHelpSearch(q){
+  var toks = String(q||'').toLowerCase().split(/[^a-z0-9]+/).filter(function(x){ return x.length > 1; });
+  if(!toks.length) return [];
+  return btHelpIndex().map(function(it){
+    var sc = 0; toks.forEach(function(t){ if(it.titleLow.indexOf(t) > -1) sc += 4; if(it.hay.indexOf(t) > -1) sc += 1; });
+    if(toks.every(function(t){ return it.hay.indexOf(t) > -1; })) sc += 3;
+    return { it:it, sc:sc };
+  }).filter(function(x){ return x.sc > 0; }).sort(function(a,b){ return b.sc - a.sc; }).slice(0, 12).map(function(x){ return x.it; });
+}
+function openHelpSearchSheet(q0){
+  var html = '<div class="sheet-head"><h2>'+tr('Search help')+'</h2></div>' +
+    '<div class="searchbar" style="margin-bottom:10px;">'+ICONS.search+'<input id="hsQ" placeholder="'+tr('Type what you want to do…')+'" value="'+esc(q0||'')+'" autocomplete="off"></div><div id="hsRes"></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="hsTrain" type="button">'+tr('Open all training lessons')+'</button></div>';
+  var ov = openSheet(html);
+  var inp = ov.querySelector('#hsQ');
+  function paint(){
+    var q = inp.value, res = btHelpSearch(q), box = ov.querySelector('#hsRes');
+    if(!q.trim()){ box.innerHTML = '<div class="banner" style="display:block;">'+tr('Try words like: price, backup, staff, receipt, loyalty, till.')+'</div>'; return; }
+    box.innerHTML = res.length ? '<div class="rowlist">'+res.map(function(r, i){
+      return '<button class="row" type="button" data-hs="'+i+'" style="width:100%;text-align:left;"><div class="main"><div class="title">'+esc(tr(r.title))+'</div><div class="sub">'+tr(r.kind === 'lesson' ? 'Training lesson' : 'Go there now')+'</div></div></button>';
+    }).join('')+'</div>' : '<div class="empty"><div class="t">'+tr('Nothing found')+'</div><div class="s">'+tr('Try a different word, or open the training lessons.')+'</div></div>';
+    box.querySelectorAll('[data-hs]').forEach(function(b){ b.addEventListener('click', function(){
+      var r = res[+b.getAttribute('data-hs')]; closeModal();
+      if(r.kind === 'lesson') openLessonSlideshow(r.id); else r.run();
+    }); });
+  }
+  inp.addEventListener('input', paint); paint();
+  ov.querySelector('#hsTrain').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
+  setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 80);
+}
+
+/* ---- backup folder (copies saved to a folder you choose, for example one that syncs to Google Drive) ---- */
+var BackupFolder = (function(){
+  var DB = 'pesa_bkfolder_v1', ST = 'h', KEEP = 30;
+  function supported(){ return typeof window.showDirectoryPicker === 'function' && !!window.indexedDB; }
+  function open(){ return new Promise(function(res, rej){ var r = indexedDB.open(DB, 1); r.onupgradeneeded = function(){ r.result.createObjectStore(ST); }; r.onsuccess = function(){ res(r.result); }; r.onerror = function(){ rej(r.error); }; }); }
+  function getH(){ return open().then(function(db){ return new Promise(function(res){ var q = db.transaction(ST,'readonly').objectStore(ST).get(WS.id); q.onsuccess = function(){ res(q.result || null); db.close(); }; q.onerror = function(){ res(null); db.close(); }; }); }).catch(function(){ return null; }); }
+  function setH(h){ return open().then(function(db){ return new Promise(function(res){ var s = db.transaction(ST,'readwrite').objectStore(ST); var q = h ? s.put(h, WS.id) : s.delete(WS.id); q.onsuccess = function(){ res(true); db.close(); }; q.onerror = function(){ res(false); db.close(); }; }); }).catch(function(){ return false; }); }
+  async function perm(h, ask){
+    try{
+      var o = { mode:'readwrite' };
+      if((await h.queryPermission(o)) === 'granted') return true;
+      if(ask && (await h.requestPermission(o)) === 'granted') return true;
+    }catch(e){}
+    return false;
+  }
+  function lastKey(){ return 'pesa_bkfolder_last_'+WS.id; }
+  function lastAt(){ try{ return parseInt(localStorage.getItem(lastKey()) || '0', 10) || 0; }catch(e){ return 0; } }
+  function safe(s){ return String(s||'shop').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,24) || 'shop'; }
+  async function writeJson(json, at){
+    var h = await getH(); if(!h) return { ok:false, why:'nofolder' };
+    if(!(await perm(h, false))) return { ok:false, why:'permission' };
+    try{
+      var d = new Date(at || Date.now()), name = 'pesa-backup-'+safe(btShop())+'-'+todayKey(d)+'-'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+'.json';
+      var fh = await h.getFileHandle(name, { create:true }), w = await fh.createWritable(); await w.write(json); await w.close();
+      try{ localStorage.setItem(lastKey(), String(Date.now())); }catch(e){}
+      try{
+        var names = [], it = h.values(), nx; while(!(nx = await it.next()).done){ var e = nx.value; if(e.kind === 'file' && e.name.indexOf('pesa-backup-'+safe(btShop())+'-') === 0) names.push(e.name); }
+        names.sort(); while(names.length > KEEP){ await h.removeEntry(names.shift()); }
+      }catch(e2){}
+      return { ok:true, name:name };
+    }catch(e){ return { ok:false, why:'error' }; }
+  }
+  async function choose(){
+    try{ var h = await window.showDirectoryPicker({ mode:'readwrite' }); await setH(h); return h; }catch(e){ return null; }
+  }
+  async function status(){
+    if(!supported()) return { state:'unsupported' };
+    var h = await getH(); if(!h) return { state:'none' };
+    var ok = await perm(h, false);
+    return { state: ok ? 'ready' : 'permission', name:h.name, last:lastAt() };
+  }
+  async function renew(){ var h = await getH(); if(!h) return false; return perm(h, true); }
+  async function forget(){ await setH(null); }
+  return { supported:supported, choose:choose, status:status, renew:renew, forget:forget, writeJson:writeJson, lastAt:lastAt };
+})();
+function btShareBackup(){
+  (async function(){
+    try{
+      var data = backupPayload(); data.ledgers = await gatherLedgers();
+      var json = JSON.stringify(data), name = 'pesa-backup-'+todayKey()+'.json';
+      var file = new File([json], name, { type:'application/json' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){ await navigator.share({ files:[file], title:'Pesa backup' }); }
+      else { downloadTextFile(name, json); }
+    }catch(e){ if(e && e.name !== 'AbortError') toast(tr('Could not share the backup')); }
+  })();
+}
+function btBackupFolderPaint(box){
+  if(!box) return;
+  BackupFolder.status().then(function(s){
+    var h = '<div class="section-title" style="margin-top:12px;">'+tr('Copies outside Pesa')+'</div>';
+    if(s.state === 'unsupported'){
+      h += '<div class="banner" style="display:block;">'+tr('This browser cannot save to a folder by itself. Use Download on a backup below, or the share button, to put a copy somewhere safe such as Google Drive, email or a flash disk.')+'</div>';
+    } else {
+      h += '<div class="banner" style="display:block;">'+tr('Choose a folder and Pesa saves a copy there every time it makes a backup. Pick a folder that your Google Drive, OneDrive or Dropbox app syncs, and the copy goes to the cloud as well. Pesa keeps the latest 30.')+'</div>';
+      if(s.state === 'none') h += '<div class="actions"><button class="btn btn-ghost btn-block" id="bfChoose" type="button">'+tr('Choose a backup folder')+'</button></div>';
+      else h += '<div class="row" style="margin-top:6px;"><div class="main"><div class="title">'+esc(s.name)+'</div><div class="sub">'+(s.state === 'ready' ? '<span style="color:var(--success);">'+tr('Ready')+'</span>' : '<span style="color:var(--warn, #d98e2b);">'+tr('Pesa needs your permission again')+'</span>')+(s.last ? ' · '+tr('last copy')+' '+fmtDateTime(new Date(s.last).toISOString()) : '')+'</div></div><div class="trail" style="display:flex;gap:6px;">'+(s.state === 'ready' ? '' : '<button class="btn btn-primary" id="bfRenew" type="button" style="padding:6px 12px;min-height:0;">'+tr('Allow')+'</button>')+'<button class="btn btn-ghost" id="bfForget" type="button" style="padding:6px 12px;min-height:0;">'+tr('Stop')+'</button></div></div>';
+    }
+    h += '<div class="actions"><button class="btn btn-ghost btn-block" id="bfShare" type="button">'+tr('Share a backup now (email, Drive, WhatsApp)')+'</button></div>';
+    box.innerHTML = h;
+    var c = box.querySelector('#bfChoose'); if(c) c.addEventListener('click', function(){ BackupFolder.choose().then(function(hh){ if(hh){ toast(tr('Folder chosen')); Backups.make('folder').then(function(){ btBackupFolderPaint(box); }); } }); });
+    var r = box.querySelector('#bfRenew'); if(r) r.addEventListener('click', function(){ BackupFolder.renew().then(function(ok){ toast(ok ? tr('Allowed') : tr('Not allowed')); btBackupFolderPaint(box); }); });
+    var fg = box.querySelector('#bfForget'); if(fg) fg.addEventListener('click', function(){ BackupFolder.forget().then(function(){ btBackupFolderPaint(box); }); });
+    var sh = box.querySelector('#bfShare'); if(sh) sh.addEventListener('click', btShareBackup);
+  });
+}
+
 function roleTabs(role){
   if(role === 'cashier') return ['me','sell','till','records'];
   if(role === 'stockclerk') return ['me','stock','records'];
@@ -3286,7 +4741,7 @@ function checkAuthAndRoute(){
   var allowed = roleTabs(State.session.role);
   if(allowed.indexOf(State.tab) === -1) State.tab = allowed[0];
   render();
-  startIdleWatch(); touchUserActive(); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
+  startIdleWatch(); touchUserActive(); setTimeout(btMaybeSetupPrompt, 2200); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
 }
 var _whatsNewChecked = false;
@@ -5021,7 +6476,7 @@ function openChargeSheet(){
   var total = cartTotal();
   var custOptions = State.customers.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+' — owes '+fmtMoney(c.balance||0)+'</option>'; }).join('');
   var html =
-    '<div class="sheet-head"><h2>Charge '+fmtMoney(total)+'</h2></div>' +
+    '<div class="sheet-head"><h2>Charge '+fmtMoney(total)+'</h2></div>' + btFxChargeHtml(total) +
     '<div class="field"><label>'+tr('Payment method')+'</label>' +
       '<div class="segbtns">' +
         '<button class="segbtn active" data-pm="cash">'+tr('Cash')+'</button>' +
@@ -5030,9 +6485,10 @@ function openChargeSheet(){
         '<button class="segbtn" data-pm="credit">'+tr('Credit')+'</button>' +
       '</div>' +
     '</div>' +
-    '<div id="pmExtra"></div>' +
+    '<div id="pmExtra"></div>' + loyaltyBoxHtml() +
     '<div class="actions"><button class="btn btn-primary btn-block" id="confirmChargeBtn">'+tr('Confirm sale')+'</button></div>';
   var ov = openSheet(html, {center:true});
+  loyaltyWire(ov);
   var pm = 'cash';
   var cardSt = { devId:null, mode:'Chip', override:null };
   function renderExtra(){
@@ -5070,6 +6526,7 @@ function openChargeSheet(){
       }
     }
   }
+  var _re0 = renderExtra; renderExtra = function(){ _re0(); btFxCash(ov, pm, total); };
   renderExtra();
   ov.querySelectorAll('[data-pm]').forEach(function(b){
     b.addEventListener('click', function(){
@@ -5114,6 +6571,7 @@ function confirmOverLimit(cust, addAmount, proceed){
   confirmSheet(tr('Over credit limit'), cust.name+' '+tr('has a credit limit of')+' '+fmtMoney(cust.creditLimit)+'. '+tr('This sale would take what they owe to')+' '+fmtMoney((cust.balance||0)+addAmount)+'. '+tr('Sell anyway?'), tr('Sell anyway'), proceed, true);
 }
 function finalizeSale(method, customer, extra){
+  loyaltyNormalize();
   var items = State.cart.map(function(i){ return { productId:i.productId, name:i.name, qty:i.qty, unitPrice:i.unitPrice, cost:i.cost||0, lineTotal:i.unitPrice*i.qty }; });
   var total = cartTotal();
   var cost = cartCost();
@@ -5132,8 +6590,10 @@ function finalizeSale(method, customer, extra){
     createdAt: new Date().toISOString()
   };
   if(extra) Object.assign(sale, extra);
+  loyaltyStamp(sale, customer);
   if(POS.open && POS.user){ sale.viaPos = true; sale.posUserId = POS.user.id; }
   refs.sales.add(sale).then(function(ref){ logAudit('create','sale', ref&&ref.id, (items.length)+' item(s), '+fmtMoney(total)); if(sale.overrideBy) logAudit('other','sale', ref&&ref.id, 'Card limit override approved by '+sale.overrideBy+' on '+(sale.posDeviceName||'terminal')+': '+(sale.overrideNote||'')); });
+  loyaltyApply(sale);
   // decrement stock
   var stockChanges = [];
   items.forEach(function(it){
@@ -5169,7 +6629,7 @@ function offerSaleReceipt(sale, customer){
     billToContact: customer ? [customer.phone, customer.email].filter(Boolean).join('\n') : '',
     dateStr: todayKey(),
     dueDateStr: '',
-    notes: '',
+    notes: loyaltyNote(sale),
     at: sale.createdAt,
     payMethod: sale.paymentMethod,
     walletProvider: sale.walletProvider || '',
@@ -5179,7 +6639,7 @@ function offerSaleReceipt(sale, customer){
   };
   var sendKind = sale.paymentMethod === 'credit' ? 'invoice' : 'receipt';
   var html = '<div class="sheet-head"><h2>'+tr('Sale recorded')+'</h2></div>' +
-    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Total '+fmtMoney(sale.total)+'. Print a receipt for the customer?</div>' +
+    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Total '+fmtMoney(sale.total)+'. Print a receipt for the customer?'+(sale.loyaltyCustomerId && (sale.pointsEarned||sale.pointsRedeemed) ? '<br><b style="color:var(--success);">'+esc(loyaltyNote(sale))+'</b>' : '')+'</div>' +
     '<div class="actions">' +
       '<button class="btn btn-ghost btn-block" id="saleSkipBtn">'+tr('Not now')+'</button>' +
       bluetoothPrintButtonHtml('saleBtPrintBtn') +
@@ -5910,6 +7370,10 @@ function openProductSheet(product, prefillBarcode){
       '<div class="field"><label>'+(isEdit?tr('Current stock'):tr('Starting stock'))+'</label><input id="pfStock" type="number" inputmode="numeric" placeholder="0" value="'+(product?product.stockQty:'')+'"></div>' +
       '<div class="field"><label>'+tr('Low stock alert at')+'</label><input id="pfLow" type="number" inputmode="numeric" placeholder="'+State.settings.lowStockDefault+'" value="'+(product&&product.lowStock!=null?product.lowStock:'')+'"></div>' +
     '</div>' +
+    '<div class="field-row">' +
+      '<div class="field"><label>'+tr('Expiry date (optional)')+'</label><input id="pfExpiry" type="date" value="'+esc(product&&product.expiryDate||'')+'"></div>' +
+      '<div class="field"><label>'+tr('Usual supplier (optional)')+'</label><select id="pfSup"><option value="">'+tr('None')+'</option>'+State.suppliers.map(function(sp){ return '<option value="'+esc(sp.id)+'"'+(product&&product.supplierId===sp.id?' selected':'')+'>'+esc(sp.name)+'</option>'; }).join('')+'</select></div>' +
+    '</div>' +
     '<div class="field"><label>Barcode (optional)</label><div style="display:flex;gap:8px;"><input id="pfBarcode" placeholder="Scan or type a barcode" value="'+esc(product?product.barcode||'':(prefillBarcode||''))+'" style="flex:1;"><button class="btn btn-ghost" id="pfScanBtn" type="button" style="flex:0 0 auto;padding:0 14px;">'+ICONS.search+'</button></div></div>' +
     '<div class="actions">' +
       (isEdit ? '<button class="btn btn-danger" id="pfDelete">'+tr('Delete')+'</button>' : '') +
@@ -5935,6 +7399,8 @@ function openProductSheet(product, prefillBarcode){
       updatedAt: new Date().toISOString()
     };
     data.barcode = (ov.querySelector('#pfBarcode') ? ov.querySelector('#pfBarcode').value.trim() : (product?product.barcode:'')) || '';
+    data.expiryDate = (ov.querySelector('#pfExpiry') ? ov.querySelector('#pfExpiry').value : '') || '';
+    data.supplierId = (ov.querySelector('#pfSup') ? ov.querySelector('#pfSup').value : '') || '';
     if(State.settings.currentBranchId && State.settings.currentBranchId!=='all' && !isEdit) data.branchId = State.settings.currentBranchId;
     if(isEdit){
       // keep the stock movement record honest: a quantity or price edit is a manual adjustment
@@ -9274,6 +10740,7 @@ function accountSectionHtml(){
     '<div id="bioBox"></div>' +
     '<div class="field" style="margin-top:6px;"><label><input type="checkbox" id="perfLite" style="width:auto;margin-right:8px;" '+(liteOn()?'checked':'')+'>'+tr('Simpler look for older or slower computers')+'</label>' +
       '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.5;">'+tr('Turns off blur and animations so Pesa runs faster on older computers.')+'</div></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="acctDisplay" type="button">'+tr('Text size and contrast')+'</button></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="acctCompat" type="button">'+tr('Check this computer')+'</button></div>';
 }
 
@@ -9303,6 +10770,8 @@ function menuRowsHtml(){
   if(isManagerOrOwner()){
     rows += '<div class="drawer-sub">Insights</div>';
     rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
+    rows += drawerRowHtml('bizhub', ICONS.stack, 'Business tools', btStockAttention() || null);
+    if(isOwner()) rows += drawerRowHtml('setup', ICONS.check, 'Setup guide');
   }
   if(isManagerOrOwner()){
     var smc = smartAlertCount();
@@ -9324,6 +10793,8 @@ function menuRowsHtml(){
   rows += '<div class="drawer-sub">Help</div>';
   if(!isInstalledApp()) rows += drawerRowHtml('install', ICONS.info, 'Install Pesa on this device');
   rows += drawerRowHtml('compat', ICONS.info, 'Check this computer');
+  rows += drawerRowHtml('helpsearch', ICONS.search, 'Search help');
+  rows += drawerRowHtml('display', ICONS.info, 'Text size and contrast');
   rows += drawerRowHtml('training', ICONS.book, 'Training');
   rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
   rows += comingSoonHtml();
@@ -9377,6 +10848,10 @@ function handleDrawerAction(key){
   else if(key==='compat') openCompatSheet();
   else if(key==='training') openTrainingSheet();
   else if(key==='smart') openSmartToolsSheet();
+  else if(key==='bizhub') openBizHub();
+  else if(key==='setup') openSetupSheet();
+  else if(key==='helpsearch') openHelpSearchSheet();
+  else if(key==='display') openDisplaySheet();
   else if(key==='about') openAboutSheet();
 }
 function openDashboardDrawer(){
@@ -11240,6 +12715,7 @@ function openTrainingSheet(){
   var totalSlides = list.reduce(function(n, l){ return n + l.slides.length; }, 0);
   var html = '<div class="sheet-head"><h2>'+ICONS.book+'<span style="margin-left:8px;">'+tr('Training')+'</span></h2></div>' +
     '<div class="banner">'+tr('Step by step lessons on every part of the app, with a voice that reads each step aloud. Pick a topic, or play them all in order.')+'</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="trSearch" type="button">'+ICONS.search+'<span style="margin-left:8px;">'+tr('Search help')+'</span></button></div>' +
     (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPlayAll" type="button">'+ICONS.play+'<span style="margin-left:8px;">'+tr('Play all lessons')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
     '<div class="rowlist" style="margin-top:12px;">' +
     list.map(function(l, i){
@@ -11256,6 +12732,7 @@ function openTrainingSheet(){
   });
   var pa = ov.querySelector('#trPlayAll');
   if(pa) pa.addEventListener('click', function(){ openLessonSlideshow(list[0].id, { chain:true }); });
+  var tsr = ov.querySelector('#trSearch'); if(tsr) tsr.addEventListener('click', function(){ closeModal(); openHelpSearchSheet(); });
 }
 
 function openLessonSlideshow(lessonId, opts){
@@ -11507,6 +12984,7 @@ function smartAlerts(){
     var ss = Sync.status();
     if(ss.state === 'error') al.push({ id:'syncerr', level:'med', title:'Cloud connection has a problem', body:'Changes are kept safely on this device and will send when the problem clears.' });
   }catch(e){}
+  try{ al = al.concat(btExtraAlerts()); }catch(e){}
   return al;
 }
 function smartAlertCount(){ try{ return smartAlerts().length; }catch(e){ return 0; } }
@@ -11520,7 +12998,7 @@ function smartTick(){
     var key = 'pesa_smart_notified_' + WS.id, seen = {};
     try{ seen = JSON.parse(localStorage.getItem(key) || '{}') || {}; }catch(e){}
     var today = todayKey();
-    al.filter(function(a){ return a.level === 'high' && seen[a.id] !== today; }).forEach(function(a){
+    al.filter(function(a){ return (a.level === 'high' || a.notify) && seen[a.id] !== today; }).forEach(function(a){
       showDeviceNotification(a.title, a.body, 'pesa-smart-'+a.id); seen[a.id] = today;
     });
     try{ localStorage.setItem(key, JSON.stringify(seen)); }catch(e){}
@@ -11568,6 +13046,7 @@ function openSmartSection(k){
   else if(k==='health') openHealthSheet();
   else if(k==='nearby') openNearbySheet();
   else if(k==='whatsnew') openWhatsNewSheet();
+  else if(k.indexOf('biz:') === 0) openBizSection(k.slice(4));
 }
 
 /* ---- alert centre ---- */
@@ -12462,7 +13941,8 @@ function backupPayload(){
     invoices: State.invoices, reports: State.reports, suppliers: State.suppliers, purchaseOrders: State.purchaseOrders,
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
     posDevices: State.posDevices, posBatches: State.posBatches, messages: State.messages, workReports: State.workReports,
-    stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements
+    stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements,
+    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -12494,6 +13974,7 @@ async function restoreBackupData(data){
   await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches); await put(refs.messages, data.messages); await put(refs.workReports, data.workReports);
   await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
   await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
+  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
@@ -12528,6 +14009,7 @@ var Backups = (function(){
       var snap = { key: WS.id+'|'+at, ws: WS.id, at: at, reason: reason||'auto', json: json, size: json.length,
         counts: { products:State.products.length, customers:State.customers.length, sales:State.sales.length } };
       await tx('readwrite', function(st){ return st.put(snap); });
+      try{ BackupFolder.writeJson(json, at); }catch(e){}
       var all = await list();
       for(var i=KEEP;i<all.length;i++){ await tx('readwrite', function(st){ return st.delete(all[i].key); }); }
       try{ localStorage.setItem(lastKey(), String(at)); }catch(e){}
@@ -12551,8 +14033,10 @@ function fmtBytes(n){ return n > 1048576 ? (n/1048576).toFixed(1)+' MB' : Math.m
 function openBackupsSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('Automatic backups')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+tr('Pesa saves a backup on this device about once a day while it is open, and keeps the latest 7. They stay on this device only. If you clear your browser data or lose the device, they go too, so download a copy now and then.')+'</div>' +
+    '<div id="bkFolder"></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="bkNow" type="button">'+tr('Back up now')+'</button></div><div id="bkList" style="margin-top:10px;"></div>' + smartBackBtn();
   var ov = openSheet(html); wireSmartBack(ov);
+  btBackupFolderPaint(ov.querySelector('#bkFolder'));
   function paint(){
     Backups.list().then(function(rows){
       ov.querySelector('#bkList').innerHTML = rows.length ? '<div class="rowlist">' + rows.map(function(r){
@@ -12574,6 +14058,7 @@ function openBackupsSheet(){
   }
   ov.querySelector('#bkNow').addEventListener('click', function(){
     var b = ov.querySelector('#bkNow'); b.disabled = true;
+    try{ BackupFolder.renew(); }catch(e){}
     Backups.make('manual').then(function(s){ b.disabled = false; toast(s ? tr('Backup saved') : tr('Could not save a backup')); paint(); });
   });
   paint();
