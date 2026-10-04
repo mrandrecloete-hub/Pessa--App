@@ -517,6 +517,8 @@
   /* sheet / modal */
   .overlay{ position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(10,14,12,0.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); z-index:40; display:flex; align-items:flex-end; justify-content:center; }
   .overlay.center{ align-items:center; padding:20px; }
+  #licGate{ position:fixed; top:0; right:0; bottom:0; left:0; z-index:35; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:20px; overflow:auto; }
+  .licgate-card{ width:100%; max-width:440px; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:24px; text-align:center; color:var(--text); }
   .sheet{
     width:100%; max-width:480px; background:var(--surface); border-radius:20px 20px 0 0;
     max-height:88vh; overflow-y:auto; padding: 16px 16px calc(20px + env(safe-area-inset-bottom,0px));
@@ -2024,7 +2026,7 @@ var Sync = (function(){
   };
 })();
 
-const SYNC_SQL = "create table if not exists pesa_docs (\n  ws text not null, coll text not null, id text not null,\n  data jsonb, deleted boolean not null default false,\n  updated_at timestamptz not null default now(),\n  primary key (ws, coll, id)\n);\ncreate index if not exists pesa_docs_pull on pesa_docs (ws, updated_at);\ncreate or replace function pesa_touch() returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end $$;\ndrop trigger if exists pesa_touch_trg on pesa_docs;\ncreate trigger pesa_touch_trg before insert or update on pesa_docs for each row execute function pesa_touch();\nalter table pesa_docs enable row level security;\ndrop policy if exists pesa_all on pesa_docs;\ncreate policy pesa_all on pesa_docs for all to anon\n  using (ws = coalesce(current_setting('request.headers', true)::json->>'x-pesa-code',''))\n  with check (ws = coalesce(current_setting('request.headers', true)::json->>'x-pesa-code',''));\n";
+const SYNC_SQL = "create table if not exists pesa_docs (\n  ws text not null, coll text not null, id text not null,\n  data jsonb, deleted boolean not null default false,\n  updated_at timestamptz not null default now(),\n  primary key (ws, coll, id)\n);\ncreate index if not exists pesa_docs_pull on pesa_docs (ws, updated_at);\ncreate or replace function pesa_touch() returns trigger language plpgsql as $$ begin new.updated_at = now(); return new; end $$;\ndrop trigger if exists pesa_touch_trg on pesa_docs;\ncreate trigger pesa_touch_trg before insert or update on pesa_docs for each row execute function pesa_touch();\nalter table pesa_docs enable row level security;\ndrop policy if exists pesa_all on pesa_docs;\ncreate policy pesa_all on pesa_docs for all to anon\n  using (ws = coalesce(current_setting('request.headers', true)::json->>'x-pesa-code',''))\n  with check (ws = coalesce(current_setting('request.headers', true)::json->>'x-pesa-code',''));\nrevoke all on pesa_docs from anon, authenticated;\ngrant select, insert, update, delete on pesa_docs to anon;\nalter table pesa_docs drop constraint if exists pesa_ws_len;\nalter table pesa_docs add constraint pesa_ws_len check (char_length(replace(ws, '-', '')) >= 16) not valid;\nalter table pesa_docs drop constraint if exists pesa_size;\nalter table pesa_docs add constraint pesa_size check (data is null or pg_column_size(data) < 2000000) not valid;\n";
 
 /* ============================== state ============================== */
 var State = {
@@ -2627,7 +2629,7 @@ function wireForgot(root){
     r.tries++; try{ localStorage.setItem(RESET_KEY, JSON.stringify(r)); }catch(e){}
     var hash = await sha256Hex(code + ':' + r.userId);
     if(hash !== r.hash) return banner(err, tr('Incorrect code.'));
-    var newHash = await sha256Hex(pw);
+    var newHash = await pwHash(pw);
     try{ localStorage.removeItem(RESET_KEY); }catch(e){}
     if(r.ws === WS.id){
       await refs.users.doc(r.userId).update({ passHash:newHash });
@@ -2661,12 +2663,12 @@ function openChangePasswordSheet(){
     err.innerHTML = '';
     if(!oldv) return fail(isCash ? tr('Enter your current PIN.') : tr('Enter your current password.'));
     var _lt = authLockText(me.id); if(_lt) return fail(_lt);
-    if((await sha256Hex(oldv)) !== me.passHash){ var _f = authFailed(me.id, me.name); return fail(_f.locked ? authLockText(me.id) : (isCash ? tr('Current PIN is incorrect.') : tr('Current password is incorrect.'))); }
+    if(!(await pwCheck(oldv, me.passHash))){ var _f = authFailed(me.id, me.name); return fail(_f.locked ? authLockText(me.id) : (isCash ? tr('Current PIN is incorrect.') : tr('Current password is incorrect.'))); }
     authOk(me.id);
     if(isCash ? !/^\d{4}$/.test(nv) : !!pwProblem(nv)) return fail(isCash ? tr('PIN must be exactly 4 digits.') : pwProblem(nv));
     if(nv !== nv2) return fail(isCash ? tr('PINs don’t match.') : tr('Passwords don’t match.'));
     if(email && !isEmail(email)) return fail(tr('Enter a valid email address'));
-    var patch = { passHash: await sha256Hex(nv) };
+    var patch = { passHash: await pwHash(nv) };
     if(email !== null && email) patch.email = email;
     await refs.users.doc(me.id).update(patch);
     try{ logAudit('update', 'user', me.id, (isCash ? 'Changed own PIN' : 'Changed own password')); }catch(e){}
@@ -2791,7 +2793,7 @@ function wireSyncSettings(ov){
   var on = root.querySelector('#syOn');
   if(on) on.addEventListener('click', function(){
     var v = vals(); if(!v.url || !v.key || !v.code) return say(tr('Fill in the URL, key and sync code first.'), false);
-    if(v.code.replace(/-/g,'').length < 12) return say(tr('The sync code must be at least 12 letters or digits. Tap Generate code.'), false);
+    if(v.code.replace(/-/g,'').length < 16) return say(tr('The sync code must be at least 16 letters or digits. Tap Generate code.'), false);
     Sync.test(v.url, v.key, v.code).then(function(){
       Sync.enable(v.url, v.key, v.code);
       closeModal(); toast(tr('Cloud sync is on')); openSettingsSheet();
@@ -2858,6 +2860,44 @@ function showWelcomeSplash(businessName, done){
   resetWelcomeSound(); playWelcomeSound();
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   setTimeout(function(){ if(done) done(); }, reduceMotion ? 400 : SPLASH_MS);
+}
+
+/* ---- password and PIN storage ----
+   New credentials are stored salted and slowed down (PBKDF2 with SHA-256, a fresh random salt each time), as
+   "p1$iterations$salt$hash". Older accounts hold a plain SHA-256 hash; they still sign in and are upgraded to the
+   new format the first time their owner signs in on a device that supports it. */
+var PW_ITERS = 150000;
+function pwSubtle(){ return !!(window.crypto && crypto.subtle && window.TextEncoder && crypto.getRandomValues); }
+function pwB64(u8){ var s2 = ''; for(var i=0;i<u8.length;i++) s2 += String.fromCharCode(u8[i]); return btoa(s2); }
+function pwUnB64(b){ var s2 = atob(b), u8 = new Uint8Array(s2.length); for(var i=0;i<s2.length;i++) u8[i] = s2.charCodeAt(i); return u8; }
+function pwEq(a, b){ a = String(a); b = String(b); if(a.length !== b.length) return false; var d = 0; for(var i=0;i<a.length;i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; }
+function pwDerive(secret, salt, iters){
+  return crypto.subtle.importKey('raw', new TextEncoder().encode(String(secret)), 'PBKDF2', false, ['deriveBits'])
+    .then(function(k){ return crypto.subtle.deriveBits({ name:'PBKDF2', salt:salt, iterations:iters, hash:'SHA-256' }, k, 256); })
+    .then(function(b){ return new Uint8Array(b); });
+}
+function pwHash(secret){
+  if(!pwSubtle()) return sha256Hex(secret);   // plain http or a file opened from a folder: the old format is the only one available
+  var salt = crypto.getRandomValues(new Uint8Array(16));
+  return pwDerive(secret, salt, PW_ITERS).then(function(h){ return 'p1$' + PW_ITERS + '$' + pwB64(salt) + '$' + pwB64(h); }, function(){ return sha256Hex(secret); });
+}
+function pwCheck(secret, stored){
+  stored = String(stored || '');
+  if(!stored) return Promise.resolve(false);
+  if(stored.indexOf('p1$') === 0){
+    var p = stored.split('$');
+    if(p.length !== 4 || !pwSubtle()) return Promise.resolve(false);
+    return pwDerive(secret, pwUnB64(p[2]), parseInt(p[1], 10) || PW_ITERS).then(function(h){ return pwEq(pwB64(h), p[3]); }, function(){ return false; });
+  }
+  return sha256Hex(secret).then(function(h){ return pwEq(h, stored); });
+}
+function pwNeedsUpgrade(stored){ return !!stored && String(stored).indexOf('p1$') !== 0 && pwSubtle(); }
+/** After a correct sign in with an old style hash, quietly store the stronger one. */
+function pwUpgrade(u, secret){
+  try{
+    if(!u || !u.id || !pwNeedsUpgrade(u.passHash)) return;
+    pwHash(secret).then(function(h){ if(h && h.indexOf('p1$') === 0 && State.users.some(function(x){ return x.id === u.id; })) refs.users.doc(u.id).update({ passHash:h }); });
+  }catch(e){}
 }
 
 function sha256Hex(str){
@@ -2997,8 +3037,8 @@ function askPasswordSheet(title, onOk){
   function go(){
     if(!inp.value || !u) return;
     var lt = authLockText(u.id); if(lt){ ov.querySelector('#apErr').innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(lt)+'</span></div>'; inp.value = ''; return; }
-    sha256Hex(inp.value).then(function(h){
-      if(h === u.passHash){ authOk(u.id); closeModal(); onOk(); }
+    pwCheck(inp.value, u.passHash).then(function(ok){
+      if(ok){ authOk(u.id); pwUpgrade(u, inp.value); closeModal(); onOk(); }
       else { var f = authFailed(u.id, u.name); ov.querySelector('#apErr').innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(f.locked ? authLockText(u.id) : (isCash ? tr('Incorrect PIN.') : tr('Incorrect password.'))+' '+f.triesLeft+' '+tr('tries left.'))+'</span></div>'; inp.value = ''; inp.focus(); }
     });
   }
@@ -4749,10 +4789,15 @@ function checkAuthAndRoute(){
     try{ al = JSON.parse(sessionStorage.getItem('pesa_autologin') || 'null'); sessionStorage.removeItem('pesa_autologin'); }catch(e){}
     if(al && al.ws === WS.id){
       var au = State.users.find(function(x){ return x.id === al.userId && x.active !== false; });
-      if(au && au.passHash === al.hash){
-        State.session = { userId:au.id, name:au.name, role:au.role };
-        saveSessionLocal(au.id);
-        toast(tr('Welcome back, ')+au.name+'!');
+      if(au && al.secret != null){
+        pwCheck(al.secret, au.passHash).then(function(ok){
+          if(!ok || State.session) return;
+          pwUpgrade(au, al.secret);
+          State.session = { userId:au.id, name:au.name, role:au.role };
+          saveSessionLocal(au.id);
+          toast(tr('Welcome back, ')+au.name+'!');
+          checkAuthAndRoute();
+        });
       }
     }
   }
@@ -4769,12 +4814,14 @@ function checkAuthAndRoute(){
   var allowed = roleTabs(State.session.role);
   if(allowed.indexOf(State.tab) === -1) State.tab = allowed[0];
   render();
+  try{ licCheck(); }catch(e){}
   startIdleWatch(); touchUserActive(); setTimeout(btMaybeSetupPrompt, 2200); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
 }
 var _whatsNewChecked = false;
 
 function showAuthScreen(view){
+  var _lg = document.getElementById('licGate'); if(_lg) _lg.remove();
   empSignupActive = (view === 'employee');
   var authEl = document.getElementById('authScreen');
   if(view === 'register' && !introSplashPlayed){
@@ -4951,15 +4998,15 @@ function wireAccountPicker(root){
       var val = pass.value; if(!val) return;
       var btn = box.querySelector('#rcAcctLogin'), err = box.querySelector('#rcAcctError');
       btn.disabled = true;
-      sha256Hex(val).then(function(hash){
+      (a.passHash ? pwCheck(val, a.passHash) : Promise.resolve(true)).then(function(ok){
         // when this device holds that business's data we can check the password right here
-        if(a.passHash && a.passHash !== hash){
+        if(!ok){
           btn.disabled = false;
           err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+(isCash?tr('Incorrect PIN.'):tr('Incorrect password.'))+'</span></div>';
           pass.value = ''; pass.focus();
           return;
         }
-        try{ sessionStorage.setItem('pesa_autologin', JSON.stringify({ ws:a.ws, userId:a.id, hash:hash })); }catch(e){}
+        try{ sessionStorage.setItem('pesa_autologin', JSON.stringify({ ws:a.ws, userId:a.id, secret:val })); }catch(e){}
         switchBusiness(a.ws);
       });
     }
@@ -4993,7 +5040,7 @@ function wireRegisterCompany(root){
     suppressAuthRoute = true;
     (async function(){
       try{
-        var passHash = await sha256Hex(pw);
+        var passHash = await pwHash(pw);
         var tradingName = v('#rcTradingName');
         await refs.company.set({
           companyName: companyName, tradingName: tradingName, regNumber: regNumber,
@@ -5104,7 +5151,7 @@ function wireEmployeeSignup(root){
       if(pw !== pw2) return fail(tr('The two entries do not match.'));
       var fresh = State.users.find(function(x){ return x.id === u.id; });
       if(!fresh || !fresh.pending){ return fail(tr('This invite has already been used.')); }
-      var hash = await sha256Hex(pw);
+      var hash = await pwHash(pw);
       var patch = { passHash:hash, pending:false, inviteCode:'', inviteExpires:'', joinedAt:new Date().toISOString(), phone:box.querySelector('#empPhone').value.trim(), email:box.querySelector('#empEmail').value.trim().toLowerCase(), active:true, lastActiveAt:new Date().toISOString() };
       refs.users.doc(u.id).update(patch);
       State.session = { userId:u.id, name:u.name, role:u.role };
@@ -5789,9 +5836,9 @@ function wireLoginView(root){
         var lockTxt = authLockText(u.id);
         if(lockTxt){ errEl.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(lockTxt)+'</span></div>'; passInput.value=''; return; }
         unlockBtn.disabled = true;
-        sha256Hex(val).then(function(hash){
-          if(hash === u.passHash){
-            authOk(u.id);
+        pwCheck(val, u.passHash).then(function(okPw){
+          if(okPw){
+            authOk(u.id); pwUpgrade(u, val);
             State.session = { userId:u.id, name:u.name, role:u.role };
             _bioLockPending = false;
             saveSessionLocal(u.id);
@@ -5943,7 +5990,7 @@ function openStaffSheet(user){
         var newPass = ov.querySelector('#sfNewPass') ? ov.querySelector('#sfNewPass').value : '';
         if(newPass){
           if(role === 'cashier' ? !/^\d{4}$/.test(newPass) : !!pwProblem(newPass)) return fail(role === 'cashier' ? tr('PIN must be exactly 4 digits.') : pwProblem(newPass));
-          patch.passHash = await sha256Hex(newPass);
+          patch.passHash = await pwHash(newPass);
         }
         refs.users.doc(user.id).update(patch);
         logAudit('update','staff',user.id,'Edited '+name);
@@ -5951,6 +5998,7 @@ function openStaffSheet(user){
         if(isMe) State.session.name = name;
         openTeamSheet();
       } else {
+        if(!licAllow('users')) return;
         if(sfMode === 'invite'){
           var ct = (ov.querySelector('#sfContact').value||'').trim();
           var invRef = refs.users.doc();
@@ -5968,7 +6016,7 @@ function openStaffSheet(user){
         // to unlock the till/account (PIN for cashiers, password for everyone else) is required.
         if(role === 'cashier' && !/^\d{4}$/.test(pass)) return fail(tr('PIN must be exactly 4 digits.'));
         if(role !== 'cashier' && pwProblem(pass)) return fail(pwProblem(pass));
-        var passHash = await sha256Hex(pass);
+        var passHash = await pwHash(pass);
         refs.users.doc().set({ name:name, email:email, role:role, jobTitle:ov.querySelector('#sfJob').value.trim(), employeeNo:nextEmployeeNo(), passHash:passHash, active:true, createdAt:new Date().toISOString(), approvedBy:State.session.name, approvedAt:new Date().toISOString(), posAccess: role !== 'stockclerk' && ov.querySelector('#sfPos').checked });
         logAudit('create','staff',null,'Added '+name+' as '+role);
         toast(name+' '+tr('added as')+' '+tr(ROLE_LABELS[role]||role));
@@ -6182,7 +6230,7 @@ function closeModal(){
 // sheets opened from them are mounted straight on <body> instead.
 function sheetRoot(){
   var app = document.getElementById('app');
-  if(app && app.style.display === 'none'){
+  if((app && app.style.display === 'none') || document.getElementById('licGate')){   // the licence lock sits above the app, so sheets open in the top level holder
     var ar = document.getElementById('authModalRoot');
     if(!ar){ ar = document.createElement('div'); ar.id = 'authModalRoot'; document.body.appendChild(ar); }
     return ar;
@@ -6756,8 +6804,9 @@ function posLimitSummaryHtml(dev){
   return bits.length ? bits.join(' · ') : tr('No limits set on this terminal.');
 }
 async function posVerifyManager(code){
-  var h = await sha256Hex(code);
-  return State.users.find(function(u){ return u.active !== false && (u.role === 'owner' || u.role === 'manager') && u.passHash === h; }) || null;
+  var list = State.users.filter(function(u){ return u.active !== false && (u.role === 'owner' || u.role === 'manager') && u.passHash; });
+  for(var i=0;i<list.length;i++){ if(await pwCheck(code, list[i].passHash)){ pwUpgrade(list[i], code); return list[i]; } }
+  return null;
 }
 
 /* ---- card section of the charge sheet ---- */
@@ -7071,8 +7120,9 @@ function posWireLock(r, d){
   async function attempt(code){
     if(!u || !code) return;
     if(posLockLeft(u.id)){ posRender(); return; }
-    var h = await sha256Hex(code), err = r.querySelector('#posLockErr');
-    if(h === u.passHash){
+    var okPin = await pwCheck(code, u.passHash), err = r.querySelector('#posLockErr');
+    if(okPin){
+      pwUpgrade(u, code);
       var all = posLockData(); delete all[u.id]; posLockSave(all);
       posSignIn(u);
     } else {
@@ -10870,7 +10920,7 @@ function renderDashboard(){
   '</div>';
 
   State.sales = realSales; State.products = realProducts;
-  return teamCardHtml() + branchBannerHtml + html;
+  return licBannerHtml() + teamCardHtml() + branchBannerHtml + html;
 }
 
 function exportData(){
@@ -10983,6 +11033,7 @@ function menuRowsHtml(){
     rows += drawerRowHtml('vat', ICONS.percent, 'NamRA VAT summary');
     rows += drawerRowHtml('audit', ICONS.clock, 'Activity log');
     if(isOwner()) rows += drawerRowHtml('security', ICONS.info, 'Security check');
+    if(isOwner() && licOn()) rows += drawerRowHtml('licence', ICONS.check, 'Licence and subscription');
   }
   rows += '<div class="drawer-sub">Help</div>';
   if(!isInstalledApp()) rows += drawerRowHtml('install', ICONS.info, 'Install Pesa on this device');
@@ -10990,6 +11041,7 @@ function menuRowsHtml(){
   rows += drawerRowHtml('helpsearch', ICONS.search, 'Search help');
   rows += drawerRowHtml('display', ICONS.info, 'Text size and contrast');
   rows += drawerRowHtml('training', ICONS.book, 'Training');
+  rows += drawerRowHtml('legal', ICONS.book, 'Terms, privacy and support');
   rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
   rows += comingSoonHtml();
   return rows;
@@ -11039,6 +11091,8 @@ function handleDrawerAction(key){
   else if(key==='vat') openVatSummarySheet();
   else if(key==='audit') openAuditLogSheet();
   else if(key==='security') openSecuritySheet();
+  else if(key==='licence') openLicenceSheet();
+  else if(key==='legal') openLegalSheet();
   else if(key==='compat') openCompatSheet();
   else if(key==='training') openTrainingSheet();
   else if(key==='smart') openSmartToolsSheet();
@@ -12218,7 +12272,7 @@ function openBranchFormSheet(branch, onDone){
     if(!name){ toast('Enter a branch name'); return; }
     var data = { name:name, address: ov.querySelector('#brAddr').value.trim() };
     if(isEdit){ refs.branches.doc(branch.id).update(data); logAudit('update','branch',branch.id,'Edited branch '+name); toast('Branch updated'); }
-    else { data.createdAt = new Date().toISOString(); refs.branches.doc().set(data); logAudit('create','branch',null,'Added branch '+name); toast('Branch added'); }
+    else { if(!licAllow('branches')) return; data.createdAt = new Date().toISOString(); refs.branches.doc().set(data); logAudit('create','branch',null,'Added branch '+name); toast('Branch added'); }
     closeModal();
     if(onDone) setTimeout(onDone, 50);
   });
@@ -12377,6 +12431,212 @@ function openVatSummarySheet(){
     saveGeneratedPdf(doc, 'namra-vat-summary-'+(c.from||'')+'_to_'+(c.to||'')+'.pdf').then(function(ok){
       btn.disabled=false; btn.textContent=old;
       if(ok) toast('VAT summary downloaded');
+    });
+  });
+}
+
+/* ============================== LICENCE AND FREE TRIAL ==============================
+   Every new business gets a free trial. After that it needs a licence key. The seller issues the key for that one
+   business only (it is tied to the business's Licence reference), and the app checks its digital signature on the
+   device (ECDSA P-256), so it works offline and a key cannot be made up without the seller's private key.
+   Licensing stays switched OFF until the seller's public key is pasted into LIC_PUBLIC_KEY below, so nothing locks
+   by accident. Honest limit: a program that runs on the customer's own device can always be changed by a skilled
+   person; this stops casual sharing and unpaid use, which is what a small business product needs. */
+var LIC_PUBLIC_KEY = null;     // paste the public key from the issuer tool here, for example {"kty":"EC","crv":"P-256","x":"...","y":"..."}
+var LIC_TRIAL_DAYS = 14, LIC_GRACE_DAYS = 7;
+var LIC_ENFORCE_FROM = '';     // "YYYY-MM-DD": businesses created before this day start their trial on it
+// users = most active staff accounts (the owner counts), branches = most branches (the main shop counts). 0 means no limit.
+var LIC_PLANS = {
+  starter:  { name:'Starter',  users:3,  branches:1 },
+  business: { name:'Business', users:10, branches:3 },
+  premium:  { name:'Premium',  users:0,  branches:0 }
+};
+var _licInfo = null;           // the saved key after checking: { rawKey, payload } or { rawKey, error }
+var _licNotified = false;
+
+function licOn(){ return !!LIC_PUBLIC_KEY; }
+function licNorm(k){ return String(k || '').replace(/\s+/g, ''); }
+/** The current time, but never earlier than the latest time this device has seen (stops winding the clock back). */
+function licNow(){
+  var n = Date.now(), seen = 0;
+  try{ seen = parseInt(localStorage.getItem('pesa_lic_seen') || '0', 10) || 0; }catch(e){}
+  if(seen > n) return seen;
+  try{ if(n - seen > 600000) localStorage.setItem('pesa_lic_seen', String(n)); }catch(e){}
+  return n;
+}
+/** This business's Licence reference, worked out from when it was registered, so every device shows the same one. */
+function licRef(){
+  var c = State.company; if(!c || !c.createdAt) return '';
+  var h = sha256Pure('pesa-licence:' + c.createdAt), A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', out = '';
+  for(var i = 0; i < 8; i++) out += A.charAt(parseInt(h.substr(i*2, 2), 16) % A.length);
+  return 'PESA-' + out.slice(0, 4) + '-' + out.slice(4);
+}
+function licUnb64(s){ s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while(s.length % 4) s += '='; return pwUnB64(s); }
+function licDate(ms){ var d = new Date(ms); return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+
+/** Checks a key: signature, that it is meant for this business, plan and date. Resolves { payload } or { error }. */
+function licVerify(raw){
+  var key = licNorm(raw), parts = key.split('.');
+  if(parts.length !== 3 || parts[0] !== 'PESA1') return Promise.resolve({ error:tr('That does not look like a Pesa licence key. Copy the whole key, starting with PESA1.') });
+  if(!LIC_PUBLIC_KEY || !pwSubtle()) return Promise.resolve({ error:tr('This device cannot check licence keys. Open Pesa from its web address (https) and try again.') });
+  var data, sig, payload;
+  try{ data = licUnb64(parts[1]); sig = licUnb64(parts[2]); payload = JSON.parse(new TextDecoder().decode(data)); }
+  catch(e){ return Promise.resolve({ error:tr('That key is damaged. Copy it again, completely.') }); }
+  return crypto.subtle.importKey('jwk', LIC_PUBLIC_KEY, { name:'ECDSA', namedCurve:'P-256' }, false, ['verify'])
+    .then(function(k){ return crypto.subtle.verify({ name:'ECDSA', hash:'SHA-256' }, k, sig, data); })
+    .then(function(ok){
+      if(!ok) return { error:tr('This key is not valid. Check that it was copied completely.') };
+      if(!payload || payload.v !== 1 || !LIC_PLANS[payload.plan] || !/^\d{4}-\d{2}-\d{2}$/.test(payload.exp || '')) return { error:tr('This key is not valid for this version of Pesa.') };
+      if(payload.ref !== licRef()) return { error:tr('This key was issued for a different business. Send your Licence reference to get the right one.') };
+      return { payload:payload };
+    }, function(){ return { error:tr('Could not check the key on this device.') }; });
+}
+/** Re checks the key saved with the business settings (and caches the answer). */
+function licRefresh(){
+  var key = licNorm(State.settings && State.settings.licenseKey);
+  if(!key){ _licInfo = null; return Promise.resolve(); }
+  if(_licInfo && _licInfo.rawKey === key) return Promise.resolve();
+  return licVerify(key).then(function(res){ _licInfo = Object.assign({ rawKey:key }, res); });
+}
+/** Where the business stands: off, checking, trial, active, grace (just ended, still working) or expired. */
+function licStatus(){
+  if(!licOn() || !State.company) return { state:'off' };
+  var DAY = 86400000, now = licNow();
+  var saved = licNorm(State.settings && State.settings.licenseKey);
+  if(saved && (!_licInfo || _licInfo.rawKey !== saved)) return { state:'checking' };
+  if(_licInfo && _licInfo.payload){
+    var p = _licInfo.payload, end = new Date(p.exp + 'T23:59:59').getTime(), left = Math.ceil((end - now) / DAY);
+    if(now <= end) return { state:'active', plan:p.plan, exp:p.exp, daysLeft:left };
+    if(now <= end + LIC_GRACE_DAYS * DAY) return { state:'grace', plan:p.plan, exp:p.exp, daysLeft:left, graceLeft:LIC_GRACE_DAYS + left };
+    return { state:'expired', plan:p.plan, exp:p.exp, reason:'subscription' };
+  }
+  var start = Math.max(new Date(State.company.createdAt || 0).getTime() || 0, LIC_ENFORCE_FROM ? new Date(LIC_ENFORCE_FROM + 'T00:00:00').getTime() : 0);
+  var tEnd = start + LIC_TRIAL_DAYS * DAY, tLeft = Math.ceil((tEnd - now) / DAY);
+  if(now <= tEnd) return { state:'trial', daysLeft:tLeft, exp:licDate(tEnd) };
+  return { state:'expired', reason:'trial', exp:licDate(tEnd) };
+}
+function licPlanName(s){ return s.plan ? tr(LIC_PLANS[s.plan].name) : ''; }
+/** The limits that apply right now. During the trial everything is open. */
+function licLimits(){
+  var s = licStatus();
+  return (s.state === 'active' || s.state === 'grace') ? LIC_PLANS[s.plan] : LIC_PLANS.premium;
+}
+/** Used before adding a staff member or a branch. Returns false (and explains) when the plan is full. */
+function licAllow(kind){
+  if(!licOn()) return true;
+  var s = licStatus(); if(s.state === 'off' || s.state === 'checking') return true;
+  var lim = licLimits()[kind]; if(!lim) return true;
+  var n = kind === 'users' ? State.users.filter(function(u){ return u.active !== false; }).length : State.branches.length + 1;
+  if(n < lim) return true;
+  var what = kind === 'users' ? tr('staff accounts') : tr('branches');
+  toast(tr('Your {0} plan allows up to {1} {2}. Upgrade to add more.').replace('{0}', licPlanName(s) || '').replace('{1}', lim).replace('{2}', what));
+  setTimeout(function(){ if(isOwner()) openLicenceSheet(); }, 500);
+  return false;
+}
+function licContactText(s){
+  var shop = (State.settings && State.settings.shopName) || (State.company && (State.company.tradingName || State.company.companyName)) || '';
+  return 'Hello, I would like to ' + (s && s.state === 'active' ? 'renew' : 'subscribe to') + ' Pesa for ' + shop + '. Licence reference: ' + licRef() + '.';
+}
+function licWhatsAppUrl(s){ return buildWhatsAppUrl(DEV_WHATSAPP, licContactText(s)); }
+function licMailUrl(s){ return buildMailtoUrl(DEV_EMAIL, 'Pesa licence ' + licRef(), licContactText(s)); }
+
+/** Shows or removes the full screen lock when the trial or subscription has ended. Nothing is deleted, and the
+ *  owner can always make a backup from the lock screen. */
+function licRenderGate(s){
+  var g = document.getElementById('licGate');
+  if(!s || s.state !== 'expired'){ if(g) g.remove(); return; }
+  if(!g){ g = document.createElement('div'); g.id = 'licGate'; document.body.appendChild(g); try{ closeModal(); }catch(e){} }
+  var owner = isOwner();
+  g.innerHTML = '<div class="licgate-card">' +
+    '<img src="'+PESA_LOGO_DATA_URL+'" alt="" style="height:54px;margin-bottom:10px;">' +
+    '<h2 style="margin:0 0 8px;">' + (s.reason === 'trial' ? tr('Your free trial has ended') : tr('Your subscription has ended')) + '</h2>' +
+    '<p style="color:var(--text-muted);font-size:14px;line-height:1.5;margin:0 0 14px;">' + tr('Your records are safe and nothing has been deleted. Subscribe to carry on selling with Pesa.') + '</p>' +
+    '<div class="banner" style="display:block;text-align:left;margin-bottom:12px;"><div style="font-size:12px;color:var(--text-muted);">' + tr('Licence reference') + '</div><div style="font-family:monospace;font-size:18px;font-weight:700;letter-spacing:.04em;">' + esc(licRef()) + '</div></div>' +
+    (owner
+      ? '<div class="actions" style="flex-direction:column;"><a class="btn btn-primary btn-block" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="' + esc(licWhatsAppUrl(s)) + '">' + tr('Subscribe on WhatsApp') + '</a>' +
+        '<button class="btn btn-ghost btn-block" id="lgKey" type="button">' + tr('I have a licence key') + '</button>' +
+        '<button class="btn btn-ghost btn-block" id="lgBackup" type="button">' + tr('Download a backup of my data') + '</button></div>'
+      : '<p style="font-size:14px;">' + tr('Please ask the owner of the business to renew the subscription.') + '</p>' +
+        '<div class="actions"><button class="btn btn-ghost btn-block" id="lgOut" type="button">' + tr('Log out') + '</button></div>') +
+    '</div>';
+  var k = g.querySelector('#lgKey'); if(k) k.addEventListener('click', openLicenceSheet);
+  var b = g.querySelector('#lgBackup'); if(b) b.addEventListener('click', function(){ try{ openBackupsSheet(); }catch(e){} });
+  var o = g.querySelector('#lgOut'); if(o) o.addEventListener('click', logout);
+}
+/** Called after sign in, on every data change, and every half hour. */
+function licCheck(){
+  if(!licOn() || !State.session || !State.company) return;
+  if(!State.ready.settings || !State.ready.company) return;
+  licRefresh().then(function(){
+    var s = licStatus();
+    licRenderGate(s);
+    if(!_licNotified && (s.state === 'trial' || s.state === 'grace' || (s.state === 'active' && s.daysLeft <= 7))){
+      _licNotified = true;
+      setTimeout(function(){ toast(licBannerText(s)); }, 2500);
+    }
+  });
+}
+function licBannerText(s){
+  if(s.state === 'trial') return tr('Free trial: {0} days left.').replace('{0}', Math.max(0, s.daysLeft));
+  if(s.state === 'grace') return tr('Your subscription ended. Pesa locks in {0} days unless you renew.').replace('{0}', Math.max(0, s.graceLeft));
+  if(s.state === 'active') return tr('Your subscription ends in {0} days.').replace('{0}', Math.max(0, s.daysLeft));
+  return '';
+}
+/** A strip at the top of the dashboard when the trial is running or the subscription is close to ending. */
+function licBannerHtml(){
+  if(!licOn() || !isManagerOrOwner()) return '';
+  var s = licStatus();
+  if(!(s.state === 'trial' || s.state === 'grace' || (s.state === 'active' && s.daysLeft <= 14))) return '';
+  var warn = s.state === 'grace' || (s.state !== 'active' && s.daysLeft <= 5) || (s.state === 'active' && s.daysLeft <= 7);
+  return '<div class="banner" style="display:block;' + (warn ? 'border-color:#D98E2B;' : '') + '"><b>' + esc(licBannerText(s)) + '</b> ' +
+    (isOwner() ? esc(tr('Open the menu and tap Licence and subscription.')) : esc(tr('Ask the owner to renew.'))) + '</div>';
+}
+
+function openLicenceSheet(){
+  if(!licOn()) return;
+  var s = licStatus();
+  var stText = s.state === 'trial' ? tr('Free trial') : s.state === 'active' ? tr('Active') : s.state === 'grace' ? tr('Ended, short grace period') : s.state === 'expired' ? tr('Ended') : tr('Checking…');
+  var stColor = s.state === 'active' ? '#2F7D4F' : (s.state === 'trial' ? '#C98A1B' : '#B3402A');
+  var planRows = Object.keys(LIC_PLANS).map(function(k){
+    var p = LIC_PLANS[k];
+    return '<div class="row"><div class="main"><div class="title">' + esc(tr(p.name)) + (s.plan === k && s.state !== 'trial' ? ' ✓' : '') + '</div>' +
+      '<div class="sub">' + (p.users ? tr('Up to {0} staff accounts').replace('{0}', p.users) : tr('Unlimited staff accounts')) + ' · ' + (p.branches ? tr('up to {0} branches').replace('{0}', p.branches) : tr('unlimited branches')) + '</div></div></div>';
+  }).join('');
+  var html = '<div class="sheet-head"><h2>' + tr('Licence and subscription') + '</h2></div>' +
+    '<div class="rowlist">' +
+      '<div class="row"><div class="main"><div class="title">' + tr('Status') + '</div></div><div class="trail"><b style="color:' + stColor + ';">' + esc(stText) + '</b></div></div>' +
+      (s.plan ? '<div class="row"><div class="main"><div class="title">' + tr('Plan') + '</div></div><div class="trail"><b>' + esc(licPlanName(s)) + '</b></div></div>' : '') +
+      (s.exp ? '<div class="row"><div class="main"><div class="title">' + (s.state === 'trial' ? tr('Trial ends') : tr('Valid until')) + '</div></div><div class="trail"><b>' + esc(fmtDateNice(s.exp)) + '</b>' + (s.state === 'active' || s.state === 'trial' ? '<div class="sub">' + Math.max(0, s.daysLeft) + ' ' + tr('days left') + '</div>' : '') + '</div></div>' : '') +
+      '<div class="row"><div class="main"><div class="title">' + tr('Licence reference') + '</div><div class="sub">' + tr('Send this when you subscribe or renew.') + '</div></div><div class="trail"><b style="font-family:monospace;">' + esc(licRef()) + '</b></div></div>' +
+    '</div>' +
+    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost" id="lcCopy" type="button">' + tr('Copy reference') + '</button>' +
+      '<a class="btn btn-primary" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="' + esc(licWhatsAppUrl(s)) + '">' + (s.state === 'active' ? tr('Renew on WhatsApp') : tr('Subscribe on WhatsApp')) + '</a></div>' +
+    '<div class="actions"><a class="btn btn-ghost btn-block" style="text-decoration:none;justify-content:center;" href="' + esc(licMailUrl(s)) + '">' + tr('Email us instead') + '</a></div>' +
+    '<div class="field" style="margin-top:14px;"><label>' + tr('Licence key') + '</label><textarea id="lcKey" rows="3" placeholder="PESA1.…" style="font-family:monospace;font-size:12px;"></textarea></div>' +
+    '<div id="lcMsg"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="lcGo" type="button">' + tr('Activate key') + '</button></div>' +
+    '<div class="sheet-head" style="margin-top:16px;"><h3 style="margin:0;font-size:15px;">' + tr('Plans') + '</h3></div><div class="rowlist">' + planRows + '</div>';
+  var ov = openSheet(html);
+  function say(t, ok){ ov.querySelector('#lcMsg').innerHTML = '<div class="banner">' + (ok ? ICONS.check : ICONS.warn) + '<span>' + esc(t) + '</span></div>'; }
+  ov.querySelector('#lcCopy').addEventListener('click', function(){ copyText(licRef(), tr('Reference copied')); });
+  ov.querySelector('#lcGo').addEventListener('click', function(){
+    var key = licNorm(ov.querySelector('#lcKey').value);
+    if(!key) return say(tr('Paste your licence key first.'), false);
+    if(!isOwner()) return say(tr('Only the owner can activate a key.'), false);
+    say(tr('Checking…'), true);
+    licVerify(key).then(function(res){
+      if(res.error) return say(res.error, false);
+      var cur = _licInfo && _licInfo.payload;
+      if(cur && cur.exp > res.payload.exp) return say(tr('You already have a key that lasts longer than this one.'), false);
+      State.settings = Object.assign({}, State.settings, { licenseKey:key });
+      refs.settings.set(State.settings);
+      _licInfo = { rawKey:key, payload:res.payload };
+      try{ localStorage.setItem('pesa_lic_seen', String(Date.now())); }catch(e){}
+      try{ logAudit('update', 'licence', null, 'Licence key activated: ' + res.payload.plan + ' until ' + res.payload.exp); }catch(e){}
+      licRenderGate(licStatus());
+      closeModal();
+      toast(tr('Licence activated. Thank you!'));
+      render();
     });
   });
 }
@@ -14721,7 +14981,7 @@ function openStockTakeResultSheet(take){
    open (owner or manager login), keeping the latest 7. They live in the
    browser's own database on this device only. Clearing the browser's data
    removes them, so download a copy now and then. */
-var APP_VERSION = '2026.10.03';
+var APP_VERSION = '2026.10.04';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -14912,6 +15172,12 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.04', items:[
+    'Documents: invoices, quotations, reports, the VAT summary, work reports and About now print in the PESA design, with a branded header and footer on every page, and quotations have a signature block for acceptance',
+    'Security: passwords and PINs are now stored salted and slowed down. Accounts upgrade by themselves the next time they sign in',
+    'Terms of Service, refunds and cancellation, and support are in the menu under Terms, privacy and support. The privacy agreement now covers subscriptions, so you will be asked to accept it once',
+    'Licence and subscription: a 14 day free trial, then a licence key per business. Owners see their status under Licence and subscription once licensing is switched on'
+  ]},
   { v:'2026.10.03', items:[
     'Works on all kinds of computers: a clear message instead of a blank page on browsers that are too old, sign in that works on plain http addresses, a simpler look for slow computers, and a Check this computer screen',
     'Security: wrong password limits at sign in, stronger password rules (8 characters), automatic sign out, failed sign ins in the Activity log, a browser security policy, and a Security check for owners',
@@ -15207,7 +15473,7 @@ function openNearbySheet(){
 /* ============================== PRIVACY AND CONFIDENTIALITY ============================== */
 // Plain language agreement every user accepts after registering or signing
 // in for the first time on a device. No hyphen or dash characters in the text.
-var PRIVACY_VERSION = '1.0';
+var PRIVACY_VERSION = '1.1';
 var PRIVACY_INTRO = 'Pesa respects your business. This agreement explains, in plain words, how your information is kept confidential and safe. It is between you and Pesa, developed by Björn Van Rensburg.';
 var PRIVACY_SECTIONS = [
   { h:'1. Your business information belongs to you', items:[
@@ -15249,8 +15515,50 @@ var PRIVACY_SECTIONS = [
   { h:'8. Changes and questions', items:[
     'If this agreement changes, you will be asked to read and accept the new version',
     'For questions or concerns about privacy, contact the developer by email at '+'ecrypted5@gmail.com'+' or on WhatsApp at 0818211692'
+  ]},
+  { h:'9. What we keep about your subscription', items:[
+    'When you subscribe or ask for support, we keep your Licence reference, your business name, the contact details you send us and your proof of payment',
+    'We use them only to issue your licence, give you support and keep our records. We do not sell or share them',
+    'We keep them for as long as we need them for your subscription and our records, and then delete them',
+    'Your licence key is checked on your own device. Checking it sends nothing to us'
   ]}
 ];
+
+/*LEGAL:START (generated by tools/build_legal.py from docs/legal.json, edit that file)*/
+var LEGAL_VERSION = "1.1";
+var LEGAL_DOCS = {"terms": {"title": "Terms of Service", "intro": "These terms are the agreement between you (the business using Pesa) and Pesa, developed by Björn Van Rensburg (we, us). Please read them. By registering a business or using Pesa you accept them, and you confirm that you may accept them for your business.", "sections": [{"h": "1. The service", "items": ["Pesa is business software for shops. It runs on your own computers and devices, and stores your records there. If you switch on the Advanced Pesa Connection, your records are also kept in your own online project that you create and control", "Some features need an internet connection, for example cloud sync, password reset emails and loading the PDF engine for the first time", "Pesa records and controls card sales but does not process card payments or connect to a bank. You take card payments on your own card machine"]}, {"h": "2. Free trial", "items": ["Every new business gets a free trial of 14 days from the day it is registered, with every feature open and no payment details needed", "When the trial ends you need a licence to carry on. Nothing is deleted when a trial ends. You can still make a backup of your records"]}, {"h": "3. Your licence", "items": ["We give you a non exclusive, non transferable right to use Pesa for one business, for the period and plan on your licence key", "A licence key is tied to your business's Licence reference. You may not share your key with another business, resell or rent Pesa, copy it for others, or remove or work around the licence checks", "Your employees may use Pesa for your business, within the limits of your plan"]}, {"h": "4. Plans, prices and payment", "items": ["The plans, what each includes, and their prices are shown on our price list or told to you when you subscribe. Prices are in Namibian dollars unless we say otherwise", "You pay in advance for the period you choose, by electronic transfer or mobile wallet. We send your licence key after we confirm your payment", "We may change prices. A change never affects a period you have already paid for, and we will tell you before it applies to your next renewal"]}, {"h": "5. Renewal and what happens when a licence ends", "items": ["Nothing renews by itself and we do not keep your payment details. To carry on, you renew and we send a new key", "Pesa warns you before your licence ends. After it ends there is a short grace period of 7 days, then Pesa locks until you renew", "While locked your records stay where they are and the owner can still download a backup. Renewing opens Pesa again with everything as you left it"]}, {"h": "6. Your data and backups", "items": ["Your business records belong to you. We cannot see them, open them or recover them, as explained in the confidentiality and privacy agreement", "You are responsible for backing up your data. Because it is stored on your own devices first, losing a device, clearing the browser data, or uninstalling the app can erase it if there is no backup", "Cloud sync is not a backup. A wrong change on one device is copied to the others"]}, {"h": "7. Your responsibilities", "items": ["Keep your records accurate and use Pesa lawfully", "Tax and other filings are your responsibility. VAT figures and reports in Pesa are working figures built from what you record. They are not tax, accounting or legal advice, so check them with NamRA or your accountant", "Keep passwords, PINs, sync codes and licence keys private, and decide carefully who in your business gets each role", "You are responsible for handling your customers' personal details lawfully and with care"]}, {"h": "8. Acceptable use", "items": ["Do not use Pesa for anything unlawful, to harm others, or to try to break, overload or get around the app or its licence checks", "Do not copy, change or reverse engineer Pesa except where the law allows it"]}, {"h": "9. Support and updates", "items": ["We give support by WhatsApp and email. We work to answer quickly and fix faults, but we do not promise a fixed response time unless we agree one with you in writing", "We release updates to fix faults, improve security and add features. Keep Pesa up to date. We may change or retire a feature, and we will tell you in advance when the change is large"]}, {"h": "10. Ownership", "items": ["We own Pesa, its code, design, name and logo. You own your data", "If you send us ideas or feedback, we may use them to improve Pesa without paying you"]}, {"h": "11. No guarantee, and limits on our responsibility", "items": ["We take care to make Pesa reliable, but it is provided as it is. We do not promise that it will be error free, always available, or fit for a particular purpose", "As far as the law allows, we are not responsible for indirect or consequential loss, loss of profit, loss of business or loss of data, including loss that happens because there was no backup", "As far as the law allows, our total responsibility to you for any claim is limited to what you paid us in the 3 months before the claim", "Nothing in these terms limits a responsibility that the law does not allow us to limit"]}, {"h": "12. Ending the agreement", "items": ["You can stop at any time by not renewing. There is no cancellation fee. Your licence works until the end of the period you paid for", "We may suspend or end a licence if you break these terms, use Pesa unlawfully, share a key, or a payment is reversed or found to be fraudulent. We will tell you why where we can", "Refunds are explained in the refunds and cancellation terms"]}, {"h": "13. Changes to these terms", "items": ["We may update these terms. When we do, Pesa shows the new version and asks you to accept it. If you do not accept, you can stop using Pesa and make a backup of your records"]}, {"h": "14. Governing law and contact", "items": ["These terms are governed by the laws of Namibia, and the Namibian courts may hear any dispute. We will first try to settle any problem with you in good faith", "Questions about these terms: ecrypted5@gmail.com or WhatsApp 0818211692"]}]}, "refunds": {"title": "Refunds and cancellation", "intro": "We want you to be sure before you pay, so every new business starts with a free 14 day trial. This page explains how cancelling and refunds work once you subscribe.", "sections": [{"h": "1. Cancelling", "items": ["You can cancel at any time by simply not renewing. Nothing renews by itself and there is no cancellation fee", "Your licence keeps working until the end of the period you paid for. After that Pesa locks, your records are kept, and you can still download a backup"]}, {"h": "2. When we refund", "items": ["A payment made twice or by mistake is refunded in full", "If a fault stops Pesa from working and we cannot fix it within 14 days of you telling us about it, we refund the unused full months of your current period", "We also refund whenever the law requires it"]}, {"h": "3. When we do not refund", "items": ["Once a licence key has been issued, payments for a period that has started are not refunded because you changed your mind, stopped using Pesa, or did not use all of the period. This is why the free trial exists", "We do not refund a licence that was ended because these terms were broken"]}, {"h": "4. Upgrading and downgrading", "items": ["You can move to a bigger plan at any time. You pay the difference for the rest of your period and we send a new key", "A move to a smaller plan starts at your next renewal"]}, {"h": "5. How to ask for a refund", "items": ["Send your Licence reference, the date of the payment, your proof of payment and a short note of what went wrong, by WhatsApp to 0818211692 or by email to ecrypted5@gmail.com", "We answer within 5 working days. Approved refunds are paid back to the account or wallet that paid, within 10 working days"]}]}, "support": {"title": "Support", "intro": "Stuck, or something not working? Message us and we will help.", "sections": [{"h": "How to reach us", "items": ["WhatsApp 0818211692", "Email ecrypted5@gmail.com"]}, {"h": "What to send so we can help faster", "items": ["Your business name and Licence reference (Menu, Licence and subscription)", "What you were doing and what happened instead. A screenshot helps", "The kind of computer or device you use and whether it was online"]}, {"h": "Before you message", "items": ["Try Search help in the menu, and the Training lessons", "Never send us your password, PIN, sync code or backup file unless we ask and you agree. We can fix most things without them"]}]}};
+/*LEGAL:END*/
+function legalDocHtml(key){
+  var d = key === 'privacy' ? { intro:PRIVACY_INTRO, sections:PRIVACY_SECTIONS.map(function(x){ return { h:x.h, items:x.items }; }) } : LEGAL_DOCS[key];
+  if(!d) return '';
+  return '<p style="font-size:13.5px;line-height:1.6;margin:0 0 12px;">'+esc(tr(d.intro))+'</p>' +
+    d.sections.map(function(sec){
+      return '<div style="font-weight:800;font-size:14.5px;margin:16px 0 7px;">'+esc(tr(sec.h))+'</div>' +
+        '<ul style="margin:0;padding-left:20px;font-size:13.5px;line-height:1.65;color:var(--text-muted);">' +
+        sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
+    }).join('');
+}
+function openLegalDoc(key){
+  var titles = { terms:'Terms of Service', privacy:'Confidentiality and privacy', refunds:'Refunds and cancellation', support:'Support' };
+  openSheet('<div class="sheet-head"><h2>'+esc(tr(titles[key]||''))+'</h2></div>' + legalDocHtml(key) +
+    '<div class="actions" style="margin-top:14px;"><button class="btn btn-ghost btn-block" id="lgBack" type="button">'+tr('Back')+'</button></div>')
+    .querySelector('#lgBack').addEventListener('click', function(){ closeModal(); openLegalSheet(); });
+}
+/** Terms, privacy, refunds and a way to reach support, for everyone who uses the app. */
+function openLegalSheet(){
+  var shop = (State.settings && State.settings.shopName) || '';
+  var note = 'Hello, I need help with Pesa'+(shop ? ' ('+shop+')' : '')+'. Version '+APP_VERSION+(licOn() && licRef() ? '. Licence reference '+licRef() : '')+'.';
+  function row(k, t, sub){ return '<button class="drawer-row" type="button" data-legal="'+k+'"><span>'+esc(tr(t))+'</span></button>'; }
+  var html = '<div class="sheet-head"><h2>'+tr('Terms, privacy and support')+'</h2></div>' +
+    '<div style="display:flex;flex-direction:column;gap:6px;">' +
+      row('terms','Terms of Service') + row('privacy','Confidentiality and privacy') + row('refunds','Refunds and cancellation') + row('support','Support') +
+    '</div>' +
+    '<div class="actions" style="margin-top:14px;"><a class="btn btn-primary" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, note))+'">'+tr('Message support on WhatsApp')+'</a>' +
+    '<a class="btn btn-ghost" style="text-decoration:none;justify-content:center;" href="'+esc(buildMailtoUrl(DEV_EMAIL, 'Pesa support', note))+'">'+tr('Email support')+'</a></div>' +
+    '<div class="small" style="margin-top:12px;font-size:12px;color:var(--text-muted);">Pesa '+esc(APP_VERSION)+' · '+tr('Documents version')+' '+esc(LEGAL_VERSION)+'</div>';
+  var ov = openSheet(html);
+  Array.prototype.forEach.call(ov.querySelectorAll('[data-legal]'), function(b){ b.addEventListener('click', function(){ closeModal(); openLegalDoc(b.getAttribute('data-legal')); }); });
+}
 
 function consentKey(userId){ return 'pesa_consent_' + (WS.id === 'default' ? 'default' : WS.id) + '_' + userId; }
 function getConsent(userId){
@@ -15272,17 +15580,19 @@ function showConsentScreen(){
     '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><p>'+tr('Confidentiality and privacy agreement')+'</p></div>' +
     '<div class="authbox">' +
       '<div style="max-height:46vh;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;background:var(--surface);">'+privacyAgreementHtml()+'</div>' +
-      '<label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.5;margin-bottom:12px;"><input type="checkbox" id="cnAgree" style="margin-top:3px;width:18px;height:18px;"><span>'+tr('I have read and agree to the Pesa confidentiality and privacy agreement.')+'</span></label>' +
+      '<div style="margin-bottom:10px;"><button class="btn btn-ghost btn-block" id="cnTerms" type="button">'+tr('Read the Terms of Service')+'</button></div>' +
+      '<label style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.5;margin-bottom:12px;"><input type="checkbox" id="cnAgree" style="margin-top:3px;width:18px;height:18px;"><span>'+tr('I have read and agree to the Pesa confidentiality and privacy agreement and the Terms of Service.')+'</span></label>' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="cnAccept" type="button" disabled>'+tr('Accept and continue')+'</button></div>' +
       '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="cnDecline" type="button">'+tr('Decline and log out')+'</button></div>' +
     '</div></div>';
   var chk = authEl.querySelector('#cnAgree'), ok = authEl.querySelector('#cnAccept');
   chk.addEventListener('change', function(){ ok.disabled = !chk.checked; });
+  authEl.querySelector('#cnTerms').addEventListener('click', function(){ openSheet('<div class="sheet-head"><h2>'+esc(tr('Terms of Service'))+'</h2></div>'+legalDocHtml('terms')+'<div class="actions" style="margin-top:14px;"><button class="btn btn-primary btn-block" id="cnTermsOk" type="button">'+tr('Close')+'</button></div>').querySelector('#cnTermsOk').addEventListener('click', closeModal); });
   ok.addEventListener('click', function(){
     var uid = State.session && State.session.userId; if(!uid) return;
     var now = new Date();
     try{ localStorage.setItem(consentKey(uid), JSON.stringify({ v:PRIVACY_VERSION, at:now.toISOString() })); }catch(e){}
-    logAudit('other','consent', uid, 'Accepted the confidentiality and privacy agreement, version '+PRIVACY_VERSION, now);
+    logAudit('other','consent', uid, 'Accepted the confidentiality and privacy agreement and the Terms of Service, version '+PRIVACY_VERSION, now);
     checkAuthAndRoute();
   });
   authEl.querySelector('#cnDecline').addEventListener('click', function(){
@@ -15723,7 +16033,7 @@ Store.ready.then(function(){
   subscribeAll();
   Sync.start();
   setTimeout(function(){ try{ Backups.auto(); smartTick(); }catch(e){} }, 20000);
-  setInterval(function(){ try{ Backups.auto(); smartTick(); }catch(e){} }, 30*60000);
+  setInterval(function(){ try{ Backups.auto(); smartTick(); licCheck(); }catch(e){} }, 30*60000);
   updateSyncBadge();
   if(!Store.isCloud()) attemptCloudReconnect();
 });

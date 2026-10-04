@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Pesa Licence Issuer</title>
+<style>
+:root{--bg:#F1F7F4;--surface:#fff;--text:#10241C;--muted:#5B6F66;--border:#CFE5D8;--primary:#0B4A38;--accent:#C9962A;--bad:#B3402A;--good:#2F7D4F}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1713;--surface:#16231D;--text:#E6F1EB;--muted:#9DB2A8;--border:#2A3630;--primary:#4FB38F;--accent:#E9C766}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 60px}
+h1{margin:0 0 4px;font-size:24px;color:var(--primary)}
+.sub{color:var(--muted);margin:0 0 18px}
+section{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px}
+h2{margin:0 0 4px;font-size:17px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 12px}
+label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
+textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.row{grid-template-columns:1fr}}
+button{font:inherit;font-weight:600;padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+button.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+@media (prefers-color-scheme:dark){button.primary{color:#07130e}}
+button.danger{color:var(--bad)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.note{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:13px;margin-top:10px}
+.warn{border-color:var(--accent)}
+.bad{color:var(--bad)}.good{color:var(--good)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+code{font-family:ui-monospace,Menlo,Consolas,monospace}
+.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1>Pesa Licence Issuer</h1>
+<p class="sub">Create licence keys for your customers. Everything happens on this device. Nothing is sent anywhere and your private key never leaves this page.</p>
+
+<section id="secKeys">
+  <h2>1. Your signing keys</h2>
+  <p class="hint">Do this once. The <b>private key</b> signs the licences. The <b>public key</b> goes into the Pesa app so it can check them. Keep the private key safe: anyone who has it can make valid licences.</p>
+  <div id="keyState" class="note"></div>
+  <div class="actions">
+    <button class="primary" id="kGen" type="button">Create my signing keys</button>
+    <button id="kCopyPub" type="button">Copy public key</button>
+    <button id="kDlPriv" type="button">Download private key backup</button>
+    <button id="kImport" type="button">Restore from backup</button>
+  </div>
+  <div id="importBox" style="display:none;">
+    <label for="kImportText">Paste the private key backup (the text inside the file)</label>
+    <textarea id="kImportText" rows="4"></textarea>
+    <div class="actions"><button class="primary" id="kImportGo" type="button">Restore</button></div>
+  </div>
+  <div id="pubBox" style="display:none;">
+    <label for="kPub">Public key (give this to whoever builds the app, it is not secret)</label>
+    <textarea id="kPub" rows="3" readonly></textarea>
+  </div>
+  <div id="keyMsg"></div>
+</section>
+
+<section id="secIssue">
+  <h2>2. Issue a licence</h2>
+  <p class="hint">The customer opens Pesa, Menu, Licence and subscription, and sends you their <b>Licence reference</b>. Pay first, then issue.</p>
+  <div class="row">
+    <div><label for="iRef">Licence reference</label><input id="iRef" placeholder="PESA-XXXX-XXXX" autocapitalize="characters" autocomplete="off"></div>
+    <div><label for="iShop">Shop name (for your records)</label><input id="iShop" placeholder="Dinner Shop"></div>
+  </div>
+  <div class="row">
+    <div><label for="iPlan">Plan</label>
+      <select id="iPlan"><option value="starter">Starter</option><option value="business" selected>Business</option><option value="premium">Premium</option></select></div>
+    <div><label for="iMonths">Period</label>
+      <select id="iMonths"><option value="1">1 month</option><option value="3">3 months</option><option value="6">6 months</option><option value="12">12 months</option></select></div>
+  </div>
+  <label for="iFrom">Renewing? Their current end date (leave empty for a new customer)</label>
+  <input id="iFrom" type="date">
+  <p class="small" id="iPreview"></p>
+  <div class="actions"><button class="primary" id="iGo" type="button">Create licence key</button></div>
+  <div id="issueMsg"></div>
+  <div id="outBox" style="display:none;">
+    <label for="iOut">Licence key</label>
+    <textarea id="iOut" rows="5" readonly></textarea>
+    <div class="actions"><button id="iCopy" type="button">Copy key</button><button id="iCopyMsg" type="button">Copy message for WhatsApp</button></div>
+  </div>
+</section>
+
+<section id="secReg">
+  <h2>3. Licences you have issued</h2>
+  <p class="hint">Kept on this device only. Export it now and then so you have a copy.</p>
+  <div id="regBox"></div>
+  <div class="actions"><button id="rCsv" type="button">Export as CSV</button><button id="rClear" type="button" class="danger">Clear list</button></div>
+</section>
+
+<section id="secCheck">
+  <h2>4. Check a key</h2>
+  <p class="hint">Paste any licence key to see what it says and whether your public key accepts it.</p>
+  <textarea id="cKey" rows="3" placeholder="PESA1.…"></textarea>
+  <div class="actions"><button id="cGo" type="button">Check</button></div>
+  <div id="checkMsg"></div>
+</section>
+</main>
+
+<script>
+(function(){
+  'use strict';
+  var PRIV_KEY = 'pesa_issuer_private_v1', REG_KEY = 'pesa_issuer_register_v1';
+  var $ = function(id){ return document.getElementById(id); };
+  var priv = null, pub = null;   // JWK objects
+
+  function ls(k, v){ try{ if(v === undefined) return localStorage.getItem(k); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){ return null; } }
+  function msg(id, text, cls){ var el = $(id); el.innerHTML = ''; if(!text) return; var d = document.createElement('div'); d.className = 'note ' + (cls || ''); d.textContent = text; el.appendChild(d); }
+  function b64u(u8){ var s = ''; for(var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64u(s){ s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while(s.length % 4) s += '='; var b = atob(s), u = new Uint8Array(b.length); for(var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function iso(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function cleanPub(j){ return { kty:j.kty, crv:j.crv, x:j.x, y:j.y }; }
+  function copy(text, okMsg, target){
+    function done(){ msg(target, okMsg, 'good'); }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, fallback); } else fallback();
+    function fallback(){ var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); done(); }catch(e){ msg(target, 'Could not copy. Select the text and copy it by hand.', 'bad'); } document.body.removeChild(t); }
+  }
+
+  if(!(window.crypto && crypto.subtle)){
+    document.querySelector('main').insertAdjacentHTML('afterbegin', '<div class="note warn"><b>This page needs a secure address.</b> Open it as a file from your computer, or from an https address, then reload.</div>');
+  }
+
+  /* ---------- keys ---------- */
+  function showKeys(){
+    var st = $('keyState');
+    if(priv && pub){
+      st.innerHTML = '<b class="good">Signing keys are ready on this device.</b> Download a backup of the private key and store it somewhere safe, in a password manager and on a USB stick.';
+      $('pubBox').style.display = 'block'; $('kPub').value = JSON.stringify(cleanPub(pub));
+    } else {
+      st.innerHTML = '<b class="bad">No signing keys on this device yet.</b> Create them now, or restore them from your backup.';
+      $('pubBox').style.display = 'none';
+    }
+  }
+  function loadKeys(){
+    var raw = ls(PRIV_KEY);
+    if(!raw) return;
+    try{ priv = JSON.parse(raw); pub = cleanPub(priv); }catch(e){ priv = null; pub = null; }
+  }
+  $('kGen').addEventListener('click', function(){
+    if(priv && !confirm('You already have signing keys on this device. Making new ones means every licence you issued before will stop working. Continue?')) return;
+    crypto.subtle.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign', 'verify']).then(function(kp){
+      return crypto.subtle.exportKey('jwk', kp.privateKey);
+    }).then(function(j){
+      priv = { kty:j.kty, crv:j.crv, x:j.x, y:j.y, d:j.d }; pub = cleanPub(priv);
+      ls(PRIV_KEY, JSON.stringify(priv)); showKeys();
+      msg('keyMsg', 'Keys created. Now download the private key backup, and copy the public key to put in the app.', 'good');
+    }, function(){ msg('keyMsg', 'Could not create keys on this device.', 'bad'); });
+  });
+  $('kCopyPub').addEventListener('click', function(){ if(!pub) return msg('keyMsg', 'Create or restore your keys first.', 'bad'); copy(JSON.stringify(cleanPub(pub)), 'Public key copied.', 'keyMsg'); });
+  $('kDlPriv').addEventListener('click', function(){
+    if(!priv) return msg('keyMsg', 'Create or restore your keys first.', 'bad');
+    var blob = new Blob([JSON.stringify(priv)], { type:'application/json' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'pesa-signing-key-PRIVATE-' + iso(new Date()) + '.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+    msg('keyMsg', 'Private key saved to your downloads. Move it somewhere safe. Never share it and never put it online.', 'warn');
+  });
+  $('kImport').addEventListener('click', function(){ var b = $('importBox'); b.style.display = b.style.display === 'none' ? 'block' : 'none'; });
+  $('kImportGo').addEventListener('click', function(){
+    try{
+      var j = JSON.parse($('kImportText').value.trim());
+      if(j.kty !== 'EC' || j.crv !== 'P-256' || !j.d || !j.x || !j.y) throw new Error('bad');
+      priv = { kty:j.kty, crv:j.crv, x:j.x, y:j.y, d:j.d }; pub = cleanPub(priv);
+      ls(PRIV_KEY, JSON.stringify(priv)); showKeys(); $('importBox').style.display = 'none'; $('kImportText').value = '';
+      msg('keyMsg', 'Keys restored.', 'good');
+    }catch(e){ msg('keyMsg', 'That is not a Pesa private key backup.', 'bad'); }
+  });
+
+  /* ---------- issuing ---------- */
+  function addMonths(d, n){ var r = new Date(d.getFullYear(), d.getMonth(), d.getDate()); var day = r.getDate(); r.setMonth(r.getMonth() + n); if(r.getDate() < day) r.setDate(0); return r; }
+  function computeExp(){
+    var today = new Date(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    var base = today, cur = $('iFrom').value;
+    if(cur){ var c = new Date(cur + 'T00:00:00'); if(!isNaN(c) && c > today) base = c; }
+    return addMonths(base, parseInt($('iMonths').value, 10));
+  }
+  function preview(){ var e = computeExp(); $('iPreview').textContent = 'The licence will run until ' + e.toLocaleDateString(undefined, { day:'numeric', month:'long', year:'numeric' }) + '.'; }
+  ['iMonths', 'iFrom'].forEach(function(id){ $(id).addEventListener('change', preview); });
+  $('iRef').addEventListener('input', function(){ var v = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if(v.indexOf('PESA') === 0) v = v.slice(4); v = v.slice(0, 8); this.value = v ? 'PESA-' + v.slice(0, 4) + (v.length > 4 ? '-' + v.slice(4) : '') : ''; });
+
+  function register(){ try{ return JSON.parse(ls(REG_KEY) || '[]') || []; }catch(e){ return []; } }
+  function saveRegister(list){ ls(REG_KEY, JSON.stringify(list)); drawRegister(); }
+  function drawRegister(){
+    var list = register(), box = $('regBox');
+    if(!list.length){ box.innerHTML = '<p class="small">Nothing issued yet.</p>'; return; }
+    var rows = list.slice().reverse().map(function(r, i){
+      var idx = list.length - 1 - i;
+      return '<tr><td>' + esc(r.issued) + '</td><td><code>' + esc(r.ref) + '</code></td><td>' + esc(r.shop || '') + '</td><td>' + esc(r.plan) + '</td><td>' + esc(r.exp) + '</td><td><button data-copy="' + idx + '" type="button">Copy key</button></td></tr>';
+    }).join('');
+    box.innerHTML = '<div style="overflow:auto;"><table><thead><tr><th>Issued</th><th>Reference</th><th>Shop</th><th>Plan</th><th>Until</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    Array.prototype.forEach.call(box.querySelectorAll('[data-copy]'), function(b){ b.addEventListener('click', function(){ copy(list[+b.getAttribute('data-copy')].key, 'Key copied.', 'issueMsg'); }); });
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+
+  var lastText = '';
+  $('iGo').addEventListener('click', function(){
+    if(!priv) return msg('issueMsg', 'Create or restore your signing keys first (step 1).', 'bad');
+    var ref = $('iRef').value.trim();
+    if(!/^PESA-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(ref)) return msg('issueMsg', 'Enter the customer\'s Licence reference exactly, like PESA-ABCD-2345.', 'bad');
+    var exp = iso(computeExp()), plan = $('iPlan').value, shop = $('iShop').value.trim();
+    var payload = { v:1, ref:ref, plan:plan, exp:exp, iat:iso(new Date()) }; if(shop) payload.shop = shop.slice(0, 60);
+    var data = new TextEncoder().encode(JSON.stringify(payload));
+    crypto.subtle.importKey('jwk', priv, { name:'ECDSA', namedCurve:'P-256' }, false, ['sign']).then(function(k){
+      return crypto.subtle.sign({ name:'ECDSA', hash:'SHA-256' }, k, data);
+    }).then(function(sig){
+      var key = 'PESA1.' + b64u(data) + '.' + b64u(new Uint8Array(sig));
+      $('iOut').value = key; $('outBox').style.display = 'block';
+      var list = register(); list.push({ issued:iso(new Date()), ref:ref, shop:shop, plan:plan, exp:exp, key:key }); saveRegister(list);
+      lastText = 'Hello' + (shop ? ' ' + shop : '') + ', thank you for your payment. Your Pesa ' + plan.charAt(0).toUpperCase() + plan.slice(1) + ' licence runs until ' + exp + '.\n\nOpen Pesa, tap the menu, then Licence and subscription, paste this key and tap Activate key:\n\n' + key;
+      msg('issueMsg', 'Licence created for ' + ref + ' on the ' + plan + ' plan, until ' + exp + '. It is saved in your list below.', 'good');
+    }, function(){ msg('issueMsg', 'Could not sign. Check that your private key is correct.', 'bad'); });
+  });
+  $('iCopy').addEventListener('click', function(){ copy($('iOut').value, 'Key copied.', 'issueMsg'); });
+  $('iCopyMsg').addEventListener('click', function(){ copy(lastText, 'Message copied. Paste it into WhatsApp.', 'issueMsg'); });
+
+  $('rCsv').addEventListener('click', function(){
+    var list = register(); if(!list.length) return;
+    var csv = 'issued,reference,shop,plan,until,key\n' + list.map(function(r){ return [r.issued, r.ref, '"' + String(r.shop || '').replace(/"/g, '""') + '"', r.plan, r.exp, r.key].join(','); }).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = 'pesa-licences-' + iso(new Date()) + '.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  });
+  $('rClear').addEventListener('click', function(){ if(confirm('Clear the list of issued licences on this device? The keys already given to customers keep working.')){ ls(REG_KEY, null); drawRegister(); } });
+
+  /* ---------- checking ---------- */
+  $('cGo').addEventListener('click', function(){
+    var raw = $('cKey').value.replace(/\s+/g, ''), parts = raw.split('.');
+    if(parts.length !== 3 || parts[0] !== 'PESA1') return msg('checkMsg', 'That is not a Pesa licence key.', 'bad');
+    if(!pub) return msg('checkMsg', 'Create or restore your keys first.', 'bad');
+    var data, sig, p;
+    try{ data = unb64u(parts[1]); sig = unb64u(parts[2]); p = JSON.parse(new TextDecoder().decode(data)); }catch(e){ return msg('checkMsg', 'The key is damaged.', 'bad'); }
+    crypto.subtle.importKey('jwk', pub, { name:'ECDSA', namedCurve:'P-256' }, false, ['verify']).then(function(k){ return crypto.subtle.verify({ name:'ECDSA', hash:'SHA-256' }, k, sig, data); }).then(function(ok){
+      var t = (ok ? 'VALID. ' : 'NOT VALID for your keys. ') + 'Reference ' + p.ref + ', plan ' + p.plan + ', until ' + p.exp + (p.shop ? ', shop ' + p.shop : '') + ', issued ' + p.iat + '.';
+      msg('checkMsg', t, ok ? 'good' : 'bad');
+    });
+  });
+
+  loadKeys(); showKeys(); preview(); drawRegister();
+})();
+</script>
+</body>
+</html>

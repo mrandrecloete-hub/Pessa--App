@@ -1,0 +1,124 @@
+{
+  "version": "1.1",
+  "updated": "4 October 2026",
+  "seller": "Pesa, developed by Björn Van Rensburg",
+  "docs": {
+    "terms": {
+      "title": "Terms of Service",
+      "intro": "These terms are the agreement between you (the business using Pesa) and Pesa, developed by Björn Van Rensburg (we, us). Please read them. By registering a business or using Pesa you accept them, and you confirm that you may accept them for your business.",
+      "sections": [
+        { "h": "1. The service", "items": [
+          "Pesa is business software for shops. It runs on your own computers and devices, and stores your records there. If you switch on the Advanced Pesa Connection, your records are also kept in your own online project that you create and control",
+          "Some features need an internet connection, for example cloud sync, password reset emails and loading the PDF engine for the first time",
+          "Pesa records and controls card sales but does not process card payments or connect to a bank. You take card payments on your own card machine"
+        ]},
+        { "h": "2. Free trial", "items": [
+          "Every new business gets a free trial of 14 days from the day it is registered, with every feature open and no payment details needed",
+          "When the trial ends you need a licence to carry on. Nothing is deleted when a trial ends. You can still make a backup of your records"
+        ]},
+        { "h": "3. Your licence", "items": [
+          "We give you a non exclusive, non transferable right to use Pesa for one business, for the period and plan on your licence key",
+          "A licence key is tied to your business's Licence reference. You may not share your key with another business, resell or rent Pesa, copy it for others, or remove or work around the licence checks",
+          "Your employees may use Pesa for your business, within the limits of your plan"
+        ]},
+        { "h": "4. Plans, prices and payment", "items": [
+          "The plans, what each includes, and their prices are shown on our price list or told to you when you subscribe. Prices are in Namibian dollars unless we say otherwise",
+          "You pay in advance for the period you choose, by electronic transfer or mobile wallet. We send your licence key after we confirm your payment",
+          "We may change prices. A change never affects a period you have already paid for, and we will tell you before it applies to your next renewal"
+        ]},
+        { "h": "5. Renewal and what happens when a licence ends", "items": [
+          "Nothing renews by itself and we do not keep your payment details. To carry on, you renew and we send a new key",
+          "Pesa warns you before your licence ends. After it ends there is a short grace period of 7 days, then Pesa locks until you renew",
+          "While locked your records stay where they are and the owner can still download a backup. Renewing opens Pesa again with everything as you left it"
+        ]},
+        { "h": "6. Your data and backups", "items": [
+          "Your business records belong to you. We cannot see them, open them or recover them, as explained in the confidentiality and privacy agreement",
+          "You are responsible for backing up your data. Because it is stored on your own devices first, losing a device, clearing the browser data, or uninstalling the app can erase it if there is no backup",
+          "Cloud sync is not a backup. A wrong change on one device is copied to the others"
+        ]},
+        { "h": "7. Your responsibilities", "items": [
+          "Keep your records accurate and use Pesa lawfully",
+          "Tax and other filings are your responsibility. VAT figures and reports in Pesa are working figures built from what you record. They are not tax, accounting or legal advice, so check them with NamRA or your accountant",
+          "Keep passwords, PINs, sync codes and licence keys private, and decide carefully who in your business gets each role",
+          "You are responsible for handling your customers' personal details lawfully and with care"
+        ]},
+        { "h": "8. Acceptable use", "items": [
+          "Do not use Pesa for anything unlawful, to harm others, or to try to break, overload or get around the app or its licence checks",
+          "Do not copy, change or reverse engineer Pesa except where the law allows it"
+        ]},
+        { "h": "9. Support and updates", "items": [
+          "We give support by WhatsApp and email. We work to answer quickly and fix faults, but we do not promise a fixed response time unless we agree one with you in writing",
+          "We release updates to fix faults, improve security and add features. Keep Pesa up to date. We may change or retire a feature, and we will tell you in advance when the change is large"
+        ]},
+        { "h": "10. Ownership", "items": [
+          "We own Pesa, its code, design, name and logo. You own your data",
+          "If you send us ideas or feedback, we may use them to improve Pesa without paying you"
+        ]},
+        { "h": "11. No guarantee, and limits on our responsibility", "items": [
+          "We take care to make Pesa reliable, but it is provided as it is. We do not promise that it will be error free, always available, or fit for a particular purpose",
+          "As far as the law allows, we are not responsible for indirect or consequential loss, loss of profit, loss of business or loss of data, including loss that happens because there was no backup",
+          "As far as the law allows, our total responsibility to you for any claim is limited to what you paid us in the 3 months before the claim",
+          "Nothing in these terms limits a responsibility that the law does not allow us to limit"
+        ]},
+        { "h": "12. Ending the agreement", "items": [
+          "You can stop at any time by not renewing. There is no cancellation fee. Your licence works until the end of the period you paid for",
+          "We may suspend or end a licence if you break these terms, use Pesa unlawfully, share a key, or a payment is reversed or found to be fraudulent. We will tell you why where we can",
+          "Refunds are explained in the refunds and cancellation terms"
+        ]},
+        { "h": "13. Changes to these terms", "items": [
+          "We may update these terms. When we do, Pesa shows the new version and asks you to accept it. If you do not accept, you can stop using Pesa and make a backup of your records"
+        ]},
+        { "h": "14. Governing law and contact", "items": [
+          "These terms are governed by the laws of Namibia, and the Namibian courts may hear any dispute. We will first try to settle any problem with you in good faith",
+          "Questions about these terms: ecrypted5@gmail.com or WhatsApp 0818211692"
+        ]}
+      ]
+    },
+    "refunds": {
+      "title": "Refunds and cancellation",
+      "intro": "We want you to be sure before you pay, so every new business starts with a free 14 day trial. This page explains how cancelling and refunds work once you subscribe.",
+      "sections": [
+        { "h": "1. Cancelling", "items": [
+          "You can cancel at any time by simply not renewing. Nothing renews by itself and there is no cancellation fee",
+          "Your licence keeps working until the end of the period you paid for. After that Pesa locks, your records are kept, and you can still download a backup"
+        ]},
+        { "h": "2. When we refund", "items": [
+          "A payment made twice or by mistake is refunded in full",
+          "If a fault stops Pesa from working and we cannot fix it within 14 days of you telling us about it, we refund the unused full months of your current period",
+          "We also refund whenever the law requires it"
+        ]},
+        { "h": "3. When we do not refund", "items": [
+          "Once a licence key has been issued, payments for a period that has started are not refunded because you changed your mind, stopped using Pesa, or did not use all of the period. This is why the free trial exists",
+          "We do not refund a licence that was ended because these terms were broken"
+        ]},
+        { "h": "4. Upgrading and downgrading", "items": [
+          "You can move to a bigger plan at any time. You pay the difference for the rest of your period and we send a new key",
+          "A move to a smaller plan starts at your next renewal"
+        ]},
+        { "h": "5. How to ask for a refund", "items": [
+          "Send your Licence reference, the date of the payment, your proof of payment and a short note of what went wrong, by WhatsApp to 0818211692 or by email to ecrypted5@gmail.com",
+          "We answer within 5 working days. Approved refunds are paid back to the account or wallet that paid, within 10 working days"
+        ]}
+      ]
+    },
+    "support": {
+      "title": "Support",
+      "intro": "Stuck, or something not working? Message us and we will help.",
+      "sections": [
+        { "h": "How to reach us", "items": [
+          "WhatsApp 0818211692",
+          "Email ecrypted5@gmail.com"
+        ]},
+        { "h": "What to send so we can help faster", "items": [
+          "Your business name and Licence reference (Menu, Licence and subscription)",
+          "What you were doing and what happened instead. A screenshot helps",
+          "The kind of computer or device you use and whether it was online"
+        ]},
+        { "h": "Before you message", "items": [
+          "Try Search help in the menu, and the Training lessons",
+          "Never send us your password, PIN, sync code or backup file unless we ask and you agree. We can fix most things without them"
+        ]}
+      ]
+    }
+  }
+}
