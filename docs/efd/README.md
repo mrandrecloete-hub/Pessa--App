@@ -7,7 +7,7 @@ Offline-first e-invoicing design for Pesa. A sale never waits for tax or network
 - NamRA has published no e-invoicing specification and no API. No law requires shops to connect yet; the budget points to 2028 or later.
 - Every `namra_*` column, the payload shape (`pesa.namra.mock/1`) and the clearance response are **mock**. They sit behind two replaceable pieces: `createHttpTransport()` and `buildPayload()`.
 - Real-time clearance in Namibia is not an agreed workflow yet. Pesa receipts therefore show honest text for each state (cleared, pending, failed).
-- Nothing here is wired into `index.html`. See "Integration".
+- The module is embedded in `index.html` (version 2026.10.06) and **off by default**. An owner switches it on in Settings, Tax records. See "Integration".
 
 ## Files
 
@@ -128,28 +128,28 @@ await writeBleInChunks(blePrinterChar, bytes);
 
 Status text printed: cleared (IRN, sequence, terminal, shortened signature, TIN, QR), pending (reference and 8-character check code), failed ("Keep this slip"). All lines fit 32 columns.
 
-## Integration into `index.html`
+## Integration into `index.html` (done)
 
-1. **Settings.** Add TIN, branch code and a terminal ID. Keep the terminal ID in `localStorage`, never in synced settings: each device needs its own, or two devices share one sequence. Reuse `State.company.vatNumber`. Keep the feature off until all three are set.
-2. **Products.** Add `taxCategory` (default `STANDARD`) to the product form. Carry it through `cart` items and `finalizeSale` items (`items.map` already copies `productId`, `name`, `qty`, `unitPrice`).
-3. **Storage adapter.** Map the module's `storage` onto `Store`. Add one method to the local Store, modelled on `setMany`, that writes several records in one save:
+Source files: `docs/efd/pesa-efd.js` (module) and `tools/efd_app.js` (Pesa glue). `python3 tools/embed_efd.py` copies both into `index.html` between `/*EFD:START*/` and `/*EFD:END*/`. Edit the sources, not the generated block.
 
-   ```js
-   // Store.batchSet([{coll:'fiscalOutbox', id, data}, {coll:'fiscalMeta', id:'T01', data}])  -> one localWriteAll(all, touched), then fireWrite() per record
-   const fiscalStorage = {
-     get:  k => { const [c, id] = k.split('/'); return Store.collection(c).doc(id).get().then(d => d && d.data ? d.data : null); },
-     put:  (k, v) => { const [c, id] = k.split('/'); return Store.collection(c).doc(id).set(v); },
-     list: p => new Promise(r => { const c = p.replace(/\/$/, ''); r(Object.values(Persist.data()[c] || {})); }),
-     batch: ops => Store.batchSet(ops.map(o => { const [c, id] = o.put[0].split('/'); return { coll: c, id, data: o.put[1] }; }))
-   };
-   ```
+| Piece | Where |
+|---|---|
+| Settings | Settings, Tax records. Owner only, only where data is stored on the device (not in the Claude app preview). Shared: on/off, TIN, branch code. This device only (`localStorage`, never synced): Terminal ID, address, access key. |
+| Terminal ID | Locked after the first tax record on a device. Every device needs its own, or two devices would share one invoice sequence. |
+| Products | Tax category (standard, zero rated, exempt) appears in the product form only while tax records are on. Items without a category count as standard. |
+| Checkout | `finalizeSale` and the credit sale sheet call `Fiscal.track(sale, addPromise)`. It is never awaited; every error is swallowed. The sale gets `fiscalId` once the record exists. |
+| Storage | `Store.batchSet()` writes the record and the sequence counter in one save. `fiscalOutbox` and `fiscalMeta` are ordinary collections, so the existing 15 s sync copies them to `pesa_docs`. |
+| Worker | Starts at launch (and when settings are saved) only when an https address and key are set. It sends only this device's records, so records pulled from other devices are never sent twice. |
+| Receipts | Bluetooth: the footer goes before the paper cut, with the QR code when cleared. PDF receipt: VAT split by standard, zero rated and exempt, plus IRN, signature stub and verify address. Both only show once an address and key are set, or the receipt is cleared. |
+| Owner screen | Counts (waiting, cleared, needs attention), connection state, failed receipts with the reason, Send now, Retry failed, Resume. |
 
-   Verify `doc().get()` returns the shape assumed above before relying on it. Both collections then ride the existing 15 s cloud sync into `pesa_docs`.
-4. **Hook the sale.** In `finalizeSale`, after `refs.sales.add(sale)` resolves, call `fiscalOutbox.enqueueSale(sale, ref.id, seller)` and store `{terminalId, sequence}` on the receipt draft. Do not `await` it in the checkout path.
-5. **Start the worker.** After sign-in: `createTaxSyncWorker({storage: fiscalStorage, transport: PesaEfd.createHttpTransport({url, token}), onEvent}).start()`. Read `url` and `token` from a new owner-only setting.
-6. **Receipt.** In `printReceiptViaBluetooth`, replace `escposReceiptBytes(...)` with the `withFiscalFooter(...)` line above. Add the same text block to `buildReceiptPdf`, using `fiscalReceiptBlock(record)` and a QR image.
-7. **Owner screen.** Show `counts()` (pending, cleared, failed), the `blocked` and `stuck` events, a "Retry failed" button, and a list of `FAILED` receipts with `lastError`.
-8. **Database.** Run `001_namra_efd.sql` in each shop's Supabase project.
+Behaviour to know:
+
+- A shop with VAT rate 0 cannot switch tax records on (the database requires a positive rate for standard lines).
+- A receipt total may differ from the sum of rounded lines by up to 50 cents without blocking the record (sub-cent fractions on weighed items). The tax record always uses the rounded lines.
+- Run `001_namra_efd.sql` in the shop's Supabase project to get the typed tables; the app works without it.
+- The tax record covers sales only. Credit notes, voids and refunds are not recorded yet (open question 4).
+- 8 UI checks run against a mock endpoint in the browser: off by default, validation, mixed-category sale, clearance, receipt PDF, Bluetooth bytes, offline sale never blocked, queue drains on reconnect.
 
 ## Open questions
 

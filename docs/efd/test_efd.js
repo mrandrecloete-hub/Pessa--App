@@ -75,6 +75,12 @@ test('buildPayload: rejects missing identity, empty sale and total mismatch', fu
   assert.throws(function () { efd.buildPayload(sale([]), { seller: SELLER, sequence: 1 }); }, /EMPTY_SALE/);
   assert.throws(function () { efd.buildPayload(sale([item('A', 1, 10)], { total: 11 }), { seller: SELLER, sequence: 1 }); }, /TOTAL_MISMATCH/);
 });
+test('total tolerance: sub-cent line fractions do not block a sale when the shop allows it', function () {
+  var items = [item('A', 0.35, 89.99), item('B', 0.35, 89.99), item('C', 0.35, 89.99)], total = 94.4895;      // lines round to 31.50 each = 94.50
+  assert.throws(function () { efd.buildPayload(sale(items, { total: total }), { seller: SELLER, sequence: 1 }); }, /TOTAL_MISMATCH/);
+  var p = efd.buildPayload(sale(items, { total: total }), { seller: SELLER, sequence: 1, config: { totalToleranceCents: 3 } });
+  assert.strictEqual(p.totals.gross, '94.50');
+});
 test('canon is key-order independent; hash excludes integrity.hash', async function () {
   assert.strictEqual(efd.canon({ b: 1, a: [2, { d: 1, c: 2 }] }), efd.canon({ a: [2, { c: 2, d: 1 }], b: 1 }));
   var p = efd.buildPayload(sale([item('A', 1, 10)]), { seller: SELLER, sequence: 1 }); await efd.sealPayload(p, sha256);

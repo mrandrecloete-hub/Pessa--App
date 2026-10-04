@@ -30,6 +30,7 @@
     staleSubmittedMs: 2 * 60 * 1000,
     loopMs: 15000,                 // same rhythm as the cloud sync
     stuckAfterAttempts: 12,        // raises an alert, keeps retrying
+    totalToleranceCents: 0,        // receipt total vs sum of rounded lines; a shop that rounds only at the end may allow one cent per line
     verifyClearance: null          // (payloadHash, signature, irn) => boolean; supply NamRA's key check when it exists
   };
 
@@ -99,7 +100,7 @@
       var key = cat + '|' + bp, p = pools[key] || (pools[key] = { taxCategory: cat, bp: bp, net: 0, vat: 0, gross: 0 });
       p.net += n; p.vat += v; p.gross += g; gross += g; net += n; vat += v;
     });
-    if (sale.total != null && toCents(sale.total) !== gross) throw new Error('TOTAL_MISMATCH');   // the receipt and the tax record must agree
+    if (sale.total != null && Math.abs(toCents(sale.total) - gross) > cfg.totalToleranceCents) throw new Error('TOTAL_MISMATCH');   // the receipt and the tax record must agree
     var at = new Date(sale.createdAt || Date.now());
     var seq = ctx.sequence, number = s.terminalId + '-' + ('000000' + seq).slice(-6);
     var pay = PAY_MAP[sale.paymentMethod] || 'OTHER';
