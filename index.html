@@ -18051,7 +18051,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.27';
+var APP_VERSION = '2026.10.28';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18243,6 +18243,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.28', items:[
+    'Opening animation: the Pesa logo now sits above the words Welcome to Pesa Namibia'
+  ]},
   { v:'2026.10.27', items:[
     'Opening animation: when the smoke clears, the words Welcome to Pesa Namibia appear before the welcome screen'
   ]},
@@ -19592,7 +19595,7 @@ var PesaIntro = (function(){
         cvs = document.createElement('canvas'); cvs.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;display:block'; ctx = cvs.getContext('2d'); VEIL.appendChild(cvs);
         VEIL.style.background = 'transparent';
         tagline = document.createElement('div'); tagline.textContent = 'Your Mula, Your Pride'; tagline.style.cssText = 'position:absolute;left:0;right:0;text-align:center;font:italic 600 17px/1.2 Georgia,"Times New Roman",serif;letter-spacing:.04em;color:rgba(255,226,150,.95);text-shadow:0 2px 12px rgba(0,0,0,.6);opacity:0;pointer-events:none'; VEIL.appendChild(tagline);
-        wtext = document.createElement('div'); wtext.innerHTML = 'Welcome to<br>Pesa Namibia'; wtext.style.cssText = 'position:absolute;left:0;right:0;text-align:center;font:700 clamp(30px,9vw,54px)/1.12 Georgia,"Times New Roman",serif;letter-spacing:.01em;color:#fff4d2;text-shadow:0 2px 3px rgba(60,30,0,.55),0 0 26px rgba(255,190,70,.75),0 6px 30px rgba(0,0,0,.55);opacity:0;pointer-events:none;padding:0 16px'; VEIL.appendChild(wtext);
+        wtext = document.createElement('div'); wtext.innerHTML = '<img alt="" style="display:block;margin:0 auto 14px;width:clamp(90px,28vw,140px);height:auto;filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)) drop-shadow(0 0 18px rgba(255,190,70,.5))">Welcome to<br>Pesa Namibia'; wtext.firstChild.src = img.src; wtext.style.cssText = 'position:absolute;left:0;right:0;text-align:center;font:700 clamp(30px,9vw,54px)/1.12 Georgia,"Times New Roman",serif;letter-spacing:.01em;color:#fff4d2;text-shadow:0 2px 3px rgba(60,30,0,.55),0 0 26px rgba(255,190,70,.75),0 6px 30px rgba(0,0,0,.55);opacity:0;pointer-events:none;padding:0 16px'; VEIL.appendChild(wtext);
         hint = document.createElement('div'); hint.textContent = (typeof tr === 'function') ? tr('Tap to skip') : 'Tap to skip'; hint.style.cssText = 'position:absolute;left:0;right:0;bottom:calc(22px + env(safe-area-inset-bottom,0px));text-align:center;font:600 12.5px/1 system-ui,sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.8);opacity:0;pointer-events:none'; VEIL.appendChild(hint);
         layout(); freshState();
         window.addEventListener('resize', function(){ if(!done){ layout(); } });
