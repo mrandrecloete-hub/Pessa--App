@@ -30,7 +30,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.check('#tvDeep'); ck('deeper tone saved', (await p.evaluate(()=>localStorage.getItem('pesa_train_pitch_v1')))==='deep');
   // open a lesson: narration uses saved voice and pitch
   await p.evaluate(()=>{ window.__spoken.length=0; });
-  await p.evaluate(()=>window.__t.openLessonSlideshow(window.__t.LESSONS[0].id)); await p.waitForSelector('#lsVoice'); await p.waitForTimeout(500);
+  await p.evaluate(()=>window.__t.openLessonSlideshow('devices')); await p.waitForSelector('#lsVoice'); await p.waitForTimeout(500);
   const ln=await p.evaluate(()=>window.__spoken[0]); ck('lesson narrated with the chosen voice at pitch 0.8 ('+(ln&&ln.voice)+')', ln && ln.voice===picked && ln.pitch===0.8);
   ck('voice button shows the name', (await p.innerText('#lsVoice')).includes(picked.replace(/^Microsoft\s+/,'').split(' ')[0]));
   await p.click('#lsVoice'); await p.waitForSelector('#lsVoicePanel .tv-row'); await p.screenshot({path:D+'tv_lesson.png'});

@@ -15600,7 +15600,7 @@ function openLicenceSheet(){
 // Narration uses the browser's own window.speechSynthesis — no account, no
 // API key, and it works fully offline.
 var LESSONS = [
-  { id:'developer', title:'Meet the developer and your privacy promise', icon:'info', who:'all', slides:[
+  { id:'developer', title:'Meet the developer and your privacy promise', icon:'info', who:'all', silent:true, slides:[
     { title:'Meet the developer', text:'Hello and welcome to Pesa! My name is Björn Van Rensburg. I am a 30 year old software developer, born and raised right here in Windhoek, Namibia.',
       where:'Menu → About Pesa' },
     { title:'Why I built Pesa', text:'I built Pesa because I watched local Namibian shop owners struggle for years with expensive, over complicated point of sale systems imported from South Africa. Those corporate systems do not understand what it is like when our local internet towers go down, or how vital mobile wallets like PayToday, easyWallet and Blue Wallet are to our daily trade. Pesa was built specifically to solve those unique Namibian realities.',
@@ -16775,7 +16775,7 @@ function openTrainingSheet(){
     el.addEventListener('click', function(){ openLessonSlideshow(el.getAttribute('data-lesson')); });
   });
   var pa = ov.querySelector('#trPlayAll');
-  if(pa) pa.addEventListener('click', function(){ openLessonSlideshow(list[0].id, { chain:true }); });
+  if(pa) pa.addEventListener('click', function(){ openLessonSlideshow((list.filter(function(l){ return !l.silent; })[0] || list[0]).id, { chain:true }); });
   var tsr = ov.querySelector('#trSearch'); if(tsr) tsr.addEventListener('click', function(){ closeModal(); openHelpSearchSheet(); });
   var tvo = ov.querySelector('#trVoice'); if(tvo) tvo.addEventListener('click', function(){ openVoiceStudio(); });
   var tnb = ov.querySelector('#trNarr');
@@ -16797,7 +16797,7 @@ function openLessonSlideshow(lessonId, opts){
   _trainState.idx = 0;
   _trainState.chain = !!opts.chain;
   _trainState.tok = (_trainState.tok || 0) + 1;
-  var supported = speechSupported();
+  var supported = speechSupported() && !lesson.silent;   // some lessons (Meet the developer) are for reading, with no voice
   // opening a lesson is a tap, so narration may start straight away
   var wantPlay = supported && State.settings.soundEnabled !== false;
   var partIdx = 0;
@@ -18055,7 +18055,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.29';
+var APP_VERSION = '2026.10.30';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18247,6 +18247,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.30', items:[
+    'Training: Meet the developer is now for reading only, with no voice. Every other lesson still has the voice over'
+  ]},
   { v:'2026.10.29', items:[
     'Training: the narrator voice list now opens by itself on the Training page, and if your device has no labelled male voice it lists every English voice so you can hear each one and pick'
   ]},
