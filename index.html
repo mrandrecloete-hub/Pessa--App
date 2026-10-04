@@ -234,26 +234,40 @@
   .todaypill .lbl{ font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; opacity:0.75; }
   .todaypill .val{ font-size:14px; font-weight:600; }
 
-  /* ---------- glass clock (iPhone style) in the top right corner ---------- */
+  /* ---------- gold glass clock and settings button, top right corner ---------- */
   .glassclock, .todaypill{
     position:relative; overflow:hidden; isolation:isolate;
-    background:linear-gradient(135deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.14) 55%, rgba(255,255,255,.26) 100%);
-    -webkit-backdrop-filter:blur(18px) saturate(190%); backdrop-filter:blur(18px) saturate(190%);
-    border:1px solid rgba(255,255,255,.55);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.75), inset 0 -1px 0 rgba(255,255,255,.18), 0 10px 22px -10px rgba(0,30,20,.55);
-    color:#fff; text-shadow:0 1px 2px rgba(0,40,25,.35);
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 40' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23e9923a' stop-opacity='.75'/%3E%3Cstop offset='1' stop-color='%23a4511c' stop-opacity='.15'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0 40 L0 30 C40 28 70 24 110 14 C130 9 150 7 165 12 C180 17 190 24 200 26 L200 40Z' fill='url(%23g)'/%3E%3C/svg%3E") center bottom/100% 46% no-repeat,
+      radial-gradient(120% 160% at 12% 0%, rgba(70,160,140,.42) 0%, rgba(12,52,48,.0) 55%),
+      linear-gradient(145deg, #0f3d38 0%, #0a2523 60%, #081a19 100%);
+    border:1px solid #d9a548;
+    box-shadow:inset 0 1px 0 rgba(255,236,190,.55), inset 0 0 14px rgba(233,168,69,.22), 0 0 0 1px rgba(217,165,72,.18), 0 8px 18px -8px rgba(0,0,0,.65);
+    color:#f6ecd4; text-shadow:none;
   }
-  .glassclock::before, .todaypill::before{ content:''; position:absolute; left:-20%; top:-60%; width:140%; height:90%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,255,255,.55), rgba(255,255,255,0)); opacity:.55; z-index:-1; pointer-events:none; }
-  .glassclock{ flex:none; border-radius:18px; padding:5px 11px 6px; text-align:center; min-width:74px; line-height:1; }
-  .gc-time{ font-family:var(--font-sans); font-size:19px; font-weight:800; letter-spacing:.01em; font-variant-numeric:tabular-nums; }
+  .glassclock::before, .todaypill::before{ content:''; position:absolute; left:-10%; top:-70%; width:120%; height:100%; border-radius:50%; background:radial-gradient(closest-side, rgba(255,240,200,.38), rgba(255,240,200,0)); opacity:.7; z-index:-1; pointer-events:none; }
+  .glassclock{ flex:none; border-radius:16px; padding:6px 12px 7px; text-align:center; min-width:86px; line-height:1; }
+  .gc-time{ font-family:var(--font-sans); font-size:21px; font-weight:800; letter-spacing:.01em; font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#ffe7a8 0%,#f0b84f 55%,#d8892a 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; filter:drop-shadow(0 1px 4px rgba(233,168,69,.45)); }
   .gc-colon{ display:inline-block; margin:0 1px; animation:gcBlink 1s steps(1) infinite; }
-  .gc-date{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; opacity:.95; margin-top:3px; white-space:nowrap; }
-  @keyframes gcBlink{ 0%{ opacity:1; } 50%{ opacity:.25; } }
+  .gc-date{ font-size:9.5px; font-weight:500; letter-spacing:.02em; color:#f6ecd4; opacity:.96; margin-top:3px; white-space:nowrap; }
+  @keyframes gcBlink{ 0%{ opacity:1; } 50%{ opacity:.3; } }
   @media (prefers-reduced-motion:reduce){ .gc-colon{ animation:none; } }
   .topbar .shopdate{ display:none; }
-  .todaypill{ border-radius:18px; padding:5px 10px 6px; }
-  .todaypill .lbl, .todaypill .val{ text-shadow:0 1px 2px rgba(0,40,25,.35); }
-  @media (max-width:430px){ .glassclock{ min-width:64px; padding:4px 8px 5px; border-radius:16px; } .gc-time{ font-size:16px; } .gc-date{ font-size:9px; } .todaypill{ padding:4px 8px 5px; } .todaypill .val{ font-size:12.5px; } .topbar{ gap:7px; padding-left:12px; padding-right:12px; } }
+  .todaypill{ border-radius:16px; padding:6px 10px 7px; }
+  .todaypill .lbl{ color:#f6ecd4; text-shadow:none; }
+  .todaypill .val{ background:linear-gradient(180deg,#ffe7a8,#e9a842); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; text-shadow:none; }
+  @media (max-width:459px){ .gc-yr{ display:none; } }
+  @media (max-width:430px){ .glassclock{ min-width:70px; padding:5px 8px 6px; border-radius:15px; } .gc-time{ font-size:18px; } .gc-date{ font-size:8.6px; } .todaypill{ padding:5px 8px 6px; } .todaypill .val{ font-size:12.5px; } .topbar{ gap:7px; padding-left:12px; padding-right:12px; } }
+  .icon-btn.gear-btn{
+    position:relative; overflow:hidden; isolation:isolate; width:40px; height:40px; border-radius:13px; border:1.5px solid #d9a548;
+    background:radial-gradient(130% 130% at 22% 15%, rgba(90,190,165,.55) 0%, rgba(14,58,52,.0) 60%), linear-gradient(150deg, #0f3d38, #081a19);
+    box-shadow:inset 0 1px 0 rgba(255,236,190,.6), inset 0 0 12px rgba(233,168,69,.28), 0 0 12px -2px rgba(233,168,69,.45), 0 6px 14px -6px rgba(0,0,0,.7);
+    color:#e9c46f; transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .icon-btn.gear-btn::before{ content:''; position:absolute; left:6%; top:4%; width:88%; height:46%; border-radius:12px 12px 50% 50%; background:linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0)); z-index:-1; pointer-events:none; }
+  .icon-btn.gear-btn:active{ transform:scale(.94); background:radial-gradient(130% 130% at 22% 15%, rgba(90,190,165,.7) 0%, rgba(14,58,52,.1) 60%), linear-gradient(150deg, #0f3d38, #081a19); }
+  .icon-btn.gear-btn .gearico{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
   .icon-btn{
     width:34px; height:34px; border-radius:10px; border:1px solid rgba(255,255,255,0.22);
     background:rgba(255,255,255,0.1); color:var(--primary-contrast);
@@ -742,8 +756,7 @@
   @media (prefers-color-scheme: dark){ html.hc:not([data-theme="light"]){ --text:#fff; --text-muted:#eef4f0; --border:#a7bbb0; --surface-3:#2d4a3d; } }
   html.hc[data-theme="dark"]{ --text:#fff; --text-muted:#eef4f0; --border:#a7bbb0; --surface-3:#2d4a3d; }
   .lite *, .lite *::before, .lite *::after{ animation-duration:0.001s !important; animation-iteration-count:1 !important; animation-delay:0s !important; transition-duration:0.001s !important; scroll-behavior:auto !important; }
-  .lite .glassclock, .lite .todaypill, .lite .overlay, .lite .drawer-overlay{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
-  .lite .glassclock, .lite .todaypill{ background:rgba(255,255,255,.2) !important; }
+  .lite .overlay, .lite .drawer-overlay{ -webkit-backdrop-filter:none !important; backdrop-filter:none !important; }
   .lite .app-watermark::before, .lite .app-watermark::after{ display:none !important; }
   .lite .app-emblem img, .lite .soon-c img{ filter:none !important; }
   .lite *{ text-shadow:none !important; }
@@ -929,6 +942,10 @@
   .spk{ border:1.5px solid var(--primary); border-radius:16px; padding:12px; margin:10px 0; background:var(--surface); }
   .spk-list{ max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
   .spk-row{ display:flex; align-items:center; gap:10px; border:1.5px solid var(--border); border-radius:12px; padding:9px 10px; cursor:pointer; } .spk-row.on{ border-color:var(--primary); background:rgba(20,163,122,.08); }
+  .dept-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; position:sticky; top:0; z-index:2; margin:10px 0 2px; padding:7px 12px; border-radius:10px; background:linear-gradient(120deg, var(--primary) 0%, var(--primary-dim) 130%); color:var(--primary-contrast); font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+  .dept-h:first-child{ margin-top:0; } .dept-h small{ font-size:11px; font-weight:700; opacity:.85; letter-spacing:0; }
+  .spk-dept{ display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:1; margin-top:4px; padding:7px 10px; border-radius:10px; background:linear-gradient(120deg, var(--primary) 0%, var(--primary-dim) 130%); color:var(--primary-contrast); font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; }
+  .spk-dept b{ flex:1; min-width:0; } .spk-dept small{ font-size:11px; font-weight:700; opacity:.85; letter-spacing:0; } .spk-dept input[type=checkbox]{ width:20px; height:20px; accent-color:#e9b44c; flex:none; }
   .spk-row input[type=checkbox]{ width:20px; height:20px; accent-color:var(--primary); flex:none; }
   .spk-main{ flex:1; min-width:0; display:flex; flex-direction:column; } .spk-main b{ font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .spk-main small{ color:var(--text-muted); font-size:12px; font-weight:600; }
   .spk-qty{ width:64px; padding:6px 8px; border-radius:8px; border:1.5px solid var(--border); font-weight:800; text-align:center; flex:none; } .spk-more{ text-align:center; color:var(--text-muted); font-size:12.5px; padding:8px; }
@@ -1040,8 +1057,8 @@
         <div class="gc-time num"><span id="gcH">--</span><span class="gc-colon">:</span><span id="gcM">--</span></div>
         <div class="gc-date" id="gcDate"></div>
       </div>
-      <button class="icon-btn" id="settingsBtn" aria-label="Settings">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"></path></svg>
+      <button class="icon-btn gear-btn" id="settingsBtn" aria-label="Settings">
+        <svg class="gearico" width="27" height="27" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="gearG" x1="0.1" y1="0" x2="0.9" y2="1"><stop offset="0" stop-color="#fbe3a2"/><stop offset=".45" stop-color="#d1a352"/><stop offset="1" stop-color="#8c632b"/></linearGradient></defs><path d="M38.78 20.45 L44.81 21.20 L44.81 26.80 L38.78 27.55 L36.96 31.94 L40.69 36.74 L36.74 40.69 L31.94 36.96 L27.55 38.78 L26.80 44.81 L21.20 44.81 L20.45 38.78 L16.06 36.96 L11.26 40.69 L7.31 36.74 L11.04 31.94 L9.22 27.55 L3.19 26.80 L3.19 21.20 L9.22 20.45 L11.04 16.06 L7.31 11.26 L11.26 7.31 L16.06 11.04 L20.45 9.22 L21.20 3.19 L26.80 3.19 L27.55 9.22 L31.94 11.04 L36.74 7.31 L40.69 11.26 L36.96 16.06Z M18.80 24.00 a5.20 5.20 0 1 0 10.40 0 a5.20 5.20 0 1 0 -10.40 0Z" fill="url(#gearG)" fill-rule="evenodd" stroke="#ffeebd" stroke-opacity=".75" stroke-width=".7" stroke-linejoin="round"/><circle cx="24" cy="24" r="9" fill="none" stroke="#7a5522" stroke-opacity=".55" stroke-width="1.6"/><circle cx="24" cy="24" r="8.2" fill="none" stroke="#ffe9b0" stroke-opacity=".55" stroke-width=".7"/></svg>
       </button>
     </div>
 
@@ -1440,6 +1457,8 @@ Object.assign(LANGS.af.strings, {"Meet the developer": "Ontmoet die ontwikkelaar
 Object.assign(LANGS.de.strings, {"Meet the developer": "Lernen Sie den Entwickler kennen", "Hello and welcome to Pesa! My name is Björn Van Rensburg. I am a 30 year old software developer, born and raised right here in Windhoek, Namibia.": "Hallo und willkommen bei Pesa! Mein Name ist Björn Van Rensburg. Ich bin ein 30 Jahre alter Softwareentwickler, geboren und aufgewachsen hier in Windhoek, Namibia.", "Why I built Pesa": "Warum ich Pesa gebaut habe", "I built Pesa because I watched local Namibian shop owners struggle for years with expensive, over complicated point of sale systems imported from South Africa. Those corporate systems do not understand what it is like when our local internet towers go down, or how vital mobile wallets like PayToday, easyWallet and Blue Wallet are to our daily trade. Pesa was built specifically to solve those unique Namibian realities.": "Ich habe Pesa gebaut, weil ich jahrelang gesehen habe, wie einheimische namibische Ladenbesitzer mit teuren, überkomplizierten Kassensystemen aus Südafrika kämpfen. Diese Konzernsysteme verstehen nicht, wie es ist, wenn unsere lokalen Funkmasten ausfallen, oder wie wichtig mobile Wallets wie PayToday, easyWallet und Blue Wallet für unseren täglichen Handel sind. Pesa wurde speziell gebaut, um diese besonderen namibischen Gegebenheiten zu lösen.", "Your Mula, Your Pride": "Ihr Mula, Ihr Stolz", "Because the phrase Your Mula, Your Pride is our core promise, this application comes with a strict confidentiality agreement. Here are the three promises that matter most.": "Weil der Satz Ihr Mula, Ihr Stolz unser Kernversprechen ist, kommt diese Anwendung mit einer strengen Vertraulichkeitsvereinbarung. Hier sind die drei wichtigsten Versprechen.", "You can read the full agreement any time under Menu, Terms, privacy and support, and on the About Pesa page.": "Sie können die vollständige Vereinbarung jederzeit unter Menü, Bedingungen, Datenschutz und Support sowie auf der Seite Über Pesa lesen.", "Promise one: total data sovereignty": "Versprechen eins: volle Datenhoheit", "Your sales, inventory and customer credits belong strictly to your shop. I have zero access to your margins.": "Ihre Verkäufe, Ihr Bestand und Ihr Kundenkredit gehören ausschließlich Ihrem Laden. Ich habe keinerlei Zugriff auf Ihre Margen.", "Promise two: no central server trackers": "Versprechen zwei: keine zentralen Server Tracker", "Pesa saves your data to your own computer or device first. If you turn on cloud syncing, it connects only to a private online database that you control through Supabase.": "Pesa speichert Ihre Daten zuerst auf Ihrem eigenen Computer oder Gerät. Wenn Sie die Cloud Synchronisierung einschalten, verbindet es sich nur mit einer privaten Online Datenbank, die Sie über Supabase selbst steuern.", "Promise three: no hidden backdoors": "Versprechen drei: keine versteckten Hintertüren", "The application does not send usage tracking, background analytics or financial reports back to me.": "Die Anwendung sendet weder Nutzungsverfolgung noch Hintergrundanalysen noch Finanzberichte an mich zurück.", "To be fully open: the first time Pesa is opened online it fetches its fonts and its PDF tool from public servers, a password reset email is sent only if the owner sets that up, and tax records go to NamRA only if you enter its details. None of these carry your business records to me.": "Um ganz offen zu sein: Beim ersten Öffnen von Pesa online holt es seine Schriften und sein PDF Werkzeug von öffentlichen Servern, eine E Mail zum Zurücksetzen des Passworts wird nur gesendet, wenn der Inhaber sie einrichtet, und Steuerbelege gehen nur an NamRA, wenn Sie dessen Daten eingeben. Nichts davon überträgt Ihre Geschäftsdaten an mich.", "Thank you, and how to reach me": "Danke, und wie Sie mich erreichen", "Thank you for choosing local innovation to drive Namibia's retail growth. If you ever have technical feedback or questions during your store operations, you can reach me directly on WhatsApp at 081 821 1692, or by email at ecrypted5@gmail.com.": "Danke, dass Sie sich für lokale Innovation entscheiden, die Namibias Einzelhandel voranbringt. Wenn Sie jemals technisches Feedback oder Fragen im Ladenbetrieb haben, erreichen Sie mich direkt per WhatsApp unter 081 821 1692 oder per E Mail an ecrypted5@gmail.com.", "Meet the developer and your privacy promise": "Lernen Sie den Entwickler kennen und Ihr Datenschutzversprechen", "Menu → About Pesa": "Menü → Über Pesa", "Menu → Terms, privacy and support": "Menü → Bedingungen, Datenschutz und Support", "Menu → About Pesa → Your privacy and confidentiality": "Menü → Über Pesa → Ihre Privatsphäre und Vertraulichkeit", "Settings → Advanced Pesa Connection settings": "Einstellungen → Erweiterte Pesa Verbindungseinstellungen", "Menu → About Pesa → Contact the developer": "Menü → Über Pesa → Entwickler kontaktieren", "A new first training lesson, Meet the developer and your privacy promise, with a narrated message from the developer about why Pesa was built and what it never does with your records": "Eine neue erste Schulungslektion, Lernen Sie den Entwickler kennen und Ihr Datenschutzversprechen, mit einer gesprochenen Botschaft des Entwicklers dazu, warum Pesa gebaut wurde und was es nie mit Ihren Daten tut"});
 Object.assign(LANGS.af.strings, {"Pilot feedback form": "Loodsproef-terugvoervorm", "A 48 hour pilot run. Please fill this in by hand while you work. Be honest: every problem you write down helps make Pesa better. Do not write passwords, PINs or customers’ personal details on this form.": "'n 48 uur loodsproef. Vul dit asseblief met die hand in terwyl jy werk. Wees eerlik: elke probleem wat jy neerskryf help om Pesa beter te maak. Moenie wagwoorde, PIN's of kliënte se persoonlike besonderhede op hierdie vorm skryf nie.", "About you and the pilot": "Oor jou en die loodsproef", "Cashier name": "Kassier se naam", "Shop or branch": "Winkel of tak", "Device used (computer, tablet or other)": "Toestel gebruik (rekenaar, tablet of ander)", "Shifts I worked": "Skofte wat ek gewerk het", "Pilot started (date and time)": "Loodsproef begin (datum en tyd)", "Pilot ended (date and time)": "Loodsproef geëindig (datum en tyd)", "How easy was it? Circle one number for each line": "Hoe maklik was dit? Omkring een nommer vir elke reël", "1 = very hard    3 = fine    5 = very easy": "1 = baie moeilik    3 = reg    5 = baie maklik", "Making a sale at the till": "'n Verkoop by die kasregister maak", "Finding a product by name or barcode": "'n Produk volgens naam of strepieskode vind", "Taking cash, card or wallet payments": "Kontant-, kaart- of beursiebetalings aanvaar", "Printing or sharing receipts": "Kwitansies druk of deel", "Opening and closing my till": "My kasregister oop- en toemaak", "Working when the internet was down": "Werk wanneer die internet af was", "Speed of the app overall": "Spoed van die toepassing in die algemeen", "Overall, how easy was Pesa to use?": "Oor die algemeen, hoe maklik was Pesa om te gebruik?", "Numbers for my shift or shifts": "Syfers vir my skof of skofte", "About how many sales did I make?": "Ongeveer hoeveel verkope het ek gemaak?", "Times Pesa was slow or froze": "Kere wat Pesa stadig was of gevries het", "Times the internet was down": "Kere wat die internet af was", "Times a barcode would not scan": "Kere wat 'n strepieskode nie wou skandeer nie", "Times I needed help from someone": "Kere wat ek hulp van iemand nodig gehad het", "Sales I had to correct or cancel": "Verkope wat ek moes regstel of kanselleer", "Working without internet (tick one box for each question)": "Werk sonder internet (merk een blokkie vir elke vraag)", "Did Pesa keep working when the internet was down?": "Het Pesa aanhou werk toe die internet af was?", "Did my sales show up on the other devices afterwards?": "Het my verkope daarna op die ander toestelle verskyn?", "Partly": "Gedeeltelik", "It did not happen": "Dit het nie gebeur nie", "Not tried": "Nie probeer nie", "Not sure": "Nie seker nie", "Not yet": "Nog nie", "Problem log: write down anything that went wrong": "Probleemlogboek: skryf alles neer wat skeefgeloop het", "What I was doing": "Wat ek gedoen het", "What went wrong": "Wat verkeerd geloop het", "How bad?": "Hoe erg?", "How bad: S = small, A = annoying, X = stopped the sale. Circle one letter.": "Hoe erg: S = klein, A = irriterend, X = het die verkoop gestop. Omkring een letter.", "In my own words": "In my eie woorde", "What worked best for me?": "Wat het vir my die beste gewerk?", "What was most confusing or slow?": "Wat was die verwarrendste of stadigste?", "What did customers say or do?": "Wat het kliënte gesê of gedoen?", "What is the first thing I would change?": "Wat is die eerste ding wat ek sou verander?", "My verdict (tick one box for each question)": "My oordeel (merk een blokkie vir elke vraag)", "Would I use Pesa every day?": "Sal ek Pesa elke dag gebruik?", "Would I trust Pesa to run my till on its own?": "Sal ek Pesa vertrou om my kasregister alleen te laat loop?", "Signatures": "Handtekeninge", "Cashier signature": "Kassier se handtekening", "Reviewed by owner or manager": "Nagegaan deur eienaar of bestuurder", "Owner or manager notes": "Notas van eienaar of bestuurder", "Print it and note how Pesa works for you during the 48 hour pilot.": "Druk dit en skryf neer hoe Pesa vir jou werk tydens die 48 uur loodsproef.", "Print this form and fill it in by hand while you work during the 48 hour pilot run. Hand it to the owner when the pilot ends.": "Druk hierdie vorm en vul dit met die hand in terwyl jy werk tydens die 48 uur loodsproef. Gee dit aan die eienaar wanneer die loodsproef eindig.", "What is on the form": "Wat op die vorm is", "Name, shop, device and when the pilot started": "Naam, winkel, toestel en wanneer die loodsproef begin het", "How easy was it?": "Hoe maklik was dit?", "Eight lines to rate from 1 to 5": "Agt reëls om van 1 tot 5 te gradeer", "Sales made, slow moments, internet down, scans that failed": "Verkope gemaak, stadige oomblikke, internet af, skanderings wat misluk het", "Working without internet": "Werk sonder internet", "Did it keep working, and did the sales show up later": "Het dit aanhou werk, en het die verkope later verskyn", "Problem log": "Probleemlogboek", "Eight lines for date, what happened and how bad": "Agt reëls vir datum, wat gebeur het en hoe erg", "What worked, what confused, what customers said, what to change": "Wat gewerk het, wat verwar het, wat kliënte gesê het, wat om te verander", "My verdict": "My oordeel", "Would I use it every day, and trust it on its own": "Sal ek dit elke dag gebruik, en dit alleen vertrou", "Cashier and owner or manager": "Kassier en eienaar of bestuurder", "Fill in my name and the shop": "Vul my naam en die winkel in", "Pilot starts": "Loodsproef begin", "If you enter it, the form also prints when the 48 hours end.": "As jy dit invoer, druk die vorm ook wanneer die 48 uur eindig.", "Download or print the form": "Laai die vorm af of druk dit", "Open the downloaded file and print it. Choose Word if you want to change the wording first.": "Maak die afgelaaide lêer oop en druk dit. Kies Word as jy eers die bewoording wil verander.", "Show the Pilot feedback form card on employee dashboards": "Wys die Loodsproef-terugvoervorm-kaart op werknemers se paneelborde", "Form downloaded": "Vorm afgelaai", "Couldn’t make the form. Please try again.": "Kon nie die vorm maak nie. Probeer asseblief weer.", "Hand this form to the shop owner when the pilot ends. If a problem needs the developer, contact him on WhatsApp 081 821 1692 or by email at ecrypted5@gmail.com.": "Gee hierdie vorm aan die winkeleienaar wanneer die loodsproef eindig. As 'n probleem die ontwikkelaar nodig het, kontak hom op WhatsApp 081 821 1692 of per e-pos by ecrypted5@gmail.com.", "A printable pilot feedback form for cashiers, on the employee dashboard and in the menu, with ratings, a problem log and space for their own words": "'n Drukbare loodsproef-terugvoervorm vir kassiers, op die werknemerpaneelbord en in die kieslys, met graderings, 'n probleemlogboek en spasie vir hul eie woorde", "A printable Pilot feedback form for cashiers to log how Pesa works for them during the 48 hour pilot run. Find it on the employee dashboard and in the menu": "'n Drukbare Loodsproef-terugvoervorm vir kassiers om aan te teken hoe Pesa vir hulle werk tydens die 48 uur loodsproef. Kry dit op die werknemerpaneelbord en in die kieslys"});
 Object.assign(LANGS.de.strings, {"Pilot feedback form": "Pilot Feedbackformular", "A 48 hour pilot run. Please fill this in by hand while you work. Be honest: every problem you write down helps make Pesa better. Do not write passwords, PINs or customers’ personal details on this form.": "Ein 48 Stunden Pilotlauf. Bitte füllen Sie dies von Hand aus, während Sie arbeiten. Seien Sie ehrlich: Jedes Problem, das Sie notieren, hilft, Pesa zu verbessern. Schreiben Sie keine Passwörter, PINs oder persönlichen Kundendaten auf dieses Formular.", "About you and the pilot": "Zu Ihnen und zum Pilotlauf", "Cashier name": "Name des Kassierers", "Shop or branch": "Laden oder Filiale", "Device used (computer, tablet or other)": "Verwendetes Gerät (Computer, Tablet oder anderes)", "Shifts I worked": "Schichten, die ich gearbeitet habe", "Pilot started (date and time)": "Pilot gestartet (Datum und Uhrzeit)", "Pilot ended (date and time)": "Pilot beendet (Datum und Uhrzeit)", "How easy was it? Circle one number for each line": "Wie einfach war es? Kreisen Sie in jeder Zeile eine Zahl ein", "1 = very hard    3 = fine    5 = very easy": "1 = sehr schwer    3 = in Ordnung    5 = sehr leicht", "Making a sale at the till": "Einen Verkauf an der Kasse abwickeln", "Finding a product by name or barcode": "Ein Produkt nach Name oder Barcode finden", "Taking cash, card or wallet payments": "Bar , Karten oder Wallet Zahlungen annehmen", "Printing or sharing receipts": "Belege drucken oder teilen", "Opening and closing my till": "Meine Kasse öffnen und schließen", "Working when the internet was down": "Arbeiten, als das Internet ausgefallen war", "Speed of the app overall": "Geschwindigkeit der App insgesamt", "Overall, how easy was Pesa to use?": "Insgesamt: Wie einfach war Pesa zu benutzen?", "Numbers for my shift or shifts": "Zahlen für meine Schicht(en)", "About how many sales did I make?": "Ungefähr wie viele Verkäufe habe ich gemacht?", "Times Pesa was slow or froze": "Wie oft Pesa langsam war oder eingefroren ist", "Times the internet was down": "Wie oft das Internet ausgefallen war", "Times a barcode would not scan": "Wie oft ein Barcode sich nicht scannen ließ", "Times I needed help from someone": "Wie oft ich Hilfe von jemandem brauchte", "Sales I had to correct or cancel": "Verkäufe, die ich korrigieren oder stornieren musste", "Working without internet (tick one box for each question)": "Arbeiten ohne Internet (pro Frage ein Kästchen ankreuzen)", "Did Pesa keep working when the internet was down?": "Hat Pesa weitergearbeitet, als das Internet ausgefallen war?", "Did my sales show up on the other devices afterwards?": "Sind meine Verkäufe danach auf den anderen Geräten erschienen?", "Partly": "Teilweise", "It did not happen": "Es ist nicht vorgekommen", "Not tried": "Nicht versucht", "Not sure": "Nicht sicher", "Not yet": "Noch nicht", "Problem log: write down anything that went wrong": "Problemprotokoll: Notieren Sie alles, was schiefgegangen ist", "What I was doing": "Was ich gerade tat", "What went wrong": "Was schiefgegangen ist", "How bad?": "Wie schlimm?", "How bad: S = small, A = annoying, X = stopped the sale. Circle one letter.": "Wie schlimm: S = klein, A = lästig, X = Verkauf gestoppt. Kreisen Sie einen Buchstaben ein.", "In my own words": "In meinen eigenen Worten", "What worked best for me?": "Was hat für mich am besten funktioniert?", "What was most confusing or slow?": "Was war am verwirrendsten oder langsamsten?", "What did customers say or do?": "Was haben Kunden gesagt oder getan?", "What is the first thing I would change?": "Was würde ich als Erstes ändern?", "My verdict (tick one box for each question)": "Mein Urteil (pro Frage ein Kästchen ankreuzen)", "Would I use Pesa every day?": "Würde ich Pesa jeden Tag benutzen?", "Would I trust Pesa to run my till on its own?": "Würde ich Pesa zutrauen, meine Kasse allein zu führen?", "Signatures": "Unterschriften", "Cashier signature": "Unterschrift des Kassierers", "Reviewed by owner or manager": "Geprüft von Inhaber oder Manager", "Owner or manager notes": "Notizen von Inhaber oder Manager", "Print it and note how Pesa works for you during the 48 hour pilot.": "Drucken Sie es aus und notieren Sie, wie Pesa im 48 Stunden Pilotlauf für Sie funktioniert.", "Print this form and fill it in by hand while you work during the 48 hour pilot run. Hand it to the owner when the pilot ends.": "Drucken Sie dieses Formular aus und füllen Sie es während des 48 Stunden Pilotlaufs von Hand aus. Geben Sie es dem Inhaber, wenn der Pilot endet.", "What is on the form": "Was auf dem Formular steht", "Name, shop, device and when the pilot started": "Name, Laden, Gerät und Beginn des Piloten", "How easy was it?": "Wie einfach war es?", "Eight lines to rate from 1 to 5": "Acht Zeilen zum Bewerten von 1 bis 5", "Sales made, slow moments, internet down, scans that failed": "Getätigte Verkäufe, langsame Momente, Internet aus, fehlgeschlagene Scans", "Working without internet": "Arbeiten ohne Internet", "Did it keep working, and did the sales show up later": "Hat es weitergearbeitet, und sind die Verkäufe später erschienen", "Problem log": "Problemprotokoll", "Eight lines for date, what happened and how bad": "Acht Zeilen für Datum, Vorfall und Schweregrad", "What worked, what confused, what customers said, what to change": "Was funktionierte, was verwirrte, was Kunden sagten, was zu ändern ist", "My verdict": "Mein Urteil", "Would I use it every day, and trust it on its own": "Würde ich es täglich nutzen und ihm allein vertrauen", "Cashier and owner or manager": "Kassierer und Inhaber oder Manager", "Fill in my name and the shop": "Meinen Namen und den Laden eintragen", "Pilot starts": "Pilot beginnt", "If you enter it, the form also prints when the 48 hours end.": "Wenn Sie es eingeben, druckt das Formular auch, wann die 48 Stunden enden.", "Download or print the form": "Formular herunterladen oder drucken", "Open the downloaded file and print it. Choose Word if you want to change the wording first.": "Öffnen Sie die heruntergeladene Datei und drucken Sie sie. Wählen Sie Word, wenn Sie zuerst den Wortlaut ändern möchten.", "Show the Pilot feedback form card on employee dashboards": "Die Karte Pilot Feedbackformular auf den Mitarbeiter Dashboards anzeigen", "Form downloaded": "Formular heruntergeladen", "Couldn’t make the form. Please try again.": "Das Formular konnte nicht erstellt werden. Bitte versuchen Sie es erneut.", "Hand this form to the shop owner when the pilot ends. If a problem needs the developer, contact him on WhatsApp 081 821 1692 or by email at ecrypted5@gmail.com.": "Geben Sie dieses Formular dem Ladeninhaber, wenn der Pilot endet. Wenn ein Problem den Entwickler braucht, erreichen Sie ihn per WhatsApp unter 081 821 1692 oder per E Mail an ecrypted5@gmail.com.", "A printable pilot feedback form for cashiers, on the employee dashboard and in the menu, with ratings, a problem log and space for their own words": "Ein druckbares Pilot Feedbackformular für Kassierer, im Mitarbeiter Dashboard und im Menü, mit Bewertungen, einem Problemprotokoll und Platz für eigene Worte", "A printable Pilot feedback form for cashiers to log how Pesa works for them during the 48 hour pilot run. Find it on the employee dashboard and in the menu": "Ein druckbares Pilot Feedbackformular, in dem Kassierer festhalten, wie Pesa im 48 Stunden Pilotlauf für sie funktioniert. Zu finden im Mitarbeiter Dashboard und im Menü"});
+Object.assign(LANGS.af.strings, {"Invoice": "Faktuur", "Tax invoice": "Belastingfaktuur", "VAT registration no.": "BTW-registrasienr.", "Net total excl. VAT": "Netto totaal sonder BTW", "VAT {0}": "BTW {0}", "Gross total due": "Bruto verskuldig", "Document verification signature": "Dokumentverifikasie-handtekening", "Reserved for a cryptographic verification code. Until a code is printed in the box below, this document has not been validated by NamRA.": "Gereserveer vir 'n kriptografiese verifikasiekode. Totdat 'n kode in die blokkie hieronder gedruk is, is hierdie dokument nie deur NamRA gevalideer nie.", "Verification code": "Verifikasiekode", "Customer TIN (optional, for business customers)": "Kliënt se TIN (opsioneel, vir sakekliënte)", "Your TIN is not set, so it will not print on this tax invoice. Add it in Settings, Tax records.": "Jou TIN is nie gestel nie, dus sal dit nie op hierdie belastingfaktuur druk nie. Voeg dit by in Instellings, Belastingrekords.", "Dairy products": "Suiwelprodukte", "Bakery": "Bakkery", "Cold drinks and water": "Koeldrank en water", "Meat and fish": "Vleis en vis", "Fruit and vegetables": "Vrugte en groente", "Dry goods and groceries": "Droogware en kruideniersware", "Household and cleaning": "Huishoudelik en skoonmaak", "Toiletries and health": "Toiletware en gesondheid", "Snacks and sweets": "Peuselhappies en lekkers", "Other products": "Ander produkte", "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders": "Belastingfakture wys jou TIN en BTW registrasienommer, die koper se TIN, en 'n uiteensetting in netto, BTW, nulkoers, vrygestel en bruto. Voorraad word onder departementopskrifte gelys, en jy kan verskeie produkte op een slag op fakture, kwotasies en aankooporders merk"});
+Object.assign(LANGS.de.strings, {"Invoice": "Rechnung", "Tax invoice": "Steuerrechnung", "VAT registration no.": "USt-Registrierungsnr.", "Net total excl. VAT": "Nettosumme ohne MwSt.", "VAT {0}": "MwSt. {0}", "Gross total due": "Brutto fällig", "Document verification signature": "Dokumentprüfsignatur", "Reserved for a cryptographic verification code. Until a code is printed in the box below, this document has not been validated by NamRA.": "Reserviert für einen kryptografischen Prüfcode. Solange im Feld unten kein Code gedruckt ist, wurde dieses Dokument nicht von NamRA validiert.", "Verification code": "Prüfcode", "Customer TIN (optional, for business customers)": "TIN des Kunden (optional, für Geschäftskunden)", "Your TIN is not set, so it will not print on this tax invoice. Add it in Settings, Tax records.": "Ihre TIN ist nicht hinterlegt und wird daher nicht auf dieser Steuerrechnung gedruckt. Tragen Sie sie unter Einstellungen, Steuerdaten ein.", "Dairy products": "Milchprodukte", "Bakery": "Backwaren", "Cold drinks and water": "Kaltgetränke und Wasser", "Meat and fish": "Fleisch und Fisch", "Fruit and vegetables": "Obst und Gemüse", "Dry goods and groceries": "Trockenwaren und Lebensmittel", "Household and cleaning": "Haushalt und Reinigung", "Toiletries and health": "Körperpflege und Gesundheit", "Snacks and sweets": "Snacks und Süßigkeiten", "Other products": "Sonstige Produkte", "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders": "Steuerrechnungen zeigen Ihre TIN und USt Registrierungsnummer, die TIN des Käufers sowie eine Aufschlüsselung in Netto, MwSt., nullbesteuert, befreit und Brutto. Der Bestand ist unter Abteilungsüberschriften gelistet, und Sie können auf Rechnungen, Angeboten und Bestellungen mehrere Produkte auf einmal ankreuzen"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -3858,7 +3877,7 @@ function btItemsEditor(box, items, onTotal){
     });
   }
   paint(); total();
-  return { get:function(){ return list.filter(function(i){ return String(i.desc).trim() && (Number(i.qty)||0) > 0; }).map(function(i){ return { desc:String(i.desc).trim(), qty:Number(i.qty)||0, unitPrice:Number(i.unitPrice)||0 }; }); } };
+  return { add:function(rows){ rows.forEach(function(r){ list.push({ desc:r.desc, qty:r.qty, unitPrice:r.unitPrice }); }); if(list.length > rows.length && !String(list[0].desc).trim() && !(Number(list[0].unitPrice) > 0)) list.shift(); paint(); total(); }, get:function(){ return list.filter(function(i){ return String(i.desc).trim() && (Number(i.qty)||0) > 0; }).map(function(i){ return { desc:String(i.desc).trim(), qty:Number(i.qty)||0, unitPrice:Number(i.unitPrice)||0 }; }); } };
 }
 function btAdvance(key, every){
   var d = new Date(key+'T12:00:00');
@@ -3935,6 +3954,7 @@ function openDocForm(kind, rec){
     (isQ ? '<div class="field"><label>'+tr('Valid until')+'</label><input id="dfValid" type="date" value="'+esc(rec.validUntil||btAddDays(todayKey(), 14))+'"></div>' :
       '<div class="field-row"><div class="field"><label>'+tr('How often')+'</label><select id="dfEvery">'+BT_EVERY.map(function(e){ return '<option value="'+e[0]+'"'+((rec.every||'month')===e[0]?' selected':'')+'>'+tr(e[1])+'</option>'; }).join('')+'</select></div><div class="field"><label>'+tr('Next due date')+'</label><input id="dfNext" type="date" value="'+esc(rec.nextDue||btAddDays(todayKey(), 30))+'"></div></div>') +
     '<div class="section-title">'+tr('Items')+'</div><div id="dfItems"></div>' +
+    (State.products.length ? '<button class="btn btn-ghost btn-block" id="dfPickBtn" type="button" style="margin-top:8px;">☑ '+tr('Pick items from stock')+'</button><div id="dfPickBox"></div>' : '') +
     '<div class="field" style="margin-top:12px;"><label>'+tr('Notes (optional)')+'</label><textarea id="dfNotes" rows="2">'+esc(rec.notes||'')+'</textarea></div>' +
     '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num" id="dfTotal">N$0.00</span></div>' +
     (isQ ? '' : '<label style="display:flex;gap:8px;align-items:center;margin:10px 0;"><input type="checkbox" id="dfActive" '+(rec.active===false?'':'checked')+' style="width:18px;height:18px;"> '+tr('Active')+'</label>') +
@@ -3942,6 +3962,11 @@ function openDocForm(kind, rec){
     '<div class="actions"><button class="btn btn-ghost btn-block" id="dfBack" type="button">'+tr('Back')+'</button></div>';
   var ov = openSheet(html);
   var ed = btItemsEditor(ov.querySelector('#dfItems'), rec.items, function(t){ ov.querySelector('#dfTotal').textContent = fmtMoney(t); });
+  var dfPick = ov.querySelector('#dfPickBtn');
+  if(dfPick) dfPick.addEventListener('click', function(){
+    var box = ov.querySelector('#dfPickBox'); if(box.innerHTML){ box.innerHTML = ''; return; }
+    mountStockPicker(box, { price:'sell', onAdd:function(list){ ed.add(list.map(function(x){ return { desc:x.p.name||'', qty:x.qty, unitPrice:Number(x.p.sellPrice)||0 }; })); toast(list.length+' '+tr('items added')); } });
+  });
   function back(){ closeModal(); if(isQ && isEdit) openQuoteView(rec.id); else openQuotesSheet(isQ ? 'quotes' : 'rec'); }
   ov.querySelector('#dfBack').addEventListener('click', back);
   ov.querySelector('#dfCust').addEventListener('change', function(e){
@@ -7052,38 +7077,99 @@ function wireTicks(root){
     State.cart = State.cart.filter(function(i){ return !ids[i.productId]; }); renderCartBar();
   }); });
 }
+/* ---- departments: every product sits under a department header (its Category). Products with no Category are placed by their name
+   (milk and yogurt go under Dairy products); anything Pesa cannot place goes last under Other products. ---- */
+var DEPT_WORDS = [
+  ['Dairy products', /\b(milk|yogh?urt|cheese|butter|cream|maas|amasi|custard|margarine|eggs?)\b/],
+  ['Bakery', /\b(bread|buns?|rolls?|cakes?|muffins?|scones?|rusks?|pies?|vetkoek|biscuits?)\b/],
+  ['Cold drinks and water', /\b(cola|coke|fanta|sprite|juice|water|soda|cooldrink|cool drink|energy drink|iced tea)\b/],
+  ['Meat and fish', /\b(beef|chicken|mince|sausages?|boerewors|polony|fish|pork|lamb|bacon|biltong|ham)\b/],
+  ['Fruit and vegetables', /\b(apples?|bananas?|tomato(es)?|onions?|potato(es)?|carrots?|oranges?|cabbage|spinach|lemons?|grapes?)\b/],
+  ['Dry goods and groceries', /\b(rice|maize|mealie|flour|sugar|oil|pasta|spaghetti|salt|beans|lentils|oats|cereal|tea|coffee|jam|sauce)\b/],
+  ['Household and cleaning', /\b(soap|bleach|detergent|washing powder|omo|toilet paper|dishwash|polish|sponge|candles?|matches)\b/],
+  ['Toiletries and health', /\b(shampoo|toothpaste|toothbrush|deodorant|lotion|vaseline|razor|nappies|tissues?|painkiller|plasters?)\b/],
+  ['Snacks and sweets', /\b(chips|chocolate|sweets?|candy|crisps|popcorn|lollipops?|gum)\b/]
+];
+function deptKey(label){ return String(label||'').toLowerCase().replace(/\bproducts?\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim() || 'other'; }
+function deptInfo(p){
+  var c = String(p && p.category || '').trim();
+  if(c){ return { key:deptKey(c), label:c.charAt(0).toUpperCase() + c.slice(1), explicit:true }; }
+  var n = String(p && p.name || '').toLowerCase();
+  for(var i = 0; i < DEPT_WORDS.length; i++) if(DEPT_WORDS[i][1].test(n)) return { key:deptKey(DEPT_WORDS[i][0]), label:DEPT_WORDS[i][0], explicit:false };
+  return { key:'other', label:'Other products', explicit:false };
+}
+function deptGuess(name){ var d = deptInfo({ name:name }); return d.key === 'other' ? '' : d.label; }
+var _deptColl = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator(undefined, { numeric:true, sensitivity:'base' }) : null;
+function deptCmp(a, b){ return _deptColl ? _deptColl.compare(a, b) : (a < b ? -1 : a > b ? 1 : 0); }
+/** Groups products by department: departments A to Z (Other products last), products A to Z inside each. */
+function deptGroups(list){
+  var map = {}, order = [];
+  for(var i = 0; i < list.length; i++){
+    var p = list[i], d = deptInfo(p), g = map[d.key];
+    if(!g){ g = map[d.key] = { key:d.key, label:d.label, explicit:d.explicit, items:[] }; order.push(g); }
+    else if(d.explicit && !g.explicit){ g.label = d.label; g.explicit = true; }
+    g.items.push(p);
+  }
+  order.forEach(function(g){ g.items.sort(function(a, b){ return deptCmp(String(a.name||''), String(b.name||'')); }); });
+  order.sort(function(a, b){ return ((a.key === 'other') - (b.key === 'other')) || deptCmp(a.label, b.label); });
+  return order;
+}
+var _deptMemo = { src:null, len:-1, groups:null };
+function deptGroupsFor(list){   // the full stock list is grouped once per change, not on every redraw
+  if(list === State.products){
+    if(_deptMemo.src !== list || _deptMemo.len !== list.length || _deptMemo.sig !== deptSig(list)){ _deptMemo = { src:list, len:list.length, sig:deptSig(list), groups:deptGroups(list) }; }
+    return _deptMemo.groups;
+  }
+  return deptGroups(list);
+}
+function deptSig(list){ var s = 0, n = Math.min(list.length, 50); for(var i = 0; i < n; i++){ var p = list[i]; s = (s * 31 + String(p.name||'').length * 7 + String(p.category||'').length) | 0; } var l = list[list.length - 1]; return s + '|' + (l ? String(l.name||'') + String(l.category||'') : ''); }
+
 /* Inline picker: tick several products (with a quantity each), Select all / Deselect all, then add them in one go.
    Used on invoices and purchase orders. opts: { price:'sell'|'cost', onAdd(list:[{p,qty}]) } */
 function mountStockPicker(box, opts){
-  var sel = {}, q = '';
-  function matches(){
+  var sel = {}, q = '', grp = deptGroupsFor(State.products);
+  function regroup(){
     var qq = q.trim().toLowerCase();
-    return State.products.filter(function(p){ return !qq || (p.name||'').toLowerCase().indexOf(qq) > -1 || (p.category||'').toLowerCase().indexOf(qq) > -1 || (p.barcode && String(p.barcode) === qq); })
-      .sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||'')); });
+    grp = !qq ? deptGroupsFor(State.products) : deptGroups(State.products.filter(function(p){ return (p.name||'').toLowerCase().indexOf(qq) > -1 || (p.category||'').toLowerCase().indexOf(qq) > -1 || deptInfo(p).label.toLowerCase().indexOf(qq) > -1 || (p.barcode && String(p.barcode) === qq); }));
   }
+  function matches(){ var out = []; grp.forEach(function(g){ out = out.concat(g.items); }); return out; }
   function count(){ return Object.keys(sel).length; }
+  function rowHtml(p){
+    var on = sel[p.id] != null, pr = opts.price === 'cost' ? (p.costPrice||0) : (p.sellPrice||0);
+    return '<label class="spk-row'+(on?' on':'')+'" data-spkrow="'+p.id+'"><input type="checkbox" data-spk="'+p.id+'"'+(on?' checked':'')+'><span class="spk-main"><b>'+esc(p.name)+'</b><small>'+(p.stockQty!=null ? p.stockQty+' '+tr('in stock')+' · ' : '')+fmtMoney(pr)+'</small></span>' +
+      (on ? '<input class="spk-qty" type="number" min="1" step="1" value="'+sel[p.id]+'" data-spkq="'+p.id+'" inputmode="numeric">' : '') + '</label>';
+  }
   function paintList(){
-    var list = matches(), shown = list.slice(0, 150), el = box.querySelector('.spk-list');
-    el.innerHTML = shown.length ? shown.map(function(p){
-      var on = sel[p.id] != null, pr = opts.price === 'cost' ? (p.costPrice||0) : (p.sellPrice||0);
-      return '<label class="spk-row'+(on?' on':'')+'" data-spkrow="'+p.id+'"><input type="checkbox" data-spk="'+p.id+'"'+(on?' checked':'')+'><span class="spk-main"><b>'+esc(p.name)+'</b><small>'+(p.stockQty!=null ? p.stockQty+' '+tr('in stock')+' · ' : '')+fmtMoney(pr)+'</small></span>' +
-        (on ? '<input class="spk-qty" type="number" min="1" step="1" value="'+sel[p.id]+'" data-spkq="'+p.id+'" inputmode="numeric">' : '') + '</label>';
-    }).join('') + (list.length > shown.length ? '<div class="spk-more">'+(list.length-shown.length)+' '+tr('more, search to narrow down')+'</div>' : '') : '<div class="spk-more">'+tr('No matches')+'</div>';
+    var el = box.querySelector('.spk-list'), total = 0, shown = 0, html = '', CAP = 150;
+    grp.forEach(function(g){ total += g.items.length; });
+    for(var gi = 0; gi < grp.length && shown < CAP; gi++){
+      var g = grp[gi], part = g.items.slice(0, CAP - shown), allOn = g.items.every(function(p){ return sel[p.id] != null; });
+      html += '<label class="spk-dept"><input type="checkbox" data-spkd="'+gi+'"'+(allOn?' checked':'')+'><b>'+esc(tr(g.label))+'</b><small>'+g.items.length+'</small></label>' + part.map(rowHtml).join('');
+      shown += part.length;
+    }
+    el.innerHTML = total ? html + (total > shown ? '<div class="spk-more">'+(total-shown)+' '+tr('more, search to narrow down')+'</div>' : '') : '<div class="spk-more">'+tr('No matches')+'</div>';
     box.querySelector('[data-spkn]').textContent = count();
     box.querySelector('[data-spkadd]').disabled = !count();
-    el.querySelectorAll('[data-spk]').forEach(function(c){ c.addEventListener('change', function(){ var id = c.getAttribute('data-spk'); if(c.checked) sel[id] = sel[id] || 1; else delete sel[id]; paintList(); }); });
+    el.querySelectorAll('[data-spk]').forEach(function(c){ c.addEventListener('change', function(){ var id = c.getAttribute('data-spk'); if(c.checked) sel[id] = sel[id] || 1; else delete sel[id]; var top = el.scrollTop; paintList(); box.querySelector('.spk-list').scrollTop = top; }); });
+    el.querySelectorAll('[data-spkd]').forEach(function(c){ c.addEventListener('change', function(){
+      var g = grp[+c.getAttribute('data-spkd')]; if(!g) return;
+      g.items.slice(0, 500).forEach(function(p){ if(c.checked) sel[p.id] = sel[p.id] || 1; else delete sel[p.id]; });
+      var top = el.scrollTop; paintList(); box.querySelector('.spk-list').scrollTop = top;
+    }); });
     el.querySelectorAll('[data-spkq]').forEach(function(i){ i.addEventListener('click', function(e){ e.stopPropagation(); }); i.addEventListener('input', function(){ sel[i.getAttribute('data-spkq')] = Math.max(1, parseInt(i.value,10) || 1); }); });
-    return list;
   }
   box.innerHTML = '<div class="spk"><div class="searchbar">'+ICONS.search+'<input data-spks placeholder="'+tr('Search products…')+'"></div>' +
     '<div class="tickbar"><span class="tc"><b data-spkn>0</b> '+tr('selected')+'</span><button class="btn btn-ghost" type="button" data-spkall>'+tr('Select all')+'</button><button class="btn btn-ghost" type="button" data-spkclr>'+tr('Deselect all')+'</button></div>' +
     '<div class="spk-list"></div><div class="actions"><button class="btn btn-ghost btn-block" type="button" data-spkcancel>'+tr('Cancel')+'</button><button class="btn btn-primary btn-block" type="button" data-spkadd disabled>'+tr('Add selected')+'</button></div></div>';
-  box.querySelector('[data-spks]').addEventListener('input', debounce(function(e){ q = e.target.value; paintList(); }, 150));
+  box.querySelector('[data-spks]').addEventListener('input', debounce(function(e){ q = e.target.value; regroup(); paintList(); }, 150));
   box.querySelector('[data-spkall]').addEventListener('click', function(){ matches().slice(0, 500).forEach(function(p){ sel[p.id] = sel[p.id] || 1; }); paintList(); });
   box.querySelector('[data-spkclr]').addEventListener('click', function(){ sel = {}; paintList(); });
   box.querySelector('[data-spkcancel]').addEventListener('click', function(){ box.innerHTML = ''; });
   box.querySelector('[data-spkadd]').addEventListener('click', function(){
-    var out = Object.keys(sel).map(function(id){ return { p:State.products.find(function(x){ return x.id === id; }), qty:sel[id] }; }).filter(function(x){ return x.p; });
+    var byId = {}; State.products.forEach(function(p){ byId[p.id] = p; });
+    // keep the order the list is shown in: department by department, A to Z
+    var out = []; grp.forEach(function(g){ g.items.forEach(function(p){ if(sel[p.id] != null) out.push({ p:p, qty:sel[p.id] }); }); });
+    Object.keys(sel).forEach(function(id){ if(byId[id] && !out.some(function(x){ return x.p.id === id; })) out.push({ p:byId[id], qty:sel[id] }); });
     if(!out.length) return; box.innerHTML = ''; opts.onAdd(out);
   });
   paintList();
@@ -8047,7 +8133,8 @@ function renderStock(){
   html += '<div class="searchbar" style="margin-bottom:10px;">'+ICONS.search+'<input id="stockSearchInput" placeholder="'+esc(tr('Search products…'))+'" value="'+esc(State.stockSearch||'')+'"></div>';
   html += '<div class="banner" style="display:block;"><strong>'+stTot.items.toLocaleString()+'</strong> products · <strong>'+stTot.qty.toLocaleString()+'</strong> units · stock at cost <strong>'+fmtMoney(stTot.cost)+'</strong> · at selling price <strong>'+fmtMoney(stTot.retail)+'</strong></div>';
   if(sq && stockList.length === 0) html += '<div class="empty"><div class="t">'+tr('No matches')+'</div></div>';
-  html += '<div class="rowlist">' + stockList.slice(0, stockLimit).map(function(p){
+  var stockGroups = deptGroupsFor(stockList), stShown = 0;
+  function stockRow(p){
     var low = p.stockQty!=null && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault);
     var out = p.stockQty!=null && p.stockQty <= 0;
     var checked = !!selS.ids[p.id];
@@ -8056,14 +8143,21 @@ function renderStock(){
       '<div class="avatar">'+esc(initials(p.name))+'</div>' +
       '<div class="main">' +
         '<div class="title">'+esc(p.name)+'</div>' +
-        '<div class="sub">'+esc(p.category||'Uncategorised')+' · cost '+fmtMoney(p.costPrice)+'</div>' +
+        '<div class="sub">'+esc(deptInfo(p).label)+' · cost '+fmtMoney(p.costPrice)+'</div>' +
       '</div>' +
       '<div class="trail">' +
         '<div class="amt num">'+fmtMoney(p.sellPrice)+'</div>' +
         '<div class="note">'+(out?'<span class="chip low">Out of stock</span>':(low?'<span class="chip low">'+p.stockQty+' '+(p.unit||'left')+'</span>':(p.stockQty+' '+(p.unit||'in stock'))))+'</div>' +
       '</div>' +
     '</div>';
-  }).join('') + '</div>';
+  }
+  html += '<div class="rowlist">';
+  for(var sgi = 0; sgi < stockGroups.length && stShown < stockLimit; sgi++){
+    var sg = stockGroups[sgi], sPart = sg.items.slice(0, stockLimit - stShown);
+    html += '<div class="dept-h" data-dept="'+esc(sg.key)+'"><span>'+esc(tr(sg.label))+'</span><small>'+sg.items.length+'</small></div>' + sPart.map(stockRow).join('');
+    stShown += sPart.length;
+  }
+  html += '</div>';
   if(stockList.length > stockLimit) html += '<div style="text-align:center;margin:14px 0 4px;"><button class="btn btn-ghost" id="stockMoreBtn" type="button">Show more ('+(stockList.length - stockLimit).toLocaleString()+' more — or search)</button></div>';
   html += renderSelectBar('stock');
   return html;
@@ -8097,6 +8191,13 @@ function openProductSheet(product, prefillBarcode){
       '<button class="btn btn-primary btn-block" id="pfSave">'+(isEdit?'Save changes':tr('Add product'))+'</button>' +
     '</div>';
   var ov = openSheet(html);
+  (function(){   // suggest a department from the name while the Category box is empty (milk, yogurt: Dairy products)
+    var nm = ov.querySelector('#pfName'), ct = ov.querySelector('#pfCat'), auto = '';
+    nm.addEventListener('input', function(){
+      if(ct.value.trim() && ct.value !== auto) return;
+      auto = deptGuess(nm.value); ct.value = auto;
+    });
+  })();
   ov.querySelector('#pfScanBtn').addEventListener('click', function(){
     openBarcodeScanSheet(function(code){
       ov.querySelector('#pfBarcode').value = code;
@@ -10342,8 +10443,8 @@ function wireNotificationSettings(ov){
 /* ============================== INVOICES ============================== */
 var InvoiceDraft = { items: [] };
 
-function invAddItem(desc, qty, unitPrice){
-  InvoiceDraft.items.push({ id:uid(), desc: desc||'', qty: qty!=null?qty:1, unitPrice: unitPrice!=null?unitPrice:0 });
+function invAddItem(desc, qty, unitPrice, productId){
+  InvoiceDraft.items.push({ id:uid(), desc: desc||'', qty: qty!=null?qty:1, unitPrice: unitPrice!=null?unitPrice:0, productId: productId||undefined });
 }
 
 function invStockOptions(selId){
@@ -10416,6 +10517,22 @@ function invUpdateTotal(){
   return total;
 }
 
+/** A business with a VAT registration number on its company profile is a VAT vendor, so its invoices are Tax invoices. */
+function isVatVendor(){ return !!(State.company && String(State.company.vatNumber || '').trim()); }
+/** Splits invoice lines into the tax figures a Namibian tax invoice shows. Prices include VAT, so VAT is taken out of the standard rated lines.
+ *  Net = standard rated value without VAT. Net + VAT + Zero rated + Exempt = Gross, so the four lines always add up to the total due. */
+function invoiceTaxBreakdown(items){
+  var rate = Fiscal.vatRate(), std = 0, zero = 0, ex = 0, r2 = function(x){ return Math.round(x * 100) / 100; };
+  (items || []).forEach(function(it){
+    var amt = (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), p = null;
+    if(it.productId) p = State.products.find(function(x){ return x.id === it.productId; });
+    if(!p){ var nm = String(it.desc || '').trim().toLowerCase(); if(nm) p = State.products.find(function(x){ return String(x.name || '').toLowerCase() === nm; }); }
+    var cat = (p && p.taxCategory) || 'STANDARD';
+    if(cat === 'ZERO_RATED') zero += amt; else if(cat === 'EXEMPT') ex += amt; else std += amt;
+  });
+  var vat = rate > 0 ? r2(std * rate / (100 + rate)) : 0;
+  return { rate:rate, net:r2(std - vat), vat:vat, zero:r2(zero), exempt:r2(ex), gross:r2(std + zero + ex) };
+}
 function buildInvoicePdf(draft){
   var jsPDFCtor = getJsPDF();
   if(!jsPDFCtor) return null;
@@ -10430,15 +10547,20 @@ function buildInvoicePdf(draft){
   if(draft.payMethod === 'credit') status = 'On credit';
   else if(draft.received != null && draft.received !== '' && !isNaN(Number(draft.received))) status = Number(draft.received) >= subtotal ? 'Paid' : 'Balance due';
   else if(draft.payMethod) status = 'Paid';
-  var ty = y; y = pdTitle(doc, pal, m, y, 'Invoice');
+  var vend = isVatVendor(), tb = vend ? invoiceTaxBreakdown(items) : null;
+  var ty = y; y = pdTitle(doc, pal, m, y, tr(vend ? 'Tax invoice' : 'Invoice'));
   if(status) pdPill(doc, pal, m + W, ty + 1.5, status);
 
-  // business and bill to cards
-  var bizLines = pdLines(S.businessContact);
-  if(State.company && State.company.vatNumber) bizLines.push(tr('VAT no.') + ': ' + State.company.vatNumber);
+  // business and bill to cards: the seller's TIN and VAT registration number come first so they are never cut off
+  var sellerTin = String((S.fiscal && S.fiscal.tin) || '').trim(), bizLines = [];
+  if(sellerTin) bizLines.push(tr('TIN') + ': ' + sellerTin);
+  if(State.company && State.company.vatNumber) bizLines.push(tr('VAT registration no.') + ': ' + State.company.vatNumber);
+  bizLines = bizLines.concat(pdLines(S.businessContact));
+  var billLines = pdLines(draft.billToContact);
+  if(draft.billToTin) billLines.unshift(tr('TIN') + ': ' + draft.billToTin);
   y += pdTwoCards(doc, pal, m, y, W,
     { heading:'Business details', name:S.shopName || 'My Shop', lines:bizLines },
-    { heading:'Bill to', name:draft.billToName || 'Customer', lines:pdLines(draft.billToContact) }) + 5;
+    { heading:'Bill to', name:draft.billToName || 'Customer', lines:billLines }) + 5;
   y += pdStrip(doc, pal, m, y, W, 'Invoice details', [['Invoice no.', draft.number], ['Issue date', docStamp(draft)], ['Due date', draft.dueDateStr ? fmtDateNice(draft.dueDateStr) : '']]) + 6;
 
   // line items
@@ -10448,16 +10570,31 @@ function buildInvoicePdf(draft){
 
   // notes on the left, totals on the right
   var tw = 76, lw = W - tw - 6, barH = 12;
-  var rightH = 7 + barH + (pr.length ? 3 + pr.length*7 : 0);
+  var topRows = vend ? [['Net total excl. VAT', fmtMoney(tb.net)], ['VAT ' + tb.rate + '%', fmtMoney(tb.vat)], ['Zero rated (0%)', fmtMoney(tb.zero)], ['Exempt', fmtMoney(tb.exempt)]] : [['Subtotal', fmtMoney(subtotal)]];
+  var rightH = topRows.length*7 + barH + (pr.length ? 3 + pr.length*7 : 0);
   var note = draft.notes || t.defaultNote || '';
   doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
   var noteH = Math.max(24, 12 + doc.splitTextToSize(String(note), lw - 8).length*4.3 + 4), blockH = Math.max(rightH, noteH);
   if(y + blockH > head.limit){ doc.addPage(); y = pdTop(doc, 16); }
   pdNotesCard(doc, pal, m, y, lw, 'Notes', note, blockH);
   var ry = y;
-  ry += pdTotalRows(doc, pal, m + W - tw, ry, tw, [['Subtotal', fmtMoney(subtotal)]]);
-  ry += pdTotalBar(doc, pal, m + W - tw, ry, tw, t.totalLabel, fmtMoney(subtotal), barH);
+  ry += pdTotalRows(doc, pal, m + W - tw, ry, tw, topRows);
+  ry += pdTotalBar(doc, pal, m + W - tw, ry, tw, vend ? 'Gross total due' : t.totalLabel, fmtMoney(vend ? tb.gross : subtotal), barH);
   if(pr.length){ ry += 3; pdTotalRows(doc, pal, m + W - tw, ry, tw, pr); }
+
+  // Document verification signature: a tax invoice keeps a labelled place for a cryptographic verification code.
+  // draft.verificationHash prints it when one exists. Until then the box stays empty and the text says so.
+  if(vend){
+    var vy = y + blockH + 6, vh = 33;
+    if(vy + vh > head.limit){ doc.addPage(); vy = pdTop(doc, 16); }
+    pdCard(doc, pal, m, vy, W, vh, 'Document verification signature');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.6); pdSet(doc, 't', pal.muted);
+    doc.text(doc.splitTextToSize(tr('Reserved for a cryptographic verification code. Until a code is printed in the box below, this document has not been validated by NamRA.'), W - 8), m + 4, vy + 13.4);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.6); pdSet(doc, 't', pal.muted); pdCS(doc, 0.3); doc.text(String(tr('Verification code')).toUpperCase(), m + 4, vy + 21.4); pdCS(doc, 0);
+    doc.setFillColor(255,255,255); pdSet(doc, 'd', pal.border); doc.setLineWidth(0.25); doc.setLineDashPattern(draft.verificationHash ? [] : [1, 1], 0);
+    doc.roundedRect(m + 4, vy + 23, W - 8, 7, 1.2, 1.2, 'FD'); doc.setLineDashPattern([], 0);
+    if(draft.verificationHash){ doc.setFont('courier','normal'); doc.setFontSize(6.8); pdSet(doc, 't', pal.text); doc.text(String(draft.verificationHash).slice(0, 96), m + 6, vy + 27.7); }
+  }
   return doc;
 }
 
@@ -10600,16 +10737,18 @@ function buildReceiptPdf(draft){
 function openInvoiceSheet(prefill){
   InvoiceDraft.items = [];
   if(prefill && prefill.items && prefill.items.length){
-    prefill.items.forEach(function(it){ invAddItem(it.desc, it.qty, it.unitPrice); });
+    prefill.items.forEach(function(it){ invAddItem(it.desc, it.qty, it.unitPrice, it.productId); });
   } else {
     invAddItem('', 1, 0);
   }
   var number = 'INV-' + String(State.settings.invoiceNextNumber||1).padStart(4,'0');
   var html =
     '<div class="sheet-head"><h2>'+tr('New invoice')+'</h2></div>' +
-    '<div class="banner">Invoice '+number+'</div>' +
+    '<div class="banner">'+(isVatVendor() ? tr('Tax invoice') : 'Invoice')+' '+number+'</div>' +
+    (isVatVendor() && !String((State.settings.fiscal && State.settings.fiscal.tin) || '').trim() ? '<div class="banner">'+ICONS.warn+'<span>'+tr('Your TIN is not set, so it will not print on this tax invoice. Add it in Settings, Tax records.')+'</span></div>' : '') +
     '<div class="field"><label>'+tr('Bill to')+'</label><input id="invBillName" placeholder="Customer or business name" value="'+esc(prefill&&prefill.billToName||'')+'"></div>' +
     '<div class="field"><label>'+tr('Customer contact (optional)')+'</label><textarea id="invBillContact" rows="2" placeholder="Phone, address…">'+esc(prefill&&prefill.billToContact||'')+'</textarea></div>' +
+    '<div class="field"><label>'+tr('Customer TIN (optional, for business customers)')+'</label><input id="invBillTin" autocomplete="off" placeholder="e.g. 1234567890" value="'+esc(prefill&&prefill.billToTin||'')+'"></div>' +
     '<div class="field-row">' +
       '<div class="field"><label>'+tr('Invoice date')+'</label><input id="invDate" type="date" value="'+todayKey()+'"></div>' +
       '<div class="field"><label>'+tr('Due date (optional)')+'</label><input id="invDue" type="date"></div>' +
@@ -10680,9 +10819,9 @@ function openInvoiceSheet(prefill){
     var sales = State.sales.filter(function(x){ var d = new Date(x.createdAt); return d >= s0 && d < e0 && (!cid || x.customerId === cid); });
     if(!sales.length){ msg.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('No sales found for those dates.')+'</span></div>'; return; }
     var agg = {}, order = [];
-    sales.forEach(function(x){ (x.items||[]).forEach(function(it){ var k = it.name+'|'+it.unitPrice; if(!agg[k]){ agg[k] = { desc:it.name, qty:0, unitPrice:it.unitPrice }; order.push(k); } agg[k].qty += it.qty||0; }); });
+    sales.forEach(function(x){ (x.items||[]).forEach(function(it){ var k = it.name+'|'+it.unitPrice; if(!agg[k]){ agg[k] = { desc:it.name, qty:0, unitPrice:it.unitPrice, productId:it.productId||null }; order.push(k); } agg[k].qty += it.qty||0; }); });
     InvoiceDraft.items = [];
-    order.forEach(function(k){ invAddItem(agg[k].desc, agg[k].qty, agg[k].unitPrice); });
+    order.forEach(function(k){ invAddItem(agg[k].desc, agg[k].qty, agg[k].unitPrice, agg[k].productId); });
     invRenderItems(itemsList); invUpdateTotal();
     ov.querySelector('#invDate').value = to;
     if(cid){
@@ -10712,6 +10851,7 @@ function openInvoiceSheet(prefill){
       number: number,
       billToName: ov.querySelector('#invBillName').value.trim() || 'Customer',
       billToContact: ov.querySelector('#invBillContact').value.trim(),
+      billToTin: (ov.querySelector('#invBillTin').value || '').trim(),
       dateStr: ov.querySelector('#invDate').value || todayKey(),
       dueDateStr: ov.querySelector('#invDue').value || '',
       notes: ov.querySelector('#invNotes').value.trim(),
@@ -12635,8 +12775,8 @@ function tickGlassClock(){
   var m = parts.match(/(\d{1,2})\D+(\d{2})/);
   h.textContent = m ? m[1].padStart(2,'0') : parts;
   document.getElementById('gcM').textContent = m ? m[2] : '';
-  var ds = d.toLocaleDateString(loc, { weekday:'short', day:'numeric', month:'short' }).replace(/,/g,'');
-  var de = document.getElementById('gcDate'); if(de && de.textContent !== ds) de.textContent = ds;
+  var ds = d.toLocaleDateString(loc, { weekday:'short' }).replace(/[.,]/g,'') + ', ' + d.toLocaleDateString(loc, { day:'numeric', month:'short' }).replace(/,/g,''), yr = String(d.getFullYear());
+  var de = document.getElementById('gcDate'); if(de && de.getAttribute('data-k') !== ds+yr){ de.setAttribute('data-k', ds+yr); de.textContent = ds; var ys = document.createElement('span'); ys.className = 'gc-yr'; ys.textContent = ' ' + yr; de.appendChild(ys); }
   var gc = document.getElementById('glassClock'); if(gc) gc.title = d.toLocaleDateString(loc, { weekday:'long', day:'numeric', month:'long', year:'numeric' }) + ' ' + d.toLocaleTimeString(loc);
 }
 function startGlassClock(){ tickGlassClock(); if(_gcTimer) return; _gcTimer = setInterval(tickGlassClock, 1000); document.addEventListener('visibilitychange', function(){ if(!document.hidden) tickGlassClock(); }); }
@@ -16231,7 +16371,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.14';
+var APP_VERSION = '2026.10.15';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -16423,6 +16563,11 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.15', items:[
+    "Invoices for VAT registered businesses are now Tax invoices: your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown, with a labelled place for a verification code",
+    'Stock is listed under department headers (milk and yogurt go under Dairy products), and you can tick several products at a time on invoices, quotes and purchase orders',
+    'A new gold glass settings button and clock in the top bar'
+  ]},
   { v:'2026.10.14', items:[
     'A printable Pilot feedback form for cashiers to log how Pesa works for them during the 48 hour pilot run. Find it on the employee dashboard and in the menu'
   ]},
@@ -16935,6 +17080,7 @@ var ABOUT_FEATURES = [
   'A speed check and test products: see how fast Pesa searches, scans and draws the product list on this computer or device, and load made up test products to try a very big shop. Test products are never saved, synced, backed up or sold',
   'Terms, privacy and support pages that say plainly what Pesa does and does not do',
   'A printable pilot feedback form for cashiers, on the employee dashboard and in the menu, with ratings, a problem log and space for their own words',
+  "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders",
   'A welcome animation when Pesa opens, which you can skip or turn off',
   'Licence and subscription: when your Pesa provider switches it on, the owner enters a licence key and Pesa checks the plan on the device'
 ];
