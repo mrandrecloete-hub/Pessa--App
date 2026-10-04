@@ -13242,11 +13242,41 @@ function openCashierSettingsSheet(){
   var pvb = ov.querySelector('#stPrivacyBtn'); if(pvb) pvb.addEventListener('click', function(){ closeModal(); openPrivacySheet(); });
 }
 
+var PESA_PUBLIC_URL = 'https://mrandrecloete-hub.github.io/Pessa--App/';
+function appShareLink(){
+  var c = State.settings && State.settings.shareLink;
+  if(c && /^https?:\/\//i.test(c)) return c;
+  try{ if(/github\.io$/i.test(location.hostname)) return location.origin + location.pathname.replace(/index\.html$/,''); }catch(e){}
+  return PESA_PUBLIC_URL;
+}
+function shareAppHtml(){
+  var l = appShareLink();
+  return '<div class="section-title">'+tr('Share Pesa')+'</div>' +
+    '<div class="field"><label>'+tr('App link')+'</label><input id="shLink" readonly value="'+esc(l)+'" style="font-size:13px;"></div>' +
+    '<div class="actions">' +
+      '<button class="btn btn-primary" id="shCopy" type="button">'+tr('Copy link')+'</button>' +
+      '<button class="btn btn-ghost" id="shWa" type="button">WhatsApp</button>' +
+      '<button class="btn btn-ghost" id="shMore" type="button">'+tr('Share')+'</button>' +
+    '</div>' +
+    '<div class="banner" style="display:block;">'+tr('Anyone can open this link in a browser and add Pesa to their home screen. Their shop data stays on their own device.')+'</div>';
+}
+function wireShareApp(root){
+  var msg = 'Try Pesa, a shop and point of sale app for Namibia. Your Mula, Your Pride. ';
+  var g = function(id){ return root.querySelector(id); };
+  if(!g('#shCopy')) return;
+  g('#shCopy').addEventListener('click', function(){ copyText(appShareLink(), tr('Link copied')); });
+  g('#shWa').addEventListener('click', function(){ window.open('https://wa.me/?text='+encodeURIComponent(msg+appShareLink()), '_blank'); });
+  g('#shMore').addEventListener('click', function(){
+    if(navigator.share){ navigator.share({ title:'Pesa', text:msg, url:appShareLink() }).catch(function(){}); }
+    else copyText(msg+appShareLink(), tr('Link copied'));
+  });
+}
 function openSettingsSheet(){
   if(isRestricted()) return openCashierSettingsSheet();
   var s = State.settings;
   var html = '<div class="sheet-head"><h2>'+tr('Settings')+'</h2></div>' +
     accountSectionHtml() +
+    shareAppHtml() +
     '<div class="section-title">'+tr('Company &amp; team')+'</div>' +
     '<div class="actions">' +
       '<button class="btn btn-ghost" id="openCompanyBtn" type="button">'+tr('Company details')+'</button>' +
@@ -13420,6 +13450,7 @@ function openSettingsSheet(){
   var logoRemove = ov.querySelector('#stLogoRemove');
   if(logoRemove) logoRemove.addEventListener('click', function(){ removeBrandImage('logo'); });
   wireAccountSection(ov);
+  wireShareApp(ov);
   ov.querySelector('#openCompanyBtn').addEventListener('click', function(){ closeModal(); openCompanyDetailsSheet(); });
   ov.querySelector('#openTeamBtn').addEventListener('click', function(){ closeModal(); openTeamSheet(); });
   var branchSelect = ov.querySelector('#stBranchSelect'); if(branchSelect) branchSelect.addEventListener('change', function(){ setActiveBranch(branchSelect.value); });
@@ -17999,7 +18030,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.23';
+var APP_VERSION = '2026.10.24';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18191,6 +18222,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.24', items:[
+    'Settings: a new Share Pesa section with the app link, copy, WhatsApp and share buttons'
+  ]},
   { v:'2026.10.23', items:[
     'Encrypted cloud sync: new setups lock your shop data on the device before it is sent, and existing shops can tap Upgrade in Sync settings on each device',
     'Messages: photos and voice notes older than the keep time are removed automatically to save space, and you can choose how long to keep them'
