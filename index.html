@@ -18051,7 +18051,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.26';
+var APP_VERSION = '2026.10.27';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18243,6 +18243,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.27', items:[
+    'Opening animation: when the smoke clears, the words Welcome to Pesa Namibia appear before the welcome screen'
+  ]},
   { v:'2026.10.26', items:[
     'Opening animation: the money and water wave are gone. The icon now cracks, explodes with fire and flying glass, and clears away in smoke'
   ]},
@@ -19229,13 +19232,13 @@ document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=4.5 draws one still frame at 4.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var TL = { logoIn:0.35, shimmer:1.55, crack:2.15, brk:4.05, wave:6.0, waveDur:2.0 };   // wave/waveDur now mean: when the smoke starts to clear, and how long it takes   // seconds
+  var TL = { logoIn:0.35, shimmer:1.55, crack:2.15, brk:4.05, wave:7.5, waveDur:1.6 };   // wave/waveDur now mean: when the smoke starts to clear, and how long it takes   // seconds
   var VEIL = null, cvs = null, ctx = null, img = null;
   var W = 0, H = 0, DPR = 1, L = 240, sc = 1, cx = 0, cy = 0, Lw = 240, Lh = 233, B = 200;
   var spr = {}, geo = null, layer = null, lctx = null, grain = null;
   var S = null;                                             // simulation state
   var opts = { lite:false, simple:false, still:null, seed:20261004 };
-  var raf = 0, last = 0, done = false, hint = null, tagline = null, perf = { n:0, sum:0, down:false };
+  var raf = 0, last = 0, done = false, hint = null, tagline = null, wtext = null, perf = { n:0, sum:0, down:false };
 
   function mulberry(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   var R = mulberry(opts.seed);
@@ -19525,6 +19528,7 @@ var PesaIntro = (function(){
     drawBurstFX(t);
     drawSparks();
     var fo = 1 - sm((t - tWave()) / TL.waveDur); cvs.style.opacity = fo.toFixed(3);
+    if(wtext){ var wi = sm((t - (TL.brk + 1.7)) / 1.1); wtext.style.opacity = Math.min(wi, fo).toFixed(3); wtext.style.top = Math.round(cy - wtext.offsetHeight / 2) + 'px'; wtext.style.transform = 'scale(' + (0.94 + 0.06 * wi).toFixed(3) + ')'; }
     tagText(t);
   }
 
@@ -19588,6 +19592,7 @@ var PesaIntro = (function(){
         cvs = document.createElement('canvas'); cvs.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;display:block'; ctx = cvs.getContext('2d'); VEIL.appendChild(cvs);
         VEIL.style.background = 'transparent';
         tagline = document.createElement('div'); tagline.textContent = 'Your Mula, Your Pride'; tagline.style.cssText = 'position:absolute;left:0;right:0;text-align:center;font:italic 600 17px/1.2 Georgia,"Times New Roman",serif;letter-spacing:.04em;color:rgba(255,226,150,.95);text-shadow:0 2px 12px rgba(0,0,0,.6);opacity:0;pointer-events:none'; VEIL.appendChild(tagline);
+        wtext = document.createElement('div'); wtext.innerHTML = 'Welcome to<br>Pesa Namibia'; wtext.style.cssText = 'position:absolute;left:0;right:0;text-align:center;font:700 clamp(30px,9vw,54px)/1.12 Georgia,"Times New Roman",serif;letter-spacing:.01em;color:#fff4d2;text-shadow:0 2px 3px rgba(60,30,0,.55),0 0 26px rgba(255,190,70,.75),0 6px 30px rgba(0,0,0,.55);opacity:0;pointer-events:none;padding:0 16px'; VEIL.appendChild(wtext);
         hint = document.createElement('div'); hint.textContent = (typeof tr === 'function') ? tr('Tap to skip') : 'Tap to skip'; hint.style.cssText = 'position:absolute;left:0;right:0;bottom:calc(22px + env(safe-area-inset-bottom,0px));text-align:center;font:600 12.5px/1 system-ui,sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.8);opacity:0;pointer-events:none'; VEIL.appendChild(hint);
         layout(); freshState();
         window.addEventListener('resize', function(){ if(!done){ layout(); } });
