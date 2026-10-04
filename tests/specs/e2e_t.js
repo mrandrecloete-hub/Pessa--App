@@ -61,7 +61,7 @@ async function newDevice(b){ const ctx=await b.newContext({viewport:{width:390,h
   await L.evaluate(async(c)=>{ await window.__t.refs.products.doc('lp').set({name:'Legacy Plain Item',sellPrice:1,costPrice:1,stockQty:1}); await window.__t.Sync.enable('https://mock.test','k',c,{v:1}); },LC); await L.waitForTimeout(2500);
   ck('legacy shop uploads readable rows under the code', [...store.values()].some(r=>r.ws===LC && r.data && r.data.name==='Legacy Plain Item'));
   ck('legacy shop reports not secure', (await L.evaluate(()=>window.__t.Sync.secure()))===false);
-  await L.evaluate(()=>window.__t.openSettingsSheet()); await L.waitForSelector('#syUp'); ck('legacy settings offers the upgrade button and a warning', /not encrypted/.test(await L.innerText('body')));
+  await L.evaluate(()=>window.__t.openSettingsSheet()); await L.$$eval('.st-grp',g=>g.forEach(x=>x.open=true)); await L.waitForSelector('#syUp'); ck('legacy settings offers the upgrade button and a warning', /not encrypted/.test(await L.innerText('body')));
   await L.click('#syUp'); await L.waitForSelector('#cfOk'); ck('upgrade asks for confirmation', /every other device/i.test(await L.innerText('.sheet')));
   await L.evaluate(()=>window.__t.closeModal());
   await L.evaluate(()=>window.__t.Sync.upgrade()); await L.waitForTimeout(2500);
@@ -75,7 +75,7 @@ async function newDevice(b){ const ctx=await b.newContext({viewport:{width:390,h
   const N=await newDevice(b); await N.evaluate(c=>window.__t.Sync.join('https://mock.test','k',c),LS); await N.waitForTimeout(2000);
   ck('joining an old readable business stays on v1 and reads it', (await N.evaluate(()=>window.__t.Sync.cfg().v))===1 && await N.evaluate(()=>window.__t.State.products.some(p=>p.name==='Z Item')));
   // settings UI
-  await A.evaluate(()=>window.__t.openSettingsSheet()); await A.waitForTimeout(400); const txt=await A.innerText('body'); ck('settings says encrypted sync', /Encrypted sync/.test(txt));
+  await A.evaluate(()=>window.__t.openSettingsSheet()); await A.$$eval('.st-grp',g=>g.forEach(x=>x.open=true)); await A.waitForTimeout(400); const txt=await A.innerText('body'); ck('settings says encrypted sync', /Encrypted sync/.test(txt));
   await L.evaluate(()=>window.__t.openSettingsSheet()); ck('settings of an old setup offers upgrade (after v2 it should not)', !(await L.$('#syUp')));
   for(const d of [A,B,C,D,L,M,N]) if(d.errs.length) console.log(d.errs);
   ck('no page errors anywhere', [A,B,C,D,L,M,N].every(d=>d.errs.length===0));

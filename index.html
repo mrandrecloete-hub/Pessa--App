@@ -286,6 +286,8 @@
   .st-grp > summary .st-h{ font-size:12.5px; color:var(--text-muted); }
   .st-grp .st-b{ padding:0 14px 12px; }
   .st-grp .st-b .section-title:first-child{ margin-top:4px; }
+  .sheet-backrow{ display:inline-flex; align-items:center; gap:2px; border:0; background:var(--surface-2); color:var(--text); border-radius:999px; padding:6px 13px 6px 8px; font-weight:600; font-size:13px; margin:0 0 6px; cursor:pointer; }
+  .sheet-backrow svg{ width:16px; height:16px; }
   .section-title{ font-size:var(--fs-section); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); margin: 18px 2px 8px; display:flex; align-items:center; justify-content:space-between; }
   .section-title:first-child{ margin-top:2px; }
   .section-title .see-all{ font-size:11.5px; font-weight:600; color:var(--primary-dim); text-transform:none; letter-spacing:0; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
@@ -1130,6 +1132,7 @@
 
   <div class="appmain">
     <div class="topbar">
+      <button class="icon-btn" id="backBtn" aria-label="Back" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
       <button class="icon-btn" id="menuBtn" aria-label="Menu" style="display:none;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
       </button>
@@ -7610,11 +7613,50 @@ function toast(msg){
 }
 
 /* ============================== modal helpers ============================== */
+/* ============================== BACK NAVIGATION ============================== */
+/* The Back button of the phone or browser, and the Back buttons in Pesa, step back through the sheets and pages
+   you opened instead of leaving Pesa. History entries are kept in line with what is on screen:
+   one base entry, one per page you moved away from, and one while a sheet is open. */
+var NavBack = (function(){
+  var tabStack = [], sheetPushed = false, ignore = 0, ready = false;
+  function sheetOpen(){ var r = document.getElementById('modalRoot'), a = document.getElementById('authModalRoot'); return !!((r && r.firstChild) || (a && a.firstChild)); }
+  function homeTab(){ try{ return State.session ? roleTabs(State.session.role)[0] : 'dashboard'; }catch(e){ return 'dashboard'; } }
+  function init(){
+    if(ready) return; ready = true;
+    try{ history.replaceState({ pesa:'base' }, ''); }catch(e){}
+    window.addEventListener('popstate', function(){
+      if(ignore > 0){ ignore--; return; }
+      if(sheetOpen()){ sheetPushed = false; closeModal(); return; }
+      if(tabStack.length){ State.tab = tabStack.pop(); render(); }
+    });
+  }
+  function sheetOpened(){ init(); if(!sheetPushed){ try{ history.pushState({ pesa:'sheet' }, ''); sheetPushed = true; }catch(e){} } }
+  function sheetClosed(){
+    setTimeout(function(){ if(sheetPushed && !sheetOpen()){ sheetPushed = false; ignore++; try{ history.back(); }catch(e){ ignore--; } } }, 0);
+  }
+  function tabChanged(from, to){
+    init(); if(from === to) return;
+    tabStack.push(from);
+    try{
+      if(sheetPushed && !sheetOpen()){ sheetPushed = false; history.replaceState({ pesa:'tab' }, ''); }   // the closed sheet's entry becomes this page's entry
+      else history.pushState({ pesa:'tab' }, '');
+    }catch(e){}
+  }
+  function canGoBack(){ return sheetOpen() || tabStack.length > 0 || State.tab !== homeTab(); }
+  function back(){
+    if(sheetOpen() || tabStack.length){ try{ history.back(); }catch(e){} return; }
+    if(State.tab !== homeTab()){ State.tab = homeTab(); render(); }
+  }
+  function reset(){ tabStack = []; }
+  return { sheetOpened:sheetOpened, sheetClosed:sheetClosed, tabChanged:tabChanged, back:back, reset:reset, canGoBack:canGoBack, homeTab:homeTab };
+})();
+
 function closeModal(){
   try{ msgCleanup(); }catch(e){}
   try{ if(typeof stopNarration === 'function' && _trainState && (_trainState.playing || _trainState.autoTimer)) stopNarration(); }catch(e){}
   document.getElementById('modalRoot').innerHTML = '';
   var ar = document.getElementById('authModalRoot'); if(ar) ar.innerHTML = '';
+  try{ NavBack.sheetClosed(); }catch(e){}
 }
 // Sign-in / register screens hide the app shell (which holds #modalRoot), so
 // sheets opened from them are mounted straight on <body> instead.
@@ -7637,6 +7679,15 @@ function openSheet(innerHtml, opts){
   overlay.addEventListener('mousedown', function(e){ if(e.target === overlay) closeModal(); });
   root.innerHTML = '';
   root.appendChild(overlay);
+  try{
+    NavBack.sheetOpened();
+    var sh = overlay.firstChild;
+    if(!opts.center && !opts.noBack && !overlay.querySelector('.drawer-close, #vsBack, #vlBack, .mv-full, #cnAgree, #licGate, [data-noback]')){
+      var bb = document.createElement('button'); bb.type = 'button'; bb.className = 'sheet-backrow'; bb.innerHTML = ICONS.back + '<span>' + esc(tr('Back')) + '</span>';
+      bb.addEventListener('click', function(){ NavBack.back(); });
+      sh.insertBefore(bb, sh.firstChild && sh.firstChild.classList && sh.firstChild.classList.contains('sheet-handle') ? sh.firstChild.nextSibling : sh.firstChild);
+    }
+  }catch(e){}
   return overlay;
 }
 function confirmSheet(title, body, confirmLabel, onConfirm, danger, sensitive){
@@ -13572,6 +13623,7 @@ function tickGlassClock(){
 function startGlassClock(){ tickGlassClock(); if(_gcTimer) return; _gcTimer = setInterval(tickGlassClock, 1000); document.addEventListener('visibilitychange', function(){ if(!document.hidden) tickGlassClock(); }); }
 function updateHeader(){
   applyBrandLogo();
+  try{ var _bk = document.getElementById('backBtn'); if(_bk){ if(!_bk._w){ _bk._w = 1; _bk.addEventListener('click', function(){ NavBack.back(); }); } _bk.style.display = (State.tab !== NavBack.homeTab()) ? 'flex' : 'none'; } }catch(e){}
   startGlassClock();
   document.getElementById('shopNameEl').textContent = State.settings.shopName;
   document.getElementById('shopDateEl').textContent = new Date().toLocaleDateString(uiLocale(), {weekday:'long', day:'numeric', month:'long'});
@@ -13829,7 +13881,9 @@ function wireContent(){
 }
 
 function setTab(tab){
+  var _from = State.tab;
   State.tab = tab;
+  try{ NavBack.tabChanged(_from, tab); }catch(e){}
   render();
 }
 
@@ -18088,7 +18142,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.32';
+var APP_VERSION = '2026.10.33';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18280,6 +18334,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.33', items:[
+    'Back button: the Back button of your phone or browser, and a new Back button on every page and sheet, now step back to where you were instead of leaving Pesa'
+  ]},
   { v:'2026.10.32', items:[
     'Training: you can now upload audio files for a lesson, one file per slide, or add one file to a single slide. The button is called Record or upload my voice'
   ]},
