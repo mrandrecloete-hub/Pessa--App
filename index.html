@@ -16315,6 +16315,7 @@ var VoiceClips = (function(){
 })();
 
 var VC_LANG_NAMES = { en:'English', af:'Afrikaans', de:'Deutsch' };
+var VC_UP = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>';
 var VC_MIC = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>';
 // The words of one slide in the order they are read aloud (also used to notice when the text has changed since recording)
 function vcLines(slide){
@@ -16341,7 +16342,7 @@ function openVoiceStudio(){
     LESSONS.forEach(function(l){ l.slides.forEach(function(s, i){ total++; if(have[l.id + '|' + i]) done++; }); });
     var wel = have['welcome|0'];
     var html = '<div class="sheet-head"><button class="drawer-close" id="vsBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+tr('My voice')+'</h2></div>' +
-      '<div class="banner">'+tr('Record each training slide in your own voice. Your recording plays instead of the computer or device voice. Any slide you have not recorded keeps the computer voice.')+'</div>' +
+      '<div class="banner">'+tr('Record each training slide in your own voice, or upload audio files made by someone else. Open a lesson to upload. Your recording plays instead of the computer or device voice. Any slide you have not recorded keeps the computer voice.')+'</div>' +
       '<div class="actions" style="margin-bottom:6px;"><button class="btn btn-primary btn-block" id="vsAuto" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record hands free')+'</span></button></div>' +
       '<div style="font-size:12px;color:var(--text-muted);margin:0 2px 10px;line-height:1.5;">'+tr('Read the slides one after another and Pesa saves each one by itself. Or tap a lesson below to record slide by slide.')+'</div>' +
       '<div style="font-size:13px;color:var(--text-muted);margin:2px 2px 10px;">'+tr('Recording language')+': <strong>'+esc(VC_LANG_NAMES[lang] || lang)+'</strong> · '+done+' '+tr('of')+' '+total+' '+tr('slides recorded')+'</div>' +
@@ -16412,11 +16413,13 @@ function openVoiceLesson(lessonId){
       return '<div class="row" data-vl="'+i+'"><div class="ico" style="width:36px;height:36px;border-radius:10px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+VC_MIC+'</div>' +
         '<div class="main"><div class="title">'+(i+1)+'. '+esc(tr(s.title))+'</div><div class="sub">'+
           (rec ? vcFmtTime(rec.dur)+' · '+(stale ? '<span style="color:var(--warning,#b45309);">'+tr('Text changed since you recorded')+'</span>' : tr('Recorded')) : tr('Not recorded yet'))+'</div></div>' +
+        '<button class="icon-btn" data-up="'+i+'" type="button" aria-label="Upload audio" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);display:flex;align-items:center;justify-content:center;">'+VC_UP+'</button>' +
         (rec ? '<button class="icon-btn" data-play="'+i+'" type="button" aria-label="Listen" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);display:flex;align-items:center;justify-content:center;">'+ICONS.play+'</button>' +
           '<button class="icon-btn" data-del="'+i+'" type="button" aria-label="Delete" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--danger);display:flex;align-items:center;justify-content:center;margin-left:6px;">'+ICONS.trash+'</button>' : '') + '</div>';
     }).join('');
     var html = '<div class="sheet-head"><button class="drawer-close" id="vlBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+esc(tr(lesson.title))+'</h2></div>' +
       '<div class="banner">'+tr('Tap a slide to record it. Read the words on the screen in your own way. You do not need to say them word for word.')+'</div>' +
+      '<div class="actions" style="margin-top:10px;flex-direction:column;"><button class="btn btn-ghost btn-block" id="vlUpAll" type="button">'+VC_UP+'<span style="margin-left:8px;">'+tr('Upload audio files for this lesson')+'</span></button></div><div style="font-size:12px;color:var(--text-muted);margin:6px 2px 0;line-height:1.5;">'+tr('Choose one audio file per slide, such as MP3 or M4A. They are matched to the slides in the order of their file names. Or tap the arrow on a slide to add one file for it.')+'</div><input type="file" id="vlFiles" accept="audio/*" multiple style="display:none;"><input type="file" id="vlFile1" accept="audio/*" style="display:none;">' +
       (lesson.id !== 'welcome' ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-primary btn-block" id="vlAuto" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record this whole lesson hands free')+'</span></button></div>' : '') +
       '<div class="rowlist" style="margin-top:10px;">'+rows+'</div>';
     var ov = openSheet(html), cur = null;
@@ -16425,6 +16428,32 @@ function openVoiceLesson(lessonId){
     var va = ov.querySelector('#vlAuto'); if(va) va.addEventListener('click', function(){ stopPrev(); openVoiceAutoSetup([lesson], function(){ openVoiceLesson(lesson.id); }); });
     ov.querySelectorAll('[data-vl]').forEach(function(el){
       el.addEventListener('click', function(){ stopPrev(); openSlideRecorderFor(lesson, parseInt(el.getAttribute('data-vl'), 10)); });
+    });
+    function saveUpload(i, file){
+      if(file.size > 25*1024*1024) return Promise.resolve(false);
+      return VoiceClips.measure(file).then(function(d){
+        if(!(d > 0.5)) return false;
+        var sl = lesson.slides[i];
+        return VoiceClips.put({ key:VoiceClips.key(lang, lesson.id, i), lang:lang, id:lesson.id, idx:i, mime:file.type || 'audio/mpeg', dur:d, hash:VoiceClips.hash(vcLines(sl).join('|')), at:new Date().toISOString(), blob:file }).then(function(){ return true; });
+      }).catch(function(){ return false; });
+    }
+    var upAll = ov.querySelector('#vlUpAll'), filesIn = ov.querySelector('#vlFiles'), file1 = ov.querySelector('#vlFile1'), upIdx = 0;
+    if(upAll){ upAll.addEventListener('click', function(){ filesIn.click(); });
+      filesIn.addEventListener('change', function(){
+        var fl = Array.prototype.slice.call(filesIn.files || []).sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { numeric:true }); });
+        if(!fl.length) return;
+        if(fl.length > lesson.slides.length){ toast(tr('That is more files than slides. Pick at most')+' '+lesson.slides.length); return; }
+        toast(tr('Saving audio…'));
+        fl.reduce(function(pr, f, k){ return pr.then(function(n){ return saveUpload(k, f).then(function(ok){ return n + (ok ? 1 : 0); }); }); }, Promise.resolve(0)).then(function(n){
+          toast(n + ' ' + tr('of') + ' ' + fl.length + ' ' + tr('audio files saved')); openVoiceLesson(lesson.id);
+        });
+      }); }
+    ov.querySelectorAll('[data-up]').forEach(function(b){
+      b.addEventListener('click', function(e){ e.stopPropagation(); stopPrev(); upIdx = parseInt(b.getAttribute('data-up'), 10); file1.value = ''; file1.click(); });
+    });
+    if(file1) file1.addEventListener('change', function(){
+      var f = file1.files && file1.files[0]; if(!f) return;
+      saveUpload(upIdx, f).then(function(ok){ toast(ok ? tr('Saved') : tr('Pesa could not read that audio file.')); openVoiceLesson(lesson.id); });
     });
     ov.querySelectorAll('[data-play]').forEach(function(b){
       b.addEventListener('click', function(e){
@@ -16762,7 +16791,7 @@ function openTrainingSheet(){
   var html = '<div class="sheet-head"><h2>'+ICONS.book+'<span style="margin-left:8px;">'+tr('Training')+'</span></h2></div>' +
     '<div class="banner">'+tr('Step by step lessons on every part of the app, with a voice that reads each step aloud. Pick a topic, or play them all in order.')+'</div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="trSearch" type="button">'+ICONS.search+'<span style="margin-left:8px;">'+tr('Search help')+'</span></button></div>' +
-    (isManagerOrOwner() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trVoice" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record my voice')+'</span></button></div>' : '') +
+    (isManagerOrOwner() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trVoice" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record or upload my voice')+'</span></button></div>' : '') +
     (speechSupported() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trNarr" type="button">'+ICONS.soundOn+'<span style="margin-left:8px;">'+tr('Narrator voice')+'</span></button></div><div id="trNarrPanel"></div>' : '') +
     (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPlayAll" type="button">'+ICONS.play+'<span style="margin-left:8px;">'+tr('Play all lessons')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
     '<div class="rowlist" style="margin-top:12px;">' +
@@ -18059,7 +18088,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.31';
+var APP_VERSION = '2026.10.32';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18251,6 +18280,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.32', items:[
+    'Training: you can now upload audio files for a lesson, one file per slide, or add one file to a single slide. The button is called Record or upload my voice'
+  ]},
   { v:'2026.10.31', items:[
     'Training: the Meet the developer lesson now shows a photo of the developer, Björn Van Rensburg'
   ]},

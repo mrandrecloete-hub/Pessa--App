@@ -1,0 +1,10 @@
+const { chromium } = require('playwright');
+(async()=>{ const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'})).newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await require('./biz_boot.js')(p);
+ await p.evaluate(()=>window.__t.openTrainingSheet()); await p.waitForSelector('#trVoice'); console.log('btn:',await p.innerText('#trVoice'));
+ await p.click('#trVoice'); await p.waitForSelector('[data-vs="devices"]'); await p.click('[data-vs="devices"]'); await p.waitForSelector('#vlUpAll');
+ console.log('row up buttons',await p.locator('[data-up]').count());
+ await p.setInputFiles('#vlFiles',['/tmp/a3.wav','/tmp/a1.wav','/tmp/a2.wav']); await p.waitForTimeout(1500);
+ console.log('recorded subs:',await p.$$eval('[data-vl] .sub',e=>e.slice(0,4).map(x=>x.textContent)));
+ await p.setInputFiles('#vlFile1','/tmp/a1.wav'); await p.waitForTimeout(800);
+ console.log('errors',errs); await b.close(); })();
