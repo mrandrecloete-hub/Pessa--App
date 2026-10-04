@@ -8003,7 +8003,7 @@ function pdBand(doc, st, H, compact){
   doc.setFont('helvetica','bold'); doc.setFontSize(compact ? 15 : 24); doc.setTextColor(255,255,255);
   pdCS(doc, 0.6); doc.text('PESA', tx, my + (compact ? 6 : 8.6)); pdCS(doc, 0);
   doc.setFont('helvetica','bold'); doc.setFontSize(compact ? 5 : 6.2); pdSet(doc, 't', pal.gold2);
-  pdCS(doc, compact ? 1.2 : 1.6); doc.text('PAY · TRACK · GROW', tx, my + (compact ? 9.6 : 13.2)); pdCS(doc, 0);
+  pdCS(doc, compact ? 0.7 : 1.0); doc.text('YOUR MULA, YOUR PRIDE', tx, my + (compact ? 9.6 : 13.2)); pdCS(doc, 0);
   // right side: the business logo on a white plate, else the business name
   var name = S.shopName || '';
   if(compact){
@@ -8038,14 +8038,14 @@ function pdFooter(doc, pal, pg, total){
   var mh = 8.5, mw = mh / PESA_LOGO_ASPECT;
   try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', 14, y + 8.6, mw, mh); }catch(e){}
   doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255); pdCS(doc, 0.4); doc.text('PESA', 14 + mw + 2.6, y + 13.6); pdCS(doc, 0);
-  doc.setFont('helvetica','bold'); doc.setFontSize(4.6); pdSet(doc, 't', pal.gold2); pdCS(doc, 0.9); doc.text('PAY · TRACK · GROW', 14 + mw + 2.6, y + 16.4); pdCS(doc, 0);
+  doc.setFont('helvetica','bold'); doc.setFontSize(4.2); pdSet(doc, 't', pal.gold2); pdCS(doc, 0.5); doc.text('YOUR MULA, YOUR PRIDE', 14 + mw + 2.6, y + 16.4); pdCS(doc, 0);
   // contacts
   var c = pdContacts(), items = [];
   if(c.phone) items.push(['phone', c.phone]); if(c.email) items.push(['mail', c.email]); if(c.web) items.push(['web', c.web]);
-  var cx = 62, cyy = y + 13.1, fs = 7.4;
+  var cx = 70, cyy = y + 13.1, fs = 7.4;
   doc.setFont('helvetica','normal');
   function totalW(sz){ doc.setFontSize(sz); var s = 0; items.forEach(function(it){ s += 6.4 + 2 + doc.getTextWidth(it[1]) + 6; }); return s; }
-  while(items.length && fs > 5.6 && totalW(fs) > 112) fs -= 0.4;
+  while(items.length && fs > 5.6 && totalW(fs) > 104) fs -= 0.4;
   doc.setFontSize(fs);
   items.forEach(function(it){
     pdSet(doc, 'd', pal.gold2); doc.setLineWidth(0.35); doc.circle(cx + 3.2, cyy - 1.2, 3.2, 'S');
