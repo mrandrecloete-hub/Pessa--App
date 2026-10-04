@@ -942,6 +942,17 @@
   .spk{ border:1.5px solid var(--primary); border-radius:16px; padding:12px; margin:10px 0; background:var(--surface); }
   .spk-list{ max-height:260px; overflow:auto; display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
   .spk-row{ display:flex; align-items:center; gap:10px; border:1.5px solid var(--border); border-radius:12px; padding:9px 10px; cursor:pointer; } .spk-row.on{ border-color:var(--primary); background:rgba(20,163,122,.08); }
+  .pf-q{ margin:14px 0 4px; font-weight:700; font-size:14px; }
+  .pf-rates{ display:flex; gap:8px; margin-top:6px; }
+  .pf-rate{ flex:1; height:44px; border-radius:12px; border:1.5px solid var(--border); background:var(--surface-2); color:var(--text); font-weight:800; font-size:16px; cursor:pointer; }
+  .pf-rate.on{ background:var(--primary); border-color:var(--primary); color:var(--primary-contrast); }
+  .pf-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  .pf-chip{ border:1.5px solid var(--border); background:var(--surface-2); color:var(--text); border-radius:999px; padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; }
+  .pf-chip.on{ background:var(--primary); border-color:var(--primary); color:var(--primary-contrast); }
+  .pf-counts{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; } .pf-counts .field{ margin:0; } .pf-counts label{ font-size:12px; }
+  .pf-add{ border:1.5px dashed var(--border); border-radius:14px; padding:12px; margin-top:10px; }
+  .pf-snack{ position:fixed; left:12px; right:12px; bottom:calc(86px + env(safe-area-inset-bottom,0px)); z-index:60; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; background:#0f3d38; color:#f6ecd4; border:1px solid #d9a548; box-shadow:0 10px 24px -8px rgba(0,0,0,.6); font-size:13.5px; font-weight:600; }
+  .pf-snack span{ flex:1; min-width:0; } .pf-snack .go{ background:linear-gradient(180deg,#ffe3a1,#e9a842); color:#3a2705; border:0; border-radius:10px; padding:8px 12px; font-weight:800; cursor:pointer; } .pf-snack .x{ background:none; border:0; color:#f6ecd4; font-size:16px; cursor:pointer; padding:4px 6px; }
   .dept-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; position:sticky; top:0; z-index:2; margin:10px 0 2px; padding:7px 12px; border-radius:10px; background:linear-gradient(120deg, var(--primary) 0%, var(--primary-dim) 130%); color:var(--primary-contrast); font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
   .dept-h:first-child{ margin-top:0; } .dept-h small{ font-size:11px; font-weight:700; opacity:.85; letter-spacing:0; }
   .spk-dept{ display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:1; margin-top:4px; padding:7px 10px; border-radius:10px; background:linear-gradient(120deg, var(--primary) 0%, var(--primary-dim) 130%); color:var(--primary-contrast); font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; }
@@ -1459,6 +1470,8 @@ Object.assign(LANGS.af.strings, {"Pilot feedback form": "Loodsproef-terugvoervor
 Object.assign(LANGS.de.strings, {"Pilot feedback form": "Pilot Feedbackformular", "A 48 hour pilot run. Please fill this in by hand while you work. Be honest: every problem you write down helps make Pesa better. Do not write passwords, PINs or customers’ personal details on this form.": "Ein 48 Stunden Pilotlauf. Bitte füllen Sie dies von Hand aus, während Sie arbeiten. Seien Sie ehrlich: Jedes Problem, das Sie notieren, hilft, Pesa zu verbessern. Schreiben Sie keine Passwörter, PINs oder persönlichen Kundendaten auf dieses Formular.", "About you and the pilot": "Zu Ihnen und zum Pilotlauf", "Cashier name": "Name des Kassierers", "Shop or branch": "Laden oder Filiale", "Device used (computer, tablet or other)": "Verwendetes Gerät (Computer, Tablet oder anderes)", "Shifts I worked": "Schichten, die ich gearbeitet habe", "Pilot started (date and time)": "Pilot gestartet (Datum und Uhrzeit)", "Pilot ended (date and time)": "Pilot beendet (Datum und Uhrzeit)", "How easy was it? Circle one number for each line": "Wie einfach war es? Kreisen Sie in jeder Zeile eine Zahl ein", "1 = very hard    3 = fine    5 = very easy": "1 = sehr schwer    3 = in Ordnung    5 = sehr leicht", "Making a sale at the till": "Einen Verkauf an der Kasse abwickeln", "Finding a product by name or barcode": "Ein Produkt nach Name oder Barcode finden", "Taking cash, card or wallet payments": "Bar , Karten oder Wallet Zahlungen annehmen", "Printing or sharing receipts": "Belege drucken oder teilen", "Opening and closing my till": "Meine Kasse öffnen und schließen", "Working when the internet was down": "Arbeiten, als das Internet ausgefallen war", "Speed of the app overall": "Geschwindigkeit der App insgesamt", "Overall, how easy was Pesa to use?": "Insgesamt: Wie einfach war Pesa zu benutzen?", "Numbers for my shift or shifts": "Zahlen für meine Schicht(en)", "About how many sales did I make?": "Ungefähr wie viele Verkäufe habe ich gemacht?", "Times Pesa was slow or froze": "Wie oft Pesa langsam war oder eingefroren ist", "Times the internet was down": "Wie oft das Internet ausgefallen war", "Times a barcode would not scan": "Wie oft ein Barcode sich nicht scannen ließ", "Times I needed help from someone": "Wie oft ich Hilfe von jemandem brauchte", "Sales I had to correct or cancel": "Verkäufe, die ich korrigieren oder stornieren musste", "Working without internet (tick one box for each question)": "Arbeiten ohne Internet (pro Frage ein Kästchen ankreuzen)", "Did Pesa keep working when the internet was down?": "Hat Pesa weitergearbeitet, als das Internet ausgefallen war?", "Did my sales show up on the other devices afterwards?": "Sind meine Verkäufe danach auf den anderen Geräten erschienen?", "Partly": "Teilweise", "It did not happen": "Es ist nicht vorgekommen", "Not tried": "Nicht versucht", "Not sure": "Nicht sicher", "Not yet": "Noch nicht", "Problem log: write down anything that went wrong": "Problemprotokoll: Notieren Sie alles, was schiefgegangen ist", "What I was doing": "Was ich gerade tat", "What went wrong": "Was schiefgegangen ist", "How bad?": "Wie schlimm?", "How bad: S = small, A = annoying, X = stopped the sale. Circle one letter.": "Wie schlimm: S = klein, A = lästig, X = Verkauf gestoppt. Kreisen Sie einen Buchstaben ein.", "In my own words": "In meinen eigenen Worten", "What worked best for me?": "Was hat für mich am besten funktioniert?", "What was most confusing or slow?": "Was war am verwirrendsten oder langsamsten?", "What did customers say or do?": "Was haben Kunden gesagt oder getan?", "What is the first thing I would change?": "Was würde ich als Erstes ändern?", "My verdict (tick one box for each question)": "Mein Urteil (pro Frage ein Kästchen ankreuzen)", "Would I use Pesa every day?": "Würde ich Pesa jeden Tag benutzen?", "Would I trust Pesa to run my till on its own?": "Würde ich Pesa zutrauen, meine Kasse allein zu führen?", "Signatures": "Unterschriften", "Cashier signature": "Unterschrift des Kassierers", "Reviewed by owner or manager": "Geprüft von Inhaber oder Manager", "Owner or manager notes": "Notizen von Inhaber oder Manager", "Print it and note how Pesa works for you during the 48 hour pilot.": "Drucken Sie es aus und notieren Sie, wie Pesa im 48 Stunden Pilotlauf für Sie funktioniert.", "Print this form and fill it in by hand while you work during the 48 hour pilot run. Hand it to the owner when the pilot ends.": "Drucken Sie dieses Formular aus und füllen Sie es während des 48 Stunden Pilotlaufs von Hand aus. Geben Sie es dem Inhaber, wenn der Pilot endet.", "What is on the form": "Was auf dem Formular steht", "Name, shop, device and when the pilot started": "Name, Laden, Gerät und Beginn des Piloten", "How easy was it?": "Wie einfach war es?", "Eight lines to rate from 1 to 5": "Acht Zeilen zum Bewerten von 1 bis 5", "Sales made, slow moments, internet down, scans that failed": "Getätigte Verkäufe, langsame Momente, Internet aus, fehlgeschlagene Scans", "Working without internet": "Arbeiten ohne Internet", "Did it keep working, and did the sales show up later": "Hat es weitergearbeitet, und sind die Verkäufe später erschienen", "Problem log": "Problemprotokoll", "Eight lines for date, what happened and how bad": "Acht Zeilen für Datum, Vorfall und Schweregrad", "What worked, what confused, what customers said, what to change": "Was funktionierte, was verwirrte, was Kunden sagten, was zu ändern ist", "My verdict": "Mein Urteil", "Would I use it every day, and trust it on its own": "Würde ich es täglich nutzen und ihm allein vertrauen", "Cashier and owner or manager": "Kassierer und Inhaber oder Manager", "Fill in my name and the shop": "Meinen Namen und den Laden eintragen", "Pilot starts": "Pilot beginnt", "If you enter it, the form also prints when the 48 hours end.": "Wenn Sie es eingeben, druckt das Formular auch, wann die 48 Stunden enden.", "Download or print the form": "Formular herunterladen oder drucken", "Open the downloaded file and print it. Choose Word if you want to change the wording first.": "Öffnen Sie die heruntergeladene Datei und drucken Sie sie. Wählen Sie Word, wenn Sie zuerst den Wortlaut ändern möchten.", "Show the Pilot feedback form card on employee dashboards": "Die Karte Pilot Feedbackformular auf den Mitarbeiter Dashboards anzeigen", "Form downloaded": "Formular heruntergeladen", "Couldn’t make the form. Please try again.": "Das Formular konnte nicht erstellt werden. Bitte versuchen Sie es erneut.", "Hand this form to the shop owner when the pilot ends. If a problem needs the developer, contact him on WhatsApp 081 821 1692 or by email at ecrypted5@gmail.com.": "Geben Sie dieses Formular dem Ladeninhaber, wenn der Pilot endet. Wenn ein Problem den Entwickler braucht, erreichen Sie ihn per WhatsApp unter 081 821 1692 oder per E Mail an ecrypted5@gmail.com.", "A printable pilot feedback form for cashiers, on the employee dashboard and in the menu, with ratings, a problem log and space for their own words": "Ein druckbares Pilot Feedbackformular für Kassierer, im Mitarbeiter Dashboard und im Menü, mit Bewertungen, einem Problemprotokoll und Platz für eigene Worte", "A printable Pilot feedback form for cashiers to log how Pesa works for them during the 48 hour pilot run. Find it on the employee dashboard and in the menu": "Ein druckbares Pilot Feedbackformular, in dem Kassierer festhalten, wie Pesa im 48 Stunden Pilotlauf für sie funktioniert. Zu finden im Mitarbeiter Dashboard und im Menü"});
 Object.assign(LANGS.af.strings, {"Invoice": "Faktuur", "Tax invoice": "Belastingfaktuur", "VAT registration no.": "BTW-registrasienr.", "Net total excl. VAT": "Netto totaal sonder BTW", "VAT {0}": "BTW {0}", "Gross total due": "Bruto verskuldig", "Document verification signature": "Dokumentverifikasie-handtekening", "Reserved for a cryptographic verification code. Until a code is printed in the box below, this document has not been validated by NamRA.": "Gereserveer vir 'n kriptografiese verifikasiekode. Totdat 'n kode in die blokkie hieronder gedruk is, is hierdie dokument nie deur NamRA gevalideer nie.", "Verification code": "Verifikasiekode", "Customer TIN (optional, for business customers)": "Kliënt se TIN (opsioneel, vir sakekliënte)", "Your TIN is not set, so it will not print on this tax invoice. Add it in Settings, Tax records.": "Jou TIN is nie gestel nie, dus sal dit nie op hierdie belastingfaktuur druk nie. Voeg dit by in Instellings, Belastingrekords.", "Dairy products": "Suiwelprodukte", "Bakery": "Bakkery", "Cold drinks and water": "Koeldrank en water", "Meat and fish": "Vleis en vis", "Fruit and vegetables": "Vrugte en groente", "Dry goods and groceries": "Droogware en kruideniersware", "Household and cleaning": "Huishoudelik en skoonmaak", "Toiletries and health": "Toiletware en gesondheid", "Snacks and sweets": "Peuselhappies en lekkers", "Other products": "Ander produkte", "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders": "Belastingfakture wys jou TIN en BTW registrasienommer, die koper se TIN, en 'n uiteensetting in netto, BTW, nulkoers, vrygestel en bruto. Voorraad word onder departementopskrifte gelys, en jy kan verskeie produkte op een slag op fakture, kwotasies en aankooporders merk"});
 Object.assign(LANGS.de.strings, {"Invoice": "Rechnung", "Tax invoice": "Steuerrechnung", "VAT registration no.": "USt-Registrierungsnr.", "Net total excl. VAT": "Nettosumme ohne MwSt.", "VAT {0}": "MwSt. {0}", "Gross total due": "Brutto fällig", "Document verification signature": "Dokumentprüfsignatur", "Reserved for a cryptographic verification code. Until a code is printed in the box below, this document has not been validated by NamRA.": "Reserviert für einen kryptografischen Prüfcode. Solange im Feld unten kein Code gedruckt ist, wurde dieses Dokument nicht von NamRA validiert.", "Verification code": "Prüfcode", "Customer TIN (optional, for business customers)": "TIN des Kunden (optional, für Geschäftskunden)", "Your TIN is not set, so it will not print on this tax invoice. Add it in Settings, Tax records.": "Ihre TIN ist nicht hinterlegt und wird daher nicht auf dieser Steuerrechnung gedruckt. Tragen Sie sie unter Einstellungen, Steuerdaten ein.", "Dairy products": "Milchprodukte", "Bakery": "Backwaren", "Cold drinks and water": "Kaltgetränke und Wasser", "Meat and fish": "Fleisch und Fisch", "Fruit and vegetables": "Obst und Gemüse", "Dry goods and groceries": "Trockenwaren und Lebensmittel", "Household and cleaning": "Haushalt und Reinigung", "Toiletries and health": "Körperpflege und Gesundheit", "Snacks and sweets": "Snacks und Süßigkeiten", "Other products": "Sonstige Produkte", "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders": "Steuerrechnungen zeigen Ihre TIN und USt Registrierungsnummer, die TIN des Käufers sowie eine Aufschlüsselung in Netto, MwSt., nullbesteuert, befreit und Brutto. Der Bestand ist unter Abteilungsüberschriften gelistet, und Sie können auf Rechnungen, Angeboten und Bestellungen mehrere Produkte auf einmal ankreuzen"});
+Object.assign(LANGS.af.strings, {"Answers tapped in on screen in Pesa.": "Antwoorde op die skerm in Pesa gekies.", "Small": "Klein", "Annoying": "Irriterend", "Stopped the sale": "Het die verkoop gestop", "Computer": "Rekenaar", "Tablet": "Tablet", "Other device": "Ander toestel", "No problems logged": "Geen probleme aangeteken nie", "Submitted in Pesa on": "In Pesa ingedien op", "Your name": "Jou naam", "e.g. Monday morning, Tuesday full day": "bv. Maandagoggend, Dinsdag heeldag", "Tap your answers. They save on this device as you go, so you can stop and come back. Do not write passwords, PINs or customers’ personal details.": "Tik jou antwoorde. Hulle word op hierdie toestel gestoor soos jy gaan, so jy kan ophou en terugkom. Moenie wagwoorde, PIN's of kliënte se persoonlike besonderhede skryf nie.", "Add a problem": "Voeg 'n probleem by", "Add this problem": "Voeg hierdie probleem by", "Remove": "Verwyder", "Write what went wrong first": "Skryf eers wat verkeerd geloop het", "Save and submit": "Stoor en dien in", "Save and finish later": "Stoor en voltooi later", "Draft saved": "Konsep gestoor", "Answer at least one question first": "Beantwoord eers ten minste een vraag", "Pilot feedback saved": "Loodsproef-terugvoer gestoor", "Your form is saved on this device. Pesa cannot send it by itself, so tap a button to send a copy to the developer. Nothing leaves this device until you tap.": "Jou vorm is op hierdie toestel gestoor. Pesa kan dit nie self stuur nie, so tik 'n knoppie om 'n kopie aan die ontwikkelaar te stuur. Niks verlaat hierdie toestel voordat jy tik nie.", "WhatsApp the developer": "WhatsApp die ontwikkelaar", "Email the developer": "E-pos die ontwikkelaar", "Share or copy the answers": "Deel of kopieer die antwoorde", "Download a PDF copy": "Laai 'n PDF-kopie af", "WhatsApp opened": "WhatsApp oopgemaak", "Email opened": "E-pos oopgemaak", "Shared or copied": "Gedeel of gekopieer", "PDF copy saved": "PDF-kopie gestoor", "Copied": "Gekopieer", "Couldn’t copy. Use the WhatsApp or email button instead.": "Kon nie kopieer nie. Gebruik eerder die WhatsApp- of e-poskнoppie.", "Pilot feedback submitted. Thank you!": "Loodsproef-terugvoer ingedien. Dankie!", "Tap to send a copy to the developer again, or to fill in a new form.": "Tik om weer 'n kopie aan die ontwikkelaar te stuur, of om 'n nuwe vorm in te vul.", "You have a saved draft. Tap to finish it.": "Jy het 'n gestoorde konsep. Tik om dit te voltooi.", "Tap here to answer it on screen. It takes about 5 minutes.": "Tik hier om dit op die skerm te beantwoord. Dit neem ongeveer 5 minute.", "Please fill in the pilot feedback form": "Vul asseblief die loodsproef-terugvoervorm in", "The 48 hours are over. Please send your form today.": "Die 48 uur is verby. Stuur asseblief vandag jou vorm.", "The pilot ends in": "Die loodsproef eindig oor", "hour": "uur", "hours": "uur", "Fill in the form here on screen by tapping your answers. When you submit, you can send a copy to the developer with one tap.": "Vul die vorm hier op die skerm in deur jou antwoorde te tik. Wanneer jy indien, kan jy met een tik 'n kopie aan die ontwikkelaar stuur.", "Continue my form": "Gaan voort met my vorm", "Fill in a new form": "Vul 'n nuwe vorm in", "Fill in the form on screen": "Vul die vorm op die skerm in", "Forms I filled in on this device": "Vorms wat ek op hierdie toestel ingevul het", "Send options used": "Stuuropsies gebruik", "Not sent yet. Tap to send.": "Nog nie gestuur nie. Tik om te stuur.", "Paper copy": "Papierkopie", "Download or print a blank paper form": "Laai 'n leë papiervorm af of druk dit", "For the owner or manager": "Vir die eienaar of bestuurder", "The 48 hour pilot started": "Die 48 uur loodsproef het begin", "No pilot start time is set. Start it so everyone sees how long is left.": "Geen begintyd vir die loodsproef is gestel nie. Begin dit sodat almal sien hoe lank oor is.", "Start the 48 hours now": "Begin die 48 uur nou", "Clear the start time": "Vee die begintyd uit", "Show the pilot reminder and form card to everyone": "Wys die loodsproef-herinnering en vormkaart aan almal", "Reminder: please fill in the pilot feedback form.": "Herinnering: vul asseblief die loodsproef-terugvoervorm in.", "Fill in": "Vul in", "Pilot feedback reminder": "Loodsproef-terugvoerherinnering", "Please take a few minutes to fill in the pilot feedback form. It helps make Pesa better for your shop.": "Neem asseblief 'n paar minute om die loodsproef-terugvoervorm in te vul. Dit help om Pesa beter vir jou winkel te maak.", "Fill in now": "Vul nou in", "Remind me later": "Herinner my later", "The pilot feedback form can be filled in on screen by tapping answers. A copy can be sent to the developer with one tap, and Pesa reminds everyone until it is done": "Die loodsproef-terugvoervorm kan op die skerm ingevul word deur antwoorde te tik. 'n Kopie kan met een tik aan die ontwikkelaar gestuur word, en Pesa herinner almal totdat dit klaar is"});
+Object.assign(LANGS.de.strings, {"Answers tapped in on screen in Pesa.": "Antworten am Bildschirm in Pesa angetippt.", "Small": "Klein", "Annoying": "Lästig", "Stopped the sale": "Verkauf gestoppt", "Computer": "Computer", "Tablet": "Tablet", "Other device": "Anderes Gerät", "No problems logged": "Keine Probleme erfasst", "Submitted in Pesa on": "In Pesa eingereicht am", "Your name": "Ihr Name", "e.g. Monday morning, Tuesday full day": "z. B. Montagvormittag, Dienstag ganztags", "Tap your answers. They save on this device as you go, so you can stop and come back. Do not write passwords, PINs or customers’ personal details.": "Tippen Sie Ihre Antworten an. Sie werden unterwegs auf diesem Gerät gespeichert, Sie können also unterbrechen und später weitermachen. Schreiben Sie keine Passwörter, PINs oder persönlichen Kundendaten.", "Add a problem": "Problem hinzufügen", "Add this problem": "Dieses Problem hinzufügen", "Remove": "Entfernen", "Write what went wrong first": "Schreiben Sie zuerst, was schiefgegangen ist", "Save and submit": "Speichern und einreichen", "Save and finish later": "Speichern und später fertigstellen", "Draft saved": "Entwurf gespeichert", "Answer at least one question first": "Beantworten Sie zuerst mindestens eine Frage", "Pilot feedback saved": "Pilot Feedback gespeichert", "Your form is saved on this device. Pesa cannot send it by itself, so tap a button to send a copy to the developer. Nothing leaves this device until you tap.": "Ihr Formular ist auf diesem Gerät gespeichert. Pesa kann es nicht selbst senden. Tippen Sie auf eine Schaltfläche, um dem Entwickler eine Kopie zu schicken. Nichts verlässt dieses Gerät, bevor Sie tippen.", "WhatsApp the developer": "Dem Entwickler per WhatsApp schreiben", "Email the developer": "Dem Entwickler eine E Mail senden", "Share or copy the answers": "Antworten teilen oder kopieren", "Download a PDF copy": "PDF Kopie herunterladen", "WhatsApp opened": "WhatsApp geöffnet", "Email opened": "E Mail geöffnet", "Shared or copied": "Geteilt oder kopiert", "PDF copy saved": "PDF Kopie gespeichert", "Copied": "Kopiert", "Couldn’t copy. Use the WhatsApp or email button instead.": "Kopieren war nicht möglich. Nutzen Sie stattdessen die WhatsApp oder E Mail Schaltfläche.", "Pilot feedback submitted. Thank you!": "Pilot Feedback eingereicht. Danke!", "Tap to send a copy to the developer again, or to fill in a new form.": "Tippen Sie, um dem Entwickler erneut eine Kopie zu senden oder ein neues Formular auszufüllen.", "You have a saved draft. Tap to finish it.": "Sie haben einen gespeicherten Entwurf. Tippen Sie, um ihn fertigzustellen.", "Tap here to answer it on screen. It takes about 5 minutes.": "Tippen Sie hier, um es am Bildschirm zu beantworten. Es dauert etwa 5 Minuten.", "Please fill in the pilot feedback form": "Bitte füllen Sie das Pilot Feedbackformular aus", "The 48 hours are over. Please send your form today.": "Die 48 Stunden sind vorbei. Bitte senden Sie Ihr Formular heute.", "The pilot ends in": "Der Pilot endet in", "hour": "Stunde", "hours": "Stunden", "Fill in the form here on screen by tapping your answers. When you submit, you can send a copy to the developer with one tap.": "Füllen Sie das Formular hier am Bildschirm aus, indem Sie Ihre Antworten antippen. Nach dem Einreichen können Sie mit einem Tipp eine Kopie an den Entwickler senden.", "Continue my form": "Mein Formular fortsetzen", "Fill in a new form": "Neues Formular ausfüllen", "Fill in the form on screen": "Formular am Bildschirm ausfüllen", "Forms I filled in on this device": "Formulare, die ich auf diesem Gerät ausgefüllt habe", "Send options used": "Sendeoptionen genutzt", "Not sent yet. Tap to send.": "Noch nicht gesendet. Zum Senden tippen.", "Paper copy": "Papierkopie", "Download or print a blank paper form": "Leeres Papierformular herunterladen oder drucken", "For the owner or manager": "Für Inhaber oder Manager", "The 48 hour pilot started": "Der 48 Stunden Pilot begann", "No pilot start time is set. Start it so everyone sees how long is left.": "Es ist keine Startzeit für den Pilot festgelegt. Starten Sie ihn, damit alle sehen, wie lange noch Zeit ist.", "Start the 48 hours now": "Die 48 Stunden jetzt starten", "Clear the start time": "Startzeit löschen", "Show the pilot reminder and form card to everyone": "Pilot Erinnerung und Formularkarte für alle anzeigen", "Reminder: please fill in the pilot feedback form.": "Erinnerung: Bitte füllen Sie das Pilot Feedbackformular aus.", "Fill in": "Ausfüllen", "Pilot feedback reminder": "Erinnerung Pilot Feedback", "Please take a few minutes to fill in the pilot feedback form. It helps make Pesa better for your shop.": "Bitte nehmen Sie sich ein paar Minuten, um das Pilot Feedbackformular auszufüllen. Das hilft, Pesa für Ihren Laden zu verbessern.", "Fill in now": "Jetzt ausfüllen", "Remind me later": "Später erinnern", "The pilot feedback form can be filled in on screen by tapping answers. A copy can be sent to the developer with one tap, and Pesa reminds everyone until it is done": "Das Pilot Feedbackformular lässt sich am Bildschirm durch Antippen ausfüllen. Mit einem Tipp kann eine Kopie an den Entwickler gesendet werden, und Pesa erinnert alle, bis es erledigt ist"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -5028,9 +5041,12 @@ var PF_RATINGS = ['Making a sale at the till','Finding a product by name or barc
 var PF_COUNTS = ['About how many sales did I make?','Times Pesa was slow or froze','Times the internet was down','Times a barcode would not scan','Times I needed help from someone','Sales I had to correct or cancel'];
 var PF_OFFLINE = [['Did Pesa keep working when the internet was down?',['Yes','Partly','No','It did not happen']],['Did my sales show up on the other devices afterwards?',['Yes','Partly','No','Not tried']]];
 var PF_WORDS = ['What worked best for me?','What was most confusing or slow?','What did customers say or do?','What is the first thing I would change?'];
+var PF_BAD = { S:'Small', A:'Annoying', X:'Stopped the sale' };
+var PF_DEVICES = ['Computer', 'Tablet', 'Other device'];
 var PF_VERDICT = [['Would I use Pesa every day?',['Yes','Not sure','No']],['Would I trust Pesa to run my till on its own?',['Yes','Not yet','No']]];
 function pilotFormPdf(o){
   o = o || {};
+  var A = o.ans || null;   // answers tapped in on screen; null prints the blank form
   var doc = newPdfDoc(getJsPDF(), { unit:'mm', format:'a4' });
   var head = drawDocHeader(doc, { plain:true });
   var M = head.margin, W = head.contentW, pal = head.pal, y = head.y, LIM = 268;
@@ -5042,7 +5058,7 @@ function pilotFormPdf(o){
 
   y = pdTitle(doc, pal, M, y, tr('Pilot feedback form'));
   doc.setFont('helvetica','normal'); doc.setFontSize(9); pdSet(doc, 't', pal.text);
-  var intro = doc.splitTextToSize('A 48 hour pilot run. Please fill this in by hand while you work. Be honest: every problem you write down helps make Pesa better. Do not write passwords, PINs or customers’ personal details on this form.', W);
+  var intro = doc.splitTextToSize(A ? tr('Answers tapped in on screen in Pesa.') : 'A 48 hour pilot run. Please fill this in by hand while you work. Be honest: every problem you write down helps make Pesa better. Do not write passwords, PINs or customers’ personal details on this form.', W);
   doc.text(intro, M, y); y += intro.length * 4.4 + 2;
 
   function fieldRow(items){
@@ -5059,18 +5075,23 @@ function pilotFormPdf(o){
   heading('About you and the pilot');
   var start = o.start ? new Date(o.start) : null, end = start ? new Date(start.getTime() + 48 * 3600000) : null;
   fieldRow([['Cashier name', o.name || ''], ['Shop or branch', o.shop || '']]);
-  fieldRow([['Device used (computer, tablet or other)', ''], ['Shifts I worked', '']]);
+  fieldRow([['Device used (computer, tablet or other)', A ? tr(A.device || '') : ''], ['Shifts I worked', A ? A.shifts || '' : '']]);
   fieldRow([['Pilot started (date and time)', start ? fmtDateTime(start.toISOString()) : ''], ['Pilot ended (date and time)', end ? fmtDateTime(end.toISOString()) : '']]);
 
   heading('How easy was it? Circle one number for each line');
   small('1 = very hard    3 = fine    5 = very easy', M + W, y - 1, { align:'right' }); y += 2;
-  PF_RATINGS.forEach(function(label){
+  PF_RATINGS.forEach(function(label, qi){
     need(9);
     body(label, M, y + 4.2);
     for(var k = 1; k <= 5; k++){
       var cx = M + W - 66 + (k - 1) * 13 + 3.5;
-      pdSet(doc, 'd', pal.line); doc.setLineWidth(0.3); doc.circle(cx, y + 3.3, 3.2, 'S');
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); pdSet(doc, 't', pal.muted); doc.text(String(k), cx, y + 4.2, { align:'center' });
+      if(A && A.ratings && A.ratings[qi] === k){
+        pdSet(doc, 'f', pal.mid); doc.circle(cx, y + 3.3, 3.2, 'F');
+        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255); doc.text(String(k), cx, y + 4.2, { align:'center' });
+      } else {
+        pdSet(doc, 'd', pal.line); doc.setLineWidth(0.3); doc.circle(cx, y + 3.3, 3.2, 'S');
+        doc.setFont('helvetica','normal'); doc.setFontSize(8); pdSet(doc, 't', pal.muted); doc.text(String(k), cx, y + 4.2, { align:'center' });
+      }
     }
     rule(M, M + W, y + 7.4, pal.border); y += 8.2;
   });
@@ -5085,16 +5106,18 @@ function pilotFormPdf(o){
       var ls = doc.splitTextToSize(label, cw - 22);
       doc.setFont('helvetica','normal'); doc.setFontSize(8.5); pdSet(doc, 't', pal.text); doc.text(ls, x0, y + 3.4);
       pdSet(doc, 'd', pal.line); doc.setLineWidth(0.3); doc.rect(x0 + cw - 18, y, 18, 7, 'S');
+      if(A && A.counts && A.counts[ci + k] !== '' && A.counts[ci + k] != null){ doc.setFont('helvetica','bold'); doc.setFontSize(10); pdSet(doc, 't', pal.text); doc.text(String(A.counts[ci + k]), x0 + cw - 9, y + 5, { align:'center' }); }
     });
     y += 11;
   }
 
-  function optionRows(list){
-    list.forEach(function(q){
+  function optionRows(list, picks){
+    list.forEach(function(q, qi){
       need(13); body(q[0], M, y + 3.5);
       var x = M + 2;
-      q[1].forEach(function(opt){
+      q[1].forEach(function(opt, oi){
         pdSet(doc, 'd', pal.line); doc.setLineWidth(0.3); doc.rect(x, y + 6, 3.6, 3.6, 'S');
+        if(picks && picks[qi] === oi){ pdSet(doc, 'f', pal.mid); doc.rect(x, y + 6, 3.6, 3.6, 'F'); doc.setDrawColor(255,255,255); doc.setLineWidth(0.45); doc.line(x + 0.8, y + 7.9, x + 1.6, y + 8.9); doc.line(x + 1.6, y + 8.9, x + 3, y + 6.9); }
         var lab = tr(opt);
         doc.setFont('helvetica','normal'); doc.setFontSize(8.5); pdSet(doc, 't', pal.text); doc.text(lab, x + 5.2, y + 9);
         x += 6 + doc.getTextWidth(lab) + 9;
@@ -5103,24 +5126,31 @@ function pilotFormPdf(o){
     });
   }
   heading('Working without internet (tick one box for each question)');
-  optionRows(PF_OFFLINE);
+  optionRows(PF_OFFLINE, A ? A.offline : null);
 
   heading('Problem log: write down anything that went wrong');
   need(8 + 12 * 3);
-  var rows = []; for(var r = 0; r < 8; r++) rows.push(['', '', '', 'S      A      X']);
-  y = pdfTable(doc, { x:M, y:y, width:W, rowHeight:12, columns:[ { label:'Date and time', width:34 }, { label:'What I was doing', width:48 }, { label:'What went wrong', width:64 }, { label:'How bad?', width:36 } ], rows:rows });
-  small('How bad: S = small, A = annoying, X = stopped the sale. Circle one letter.', M, y + 4); y += 7;
+  var rows = [];
+  if(A){
+    (A.log || []).forEach(function(e){ rows.push([fmtDateTime(e.at), e.doing || '', e.wrong || '', tr(PF_BAD[e.bad] || '')]); });
+    if(!rows.length) rows.push(['', '', tr('No problems logged'), '']);
+  } else for(var r = 0; r < 8; r++) rows.push(['', '', '', 'S      A      X']);
+  y = pdfTable(doc, { x:M, y:y, width:W, rowHeight:A ? 8 : 12, columns:[ { label:'Date and time', width:34 }, { label:'What I was doing', width:48, wrap:!!A }, { label:'What went wrong', width:64, wrap:!!A }, { label:'How bad?', width:36 } ], rows:rows });
+  if(!A){ small('How bad: S = small, A = annoying, X = stopped the sale. Circle one letter.', M, y + 4); y += 7; } else y += 2;
 
   heading('In my own words');
-  PF_WORDS.forEach(function(q){
-    need(30); body(q, M, y + 3.5, true);
-    for(var i = 0; i < 3; i++) rule(M, M + W, y + 11 + i * 7, pal.border);
-    y += 33;
+  PF_WORDS.forEach(function(q, qi){
+    var wl = A ? doc.splitTextToSize(String((A.words && A.words[qi]) || ''), W - 2) : [], n = Math.max(3, wl.length);
+    need(12 + n * 7); body(q, M, y + 3.5, true);
+    for(var i = 0; i < n; i++) rule(M, M + W, y + 11 + i * 7, pal.border);
+    if(wl.length){ doc.setFont('helvetica','normal'); doc.setFontSize(9); pdSet(doc, 't', pal.text); wl.forEach(function(ln, li){ doc.text(ln, M + 1, y + 9.8 + li * 7); }); }
+    y += 12 + n * 7 - 2;
   });
 
   heading('My verdict (tick one box for each question)');
-  optionRows(PF_VERDICT);
+  optionRows(PF_VERDICT, A ? A.verdict : null);
 
+  if(A){ need(8); small(tr('Submitted in Pesa on') + ' ' + fmtDateTime(A.submittedAt || new Date().toISOString()) + (A.name ? ' · ' + A.name : ''), M, y + 2); y += 6; }
   y += 3; heading('Signatures');
   fieldRow([['Cashier signature', ''], ['Date', '']]);
   fieldRow([['Reviewed by owner or manager', ''], ['Date', '']]);
@@ -5132,35 +5162,242 @@ function pilotFormPdf(o){
   return doc;
 }
 function pilotCardOn(){ return State.settings.pilotCard !== false; }
+/* ---- Pilot feedback, on screen: tap answers, save, send to the developer with one tap, and reminders ---- */
+var PF_STORE = 'pesa_pilotfb_v1';
+function pfKey(){ return (typeof WS !== 'undefined' && WS && WS.id ? WS.id : 'ws') + ':' + (State.session ? State.session.userId : 'x'); }
+function pfAll(){ try{ return JSON.parse(localStorage.getItem(PF_STORE) || '{}') || {}; }catch(e){ return {}; } }
+function pfMine(){ var m = pfAll()[pfKey()] || {}; return { draft:m.draft || null, subs:m.subs || [], remindAt:m.remindAt || 0 }; }
+function pfSave(patch){ try{ var a = pfAll(), k = pfKey(); a[k] = Object.assign(pfMine(), patch); localStorage.setItem(PF_STORE, JSON.stringify(a)); }catch(e){} }
+function pfBlank(){ return { device:'', shifts:'', ratings:PF_RATINGS.map(function(){ return 0; }), counts:PF_COUNTS.map(function(){ return ''; }), offline:[-1, -1], log:[], words:PF_WORDS.map(function(){ return ''; }), verdict:[-1, -1] }; }
+function pfShopName(){ return (State.company && (State.company.tradingName || State.company.companyName)) || State.settings.shopName || ''; }
+function pfAnswered(a){ return a.ratings.some(function(r){ return r > 0; }) || a.log.length > 0 || a.words.some(function(w){ return String(w).trim(); }) || a.verdict.some(function(v){ return v > -1; }) || a.offline.some(function(v){ return v > -1; }) || a.counts.some(function(c){ return c !== '' && c != null; }); }
+function pilotEnds(){ var st = State.settings.pilotStart; if(!st) return null; var d = new Date(st); return isNaN(d.getTime()) ? null : new Date(d.getTime() + 48 * 3600000); }
+function pfDue(){ return !!(State.session && pilotCardOn() && !pfMine().subs.length); }
+function pfWhen(){
+  var e = pilotEnds(); if(!e) return '';
+  var ms = e.getTime() - Date.now(); if(ms <= 0) return tr('The 48 hours are over. Please send your form today.');
+  var h = Math.ceil(ms / 3600000); return tr('The pilot ends in') + ' ' + h + ' ' + tr(h === 1 ? 'hour' : 'hours') + '.';
+}
+/** Plain text copy for the developer. Always English, so the developer can read it whatever language the cashier uses. */
+function pfText(a){
+  var L = [], when = new Date(a.submittedAt);
+  L.push('Pesa pilot feedback', 'Shop: ' + (a.shop || ''), 'From: ' + (a.name || '') + (a.role ? ' (' + a.role + ')' : ''));
+  if(a.device) L.push('Device: ' + a.device);
+  if(a.shifts) L.push('Shifts: ' + a.shifts);
+  L.push('Filled in: ' + when.toLocaleString('en-ZA'));
+  L.push('', 'How easy was it? (1 very hard, 5 very easy)');
+  PF_RATINGS.forEach(function(q, i){ L.push('- ' + q + ': ' + (a.ratings[i] || 'no answer')); });
+  L.push('', 'Numbers for my shifts');
+  PF_COUNTS.forEach(function(q, i){ L.push('- ' + q + ' ' + (a.counts[i] !== '' && a.counts[i] != null ? a.counts[i] : 'no answer')); });
+  L.push('', 'Working without internet');
+  PF_OFFLINE.forEach(function(q, i){ L.push('- ' + q[0] + ' ' + (a.offline[i] > -1 ? q[1][a.offline[i]] : 'no answer')); });
+  L.push('', 'Problems logged: ' + a.log.length);
+  a.log.forEach(function(e, i){ L.push((i + 1) + '. ' + new Date(e.at).toLocaleString('en-ZA') + ' | ' + (PF_BAD[e.bad] || '') + ' | Doing: ' + (e.doing || '') + ' | Went wrong: ' + (e.wrong || '')); });
+  var words = []; PF_WORDS.forEach(function(q, i){ if(String(a.words[i] || '').trim()){ words.push(q); words.push(String(a.words[i]).trim()); } });
+  if(words.length){ L.push('', 'In my own words'); L = L.concat(words); }
+  L.push('', 'My verdict');
+  PF_VERDICT.forEach(function(q, i){ L.push('- ' + q[0] + ' ' + (a.verdict[i] > -1 ? q[1][a.verdict[i]] : 'no answer')); });
+  return L.join('\n');
+}
+function pfInner(){
+  var m = pfMine();
+  if(m.subs.length) return { cls:'', t:tr('Pilot feedback submitted. Thank you!'), s:tr('Tap to send a copy to the developer again, or to fill in a new form.') };
+  var s = [pfWhen(), m.draft ? tr('You have a saved draft. Tap to finish it.') : tr('Tap here to answer it on screen. It takes about 5 minutes.')].filter(Boolean).join(' ');
+  return { cls:' urgent', t:tr('Please fill in the pilot feedback form'), s:s };
+}
 function pilotCardHtml(){
   if(!pilotCardOn()) return '';
-  return '<div class="me-msg" data-me="pilotform"><div class="t">'+ICONS.clipboard+'<span>'+tr('Pilot feedback form')+'</span></div><div class="s">'+tr('Print it and note how Pesa works for you during the 48 hour pilot.')+'</div></div>';
+  var i = pfInner();
+  return '<div class="me-msg'+i.cls+'" data-me="pilotform"><div class="t">'+ICONS.clipboard+'<span>'+i.t+'</span></div><div class="s">'+i.s+'</div></div>';
 }
-function openPilotFormSheet(){
-  var mgr = isManagerOrOwner(), shop = (State.company && (State.company.tradingName || State.company.companyName)) || State.settings.shopName || '';
-  var parts = [['About you and the pilot','Name, shop, device and when the pilot started'],['How easy was it?','Eight lines to rate from 1 to 5'],['Numbers for my shift or shifts','Sales made, slow moments, internet down, scans that failed'],['Working without internet','Did it keep working, and did the sales show up later'],['Problem log','Eight lines for date, what happened and how bad'],['In my own words','What worked, what confused, what customers said, what to change'],['My verdict','Would I use it every day, and trust it on its own'],['Signatures','Cashier and owner or manager']];
+function pilotHomeNote(){
+  if(!pfDue()) return '';
+  var i = pfInner();
+  return '<div class="me-msg urgent" data-pfopen="1"><div class="t">'+ICONS.clipboard+'<span>'+i.t+'</span></div><div class="s">'+i.s+'</div></div>';
+}
+function pilotOpen(){ if(pfDue()) openPilotFillSheet(); else openPilotFormSheet(); }
+
+function openPilotFillSheet(){
+  var mine = pfMine(), d = Object.assign(pfBlank(), mine.draft || {}), who = State.session ? State.session.name : '', timer = null, badSel = 0;
+  function persist(){ pfSave({ draft:d }); }
+  function persistSoon(){ clearTimeout(timer); timer = setTimeout(persist, 300); }
+  function chips(list, cur, attr, pre){ return '<div class="pf-chips">' + list.map(function(o, i){ return '<button type="button" class="pf-chip'+(cur === i ? ' on' : '')+'" '+attr+'="'+pre+i+'">'+esc(tr(o))+'</button>'; }).join('') + '</div>'; }
+  function sec(t){ return '<div class="section-title" style="margin-top:18px;">'+tr(t)+'</div>'; }
   var html = '<div class="sheet-head"><h2>'+tr('Pilot feedback form')+'</h2></div>' +
-    '<div class="banner" style="display:block;">'+tr('Print this form and fill it in by hand while you work during the 48 hour pilot run. Hand it to the owner when the pilot ends.')+'</div>' +
-    '<div class="section-title" style="margin-top:12px;">'+tr('What is on the form')+'</div><div class="rowlist">' + parts.map(function(x){ return '<div class="row"><div class="main"><div class="title">'+esc(tr(x[0]))+'</div><div class="sub" style="white-space:normal;">'+esc(tr(x[1]))+'</div></div></div>'; }).join('') + '</div>' +
+    '<div class="banner" style="display:block;">'+tr('Tap your answers. They save on this device as you go, so you can stop and come back. Do not write passwords, PINs or customers’ personal details.')+'</div>' +
+    sec('About you and the pilot') +
+    '<div class="field"><label>'+tr('Your name')+'</label><input value="'+esc(who)+'" disabled></div>' +
+    '<div class="field"><label>'+tr('Device used (computer, tablet or other)')+'</label>'+chips(PF_DEVICES, PF_DEVICES.indexOf(d.device), 'data-pdev', '')+'</div>' +
+    '<div class="field"><label>'+tr('Shifts I worked')+'</label><input id="pfShifts" value="'+esc(d.shifts)+'" placeholder="'+esc(tr('e.g. Monday morning, Tuesday full day'))+'"></div>' +
+    sec('How easy was it?') + '<div style="font-size:12px;color:var(--text-muted);">'+tr('1 = very hard    3 = fine    5 = very easy')+'</div>' +
+    PF_RATINGS.map(function(q, i){ return '<div class="pf-q">'+esc(tr(q))+'</div><div class="pf-rates">'+[1,2,3,4,5].map(function(k){ return '<button type="button" class="pf-rate'+(d.ratings[i] === k ? ' on' : '')+'" data-pr="'+i+':'+k+'" aria-label="'+esc(tr(q))+' '+k+'">'+k+'</button>'; }).join('')+'</div>'; }).join('') +
+    sec('Numbers for my shift or shifts') + '<div class="pf-counts">' + PF_COUNTS.map(function(q, i){ return '<div class="field"><label>'+esc(tr(q))+'</label><input type="number" inputmode="numeric" min="0" step="1" data-pc="'+i+'" value="'+esc(d.counts[i])+'"></div>'; }).join('') + '</div>' +
+    sec('Working without internet') + PF_OFFLINE.map(function(q, i){ return '<div class="pf-q">'+esc(tr(q[0]))+'</div>' + chips(q[1], d.offline[i], 'data-po', i+':'); }).join('') +
+    sec('Problem log') + '<div id="pfLog" class="rowlist"></div>' +
+    '<div class="pf-add"><div class="pf-q" style="margin-top:0;">'+tr('Add a problem')+'</div>' +
+      '<div class="field"><label>'+tr('What I was doing')+'</label><input id="pfLDo"></div>' +
+      '<div class="field"><label>'+tr('What went wrong')+'</label><textarea id="pfLWrong" rows="2"></textarea></div>' +
+      '<div class="field"><label>'+tr('How bad?')+'</label><div class="pf-chips" id="pfBad">'+['S','A','X'].map(function(k, i){ return '<button type="button" class="pf-chip'+(i === 0 ? ' on' : '')+'" data-pb="'+k+'">'+esc(tr(PF_BAD[k]))+'</button>'; }).join('')+'</div></div>' +
+      '<button class="btn btn-ghost btn-block" id="pfLAdd" type="button">+ '+tr('Add this problem')+'</button></div>' +
+    sec('In my own words') + PF_WORDS.map(function(q, i){ return '<div class="field"><label>'+esc(tr(q))+'</label><textarea rows="3" data-pw="'+i+'">'+esc(d.words[i])+'</textarea></div>'; }).join('') +
+    sec('My verdict') + PF_VERDICT.map(function(q, i){ return '<div class="pf-q">'+esc(tr(q[0]))+'</div>' + chips(q[1], d.verdict[i], 'data-pv', i+':'); }).join('') +
+    '<div class="actions" style="margin-top:20px;"><button class="btn btn-primary btn-block" id="pfSubmit" type="button">'+tr('Save and submit')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pfLater" type="button">'+tr('Save and finish later')+'</button></div>';
+  var ov = openSheet(html);
+  function paintLog(){
+    var el = ov.querySelector('#pfLog');
+    el.innerHTML = d.log.map(function(e, i){ return '<div class="row"><div class="main"><div class="title" style="white-space:normal;">'+esc(e.wrong)+'</div><div class="sub" style="white-space:normal;">'+esc(fmtDateTime(e.at))+' · '+esc(tr(PF_BAD[e.bad]))+(e.doing ? ' · '+esc(e.doing) : '')+'</div></div><div class="trail"><button class="btn btn-ghost" type="button" data-plx="'+i+'" aria-label="'+esc(tr('Remove'))+'">✕</button></div></div>'; }).join('');
+  }
+  paintLog();
+  function pick(btn){ var sib = btn.parentNode.querySelectorAll('button'); for(var i = 0; i < sib.length; i++) sib[i].classList.remove('on'); btn.classList.add('on'); }
+  ov.addEventListener('click', function(e){
+    var t = e.target.closest ? e.target.closest('button') : null; if(!t) return;
+    var v;
+    if((v = t.getAttribute('data-pdev')) != null){ d.device = PF_DEVICES[+v]; pick(t); persist(); }
+    else if((v = t.getAttribute('data-pr')) != null){ var p = v.split(':'), qi = +p[0], k = +p[1]; if(d.ratings[qi] === k){ d.ratings[qi] = 0; t.classList.remove('on'); } else { d.ratings[qi] = k; pick(t); } persist(); }
+    else if((v = t.getAttribute('data-po')) != null){ var q = v.split(':'); d.offline[+q[0]] = +q[1]; pick(t); persist(); }
+    else if((v = t.getAttribute('data-pv')) != null){ var w = v.split(':'); d.verdict[+w[0]] = +w[1]; pick(t); persist(); }
+    else if((v = t.getAttribute('data-pb')) != null){ badSel = v; pick(t); }
+    else if((v = t.getAttribute('data-plx')) != null){ d.log.splice(+v, 1); paintLog(); persist(); }
+  });
+  ov.addEventListener('input', function(e){
+    var t = e.target, v;
+    if(t.id === 'pfShifts'){ d.shifts = t.value; persistSoon(); }
+    else if((v = t.getAttribute('data-pc')) != null){ d.counts[+v] = t.value; persistSoon(); }
+    else if((v = t.getAttribute('data-pw')) != null){ d.words[+v] = t.value; persistSoon(); }
+  });
+  ov.querySelector('#pfLAdd').addEventListener('click', function(){
+    var wr = ov.querySelector('#pfLWrong').value.trim(); if(!wr){ toast(tr('Write what went wrong first')); return; }
+    d.log.push({ at:new Date().toISOString(), doing:ov.querySelector('#pfLDo').value.trim(), wrong:wr, bad:badSel || 'S' });
+    ov.querySelector('#pfLDo').value = ''; ov.querySelector('#pfLWrong').value = ''; paintLog(); persist();
+  });
+  ov.querySelector('#pfLater').addEventListener('click', function(){ persist(); closeModal(); toast(tr('Draft saved')); try{ render(); }catch(x){} });
+  ov.querySelector('#pfSubmit').addEventListener('click', function(){
+    clearTimeout(timer); persist();
+    if(!pfAnswered(d)){ toast(tr('Answer at least one question first')); return; }
+    var a = Object.assign({}, d, { name:who, role:State.session ? State.session.role : '', shop:pfShopName(), start:State.settings.pilotStart || '', submittedAt:new Date().toISOString() });
+    var sub = { id:uid(), at:a.submittedAt, ans:a, sent:{} };
+    pfSave({ subs:[sub].concat(pfMine().subs), draft:null });
+    closeModal(); try{ render(); }catch(x){}
+    setTimeout(function(){ openPilotSentSheet(sub.id); }, 250);
+  });
+}
+
+function openPilotSentSheet(id){
+  var sub = pfMine().subs.filter(function(x){ return x.id === id; })[0]; if(!sub) return;
+  var a = sub.ans, text = pfText(a), cut = text;
+  if(cut.length > 1700){ cut = cut.slice(0, 1700).replace(/\n[^\n]*$/, '') + '\n(The full answers are in the PDF copy.)'; }
+  var wa = buildWhatsAppUrl(DEV_WHATSAPP, cut), mail = buildMailtoUrl(DEV_EMAIL, 'Pesa pilot feedback from ' + (a.name || '') + (a.shop ? ', ' + a.shop : ''), cut);
+  var html = '<div class="sheet-head"><h2>'+tr('Pilot feedback saved')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Your form is saved on this device. Pesa cannot send it by itself, so tap a button to send a copy to the developer. Nothing leaves this device until you tap.')+'</div>' +
+    '<div id="pfSentNote" style="font-size:13px;color:var(--success);margin:10px 0;min-height:18px;"></div>' +
+    '<div class="actions" style="flex-wrap:wrap;"><a class="btn btn-primary" id="pfWa" style="text-decoration:none;justify-content:center;flex:1;min-width:150px;" target="_blank" rel="noopener" href="'+esc(wa)+'">'+tr('WhatsApp the developer')+'</a>' +
+    '<a class="btn btn-ghost" id="pfMail" style="text-decoration:none;justify-content:center;flex:1;min-width:150px;" href="'+esc(mail)+'">'+tr('Email the developer')+'</a></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pfShare" type="button">'+tr('Share or copy the answers')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pfPdf" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download a PDF copy')+'</span></button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pfDone" type="button">'+tr('Close')+'</button></div>';
+  var ov = openSheet(html);
+  var labels = { wa:'WhatsApp opened', mail:'Email opened', share:'Shared or copied', pdf:'PDF copy saved' };
+  function note(){
+    var s = pfMine().subs.filter(function(x){ return x.id === id; })[0], parts = [];
+    Object.keys(labels).forEach(function(k){ if(s && s.sent && s.sent[k]) parts.push(tr(labels[k]) + ' · ' + new Date(s.sent[k]).toLocaleTimeString(uiLocale(), { hour:'2-digit', minute:'2-digit' })); });
+    ov.querySelector('#pfSentNote').textContent = parts.join('   ');
+  }
+  function mark(k){ var all = pfMine().subs; var s = all.filter(function(x){ return x.id === id; })[0]; if(s){ s.sent = s.sent || {}; s.sent[k] = new Date().toISOString(); pfSave({ subs:all }); } note(); }
+  note();
+  ov.querySelector('#pfWa').addEventListener('click', function(){ mark('wa'); });
+  ov.querySelector('#pfMail').addEventListener('click', function(){ mark('mail'); });
+  ov.querySelector('#pfShare').addEventListener('click', function(){
+    function copy(){ try{ navigator.clipboard.writeText(text).then(function(){ toast(tr('Copied')); mark('share'); }, function(){ toast(tr('Couldn’t copy. Use the WhatsApp or email button instead.')); }); }catch(e){ toast(tr('Couldn’t copy. Use the WhatsApp or email button instead.')); } }
+    if(navigator.share){ navigator.share({ title:'Pesa pilot feedback', text:text }).then(function(){ mark('share'); }, function(){}); } else copy();
+  });
+  ov.querySelector('#pfPdf').addEventListener('click', async function(){
+    var b = ov.querySelector('#pfPdf'), old = b.innerHTML; b.disabled = true; b.textContent = tr('Preparing…');
+    var ready = await ensureJsPDF();
+    if(!ready){ b.disabled = false; b.innerHTML = old; toast(tr('Couldn’t load the PDF engine — check your connection and try again')); return; }
+    var doc; try{ doc = pilotFormPdf({ name:a.name, shop:a.shop, start:a.start ? new Date(a.start) : null, ans:a }); }catch(e){ b.disabled = false; b.innerHTML = old; toast(tr('Couldn’t make the form. Please try again.')); return; }
+    saveGeneratedPdf(doc, 'pilot-feedback-' + (a.name || 'form').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.pdf').then(function(ok){ b.disabled = false; b.innerHTML = old; if(ok){ mark('pdf'); toast(tr('Form downloaded')); } });
+  });
+  ov.querySelector('#pfDone').addEventListener('click', closeModal);
+}
+
+/* the paper form, plus the owner's pilot window and the list of forms filled in on this device */
+function openPilotFormSheet(){
+  var mgr = isManagerOrOwner(), shop = pfShopName(), m = pfMine();
+  var parts = [['About you and the pilot','Name, shop, device and when the pilot started'],['How easy was it?','Eight lines to rate from 1 to 5'],['Numbers for my shift or shifts','Sales made, slow moments, internet down, scans that failed'],['Working without internet','Did it keep working, and did the sales show up later'],['Problem log','Eight lines for date, what happened and how bad'],['In my own words','What worked, what confused, what customers said, what to change'],['My verdict','Would I use it every day, and trust it on its own'],['Signatures','Cashier and owner or manager']];
+  var ends = pilotEnds();
+  var html = '<div class="sheet-head"><h2>'+tr('Pilot feedback form')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Fill in the form here on screen by tapping your answers. When you submit, you can send a copy to the developer with one tap.')+(pfWhen() ? ' '+pfWhen() : '')+'</div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="pvFill" type="button">'+ICONS.clipboard+'<span style="margin-left:6px;">'+tr(m.draft ? 'Continue my form' : (m.subs.length ? 'Fill in a new form' : 'Fill in the form on screen'))+'</span></button></div>' +
+    (m.subs.length ? '<div class="section-title" style="margin-top:14px;">'+tr('Forms I filled in on this device')+'</div><div class="rowlist">' + m.subs.slice(0, 10).map(function(s){ var sent = s.sent && (s.sent.wa || s.sent.mail || s.sent.share || s.sent.pdf); return '<div class="row" data-psub="'+esc(s.id)+'"><div class="main"><div class="title">'+esc(fmtDateTime(s.at))+'</div><div class="sub">'+esc(sent ? tr('Send options used') : tr('Not sent yet. Tap to send.'))+'</div></div></div>'; }).join('') + '</div>' : '') +
+    '<div class="section-title" style="margin-top:18px;">'+tr('Paper copy')+'</div>' +
+    '<div class="rowlist">' + parts.map(function(x){ return '<div class="row"><div class="main"><div class="title">'+esc(tr(x[0]))+'</div><div class="sub" style="white-space:normal;">'+esc(tr(x[1]))+'</div></div></div>'; }).join('') + '</div>' +
     '<label style="display:flex;gap:10px;align-items:center;margin:14px 0 8px;font-weight:600;"><input type="checkbox" id="pvPrefill" '+(mgr ? '' : 'checked')+' style="width:20px;height:20px;"> '+tr('Fill in my name and the shop')+'</label>' +
     '<div class="field"><label>'+tr('Pilot starts')+' — '+tr('optional')+'</label><input id="pvStart" type="datetime-local"><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+tr('If you enter it, the form also prints when the 48 hours end.')+'</div></div>' +
-    '<div class="actions"><button class="btn btn-primary btn-block" id="pvGo" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download or print the form')+'</span></button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pvGo" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download or print a blank paper form')+'</span></button></div>' +
     '<div style="font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.5;">'+tr('Open the downloaded file and print it. Choose Word if you want to change the wording first.')+'</div>' +
-    (mgr ? '<label style="display:flex;gap:10px;align-items:center;margin:16px 0 4px;font-weight:600;"><input type="checkbox" id="pvCard" '+(pilotCardOn() ? 'checked' : '')+' style="width:20px;height:20px;"> '+tr('Show the Pilot feedback form card on employee dashboards')+'</label>' : '') +
+    (mgr ? '<div class="section-title" style="margin-top:18px;">'+tr('For the owner or manager')+'</div>' +
+      '<div class="banner" style="display:block;">'+(ends ? tr('The 48 hour pilot started')+' '+esc(fmtDateTime(State.settings.pilotStart))+'. '+pfWhen() : tr('No pilot start time is set. Start it so everyone sees how long is left.'))+'</div>' +
+      '<div class="actions"><button class="btn btn-ghost" id="pvStartNow" type="button" style="flex:1;">'+tr('Start the 48 hours now')+'</button>'+(ends ? '<button class="btn btn-ghost" id="pvStartClear" type="button" style="flex:1;">'+tr('Clear the start time')+'</button>' : '')+'</div>' +
+      '<label style="display:flex;gap:10px;align-items:center;margin:16px 0 4px;font-weight:600;"><input type="checkbox" id="pvCard" '+(pilotCardOn() ? 'checked' : '')+' style="width:20px;height:20px;"> '+tr('Show the pilot reminder and form card to everyone')+'</label>' : '') +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="pvClose" type="button">'+tr('Close')+'</button></div>';
   var ov = openSheet(html);
   ov.querySelector('#pvClose').addEventListener('click', closeModal);
+  ov.querySelector('#pvFill').addEventListener('click', function(){ openPilotFillSheet(); });
+  ov.querySelectorAll('[data-psub]').forEach(function(r){ r.addEventListener('click', function(){ openPilotSentSheet(r.getAttribute('data-psub')); }); });
   var card = ov.querySelector('#pvCard'); if(card) card.addEventListener('change', function(){ btSave({ pilotCard: card.checked }); toast(tr('Saved')); });
+  var sn = ov.querySelector('#pvStartNow'); if(sn) sn.addEventListener('click', function(){ btSave({ pilotStart:new Date().toISOString() }); toast(tr('Saved')); openPilotFormSheet(); });
+  var sc = ov.querySelector('#pvStartClear'); if(sc) sc.addEventListener('click', function(){ btSave({ pilotStart:'' }); toast(tr('Saved')); openPilotFormSheet(); });
   ov.querySelector('#pvGo').addEventListener('click', async function(){
     var b = ov.querySelector('#pvGo'), old = b.innerHTML; b.disabled = true; b.textContent = tr('Preparing…');
     var ready = await ensureJsPDF();
     if(!ready){ b.disabled = false; b.innerHTML = old; toast(tr('Couldn’t load the PDF engine — check your connection and try again')); return; }
     var pre = ov.querySelector('#pvPrefill').checked, st = ov.querySelector('#pvStart').value;
-    var doc; try{ doc = pilotFormPdf({ name: pre && State.session ? State.session.name : '', shop: pre ? shop : '', start: st ? new Date(st) : null }); }
+    var doc; try{ doc = pilotFormPdf({ name: pre && State.session ? State.session.name : '', shop: pre ? shop : '', start: st ? new Date(st) : (State.settings.pilotStart ? new Date(State.settings.pilotStart) : null) }); }
     catch(e){ b.disabled = false; b.innerHTML = old; toast(tr('Couldn’t make the form. Please try again.')); return; }
     saveGeneratedPdf(doc, 'pilot-feedback-form.pdf').then(function(ok){ b.disabled = false; b.innerHTML = old; if(ok) toast(tr('Form downloaded')); });
   });
 }
+
+/* ---- reminders: a card on the dashboard, a pop up when Pesa opens, and a small nudge every 2 hours. Never during a sale. ---- */
+function pfBusy(){ return !!document.querySelector('.overlay, .sheet, #authModalRoot > *') || !!(typeof POS !== 'undefined' && POS && POS.open); }
+function pfSnack(){
+  if(document.getElementById('pfSnack')) return;
+  var el = document.createElement('div'); el.id = 'pfSnack'; el.className = 'pf-snack'; el.setAttribute('role', 'status');
+  el.innerHTML = '<span>'+esc(tr('Reminder: please fill in the pilot feedback form.'))+'</span><button type="button" class="go" data-pfopen="1">'+tr('Fill in')+'</button><button type="button" class="x" aria-label="'+esc(tr('Close'))+'">✕</button>';
+  (document.getElementById('app') || document.body).appendChild(el);
+  function gone(){ if(el.parentNode) el.parentNode.removeChild(el); }
+  el.querySelector('.x').addEventListener('click', gone); setTimeout(gone, 20000);
+}
+function openPilotReminderSheet(){
+  var m = pfMine(), when = pfWhen();
+  var html = '<div class="sheet-head"><h2>'+tr('Pilot feedback reminder')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Please take a few minutes to fill in the pilot feedback form. It helps make Pesa better for your shop.')+(when ? ' '+when : '')+(m.draft ? ' '+tr('You have a saved draft.') : '')+'</div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="prgo" type="button">'+tr('Fill in now')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="prlater" type="button">'+tr('Remind me later')+'</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#prgo').addEventListener('click', function(){ openPilotFillSheet(); });
+  ov.querySelector('#prlater').addEventListener('click', closeModal);
+}
+function pfRemindStart(tries){
+  if(!pfDue()) return;
+  if(Date.now() - pfMine().remindAt < 6 * 3600000) return;
+  if(pfBusy()){ if((tries || 0) < 12) setTimeout(function(){ pfRemindStart((tries || 0) + 1); }, 60000); return; }
+  pfSave({ remindAt:Date.now() }); openPilotReminderSheet();
+}
+function pfTick(){
+  if(!pfDue() || document.hidden || pfBusy()) return;
+  if(Date.now() - pfMine().remindAt < 2 * 3600000) return;
+  pfSave({ remindAt:Date.now() }); pfSnack();
+}
+try{
+  setInterval(pfTick, 15 * 60000);
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-pfopen]') : null; if(!t) return;
+    var sn = document.getElementById('pfSnack'); if(sn && sn.parentNode) sn.parentNode.removeChild(sn);
+    openPilotFillSheet();
+  });
+}catch(e){}
 
 /* ---- display: text size and contrast (this device only) ---- */
 var BT_UI_KEY = 'pesa_ui_prefs';
@@ -5428,6 +5665,7 @@ function checkAuthAndRoute(){
   try{ licCheck(); }catch(e){}
   startIdleWatch(); touchUserActive(); setTimeout(btMaybeSetupPrompt, 2200); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
+  (function(uid0){ setTimeout(function(){ try{ if(State.session && State.session.userId === uid0) pfRemindStart(0); }catch(e){} }, 5000); })(State.session ? State.session.userId : null);
 }
 var _whatsNewChecked = false;
 
@@ -5878,7 +6116,7 @@ function wireMe(root){
     else if(k === 'waste') openWastageSheet(); else if(k === 'addprod'){ setTab('stock'); openProductSheet(null); }
     else if(k === 'till-open') openStartTillSheet(); else if(k === 'till-close'){ if(State.till.current) openCloseTillSheet(State.till.current); }
     else if(k === 'profile') openMyProfileSheet();
-    else if(k === 'pilotform') openPilotFormSheet();
+    else if(k === 'pilotform') pilotOpen();
     else if(k === 'inbox') openInboxSheet(); else if(k === 'report') openWorkReportSheet(); else if(k === 'records') setTab('records'); else if(k === 'install') installPesa();
     else if(k === 'lowlist'){ var el = root.querySelector('[data-lowlist]'); if(el) el.scrollIntoView({behavior:'smooth'}); }
   }); });
@@ -12126,7 +12364,7 @@ function renderDashboard(){
   var topMax = top.length ? top[0].v : 1;
 
   /* ---- hero ---- */
-  var html = '<div class="hero-card">' +
+  var html = pilotHomeNote() + '<div class="hero-card">' +
     '<div class="hero-top"><div>' +
       '<div class="hero-lbl">Today’s sales</div>' +
       '<div class="hero-val num">'+fmtMoney(todayTotal)+'</div>' +
@@ -12361,7 +12599,7 @@ function menuRowsHtml(){
   rows += drawerRowHtml('compat', ICONS.info, 'Check this computer');
   rows += drawerRowHtml('helpsearch', ICONS.search, 'Search help');
   rows += drawerRowHtml('display', ICONS.info, 'Text size and contrast');
-  rows += drawerRowHtml('pilotform', ICONS.clipboard, 'Pilot feedback form');
+  rows += drawerRowHtml('pilotform', ICONS.clipboard, 'Pilot feedback form', pfDue() ? '!' : null);
   rows += drawerRowHtml('training', ICONS.book, 'Training');
   rows += drawerRowHtml('legal', ICONS.book, 'Terms, privacy and support');
   rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
@@ -16371,7 +16609,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.15';
+var APP_VERSION = '2026.10.16';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -16563,6 +16801,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.16', items:[
+    'The pilot feedback form can now be filled in on screen by tapping answers, saved as a draft, and sent to the developer with one tap on WhatsApp or email, or shared or saved as a PDF. Reminders appear on the dashboard, when Pesa opens and now and then until the form is done',
+    'Owners and managers can start the 48 hour pilot clock so everyone sees how long is left'
+  ]},
   { v:'2026.10.15', items:[
     "Invoices for VAT registered businesses are now Tax invoices: your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown, with a labelled place for a verification code",
     'Stock is listed under department headers (milk and yogurt go under Dairy products), and you can tick several products at a time on invoices, quotes and purchase orders',
@@ -17080,6 +17322,7 @@ var ABOUT_FEATURES = [
   'A speed check and test products: see how fast Pesa searches, scans and draws the product list on this computer or device, and load made up test products to try a very big shop. Test products are never saved, synced, backed up or sold',
   'Terms, privacy and support pages that say plainly what Pesa does and does not do',
   'A printable pilot feedback form for cashiers, on the employee dashboard and in the menu, with ratings, a problem log and space for their own words',
+  'The pilot feedback form can be filled in on screen by tapping answers. A copy can be sent to the developer with one tap, and Pesa reminds everyone until it is done',
   "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders",
   'A welcome animation when Pesa opens, which you can skip or turn off',
   'Licence and subscription: when your Pesa provider switches it on, the owner enters a licence key and Pesa checks the plan on the device'
