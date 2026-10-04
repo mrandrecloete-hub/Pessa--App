@@ -18051,7 +18051,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.25';
+var APP_VERSION = '2026.10.26';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18243,6 +18243,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.26', items:[
+    'Opening animation: the money and water wave are gone. The icon now cracks, explodes with fire and flying glass, and clears away in smoke'
+  ]},
   { v:'2026.10.25', items:[
     'Settings is now tidy: Account, Shop, Language, Invoices and documents, Sales and hardware, Notifications and email, Cloud sync and backup, and Share Pesa, each in its own section that opens and closes'
   ]},
@@ -19226,7 +19229,7 @@ document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=4.5 draws one still frame at 4.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var TL = { logoIn:0.35, shimmer:1.55, crack:2.15, brk:4.05, wave:7.3, waveDur:3.3 };   // seconds
+  var TL = { logoIn:0.35, shimmer:1.55, crack:2.15, brk:4.05, wave:6.0, waveDur:2.0 };   // wave/waveDur now mean: when the smoke starts to clear, and how long it takes   // seconds
   var VEIL = null, cvs = null, ctx = null, img = null;
   var W = 0, H = 0, DPR = 1, L = 240, sc = 1, cx = 0, cy = 0, Lw = 240, Lh = 233, B = 200;
   var spr = {}, geo = null, layer = null, lctx = null, grain = null;
@@ -19248,47 +19251,6 @@ var PesaIntro = (function(){
   function sprite(w, h, fn){ var c = mkCanvas(w * DPR, h * DPR), x = c.getContext('2d'); x.scale(DPR, DPR); fn(x, w, h); c._w = w; c._h = h; return c; }
 
   /* ------------------------------------------------------------------ sprites */
-  var PAL = [
-    { c:['#0c5a47', '#1d9a76', '#8ff0c4'], d:'10' }, { c:['#0b5361', '#1a93a6', '#92e8f2'], d:'20' }, { c:['#8d5d0c', '#dca022', '#ffe28f'], d:'50' },
-    { c:['#9a3a0d', '#ec7a26', '#ffc995'], d:'100' }, { c:['#093a30', '#157a62', '#c4f7e2'], d:'200' }
-  ];
-  function drawNote(x, w, h, pal, pad){
-    x.save(); x.translate(pad, pad);
-    x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 7; x.shadowOffsetY = 2.5;
-    rr(x, 0, 0, w, h, 5); var g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, pal.c[1]); g.addColorStop(.5, pal.c[0]); g.addColorStop(1, pal.c[1]); x.fillStyle = g; x.fill();
-    x.shadowColor = 'transparent'; x.shadowBlur = 0; x.shadowOffsetY = 0;
-    x.save(); rr(x, 0, 0, w, h, 5); x.clip();
-    for(var i = 0; i < 20; i++){                               // fine wave engraving
-      x.beginPath();
-      for(var px = 0; px <= w; px += 2){ var y = h * (i + .5) / 20 + Math.sin(px * .085 + i * .55) * h * .05 * (1 + Math.sin(px * .028 + i)); px === 0 ? x.moveTo(px, y) : x.lineTo(px, y); }
-      x.strokeStyle = i % 2 ? 'rgba(255,255,255,.11)' : 'rgba(0,0,0,.10)'; x.lineWidth = .6; x.stroke();
-    }
-    [[w * .17, h * .5], [w * .83, h * .5]].forEach(function(p){ for(var r = 4; r < h * .42; r += 2.6){ x.beginPath(); x.arc(p[0], p[1], r, 0, 6.2832); x.strokeStyle = 'rgba(255,255,255,.13)'; x.lineWidth = .55; x.stroke(); } });
-    var mg = x.createRadialGradient(w * .5, h * .46, 1, w * .5, h * .5, h * .38); mg.addColorStop(0, pal.c[2]); mg.addColorStop(1, pal.c[1]);
-    x.beginPath(); x.arc(w * .5, h * .5, h * .33, 0, 6.2832); x.fillStyle = mg; x.globalAlpha = .9; x.fill(); x.globalAlpha = 1;
-    x.lineWidth = 1.1; x.strokeStyle = 'rgba(255,255,255,.7)'; x.stroke();
-    x.beginPath(); x.arc(w * .5, h * .5, h * .27, 0, 6.2832); x.strokeStyle = 'rgba(0,0,0,.18)'; x.lineWidth = .7; x.stroke();
-    x.textAlign = 'center'; x.fillStyle = 'rgba(8,40,32,.92)'; x.font = '700 ' + Math.round(h * .12) + 'px system-ui, sans-serif'; x.fillText('N$', w * .5, h * .41);
-    x.font = '800 ' + Math.round(h * .24) + 'px system-ui, sans-serif'; x.fillText(pal.d, w * .5, h * .66);
-    x.font = '800 ' + Math.round(h * .12) + 'px system-ui, sans-serif'; x.fillStyle = 'rgba(255,255,255,.88)'; x.textAlign = 'left'; x.fillText(pal.d, 6, h * .22); x.textAlign = 'right'; x.fillText(pal.d, w - 6, h * .92);
-    var sg = x.createLinearGradient(0, 0, 0, h); sg.addColorStop(0, 'rgba(255,240,170,.85)'); sg.addColorStop(.5, 'rgba(255,255,255,.55)'); sg.addColorStop(1, 'rgba(255,225,130,.85)'); x.fillStyle = sg; x.fillRect(w * .74, 0, 3.4, h);
-    var sh = x.createLinearGradient(0, 0, w * .9, h * 1.3); sh.addColorStop(0, 'rgba(255,255,255,.34)'); sh.addColorStop(.42, 'rgba(255,255,255,.05)'); sh.addColorStop(.43, 'rgba(255,255,255,0)'); x.fillStyle = sh; x.fillRect(0, 0, w, h);
-    x.restore();
-    rr(x, .5, .5, w - 1, h - 1, 5); x.strokeStyle = 'rgba(255,255,255,.45)'; x.lineWidth = 1; x.stroke(); rr(x, 3.5, 3.5, w - 7, h - 7, 3); x.strokeStyle = 'rgba(255,255,255,.22)'; x.stroke();
-    x.restore();
-  }
-  function drawCoin(x, d, pad){
-    var r = d / 2, c = r + pad;
-    x.save(); x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 6; x.shadowOffsetY = 2;
-    var g = x.createRadialGradient(c - r * .35, c - r * .4, r * .1, c, c, r); g.addColorStop(0, '#fff6c2'); g.addColorStop(.45, '#f7c948'); g.addColorStop(.85, '#c4881a'); g.addColorStop(1, '#8c5c0b');
-    x.beginPath(); x.arc(c, c, r, 0, 6.2832); x.fillStyle = g; x.fill(); x.restore();
-    x.beginPath(); x.arc(c, c, r * .86, 0, 6.2832); x.strokeStyle = 'rgba(120,70,0,.55)'; x.lineWidth = 1.2; x.stroke();
-    x.beginPath(); x.arc(c, c, r * .8, 0, 6.2832); x.strokeStyle = 'rgba(255,245,190,.7)'; x.lineWidth = .8; x.stroke();
-    x.setLineDash([1.2, 2.4]); x.beginPath(); x.arc(c, c, r * .93, 0, 6.2832); x.strokeStyle = 'rgba(100,55,0,.5)'; x.lineWidth = 1; x.stroke(); x.setLineDash([]);
-    x.textAlign = 'center'; x.font = '800 ' + Math.round(r * .78) + 'px system-ui, sans-serif';
-    x.fillStyle = 'rgba(110,64,0,.75)'; x.fillText('N$', c + .8, c + r * .28 + .8); x.fillStyle = 'rgba(255,248,205,.95)'; x.fillText('N$', c, c + r * .28);
-    x.beginPath(); x.arc(c, c, r * .96, Math.PI * 1.05, Math.PI * 1.6); x.strokeStyle = 'rgba(255,255,255,.75)'; x.lineWidth = 1.6; x.lineCap = 'round'; x.stroke();
-  }
   function glowSprite(size, stops){ return sprite(size, size, function(x, w){ var g = x.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); stops.forEach(function(s){ g.addColorStop(s[0], s[1]); }); x.fillStyle = g; x.fillRect(0, 0, w, w); }); }
   function starSprite(size){
     return sprite(size, size, function(x, w){
@@ -19297,12 +19259,14 @@ var PesaIntro = (function(){
     });
   }
   function buildSprites(){
-    var nw = L * .5, nh = nw * .5, pad = 9, cd = L * .15;
-    spr.notes = PAL.map(function(p){ var s = sprite(nw + pad * 2, nh + pad * 2, function(x){ drawNote(x, nw, nh, p, pad); }); s._cw = nw; s._ch = nh; return s; });
-    spr.coin = sprite(cd + 16, cd + 16, function(x){ drawCoin(x, cd, 8); }); spr.coin._cw = cd; spr.coin._ch = cd;
     spr.foam = glowSprite(40, [[0, 'rgba(255,255,255,.95)'], [.45, 'rgba(235,255,255,.55)'], [1, 'rgba(220,255,255,0)']]);
     spr.gold = glowSprite(96, [[0, 'rgba(255,236,170,.95)'], [.3, 'rgba(255,200,90,.45)'], [1, 'rgba(255,170,40,0)']]);
     spr.star = starSprite(40);
+    spr.smoke = [0, 1, 2].map(function(k){ var rn = mulberry(31 + k * 17); return sprite(128, 128, function(x, w){
+      for(var i = 0; i < 11; i++){ var bx = 64 + (rn() - .5) * 58, by = 64 + (rn() - .5) * 58, br = 22 + rn() * 26, g = x.createRadialGradient(bx, by, 0, bx, by, br); g.addColorStop(0, 'rgba(150,152,150,.62)'); g.addColorStop(.6, 'rgba(110,114,112,.34)'); g.addColorStop(1, 'rgba(90,94,92,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w); }
+      var hl = x.createRadialGradient(48, 46, 0, 48, 46, 46); hl.addColorStop(0, 'rgba(235,232,225,.38)'); hl.addColorStop(1, 'rgba(235,232,225,0)'); x.fillStyle = hl; x.fillRect(0, 0, w, w);
+      x.globalCompositeOperation = 'destination-in'; var mk = x.createRadialGradient(64, 64, 8, 64, 64, 64); mk.addColorStop(0, 'rgba(0,0,0,1)'); mk.addColorStop(.7, 'rgba(0,0,0,.8)'); mk.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = mk; x.fillRect(0, 0, w, w);
+    }); });
     spr.beam = sprite(64, 512, function(x, w, h){ var g = x.createLinearGradient(0, 0, w, 0); g.addColorStop(0, 'rgba(255,225,150,0)'); g.addColorStop(.5, 'rgba(255,238,185,1)'); g.addColorStop(1, 'rgba(255,225,150,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.globalCompositeOperation = 'destination-in'; var v = x.createLinearGradient(0, 0, 0, h); v.addColorStop(0, 'rgba(0,0,0,1)'); v.addColorStop(.7, 'rgba(0,0,0,.25)'); v.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = v; x.fillRect(0, 0, w, h); });
     spr.dot = glowSprite(16, [[0, 'rgba(255,240,190,1)'], [.4, 'rgba(255,200,90,.6)'], [1, 'rgba(255,160,30,0)']]);
     grain = mkCanvas(128, 128); var gx = grain.getContext('2d'), id = gx.createImageData(128, 128), rn = mulberry(7);
@@ -19356,30 +19320,11 @@ var PesaIntro = (function(){
   /* ------------------------------------------------------------------ simulation state */
   function freshState(){
     R = mulberry(opts.seed);
-    S = { t:0, items:[], sparks:[], spray:[], dust:[], shards:null, broke:false, held:0, acc:0, rainAcc:0, sparkAcc:0, ready:false, readyAt:-1, bubbles:[], shake:0 };
+    S = { t:0, items:[], sparks:[], spray:[], smoke:[], smokeAcc:0, dust:[], shards:null, broke:false, held:0, acc:0, rainAcc:0, sparkAcc:0, ready:false, readyAt:-1, bubbles:[], shake:0 };
     for(var i = 0; i < (opts.lite ? 26 : 56); i++) S.dust.push({ x:R() * W, y:R() * H, z:.3 + R() * .9, ph:R() * 6.28, vy:-(4 + R() * 12) * sc, vx:(R() - .5) * 6 });
     for(i = 0; i < 34; i++) S.bubbles.push({ u:R(), y:R() * H, r:1.5 + R() * 4.5, sp:20 + R() * 50, ph:R() * 6.28 });
   }
   function tWave(){ return TL.wave + S.held; }
-  function mkItem(kind, x, y, vx, vy, burst){
-    var z = .72 + R() * .6, it = { kind:kind, x:x, y:y, vx:vx, vy:vy, rot:(R() - .5) * 2.6, vr:(R() - .5) * (burst ? 7 : 3), phX:R() * 6.28, wX:(kind === 'coin' ? 6 : 3.4) + R() * 5, phY:R() * 6.28, wY:1.2 + R() * 2.6,
-      z:z, v:(R() * PAL.length) | 0, sp:R() * 6.28, swept:false, a:1, drift:R() * 6.28 };
-    S.items.push(it); return it;
-  }
-  function burstItem(){
-    var coin = R() < .5, ang = -Math.PI / 2 + (R() - .5) * 3.5, sp = (380 + R() * 760) * sc * (coin ? .95 : 1);
-    mkItem(coin ? 'coin' : 'note', cx + (R() - .5) * L * .18, cy + (R() - .5) * L * .1, Math.cos(ang) * sp, Math.sin(ang) * sp, true);
-  }
-  function rainItem(){
-    var coin = R() < .38; mkItem(coin ? 'coin' : 'note', R() * (W + 80) - 40, -40 * sc, (R() - .5) * 50 * sc, (110 + R() * 90) * sc, false);
-  }
-
-  /* ------------------------------------------------------------------ wave geometry */
-  function waveP(t){ return clamp((t - tWave()) / TL.waveDur, 0, 1.2); }
-  function frontBase(p){ return lerp(-B * .55, W + B * 1.25 + W * .06, easeIO(Math.min(1, p))); }
-  function frontX(y, t, p){ return frontBase(p) + W * .034 * Math.sin(y * .0105 + t * 2.1) + W * .016 * Math.sin(y * .026 - t * 3.0) + (y / H - .5) * W * .09; }
-  function trailX(y, t, p){ return frontX(y, t, p) - B * (.92 + .09 * Math.sin(y * .006 + t * 1.3)) - W * .03 * Math.sin(y * .02 + t * 2.4); }
-
   /* ------------------------------------------------------------------ update */
   function update(dt){
     var t = S.t += dt, i, p, it;
@@ -19388,38 +19333,23 @@ var PesaIntro = (function(){
     S.dust.forEach(function(d){ d.x += d.vx * dt; d.y += d.vy * dt; if(d.y < -10){ d.y = H + 10; d.x = R() * W; } });
     // break
     if(!S.broke && t >= TL.brk){ doBreak(); }
-    // money
-    if(S.broke){
-      var tb = t - TL.brk, cap = opts.lite ? 110 : 230;
-      if(tb < 1.05){ S.acc += dt * (opts.lite ? 70 : 150) * (1 - tb / 1.4); while(S.acc >= 1 && S.items.length < cap){ burstItem(); S.acc--; } }
-      if(t < tWave() + .4 && tb > .7){ S.rainAcc += dt * (opts.lite ? 24 : 58) * sm((tb - .4) / .6); while(S.rainAcc >= 1 && S.items.length < cap){ rainItem(); S.rainAcc--; } }
-    }
-    var wp = waveP(t), vF = (W + B * 1.6) / TL.waveDur * 1.35;
-    for(i = S.items.length - 1; i >= 0; i--){
-      it = S.items[i];
-      var g = (it.kind === 'coin' ? 520 : 400) * sc, k = it.kind === 'coin' ? 1.55 : 2.5;
-      if(!it.swept){
-        it.vx += Math.sin(t * 1.7 + it.drift) * 36 * sc * dt; it.vy += g * dt; it.vx -= it.vx * k * dt * .55; it.vy -= it.vy * k * dt;
-        if(wp > 0){ var xf = frontX(it.y, t, wp); if(xf + 16 * sc * it.z >= it.x){ it.swept = true; it.vr += (R() - .5) * 8; } }
-      } else {
-        var tx = vF * (1.02 + .1 * Math.sin(it.drift + t)), ty = -70 * sc + Math.sin(it.y * .02 + t * 3.1 + it.drift) * 150 * sc;
-        it.vx += (tx - it.vx) * Math.min(1, dt * 4.2); it.vy += (ty - it.vy) * Math.min(1, dt * 2.2); it.wX += dt * 2; it.vr += (Math.sin(t * 3 + it.drift) * 4 - it.vr) * dt;
-      }
-      it.x += it.vx * dt; it.y += it.vy * dt; it.rot += it.vr * dt; it.phX += it.wX * dt; it.phY += it.wY * dt;
-      if(it.y > H + 60 * sc || it.x > W + 160 * sc || it.x < -260 * sc || (it.y < -300 * sc && it.vy < 0 && it.swept)) S.items.splice(i, 1);
-    }
+    var vF = 0, wp = 0;
     // sparks (from cracks and from the burst)
     if(!S.broke && t > TL.crack + .5){ var q = clamp((t - TL.crack) / (TL.brk - TL.crack), 0, 1); S.sparkAcc += dt * (4 + q * q * 70); while(S.sparkAcc >= 1){ S.sparkAcc--; crackSpark(q); } }
     if(S.broke && t - TL.brk < 1.3 && !opts.lite){ S.sparkAcc += dt * 120; while(S.sparkAcc >= 1){ S.sparkAcc--; var a = R() * 6.28, s2 = (120 + R() * 700) * sc; S.sparks.push({ x:cx, y:cy, vx:Math.cos(a) * s2, vy:Math.sin(a) * s2 - 160 * sc, life:0, max:.5 + R() * 1.1, s:.5 + R() }); } }
     for(i = S.sparks.length - 1; i >= 0; i--){ var sp = S.sparks[i]; sp.life += dt; sp.vy += 500 * sc * dt; sp.vx -= sp.vx * 1.4 * dt; sp.vy -= sp.vy * .8 * dt; sp.x += sp.vx * dt; sp.y += sp.vy * dt; if(sp.life > sp.max) S.sparks.splice(i, 1); }
     // shards
     if(S.shards){ S.shards.forEach(function(s){ s.age += dt; s.vy += 1150 * sc * dt; s.vx -= s.vx * .7 * dt; s.vy -= s.vy * .35 * dt; s.dx += s.vx * dt; s.dy += s.vy * dt; s.rot += s.om * dt; s.fx += s.fw * dt; }); }
-    // spray from the crest
-    if(wp > 0 && wp < 1.02){
-      S.spAcc = (S.spAcc || 0) + dt * (opts.lite ? 90 : 190);
-      while(S.spAcc >= 1){ S.spAcc--; var yy = R() * H, xf2 = frontX(yy, t, wp); S.spray.push({ x:xf2 + (R() - .3) * 14, y:yy, vx:vF * (.3 + R() * .5), vy:-(110 + R() * 460) * sc, life:0, max:.6 + R() * .9, r:.9 + R() * 2.6 }); }
+    // smoke: a heavy burst, then a plume that keeps rising and thinning
+    if(S.broke){
+      var tb2 = t - TL.brk;
+      if(tb2 < 1.5){ S.smokeAcc += dt * (opts.lite ? 26 : 55) * (1 - tb2 / 1.7); while(S.smokeAcc >= 1){ S.smokeAcc--; smokePuff(false); } }
     }
-    for(i = S.spray.length - 1; i >= 0; i--){ var d = S.spray[i]; d.life += dt; d.vy += 980 * sc * dt; d.x += d.vx * dt; d.y += d.vy * dt; if(d.life > d.max) S.spray.splice(i, 1); }
+    for(i = S.smoke.length - 1; i >= 0; i--){
+      var m = S.smoke[i]; m.age += dt; if(m.age > m.max){ S.smoke.splice(i, 1); continue; }
+      var drag = m.fire ? 3.2 : 1.5; m.vx -= m.vx * drag * dt; m.vy -= m.vy * drag * dt; if(!m.fire) m.vy -= (26 + m.age * 10) * sc * dt; m.vx += Math.sin(t * 1.3 + m.ph) * 14 * sc * dt;
+      m.x += m.vx * dt; m.y += m.vy * dt; m.rot += m.vr * dt;
+    }
     S.shake *= Math.pow(.0009, dt);
   }
   function crackSpark(q){
@@ -19439,10 +19369,20 @@ var PesaIntro = (function(){
     x.lineJoin = 'round'; x.lineWidth = 2.6; x.strokeStyle = 'rgba(255,240,190,.9)'; x.stroke(); x.lineWidth = 1; x.strokeStyle = 'rgba(255,255,255,.95)'; x.stroke();
     return { cv:cv, x:x0, y:y0, w:bw, h:bh };
   }
+  function smokePuff(initial){
+    var a = R() * 6.2832, sp = (initial ? 90 + R() * 640 : 30 + R() * 160) * sc, r0 = (initial ? 24 + R() * 44 : 20 + R() * 34) * sc;
+    S.smoke.push({ x:cx + Math.cos(a) * R() * L * .12, y:cy + Math.sin(a) * R() * L * .1, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp - (initial ? 40 : 70) * sc, age:0, max:(initial ? 2.6 : 2.2) + R() * 2.2, r0:r0, r1:r0 * (2.2 + R() * 1.8), rot:R() * 6.28, vr:(R() - .5) * .8, ph:R() * 6.28, fire:false, v:(R() * 3) | 0 });
+  }
+  function boom(){
+    var nS = opts.lite ? 34 : 64, nF = opts.lite ? 12 : 22, i;
+    for(i = 0; i < nS; i++) smokePuff(true);
+    for(i = 0; i < nF; i++){ var a = R() * 6.2832, sp = (160 + R() * 900) * sc, r0 = (40 + R() * 70) * sc; S.smoke.push({ x:cx + (R() - .5) * L * .12, y:cy + (R() - .5) * L * .1, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, age:0, max:.35 + R() * .55, r0:r0, r1:r0 * 2.1, rot:0, vr:0, ph:R() * 6.28, fire:true, v:0 }); }
+  }
   function doBreak(){
-    S.broke = true; S.shake = 14 * sc;
+    boom();
+    S.broke = true; S.shake = 30 * sc;
     S.shards = geo.shards.map(function(c){
-      var dx = c.cx - geo.cxl, dy = c.cy - geo.cyl, d = Math.sqrt(dx * dx + dy * dy) + 1, n = d / (Lw * .5), sp = (320 + R() * 560) * sc * (1.25 - Math.min(1, n) * .45);
+      var dx = c.cx - geo.cxl, dy = c.cy - geo.cyl, d = Math.sqrt(dx * dx + dy * dy) + 1, n = d / (Lw * .5), sp = (460 + R() * 820) * sc * (1.25 - Math.min(1, n) * .45);
       var spriteInfo = shardSprite(c);
       return { c:c, sp:spriteInfo, dx:0, dy:0, vx:dx / d * sp + (R() - .5) * 90 * sc, vy:dy / d * sp - (240 + R() * 260) * sc, rot:0, om:(R() - .5) * 8, fx:R() * 6.28, fw:1.5 + R() * 4.5, age:0, k:.9 + R() * .5 };
     });
@@ -19534,7 +19474,7 @@ var PesaIntro = (function(){
   function drawBurstFX(t){
     if(!S.broke) return; var rt = t - TL.brk;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    var fa = Math.pow(clamp(1 - rt / .85, 0, 1), 1.6);
+    var fa = .55 * Math.pow(clamp(1 - rt / .7, 0, 1), 1.8);
     if(fa > .01){ var fr = Math.max(W, H) * (.35 + rt * 1.1), g = ctx.createRadialGradient(cx, cy, 0, cx, cy, fr); g.addColorStop(0, 'rgba(255,252,230,' + fa + ')'); g.addColorStop(.35, 'rgba(255,214,120,' + (fa * .7) + ')'); g.addColorStop(1, 'rgba(255,170,50,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
     var ringR = easeOut(rt / 1.7) * Math.max(W, H) * .95, ra = Math.pow(clamp(1 - rt / 1.7, 0, 1), 1.6);
     if(ra > .01){ ctx.lineWidth = (2 + 12 * ra) * sc; var rg = ctx.createRadialGradient(cx, cy, Math.max(0, ringR - 30 * sc), cx, cy, ringR + 30 * sc); rg.addColorStop(0, 'rgba(255,220,130,0)'); rg.addColorStop(.5, 'rgba(255,240,190,' + (.45 * ra) + ')'); rg.addColorStop(1, 'rgba(255,200,90,0)'); ctx.strokeStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, ringR, 0, 6.2832); ctx.stroke(); }
@@ -19543,73 +19483,16 @@ var PesaIntro = (function(){
     ctx.restore();
   }
 
-  function drawItem(it, t){
-    var sprt = it.kind === 'coin' ? spr.coin : spr.notes[it.v], w = sprt._w * it.z, h = sprt._h * it.z;
-    var fy = Math.cos(it.phX), sy = Math.max(.07, Math.abs(fy)), sx = .8 + .2 * Math.cos(it.phY);
-    ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); ctx.scale(sx, sy); ctx.globalAlpha = (.62 + .38 * Math.abs(fy)) * it.a;
-    ctx.drawImage(sprt, -w / 2, -h / 2, w, h);
-    ctx.restore();
-    var tw = Math.pow(Math.max(0, Math.sin(t * 4.6 + it.sp)), 14);
-    if(tw > .05 && !it.swept){ var ss = (14 + 20 * tw) * sc * it.z; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = tw * .95; ctx.drawImage(spr.star, it.x + Math.cos(it.sp * 3) * w * .25 - ss / 2, it.y + Math.sin(it.sp * 5) * h * .25 - ss / 2, ss, ss); ctx.restore(); }
-  }
-
-  function wavePoints(t, p){
-    var pts = [], tr = [], step = 7, y;
-    for(y = -30; y <= H + 30; y += step){ pts.push([frontX(y, t, p), y]); tr.push([trailX(y, t, p), y]); }
-    return { f:pts, t:tr };
-  }
-  function bandPath(c, wp){ c.beginPath(); wp.f.forEach(function(p, i){ i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]); }); for(var i = wp.t.length - 1; i >= 0; i--) c.lineTo(wp.t[i][0], wp.t[i][1]); c.closePath(); }
-  function bandGradient(a){
-    var minX = 1e9, maxX = -1e9; this.t.forEach(function(p){ if(p[0] < minX) minX = p[0]; }); this.f.forEach(function(p){ if(p[0] > maxX) maxX = p[0]; });
-    var g = ctx.createLinearGradient(minX, 0, maxX, 0);
-    g.addColorStop(0, 'rgba(60,190,200,0)'); g.addColorStop(.2, 'rgba(34,165,185,' + (.2 * a) + ')'); g.addColorStop(.5, 'rgba(12,118,152,' + (.68 * a) + ')'); g.addColorStop(.82, 'rgba(5,76,116,' + (.92 * a) + ')'); g.addColorStop(.96, 'rgba(9,104,140,' + (.95 * a) + ')'); g.addColorStop(1, 'rgba(200,250,255,' + (.95 * a) + ')');
-    return g;
-  }
-
-  function drawWaveBack(wp, t, p){
-    // reveal: wipe the dark scene away behind the front, so the welcome page shows through the water
-    ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath(); ctx.moveTo(-80, -40); wp.f.forEach(function(q){ ctx.lineTo(q[0], q[1]); }); ctx.lineTo(-80, H + 40); ctx.closePath(); ctx.fillStyle = '#000'; ctx.fill(); ctx.restore();
-    // light pushed ahead of the water
-    var fx = 1e9; wp.f.forEach(function(q){ if(q[0] < fx) fx = q[0]; });
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; var lg = ctx.createLinearGradient(fx, 0, fx + W * .28, 0); lg.addColorStop(0, 'rgba(90,230,230,.20)'); lg.addColorStop(1, 'rgba(90,230,230,0)'); ctx.fillStyle = lg; ctx.fillRect(fx, 0, W * .3, H); ctx.restore();
-    // body of the water
-    ctx.save(); bandPath(ctx, wp); ctx.fillStyle = bandGradient.call(wp, 1); ctx.fill(); ctx.restore();
-  }
-  function drawWaveFront(wp, t, p, dt){
-    ctx.save(); bandPath(ctx, wp); ctx.clip();
-    ctx.fillStyle = bandGradient.call(wp, .3); ctx.fillRect(0, 0, W, H);          // film over anything the water carries
-    ctx.globalCompositeOperation = 'lighter';
-    var n = opts.lite ? 7 : 13, i, y;
-    for(i = 0; i < n; i++){                                                          // caustic currents
-      var u = (i + .5) / n; ctx.beginPath();
-      for(y = -30; y <= H + 30; y += 14){ var idx = Math.round((y + 30) / 7), f = wp.f[Math.min(idx, wp.f.length - 1)], tr = wp.t[Math.min(idx, wp.t.length - 1)], uu = clamp(u + .05 * Math.sin(y * .028 + t * 2.1 + i * 1.7), 0, 1); var x = lerp(tr[0], f[0], uu); y === -30 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
-      ctx.strokeStyle = 'rgba(190,255,250,' + (.07 + .09 * u) + ')'; ctx.lineWidth = 1.2 + 2.2 * u; ctx.stroke();
-    }
-    for(i = 0; i < 5; i++){                                                          // bright lip near the front
-      var uu2 = .9 + i * .022; ctx.beginPath();
-      for(y = -30; y <= H + 30; y += 10){ var j = Math.round((y + 30) / 7), f2 = wp.f[Math.min(j, wp.f.length - 1)], t2 = wp.t[Math.min(j, wp.t.length - 1)]; var x2 = lerp(t2[0], f2[0], uu2) + Math.sin(y * .05 + t * 4 + i) * 2; y === -30 ? ctx.moveTo(x2, y) : ctx.lineTo(x2, y); }
-      ctx.strokeStyle = 'rgba(235,255,255,' + (.34 - i * .05) + ')'; ctx.lineWidth = 2.4 - i * .3; ctx.stroke();
-    }
-    S.bubbles.forEach(function(b){ b.y -= b.sp * dt; if(b.y < -10) b.y = H + 10; var idx = clamp(Math.round((b.y + 30) / 7), 0, wp.f.length - 1), x = lerp(wp.t[idx][0], wp.f[idx][0], b.u) + Math.sin(t * 2 + b.ph) * 6; ctx.beginPath(); ctx.arc(x, b.y, b.r * sc, 0, 6.2832); ctx.strokeStyle = 'rgba(230,255,255,.38)'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fill(); });
-    ctx.restore();
-    // foam and rim along the crest
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    var tk = Math.floor(t * 12);
-    wp.f.forEach(function(q, idx){
-      for(var k = 0; k < 2; k++){
-        var h1 = frac(Math.sin(idx * 127.1 + k * 311.7 + tk * 74.7) * 43758.5453), h2 = frac(Math.sin(idx * 269.5 + k * 183.3 + tk * 31.1) * 24634.6345);
-        var r = (4 + 17 * h1 * h1) * sc, a = .4 + .55 * h2; ctx.globalAlpha = a * (opts.lite ? .8 : 1);
-        var fx = q[0] + (h2 - .55) * 22 * sc, fy = q[1] + (h1 - .5) * 8; ctx.drawImage(spr.foam, fx - r, fy - r, r * 2, r * 2);
-      }
+  function drawSmoke(t){
+    if(!S.smoke.length) return;
+    S.smoke.forEach(function(m){
+      var u = m.age / m.max, r = lerp(m.r0, m.r1, easeOut(u));
+      if(m.fire){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.pow(1 - u, 1.6) * .5; ctx.drawImage(spr.gold, m.x - r * 1.1, m.y - r * 1.1, r * 2.2, r * 2.2); ctx.restore(); return; }
+      var a = Math.min(1, m.age / .12) * Math.pow(1 - sm(u), 1.1) * .8;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(m.x, m.y); ctx.rotate(m.rot); ctx.drawImage(spr.smoke[m.v], -r, -r, r * 2, r * 2); ctx.restore();
+      if(m.age < .9){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - m.age / .9) * .5; ctx.drawImage(spr.gold, m.x - r * 1.1, m.y - r * 1.1, r * 2.2, r * 2.2); ctx.restore(); }
     });
-    ctx.globalAlpha = 1; ctx.lineWidth = 3.2 * sc; var rg = ctx.createLinearGradient(0, 0, W, 0); ctx.strokeStyle = 'rgba(240,255,255,.8)'; ctx.shadowColor = 'rgba(120,240,240,.9)'; ctx.shadowBlur = 16 * sc;
-    ctx.beginPath(); wp.f.forEach(function(q, i){ i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.stroke(); ctx.restore();
-    // spray
-    ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    S.spray.forEach(function(d){ var a = 1 - d.life / d.max; ctx.globalAlpha = a * .85; var r = d.r * sc * 2.4; ctx.drawImage(spr.foam, d.x - r, d.y - r, r * 2, r * 2); });
-    ctx.restore();
   }
-
   function drawSparks(){
     if(!S.sparks.length) return; ctx.save(); ctx.globalCompositeOperation = 'lighter';
     S.sparks.forEach(function(s){ var a = 1 - s.life / s.max; ctx.globalAlpha = a; var r = (3 + 8 * s.s) * sc * (.5 + a * .5); ctx.drawImage(spr.dot, s.x - r, s.y - r, r * 2, r * 2); });
@@ -19635,16 +19518,13 @@ var PesaIntro = (function(){
     ctx.save();
     if(S.shake > .2) ctx.translate((R() - .5) * S.shake, (R() - .5) * S.shake);
     drawBackground(t);
+    drawSmoke(t);
     if(!S.broke) drawLogoWhole(t); else drawShards(t);
-    drawBurstFX(t);
     drawGrain(t);
     ctx.restore();
-    var wp = waveP(t), W_ = null;
-    if(wp > 0){ W_ = wavePoints(t, wp); drawWaveBack(W_, t, wp); }
-    var order = S.items.slice().sort(function(a, b){ return a.z - b.z; });
-    order.forEach(function(it){ drawItem(it, t); });
+    drawBurstFX(t);
     drawSparks();
-    if(W_) drawWaveFront(W_, t, wp, dt);
+    var fo = 1 - sm((t - tWave()) / TL.waveDur); cvs.style.opacity = fo.toFixed(3);
     tagText(t);
   }
 
@@ -19683,7 +19563,7 @@ var PesaIntro = (function(){
     if(opts.simple){ S.t += dt; drawSimple(S.t); if(S.t > 2.3) return finish(false); }
     else {
       update(dt); draw(dt);
-      var endT = tWave() + TL.waveDur * 1.08; if(S.t > endT) return finish(false);
+      var endT = tWave() + TL.waveDur * 1.02; if(S.t > endT) return finish(false);
       if(S.t > 1.2 && !perf.down){ perf.n++; perf.sum += performance.now() - s0 + 0; if(perf.n === 50){ if(perf.sum / perf.n > 14 && DPR > 1.3){ perf.down = true; layout(); } } }
     }
     raf = requestAnimationFrame(frame);
