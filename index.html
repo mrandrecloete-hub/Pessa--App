@@ -16033,12 +16033,13 @@ function setTrainDeep(on){ try{ localStorage.setItem(TRAIN_PITCH_KEY, on ? 'deep
 function trainVoiceChoices(voices){
   voices = voices || (speechSupported() ? (window.speechSynthesis.getVoices() || []) : []);
   var seen = {};
-  function male(v){ var n = (v.name||'')+' '+(v.voiceURI||''); return !TV_NOVELTY.test(n) && !TV_FEMALE.test(n) && TV_MALE.test(n); }
+  function male(v){ var n = (v.name||'')+' '+(v.voiceURI||''); return !TV_NOVELTY.test(n) && !TV_FEMALE.test(n) && (TV_MALE.test(n) || /x-(iol|iom|tpd)\b/i.test(n)); }
   function uniq(v){ if(seen[v.name]) return false; seen[v.name] = 1; return true; }
   function rank(v){ var n = (v.name||'').toLowerCase(); return (/natural|online/.test(n) ? 0 : 1) + (v.localService ? 0 : 0.5); }
   var us = voices.filter(function(v){ return /^en[-_]us$/i.test(v.lang||'') && male(v); }).filter(uniq).sort(function(a,b){ return rank(a) - rank(b); });
   var other = voices.filter(function(v){ return /^en([-_]|$)/i.test(v.lang||'') && !/^en[-_]us$/i.test(v.lang||'') && male(v); }).filter(uniq);
-  return { us:us, other:other };
+  var all = voices.filter(function(v){ return /^en([-_]|$)/i.test(v.lang||'') && !TV_NOVELTY.test(v.name||''); }).filter(function(v){ return !seen[v.name]; }).filter(uniq);
+  return { us:us, other:other, all:all };
 }
 function trainVoiceLabel(v){
   var n = String(v.name||'').replace(/^Microsoft\s+/i,'').replace(/\s*-\s*English.*$/i,'').replace(/\s*Online\s*\(Natural\)/i,' (Natural)').replace(/en-us-x-(\w+)-local/i,'Voice $1').trim();
@@ -16047,12 +16048,13 @@ function trainVoiceLabel(v){
 function trainVoicePanelHtml(){
   var ch = trainVoiceChoices(), cur = _narrationVoice ? _narrationVoice.name : '';
   function row(v, i, grp){
-    var on = v.name === cur;
-    return '<div class="tv-row'+(on?' on':'')+'" data-tv="'+grp+i+'"><span class="tv-radio"></span><div class="main"><b>'+esc(trainVoiceLabel(v))+'</b><small>'+esc((v.lang||'').replace('_','-'))+' · '+tr('Male')+' · '+tr(v.localService ? 'On this device' : 'Needs internet')+'</small></div><button type="button" class="btn btn-ghost" data-tvhear="'+grp+i+'">'+tr('Hear')+'</button></div>';
+    var on = v.name === cur, isM = grp !== 'a';
+    return '<div class="tv-row'+(on?' on':'')+'" data-tv="'+grp+i+'"><span class="tv-radio"></span><div class="main"><b>'+esc(trainVoiceLabel(v))+'</b><small>'+esc((v.lang||'').replace('_','-'))+' · '+(isM ? tr('Male')+' · ' : '')+tr(v.localService ? 'On this device' : 'Needs internet')+'</small></div><button type="button" class="btn btn-ghost" data-tvhear="'+grp+i+'">'+tr('Hear')+'</button></div>';
   }
   var h = '<div class="tv-panel"><div class="tv-h">'+tr('Male American English voices')+'</div>';
   if(ch.us.length) h += ch.us.map(function(v, i){ return row(v, i, 'u'); }).join('');
   else h += '<div class="tv-none">'+tr('No male American English voice is installed on this computer or device. Add one in the device settings under speech or text to speech voices, then reopen this page.')+'</div>';
+  if(ch.all.length && !ch.us.length) h += '<div class="tv-h" style="margin-top:8px;">'+tr('All English voices on this device. Tap Hear on each and pick the one you like.')+'</div>' + ch.all.map(function(v, i){ return row(v, i, 'a'); }).join('');
   if(ch.other.length && !ch.us.length) h += '<div class="tv-h" style="margin-top:8px;">'+tr('Other English male voices')+'</div>' + ch.other.map(function(v, i){ return row(v, i, 'o'); }).join('');
   h += '<label class="tv-deep"><input type="checkbox" id="tvDeep"'+(trainPitch() < 1 ? ' checked' : '')+'> '+tr('Deeper tone, where the device allows it')+'</label>' +
     '<div class="tv-note">'+tr('The voices come from your computer or device, so the list can differ from one device to the next. Recordings you made under My voice still play instead of these voices.')+'</div></div>';
@@ -16061,7 +16063,7 @@ function trainVoicePanelHtml(){
 function wireTrainVoicePanel(root, cb){
   cb = cb || {};
   var ch = trainVoiceChoices(), map = {};
-  ch.us.forEach(function(v, i){ map['u'+i] = v; }); ch.other.forEach(function(v, i){ map['o'+i] = v; });
+  ch.us.forEach(function(v, i){ map['u'+i] = v; }); ch.other.forEach(function(v, i){ map['o'+i] = v; }); ch.all.forEach(function(v, i){ map['a'+i] = v; });
   root.querySelectorAll('[data-tvhear]').forEach(function(b){ b.addEventListener('click', function(e){
     e.stopPropagation(); var v = map[b.getAttribute('data-tvhear')]; if(!v) return;
     stopNarration();
@@ -16776,11 +16778,13 @@ function openTrainingSheet(){
   if(pa) pa.addEventListener('click', function(){ openLessonSlideshow(list[0].id, { chain:true }); });
   var tsr = ov.querySelector('#trSearch'); if(tsr) tsr.addEventListener('click', function(){ closeModal(); openHelpSearchSheet(); });
   var tvo = ov.querySelector('#trVoice'); if(tvo) tvo.addEventListener('click', function(){ openVoiceStudio(); });
-  var tnb = ov.querySelector('#trNarr'); if(tnb) tnb.addEventListener('click', function(){
-    var pn = ov.querySelector('#trNarrPanel'); if(pn.innerHTML){ pn.innerHTML = ''; stopNarration(); return; }
-    if(!_narrationVoice) refreshNarrationVoice();
-    pn.innerHTML = trainVoicePanelHtml(); wireTrainVoicePanel(pn, {});
-  });
+  var tnb = ov.querySelector('#trNarr');
+  function showNarrPanel(){ var pn = ov.querySelector('#trNarrPanel'); if(!pn) return; if(!_narrationVoice) refreshNarrationVoice(); pn.innerHTML = trainVoicePanelHtml(); wireTrainVoicePanel(pn, {}); }
+  if(tnb){
+    tnb.addEventListener('click', function(){ var pn = ov.querySelector('#trNarrPanel'); if(pn.innerHTML){ pn.innerHTML = ''; stopNarration(); return; } showNarrPanel(); });
+    showNarrPanel();
+    try{ var _prevVC = window.speechSynthesis.onvoiceschanged; window.speechSynthesis.onvoiceschanged = function(){ try{ _prevVC && _prevVC(); }catch(e){} var pn = ov.querySelector('#trNarrPanel'); if(pn && pn.innerHTML) showNarrPanel(); }; }catch(e){}
+  }
 }
 
 function openLessonSlideshow(lessonId, opts){
@@ -18051,7 +18055,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.28';
+var APP_VERSION = '2026.10.29';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18243,6 +18247,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.29', items:[
+    'Training: the narrator voice list now opens by itself on the Training page, and if your device has no labelled male voice it lists every English voice so you can hear each one and pick'
+  ]},
   { v:'2026.10.28', items:[
     'Opening animation: the Pesa logo now sits above the words Welcome to Pesa Namibia'
   ]},
