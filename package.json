@@ -1,0 +1,14 @@
+{
+  "name": "pesa",
+  "private": true,
+  "description": "Pesa shop management and POS. The app itself is the single file index.html; this package only runs the tests.",
+  "scripts": {
+    "build:test": "python3 tests/build.py",
+    "check": "python3 tests/check.py",
+    "test": "node tests/run.js"
+  },
+  "devDependencies": {
+    "jspdf": "2.5.1",
+    "playwright": "1.56.0"
+  }
+}

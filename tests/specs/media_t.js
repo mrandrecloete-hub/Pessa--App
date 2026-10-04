@@ -1,0 +1,31 @@
+const { chromium } = require('playwright');
+const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,200):'')); if(!c){fail++;} };
+(async()=>{
+  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
+  await p.fill('#rcCompanyName','M Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+  await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  const px='data:image/jpeg;base64,'+'A'.repeat(40000), au='data:audio/webm;base64,'+'B'.repeat(20000);
+  await p.evaluate(async([px,au])=>{ const T=window.__t, me=T.State.session.userId, d=n=>new Date(Date.now()-n*86400000).toISOString();
+    const add=(o)=>T.refs.messages.add(Object.assign({to:'all',toName:'All',fromId:me,fromName:'Alice',kind:'message',urgent:false,title:'',readBy:{}},o));
+    await add({body:'old photo caption',img:px,createdAt:d(100)}); await add({body:'',audio:au,dur:5,createdAt:d(95)}); await add({body:'recent photo',img:px,createdAt:d(3)}); },[px,au]);
+  await p.waitForTimeout(300);
+  ck('meter counts bytes', (await p.evaluate(()=>window.__t.msgMediaBytes()))>60000);
+  ck('default keep time is 60 days', (await p.evaluate(()=>window.__t.msgMediaDays()))===60);
+  await p.evaluate(()=>window.__t.openInboxSheet()); await p.waitForSelector('#mvKeep'); ck('owner sees storage line and selector', /Photos and voice notes use/.test(await p.innerText('.mv-foot')));
+  await p.screenshot({path:D+'media_inbox.png'});
+  await p.selectOption('#mvKeep','90'); await p.waitForTimeout(500);
+  const st=await p.evaluate(()=>window.__t.State.messages.map(m=>({b:m.body,img:!!m.img,au:!!m.audio,g:m.mediaGone||''})));
+  ck('90 days: both old messages lose their media, recent one keeps it', st.filter(m=>m.g).length===2 && st.find(m=>m.b==='recent photo').img, st);
+  ck('words stay', st.some(m=>m.b==='old photo caption'));
+  ck('preview of a removed voice note', await p.evaluate(()=>window.__t.msgPreview(window.__t.State.messages.find(m=>m.mediaGone==='audio'))).then(t=>/Removed to save space/.test(t)));
+  await p.evaluate(()=>window.__t.openThreadSheet(window.__t.State.messages.find(m=>m.mediaGone==='img').id)); await p.waitForSelector('#mvChat .mv-bub'); 
+  ck('thread shows placeholders', (await p.$$('.mv-gone')).length>=1); await p.screenshot({path:D+'media_thread.png'});
+  // always keep
+  await p.evaluate(async()=>{ const T=window.__t; await T.refs.messages.add({to:'all',toName:'All',fromId:T.State.session.userId,fromName:'Alice',kind:'message',urgent:false,title:'',readBy:{},body:'ancient',img:'data:image/jpeg;base64,AAAA',createdAt:new Date(Date.now()-500*86400000).toISOString()}); T.State.settings=Object.assign({},T.State.settings,{msgMediaDays:0}); });
+  ck('Always keeps everything', (await p.evaluate(()=>window.__t.msgSweepMedia(true)))===0);
+  ck('no page errors', errs.length===0, errs);
+  console.log(fail?'FAILED '+fail:'ALL OK'); await b.close(); process.exit(fail?1:0);
+})();

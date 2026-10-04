@@ -594,7 +594,7 @@
   .drawer-row .ico{ width:34px; height:34px; border-radius:10px; background:var(--surface-2); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
   /* download format dropdown */
-  .xp-back{ position:fixed; inset:0; z-index:9999; background:rgba(8,30,22,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .xp-back{ position:fixed; top:0; right:0; bottom:0; left:0; inset:0; z-index:9999; background:rgba(8,30,22,.5); display:flex; align-items:center; justify-content:center; padding:16px; }
   .xp-card{ width:100%; max-width:400px; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:18px; padding:18px 18px 16px; box-shadow:0 20px 50px rgba(0,0,0,.35); }
   .xp-h{ font-size:18px; font-weight:700; margin-bottom:12px; font-family:var(--font-head); }
   .xp-l{ display:block; font-size:12.5px; font-weight:600; color:var(--text-muted); margin-bottom:6px; }
@@ -955,9 +955,9 @@
   .mv-ib svg{ width:20px; height:20px; } .mv-ib:hover, .mv-ib.on{ background:rgba(255,255,255,.32); } .mv-ib.dark{ background:var(--surface-2); color:var(--text-muted); width:32px; height:32px; }
   .mv-bar > .btn{ flex:none; }
   .mv-wall{ position:relative; flex:1; min-height:0; overflow:hidden; background-color:var(--mv-wall); background-image:radial-gradient(circle at 12% 8%, rgba(245,158,11,.16), transparent 42%), radial-gradient(circle at 92% 88%, rgba(20,163,122,.22), transparent 46%); }
-  .mv-wall::before{ content:""; position:absolute; left:50%; top:50%; width:min(78%,330px); aspect-ratio:1/1; transform:translate(-50%,-50%) rotate(-6deg); background-image:var(--brand-logo-img); background-size:contain; background-repeat:no-repeat; background-position:center; opacity:.13; pointer-events:none; z-index:0; }
-  .mv-wall .mv-chat{ position:absolute; inset:0; max-height:none; min-height:0; overflow-y:auto; padding:12px 10px 14px; gap:6px; scroll-behavior:auto; z-index:1; }
-  .mv-wall .mv-list{ position:absolute; inset:0; max-height:none; overflow-y:auto; padding:10px; z-index:1; }
+  .mv-wall::before{ content:""; position:absolute; left:50%; top:50%; width:min(78vw,330px); height:min(78vw,330px); transform:translate(-50%,-50%) rotate(-6deg); background-image:var(--brand-logo-img); background-size:contain; background-repeat:no-repeat; background-position:center; opacity:.13; pointer-events:none; z-index:0; }
+  .mv-wall .mv-chat{ position:absolute; top:0; right:0; bottom:0; left:0; inset:0; max-height:none; min-height:0; overflow-y:auto; padding:12px 10px 14px; gap:6px; scroll-behavior:auto; z-index:1; }
+  .mv-wall .mv-list{ position:absolute; top:0; right:0; bottom:0; left:0; inset:0; max-height:none; overflow-y:auto; padding:10px; z-index:1; }
   .mv-wall .mv-card{ background:var(--mv-bub-in); } .mv-wall .mv-card.unread{ background:linear-gradient(135deg,rgba(20,163,122,.16),var(--mv-bub-in) 70%); }
   .mv-day{ align-self:center; background:var(--mv-bub-in); color:var(--text-muted); font-size:11.5px; font-weight:700; border-radius:999px; padding:3px 12px; margin:6px 0 2px; box-shadow:0 1px 2px rgba(0,0,0,.12); }
   .mv-wall .mv-subject{ background:var(--mv-bub-in); box-shadow:0 1px 2px rgba(0,0,0,.12); }
@@ -994,7 +994,9 @@
   .mv-callm{ position:absolute; right:10px; top:calc(100% + 4px); z-index:8; background:var(--surface); color:var(--text); border-radius:16px; box-shadow:0 10px 30px -8px rgba(0,0,0,.4); padding:14px; width:min(300px,88%); border:1.5px solid var(--border); }
   .mv-callm .cn{ font-weight:800; font-size:16px; } .mv-callm .cp{ font-size:14px; color:var(--text-muted); margin:2px 0 10px; font-variant-numeric:tabular-nums; } .mv-callm .cs{ font-size:12px; color:var(--text-muted); line-height:1.4; margin-top:8px; }
   .mv-ca{ display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px; background:var(--primary); color:#fff; font-weight:700; text-decoration:none; margin-top:6px; } .mv-ca.wa{ background:var(--surface-2); color:var(--text); border:1.5px solid var(--border); } .mv-ca.wa svg{ color:var(--primary); }
-  .mv-lb{ position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.92); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; } .mv-lb img{ max-width:100%; max-height:76vh; border-radius:10px; object-fit:contain; } .mv-lbbar{ display:flex; gap:10px; } .mv-lbbar .btn{ text-decoration:none; }
+  .mv-lb{ position:fixed; top:0; right:0; bottom:0; left:0; inset:0; z-index:9999; background:rgba(0,0,0,.92); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; } .mv-lb img{ max-width:100%; max-height:76vh; border-radius:10px; object-fit:contain; } .mv-lbbar{ display:flex; gap:10px; } .mv-lbbar .btn{ text-decoration:none; }
+  .mv-gone{ font-size:12.5px; opacity:.75; font-style:italic; padding:4px 6px; }
+  .mv-foot{ flex:none; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:space-between; padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px)); background:var(--surface); border-top:1.5px solid var(--border); font-size:12.5px; color:var(--text-muted); } .mv-foot select{ padding:5px 8px; border-radius:8px; }
   .mv-att{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; } .mv-att .btn{ display:inline-flex; align-items:center; gap:6px; } .mv-att .btn.rec{ border-color:#E5322D; color:#E5322D; }
   .mv-att + input + #cmAtt .mv-pend, #cmAtt .mv-pend{ margin-top:8px; }
 
@@ -2063,14 +2065,43 @@ var Store = (function(){
    the app. Devices share one business through a private SYNC CODE.
    Conflicts: the most recent save wins (per record). */
 var SYNC_DEFAULTS = { url:'', key:'' };   // paste your Supabase URL + anon key here to bake them into the app
+/* ---- end to end encryption for cloud sync (version 2) ----
+ * Records are locked with AES-GCM on the device before they leave it. The key comes from the sync code
+ * (PBKDF2), and the cloud only sees a hashed workspace name, so the cloud owner cannot read the data and
+ * old app versions simply never see the new rows. Row and collection names stay visible to the cloud. */
+var E2E = {
+  keys:{},
+  ok:function(){ try{ return !!(window.crypto && crypto.subtle && window.TextEncoder && crypto.getRandomValues); }catch(e){ return false; } },
+  enc:function(t){ return new TextEncoder().encode(t); },
+  b64:function(buf){ var u = new Uint8Array(buf), s = ''; for(var i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); },
+  unb64:function(t){ var b = atob(t), u = new Uint8Array(b.length); for(var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; },
+  hex:function(buf){ return Array.prototype.map.call(new Uint8Array(buf), function(x){ return ('0'+x.toString(16)).slice(-2); }).join(''); },
+  wsId:async function(code){ return 'v2-' + E2E.hex(await crypto.subtle.digest('SHA-256', E2E.enc('pesa-ws-v2|' + code))).slice(0, 40); },
+  key:async function(code){
+    if(E2E.keys[code]) return E2E.keys[code];
+    var base = await crypto.subtle.importKey('raw', E2E.enc(code), 'PBKDF2', false, ['deriveKey']);
+    var k = await crypto.subtle.deriveKey({ name:'PBKDF2', salt:E2E.enc('pesa-e2e-v2'), iterations:150000, hash:'SHA-256' }, base, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+    return (E2E.keys[code] = k);
+  },
+  seal:async function(code, coll, id, obj){
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv, additionalData:E2E.enc(coll + '|' + id) }, await E2E.key(code), E2E.enc(JSON.stringify(obj)));
+    return { e:2, iv:E2E.b64(iv), c:E2E.b64(ct) };
+  },
+  open:async function(code, coll, id, env){
+    var pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:E2E.unb64(env.iv), additionalData:E2E.enc(coll + '|' + id) }, await E2E.key(code), E2E.unb64(env.c));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+};
 var Sync = (function(){
   var CFG_KEY = 'pesa_sync_cfg_v1', OUT_KEY = 'pesa_sync_out_v1', PUSH_CHUNK = 200, PUSH_BYTES = 1500000, PULL_PAGE = 100, OVERLAP_MS = 10000;
-  var st = { syncing:false, lastOk:0, error:'', timer:null, debounce:null, started:false, again:false };
+  var st = { syncing:false, lastOk:0, error:'', timer:null, debounce:null, started:false, again:false, undecodable:0 };
   function readJson(k){ try{ return JSON.parse(localStorage.getItem(k) || '{}') || {}; }catch(e){ return {}; } }
   function writeJson(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
   function cfg(){
     var c = readJson(CFG_KEY)[WS.id] || {};
-    return { url:String(c.url || SYNC_DEFAULTS.url || '').replace(/\/+$/, ''), key:c.key || SYNC_DEFAULTS.key || '', code:c.code || '', on:!!c.on, last:c.last || '' };
+    var v2 = c.v === 2 && !!c.wsid;
+    return { url:String(c.url || SYNC_DEFAULTS.url || '').replace(/\/+$/, ''), key:c.key || SYNC_DEFAULTS.key || '', code:c.code || '', on:!!c.on, last:c.last || '', v:v2 ? 2 : 1, ws:v2 ? c.wsid : (c.code || '') };
   }
   function saveCfg(patch){ var all = readJson(CFG_KEY); all[WS.id] = Object.assign({}, all[WS.id], patch); writeJson(CFG_KEY, all); }
   function outbox(){ var all = Persist.kvGet(OUT_KEY) || {}; return all[WS.id] || {}; }
@@ -2078,7 +2109,7 @@ var Sync = (function(){
   function pendingCount(){ return Object.keys(outbox()).length; }
   function usable(){ var c = cfg(); return !!(c.on && c.url && c.key && c.code) && Store.mode() === 'local'; }
   function toColl(collPath){ return collPath.indexOf(WS.prefix) === 0 ? collPath.slice(WS.prefix.length) : collPath; }
-  function headers(c){ return { 'apikey':c.key, 'Authorization':'Bearer '+c.key, 'Content-Type':'application/json', 'x-pesa-code':c.code }; }
+  function headers(c){ return { 'apikey':c.key, 'Authorization':'Bearer '+c.key, 'Content-Type':'application/json', 'x-pesa-code':(c.ws || c.code) }; }
   function status(){
     var c = cfg();
     if(Store.mode() !== 'local') return { state:'cloud', label:'' };
@@ -2113,11 +2144,15 @@ var Sync = (function(){
     var c = cfg(), o = Object.assign({}, outbox()), keys = Object.keys(o);
     // batches stop at 200 records or about 1.5 MB, so photos and voice notes never make one huge request
     var batches = [], cur = [], sz = 0;
-    keys.forEach(function(k){ var len = JSON.stringify(o[k].d === null ? '' : o[k].d).length; if(cur.length && (cur.length >= PUSH_CHUNK || sz + len > PUSH_BYTES)){ batches.push(cur); cur = []; sz = 0; } cur.push(k); sz += len; });
+    keys.forEach(function(k){ var len = Math.round(JSON.stringify(o[k].d === null ? '' : o[k].d).length * (c.v === 2 ? 1.4 : 1)); if(cur.length && (cur.length >= PUSH_CHUNK || sz + len > PUSH_BYTES)){ batches.push(cur); cur = []; sz = 0; } cur.push(k); sz += len; });
     if(cur.length) batches.push(cur);
     for(var bi=0; bi<batches.length; bi++){
       var chunk = batches[bi];
-      var rows = chunk.map(function(k){ var e = o[k]; return { ws:c.code, coll:e.c, id:e.i, data:e.d, deleted:e.d === null }; });
+      var rows = await Promise.all(chunk.map(async function(k){
+        var e = o[k], data = e.d;
+        if(c.v === 2 && data !== null) data = await E2E.seal(c.code, e.c, e.i, data);
+        return { ws:c.ws, coll:e.c, id:e.i, data:data, deleted:e.d === null };
+      }));
       await fetchJson(c.url+'/rest/v1/pesa_docs?on_conflict=ws,coll,id', { method:'POST', headers:Object.assign(headers(c), { 'Prefer':'resolution=merge-duplicates,return=minimal' }), body:JSON.stringify(rows) });
       // clear what we sent, unless the record changed again meanwhile
       var now = outbox();
@@ -2151,9 +2186,20 @@ var Sync = (function(){
   async function pull(){
     var c = cfg(), cursor = c.last || '', maxSeen = cursor, total = 0;
     for(;;){
-      var q = c.url+'/rest/v1/pesa_docs?select=coll,id,data,deleted,updated_at&ws=eq.'+encodeURIComponent(c.code)+(cursor ? '&updated_at=gt.'+encodeURIComponent(cursor) : '')+'&order=updated_at.asc&limit='+PULL_PAGE;
+      var q = c.url+'/rest/v1/pesa_docs?select=coll,id,data,deleted,updated_at&ws=eq.'+encodeURIComponent(c.ws)+(cursor ? '&updated_at=gt.'+encodeURIComponent(cursor) : '')+'&order=updated_at.asc&limit='+PULL_PAGE;
       var rows = await fetchJson(q, { method:'GET', headers:headers(c) }) || [];
-      total += applyRemote(rows);
+      var shown = rows;
+      if(c.v === 2){
+        shown = [];
+        for(var ri = 0; ri < rows.length; ri++){
+          var r = rows[ri];
+          if(r.data && r.data.e === 2){
+            try{ shown.push(Object.assign({}, r, { data:await E2E.open(c.code, r.coll, r.id, r.data) })); }
+            catch(err){ st.undecodable++; }
+          } else shown.push(r);
+        }
+      }
+      total += applyRemote(shown);
       if(rows.length){ maxSeen = rows[rows.length-1].updated_at; cursor = maxSeen; }
       if(rows.length < PULL_PAGE) break;
     }
@@ -2167,10 +2213,11 @@ var Sync = (function(){
     if(!usable()) return refresh();
     if(!navigator.onLine){ return refresh(); }
     if(st.syncing){ st.again = true; return; }
-    st.syncing = true; st.error = ''; refresh();
+    st.syncing = true; st.error = ''; st.undecodable = 0; refresh();
     try{
       await push();
       await pull();
+      if(st.undecodable) throw new Error(st.undecodable + ' records could not be unlocked. Check that every device uses the same sync code.');
       st.lastOk = Date.now();
     }catch(e){ st.error = String(e && e.message || e); }
     st.syncing = false; refresh();
@@ -2205,18 +2252,35 @@ var Sync = (function(){
     start:start, syncNow:syncNow, status:status, queue:queue, isPending:function(coll, id){ return usable() && !!outbox()[coll+'|'+id]; }, cfg:cfg, saveCfg:saveCfg, pendingCount:pendingCount, genCode:genCode, normCode:normCode, usable:usable,
     lastError:function(){ return st.error; },
     // Owner: turn sync on for this business (uploads everything already here)
-    enable:function(url, key, code){
-      saveCfg({ url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:normCode(code), on:true, last:'' });
-      queueEverything(); st.error = ''; refresh(); return syncNow();
+    enable:async function(url, key, code, opts){
+      var nc = normCode(code), v = (opts && opts.v) || (E2E.ok() ? 2 : 1);
+      saveCfg({ url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:nc, on:true, last:'', v:v, wsid:v === 2 ? await E2E.wsId(nc) : '' });
+      queueEverything(); st.error = ''; refresh(); syncNow(); return true;   // the first upload carries on in the background
     },
-    // New device: join an existing business (nothing to upload, just download)
-    join:function(url, key, code){
-      saveCfg({ url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:normCode(code), on:true, last:'' });
+    // New device: join an existing business (nothing to upload, just download). It finds out by itself whether the business is locked (version 2) or the older readable copy.
+    join:async function(url, key, code){
+      var nc = normCode(code), u = String(url||'').trim().replace(/\/+$/, ''), k = String(key||'').trim(), v = 1, wsid = '';
+      function probe(ws){ return fetchJson(u+'/rest/v1/pesa_docs?select=id&ws=eq.'+encodeURIComponent(ws)+'&limit=1', { method:'GET', headers:headers({ key:k, ws:ws }) }).then(function(r){ return !!(r && r.length); }, function(){ return false; }); }
+      if(E2E.ok()){
+        wsid = await E2E.wsId(nc);
+        if(await probe(wsid)) v = 2;
+        else if(await probe(nc)) v = 1;
+        else v = 2;
+      }
+      saveCfg({ url:u, key:k, code:nc, on:true, last:'', v:v, wsid:v === 2 ? wsid : '' });
       st.error = ''; refresh(); return syncNow();
     },
+    // Owner and each other device: move from the readable copy to the locked copy under a hidden workspace name.
+    upgrade:async function(){
+      var c = cfg(); if(!c.on || c.v === 2 || !E2E.ok()) return false;
+      saveCfg({ v:2, wsid:await E2E.wsId(c.code), last:'' });
+      queueEverything(); st.error = ''; refresh(); await syncNow(); return true;
+    },
+    secure:function(){ return cfg().v === 2; }, canLock:function(){ return E2E.ok(); },
     disable:function(){ saveCfg({ on:false }); refresh(); },
     test:function(url, key, code){
       var c = { url:String(url||'').trim().replace(/\/+$/, ''), key:String(key||'').trim(), code:normCode(code) };
+      c.ws = c.code;
       return fetchJson(c.url+'/rest/v1/pesa_docs?select=id&ws=eq.'+encodeURIComponent(c.code)+'&limit=1', { method:'GET', headers:headers(c) });
     }
   };
@@ -2972,6 +3036,9 @@ function syncSettingsHtml(){
       '<div id="syncStatusLine" style="margin-top:8px;">'+syncStatusLineHtml()+'</div></div>' +
     (on
       ? '<div class="field"><label>'+tr('Your sync code (keep it private)')+'</label><input id="syCodeShow" readonly value="'+esc(c.code)+'" style="font-family:monospace;letter-spacing:0.5px;"></div>' +
+        (c.v === 2
+          ? '<div class="banner" style="display:block;border-left:4px solid var(--success);"><b>'+tr('Encrypted sync')+'</b><div style="margin-top:4px;">'+tr('Your records are locked on this device before they leave it. The cloud only holds scrambled data, and only devices with your sync code can read it. The shop name, record types and times are still visible to the cloud.')+'</div></div>'
+          : (Sync.canLock() ? '<div class="banner" style="display:block;border-left:4px solid var(--danger);"><b>'+tr('Your cloud copy is not encrypted')+'</b><div style="margin-top:4px;">'+tr('Anyone who can open your cloud project can read it. Upgrade to encrypted sync to lock it.')+'</div><div class="actions" style="margin-top:8px;"><button class="btn btn-primary" id="syUp" type="button">'+tr('Upgrade to encrypted sync')+'</button></div></div>' : '<div class="banner" style="display:block;">'+tr('This browser cannot lock cloud data, so the cloud copy is readable. Open Pesa from its secure address to use encrypted sync.')+'</div>')) +
         '<div class="actions"><button class="btn btn-ghost" id="syCopy" type="button">'+tr('Copy code')+'</button><button class="btn btn-ghost" id="syNow" type="button">'+tr('Sync now')+'</button><button class="btn btn-danger" id="syOff" type="button">'+tr('Turn off sync')+'</button></div>'
       : (baked ? '' : '<div class="field"><label>Supabase Project URL</label><input id="syUrl" placeholder="https://xxxx.supabase.co" value="'+esc(c.url)+'"></div>' +
                       '<div class="field"><label>Supabase anon public key</label><input id="syKey" placeholder="eyJ…" value="'+esc(c.key)+'"></div>') +
@@ -3001,11 +3068,18 @@ function wireSyncSettings(ov){
     var v = vals(); if(!v.url || !v.key || !v.code) return say(tr('Fill in the URL, key and sync code first.'), false);
     if(v.code.replace(/-/g,'').length < 16) return say(tr('The sync code must be at least 16 letters or digits. Tap Generate code.'), false);
     Sync.test(v.url, v.key, v.code).then(function(){
-      Sync.enable(v.url, v.key, v.code);
-      closeModal(); toast(tr('Cloud sync is on')); openSettingsSheet();
+      return Sync.enable(v.url, v.key, v.code).then(function(){ closeModal(); toast(tr(Sync.secure() ? 'Cloud sync is on and encrypted' : 'Cloud sync is on')); openSettingsSheet(); });
     }, function(e){ say(tr('Could not connect')+': '+String(e.message||e).slice(0,160), false); });
   });
   var cc = root.querySelector('#syCopy'); if(cc) cc.addEventListener('click', function(){ copyText(Sync.cfg().code, tr('Sync code copied')); });
+  var up = root.querySelector('#syUp'); if(up) up.addEventListener('click', function(){
+    confirmSheet(tr('Upgrade to encrypted sync?'), tr('This sends a locked copy of all your data to the cloud under a new hidden name. Every other device must also tap Upgrade, or it keeps using the old readable copy. When all devices are upgraded, delete the old readable rows in your cloud project. Pesa copies the script for you.'), tr('Upgrade'), function(){
+      var old = Sync.cfg().code;
+      Sync.upgrade().then(function(ok){
+        if(ok){ copyText("delete from pesa_docs where ws = '" + old + "';", tr('Cleanup script copied')); closeModal(); toast(tr('Encrypted sync is on. Upgrade your other devices too')); openSettingsSheet(); }
+      });
+    }, false, true);
+  });
   var sn = root.querySelector('#syNow'); if(sn) sn.addEventListener('click', function(){ Sync.syncNow(); });
   var off = root.querySelector('#syOff'); if(off) off.addEventListener('click', function(){
     confirmSheet(tr('Turn off sync?'), tr('This device will stop sending and receiving changes. Your data stays on this device and in the cloud.'), tr('Turn off'), function(){ Sync.disable(); closeModal(); openSettingsSheet(); }, true, true);
@@ -6388,9 +6462,27 @@ var MV_EMOJI = ['😀','😂','😊','😍','😎','😅','🤔','😢','😡','
 function msgDur(s){ s = Math.max(0, Math.round(+s || 0)); return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2); }
 function msgPreview(m){
   var b = String(m.body||'').trim();
+  if(m.mediaGone && !b && !m.img && !m.audio) return (/img/.test(m.mediaGone) ? '📷 ' : '🎤 ')+tr('Removed to save space');
   if(m.img && !b) return '📷 '+tr('Photo');
   if(m.audio && !b) return '🎤 '+tr('Voice message')+' '+msgDur(m.dur);
   return (m.img ? '📷 ' : m.audio ? '🎤 ' : '') + b;
+}
+// ---- keeping chat storage small: photos and voice notes are removed after a while, the words stay ----
+function msgMediaBytes(){ var n = 0; State.messages.forEach(function(m){ if(m.img) n += m.img.length; if(m.audio) n += m.audio.length; }); return Math.round(n * 0.75); }
+function msgMediaDays(){ var d = State.settings && State.settings.msgMediaDays; return d === 0 ? 0 : (d > 0 ? d : 60); }
+function msgMb(b){ return b < 100*1024 ? Math.max(0, Math.round(b/1024))+' KB' : (b/1048576).toFixed(1)+' MB'; }
+var _msgSwept = false;
+function msgSweepMedia(force){
+  if(!isManagerOrOwner()) return 0;
+  var days = msgMediaDays(); if(!days) return 0;
+  var cutoff = Date.now() - days * 86400000, n = 0;
+  State.messages.forEach(function(m){
+    if(!(m.img || m.audio) || new Date(m.createdAt).getTime() > cutoff) return;
+    n++;
+    refs.messages.doc(m.id).update({ img:'', audio:'', mediaGone:(m.img ? 'img' : '') + (m.audio ? 'audio' : '') });
+  });
+  if(n){ syncNowSafe(); try{ logAudit('other','message',null,'Removed photos and voice notes older than '+days+' days from '+n+' messages'); }catch(e){} }
+  return n;
 }
 function msgDayLabel(iso){
   var d = new Date(iso), now = new Date(), y = new Date(now.getTime() - 86400000);
@@ -6674,9 +6766,14 @@ function openInboxSheet(){
         '<div class="mv-title">'+(r.urgent?'<span class="mv-pill urgent">'+tr('Urgent')+'</span>':'')+(r.kind==='instruction'?'<span class="mv-pill inst">'+tr('Instruction')+'</span>':'')+esc(r.title || '')+'</div>' +
         '<div class="mv-prev">'+esc(prev.slice(0,110))+'</div></div>' +
         (t.unread ? '<span class="mv-badge">'+t.unread+'</span>' : '') + '</button></div>';
-    }).join('') : '<div class="mv-empty"><div class="e">💬</div><div class="t">'+tr('No messages yet.')+'</div>'+(canSend ? '<div class="s">'+tr('Send a message or instruction to your team.')+'</div>' : '<div class="s">'+tr('Messages from your employer will show here.')+'</div>')+'</div>') + '</div></div></div>';
+    }).join('') : '<div class="mv-empty"><div class="e">💬</div><div class="t">'+tr('No messages yet.')+'</div>'+(canSend ? '<div class="s">'+tr('Send a message or instruction to your team.')+'</div>' : '<div class="s">'+tr('Messages from your employer will show here.')+'</div>')+'</div>') + '</div></div>' +
+    (isManagerOrOwner() ? '<div class="mv-foot"><span>'+tr('Photos and voice notes use')+' <b>'+msgMb(msgMediaBytes())+'</b>. '+tr('Keep them for')+'</span><select id="mvKeep"'+(isOwner() ? '' : ' disabled')+'>'+[30,60,90,180,0].map(function(d){ return '<option value="'+d+'"'+(msgMediaDays()===d?' selected':'')+'>'+(d ? d+' '+tr('days') : tr('Always'))+'</option>'; }).join('')+'</select></div>' : '') + '</div>';
   var ov = openSheet(html);
   ov.querySelector('.sheet').classList.add('mv-full');
+  var kp = ov.querySelector('#mvKeep'); if(kp) kp.addEventListener('change', function(){
+    State.settings = Object.assign({}, State.settings, { msgMediaDays:parseInt(kp.value, 10) }); refs.settings.set(State.settings);
+    var n = msgSweepMedia(true); toast(n ? n+' '+tr('old photos and voice notes removed') : tr('Saved'));
+  });
   ov.querySelector('#mvX').addEventListener('click', closeModal);
   ov.querySelectorAll('[data-thread]').forEach(function(b){ b.addEventListener('click', function(){ openThreadSheet(b.getAttribute('data-thread')); }); });
   var picked = {};
@@ -6737,7 +6834,7 @@ function openThreadSheet(rootId){
       if(day !== lastDay){ lastDay = day; sep = '<div class="mv-day">'+esc(msgDayLabel(x.createdAt))+'</div>'; }
       var media = !!(x.img || x.audio);
       return sep + '<div class="mv-row'+(mine?' me':'')+'">'+(selMode ? '<span class="tick mv-tick'+(bsel[x.id]?' on':'')+'" data-btick="'+x.id+'" role="checkbox" aria-checked="'+(!!bsel[x.id])+'"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' : '')+(mine?'':msgAvatar(x.fromName))+'<div class="mv-bub'+(mine?' me':'')+(x.kind==='instruction'?' inst':'')+(media?' media':'')+'">' + (mine?'':'<div class="mv-who">'+esc(x.fromName)+'</div>') +
-        (x.img ? '<img class="mv-img" data-lb="'+x.id+'" src="'+x.img+'" alt="'+tr('Photo')+'"'+(x.imgW && x.imgH ? ' width="'+x.imgW+'" height="'+x.imgH+'"' : '')+'>' : '') + (x.audio ? msgVoiceHtml(x) : '') +
+        (x.img ? '<img class="mv-img" data-lb="'+x.id+'" src="'+x.img+'" alt="'+tr('Photo')+'"'+(x.imgW && x.imgH ? ' width="'+x.imgW+'" height="'+x.imgH+'"' : '')+'>' : '') + (x.audio ? msgVoiceHtml(x) : '') + (x.mediaGone && !x.img && !x.audio ? '<div class="mv-gone">'+(/img/.test(x.mediaGone) ? '📷 '+tr('Photo removed to save space') : '🎤 '+tr('Voice note removed to save space'))+'</div>' : '') +
         (x.body ? '<div class="mv-txt">'+esc(x.body)+'</div>' : '') + '<div class="mv-meta">'+esc(msgTime(x.createdAt))+ticks(x)+'</div></div></div>';
     }).join('');
     if(first || near || t.items.length !== lastN) chat.scrollTop = chat.scrollHeight;
@@ -6861,6 +6958,7 @@ function onMessagesChanged(){
     }
   }
   _msgKnown = ids;
+  if(!_msgSwept && State.ready && State.ready.messages && State.messages.length){ _msgSwept = true; setTimeout(function(){ try{ msgSweepMedia(); }catch(e){} }, 4000); }
   try{ if(_openThread && document.getElementById('mvThread') && _openThread.paint) _openThread.paint(); else _openThread = null; }catch(e){}
 }
 
@@ -17901,7 +17999,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.22';
+var APP_VERSION = '2026.10.23';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18093,6 +18191,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.23', items:[
+    'Encrypted cloud sync: new setups lock your shop data on the device before it is sent, and existing shops can tap Upgrade in Sync settings on each device',
+    'Messages: photos and voice notes older than the keep time are removed automatically to save space, and you can choose how long to keep them'
+  ]},
   { v:'2026.10.22', items:[
     'Accountant: the journal and the trial balance now download in every format (PDF, Word, Excel, CSV, web page, rich text, plain text and picture), like the monthly pack and the VAT working figures. Excel and CSV keep every column'
   ]},

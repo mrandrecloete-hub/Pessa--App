@@ -1,0 +1,22 @@
+const { chromium } = require('playwright');
+const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+(async()=>{ const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'})).newPage(); const e=[]; p.on('pageerror',x=>e.push(x.message));
+ await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
+ await p.fill('#rcCompanyName','D'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+ await p.evaluate(async()=>{const T=window.__t; await T.refs.users.doc().set({name:'Sam',role:'cashier',passHash:'x',active:true});});
+ await p.waitForTimeout(300);
+ await p.evaluate(async()=>{const T=window.__t,o=T.State.users.find(x=>x.role==='owner'),s=T.State.users.find(x=>x.name==='Sam');T.State.session={userId:o.id,name:o.name,role:'owner'};
+   for(const t of ['One','Two','Three']){ const r=await T.refs.messages.add({to:s.id,toName:'Sam',fromId:o.id,fromName:'Alice',kind:'message',title:t,body:'Body '+t,readBy:{},createdAt:new Date().toISOString()}); if(t==='One'){ await T.refs.messages.add({to:o.id,toName:'Alice',fromId:s.id,fromName:'Sam',kind:'reply',threadId:r.id,body:'Reply A',readBy:{},createdAt:new Date().toISOString()}); await T.refs.messages.add({to:o.id,toName:'Alice',fromId:s.id,fromName:'Sam',kind:'reply',threadId:r.id,body:'Reply B',readBy:{},createdAt:new Date().toISOString()}); } } });
+ await p.waitForTimeout(300);
+ await p.evaluate(()=>{window.__t.setTab('team');}); await p.waitForTimeout(300); await p.click('[data-trklog]'); await p.waitForSelector('[data-mtick]');
+ await p.screenshot({path:D+'md1_inbox.png'});
+ const n=()=>p.evaluate(()=>[document.querySelectorAll('[data-thread]').length, document.querySelector('[data-mcount]')?.textContent, document.querySelector('[data-mdel]')?.disabled]);
+ console.log('start', await n());
+ await p.click('[data-mtick]'); console.log('one ticked', await n()); await p.click('[data-mall]'); console.log('all', await n()); await p.click('[data-mnone]'); console.log('none', await n());
+ await p.click('[data-mtick] >> nth=0'); await p.click('[data-mdel]'); await p.waitForSelector('#dmMe'); await p.screenshot({path:D+'md2_confirm.png'}); console.log('has everyone', await p.$('#dmAll')!==null); await p.click('#dmMe'); await p.waitForTimeout(300); console.log('after delete one', await n());
+ // thread bubbles
+ await p.click('[data-thread] >> nth=1'); await p.waitForSelector('#mvTrash'); await p.click('#mvTrash'); await p.waitForSelector('[data-btick]'); console.log('bubble ticks', await p.$$eval('[data-btick]',x=>x.length));
+ await p.click('[data-btick] >> nth=1'); await p.screenshot({path:D+'md3_thread_sel.png'}); await p.click('#mvDelSel'); await p.waitForSelector('#dmMe'); console.log('everyone offered for others replies', await p.$('#dmAll')!==null); await p.click('#dmMe'); await p.waitForTimeout(400);
+ console.log('messages left', await p.evaluate(()=>window.__t.State.messages.map(m=>m.body)));
+ console.log(e); await b.close(); })();

@@ -1,0 +1,13 @@
+const { chromium } = require('playwright');
+(async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
+ await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+ await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+ await p.click('#menuBtn'); await p.waitForSelector('.drawer-row[data-drawer-row="accountant"]',{state:'attached'});
+ const has=await p.evaluate(()=>{ const r=[...document.querySelectorAll('.drawer-row[data-drawer-row="accountant"]')].find(e=>e.offsetParent); return !!(r && r.querySelector('.ico.i3d img')); });
+ console.log('menu row uses 3D icon:',has);
+ await p.evaluate(()=>{ const r=[...document.querySelectorAll('.drawer-row[data-drawer-row="accountant"]')].find(e=>e.offsetParent); r.scrollIntoView({block:'center'}); });
+ await p.waitForTimeout(300); await p.screenshot({path:'acct_ico_menu.png'});
+ await p.evaluate(()=>{ [...document.querySelectorAll('.drawer-row[data-drawer-row="accountant"]')].find(e=>e.offsetParent).click(); }); await p.waitForSelector('#acRun'); await p.waitForTimeout(400); await p.screenshot({path:'acct_ico_page.png'});
+ console.log('errors',errs); await b.close(); })();

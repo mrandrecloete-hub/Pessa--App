@@ -1,0 +1,11 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fail++;} };
+(async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage();
+ await require('./biz_boot.js')(p);
+ const toasts=()=>p.evaluate(()=>[...document.querySelectorAll('.toast, #toast, [class*=toast]')].map(e=>e.textContent).join('|'));
+ await p.evaluate(()=>{ setTimeout(()=>{ throw new Error('boom test'); },0); }); await p.waitForTimeout(400);
+ ck('calm message shown for an unexpected error', /hit a snag/.test(await toasts()));
+ await p.waitForTimeout(3500);
+ await p.evaluate(()=>{ setTimeout(()=>{ throw new Error('boom again'); },0); }); await p.waitForTimeout(400);
+ ck('second error within 15s is throttled', !/hit a snag/.test(await toasts()));
+ await b.close(); console.log(fail?'FAILED':'ALL OK'); })();
