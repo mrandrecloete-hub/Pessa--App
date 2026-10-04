@@ -2454,7 +2454,6 @@ function initRefs(){
   refs.posDevices = Store.collection('posDevices');
   refs.posBatches = Store.collection('posBatches');
   refs.messages = Store.collection('messages');
-  refs.voiceclips = Store.collection('voiceclips');
   refs.workReports = Store.collection('workReports');
   refs.wastage = Store.collection('wastage');
   refs.auditLog = Store.collection('auditLog');
@@ -2548,7 +2547,6 @@ function subscribeAll(){
     State.posBatches = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.settledAt)-new Date(a.settledAt); });
     State.ready.posBatches = true;
   });
-  refs.voiceclips.onSnapshot(function(docs){ try{ vcApplyRemote(docs); }catch(e){} });
   refs.messages.onSnapshot(function(docs){
     State.messages = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
     State.ready.messages = true;
@@ -2685,32 +2683,7 @@ function synthWaterSplash(ctx, dest, t0, strength){
 }
 window.synthWaterSplash = synthWaterSplash;
 var welcomeSoundState = { done:false, ctx:null, timers:[] };
-function speakWelcome(){
-  try{
-    if(typeof VoiceClips !== 'undefined'){
-      VoiceClips.find(currentLangCode(), 'welcome', 0).then(function(rec){
-        if(rec){ var a = new Audio(VoiceClips.url(rec)); var pr = a.play(); if(pr && pr.catch) pr.catch(function(){}); }
-        else speakWelcomeTts();
-      }, speakWelcomeTts);
-      return;
-    }
-  }catch(e){}
-  speakWelcomeTts();
-}
-function speakWelcomeTts(){
-  try{
-    if(!('speechSynthesis' in window)) return;
-    var u = new SpeechSynthesisUtterance('Welcome to Pessa');
-    u.lang = 'en-ZA'; u.rate = 0.92; u.pitch = 1.05; u.volume = 1;
-    var voices = window.speechSynthesis.getVoices() || [];
-    var v = voices.find(function(x){ return /^en[-_]ZA/i.test(x.lang); }) ||
-            voices.find(function(x){ return /^en/i.test(x.lang) && /female|samantha|zira|susan|serena|google uk english female/i.test(x.name); }) ||
-            voices.find(function(x){ return /^en/i.test(x.lang); });
-    if(v) u.voice = v;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }catch(e){}
-}
+function speakWelcome(){}   // the spoken greeting was removed: Pesa now only reads, it does not speak
 function playWelcomeSound(){
   var st = welcomeSoundState;
   if(st.done) return;
@@ -15655,10 +15628,9 @@ function openLicenceSheet(){
 }
 
 /* ============================== TRAINING ============================== */
-// A browsable set of short, narrated lessons covering every real feature in
-// the app, aimed at a shop assistant learning the till for the first time.
-// Narration uses the browser's own window.speechSynthesis — no account, no
-// API key, and it works fully offline.
+// A browsable set of short lessons covering every real feature in the app,
+// aimed at a shop assistant learning the till for the first time. They are
+// for reading (and for the full training manual PDF); Pesa has no spoken voice.
 var LESSONS = [
   { id:'developer', title:'Meet the developer and your privacy promise', icon:'info', who:'all', silent:true, slides:[
     { title:'Meet the developer', photo:true, text:'Hello and welcome to Pesa! My name is Björn Van Rensburg. I am a 30 year old software developer, born and raised right here in Windhoek, Namibia.',
@@ -16055,152 +16027,10 @@ var LESSONS = [
 
 var _trainState = { lessonId:null, idx:0, playing:false, autoTimer:null, tok:0, chain:false };
 
-function speechSupported(){
-  return typeof window!=='undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance!=='undefined';
-}
-
-function stopClipAudio(){
-  var a = _trainState.clip;
-  if(a){ a.onended = a.onerror = a.ontimeupdate = a.onloadedmetadata = null; try{ a.pause(); }catch(e){} _trainState.clip = null; }
-}
-function stopNarration(){
-  stopClipAudio();
-  _trainState.tok = (_trainState.tok || 0) + 1;
-  _trainState.playing = false;
-  if(_trainState.autoTimer){ clearTimeout(_trainState.autoTimer); _trainState.autoTimer = null; }
-  try{ if(speechSupported()) window.speechSynthesis.cancel(); }catch(e){}
-}
-
-// Picks a slower, clearly spoken male English voice for lesson narration,
-// where the browser or operating system exposes one. Voice names and lang
-// codes vary a lot by platform, so this uses a broad set of common signals
-// (the word "male" in the name, and well known male voice names on major
-// platforms) rather than relying on any single exact match. Falls back to
-// the first available English voice, and ultimately to the browser's own
-// default voice, so narration always still works on a device that has no
-// labelled male voice installed.
-var _narrationVoice = null;
-var MALE_VOICE_HINTS = ['male','david','mark','daniel','alex','fred','george','james','oliver','ryan','guy','tom','arthur','matthew','brian','eric','justin','paul','liam','ravi'];
-// ---- narrator voice chooser: male American English voices the device offers ----
-var TRAIN_VOICE_KEY = 'pesa_train_voice_v1', TRAIN_PITCH_KEY = 'pesa_train_pitch_v1';
-var TV_MALE = /\b(david|mark|guy|aaron|christopher|eric|roger|steffan|brandon|davis|jason|tony|alex|fred|tom|evan|nathan|reed|rocko|eddy|grandpa|ralph|junior|bruce|daniel|george|james|ryan|matthew|brian|justin|paul|liam|arthur|oliver|male)\b|en-us-x-(iol|iom|tpd)/i;
-var TV_FEMALE = /\b(female|zira|jenny|aria|samantha|allison|ava|susan|karen|victoria|nicky|joanna|salli|kendra|kimberly|ivy|emma|amber|ashley|cora|jane|sara|nancy|michelle|ana|libby|monica|moira|tessa|fiona|kathy|princess|vicki|agnes|serena|sonia|hazel|catherine|heather|zoe|flo|grandma|shelley|sandy|nora)\b/i;
-var TV_NOVELTY = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|deranged|hysterical)\b/i;
-function trainVoiceSaved(){ try{ return localStorage.getItem(TRAIN_VOICE_KEY) || ''; }catch(e){ return ''; } }
-function setTrainVoice(name){ try{ localStorage.setItem(TRAIN_VOICE_KEY, name || ''); }catch(e){} }
-function trainPitch(){ try{ if(localStorage.getItem(TRAIN_PITCH_KEY) === 'deep') return 0.8; }catch(e){} return 1; }
-function setTrainDeep(on){ try{ localStorage.setItem(TRAIN_PITCH_KEY, on ? 'deep' : ''); }catch(e){} }
-function trainVoiceChoices(voices){
-  voices = voices || (speechSupported() ? (window.speechSynthesis.getVoices() || []) : []);
-  var seen = {};
-  function male(v){ var n = (v.name||'')+' '+(v.voiceURI||''); return !TV_NOVELTY.test(n) && !TV_FEMALE.test(n) && (TV_MALE.test(n) || /x-(iol|iom|tpd)\b/i.test(n)); }
-  function uniq(v){ if(seen[v.name]) return false; seen[v.name] = 1; return true; }
-  function rank(v){ var n = (v.name||'').toLowerCase(); return (/natural|online/.test(n) ? 0 : 1) + (v.localService ? 0 : 0.5); }
-  var us = voices.filter(function(v){ return /^en[-_]us$/i.test(v.lang||'') && male(v); }).filter(uniq).sort(function(a,b){ return rank(a) - rank(b); });
-  var other = voices.filter(function(v){ return /^en([-_]|$)/i.test(v.lang||'') && !/^en[-_]us$/i.test(v.lang||'') && male(v); }).filter(uniq);
-  var all = voices.filter(function(v){ return /^en([-_]|$)/i.test(v.lang||'') && !TV_NOVELTY.test(v.name||''); }).filter(function(v){ return !seen[v.name]; }).filter(uniq);
-  return { us:us, other:other, all:all };
-}
-function trainVoiceLabel(v){
-  var n = String(v.name||'').replace(/^Microsoft\s+/i,'').replace(/\s*-\s*English.*$/i,'').replace(/\s*Online\s*\(Natural\)/i,' (Natural)').replace(/en-us-x-(\w+)-local/i,'Voice $1').trim();
-  return n || 'Voice';
-}
-function trainVoicePanelHtml(){
-  var ch = trainVoiceChoices(), cur = _narrationVoice ? _narrationVoice.name : '';
-  function row(v, i, grp){
-    var on = v.name === cur, isM = grp !== 'a';
-    return '<div class="tv-row'+(on?' on':'')+'" data-tv="'+grp+i+'"><span class="tv-radio"></span><div class="main"><b>'+esc(trainVoiceLabel(v))+'</b><small>'+esc((v.lang||'').replace('_','-'))+' · '+(isM ? tr('Male')+' · ' : '')+tr(v.localService ? 'On this device' : 'Needs internet')+'</small></div><button type="button" class="btn btn-ghost" data-tvhear="'+grp+i+'">'+tr('Hear')+'</button></div>';
-  }
-  var h = '<div class="tv-panel"><div class="tv-h">'+tr('Male American English voices')+'</div>';
-  if(ch.us.length) h += ch.us.map(function(v, i){ return row(v, i, 'u'); }).join('');
-  else h += '<div class="tv-none">'+tr('No male American English voice is installed on this computer or device. Add one in the device settings under speech or text to speech voices, then reopen this page.')+'</div>';
-  if(ch.all.length && !ch.us.length) h += '<div class="tv-h" style="margin-top:8px;">'+tr('All English voices on this device. Tap Hear on each and pick the one you like.')+'</div>' + ch.all.map(function(v, i){ return row(v, i, 'a'); }).join('');
-  if(ch.other.length && !ch.us.length) h += '<div class="tv-h" style="margin-top:8px;">'+tr('Other English male voices')+'</div>' + ch.other.map(function(v, i){ return row(v, i, 'o'); }).join('');
-  h += '<label class="tv-deep"><input type="checkbox" id="tvDeep"'+(trainPitch() < 1 ? ' checked' : '')+'> '+tr('Deeper tone, where the device allows it')+'</label>' +
-    '<div class="tv-note">'+tr('The voices come from your computer or device, so the list can differ from one device to the next. Recordings you made under My voice still play instead of these voices.')+'</div></div>';
-  return h;
-}
-function wireTrainVoicePanel(root, cb){
-  cb = cb || {};
-  var ch = trainVoiceChoices(), map = {};
-  ch.us.forEach(function(v, i){ map['u'+i] = v; }); ch.other.forEach(function(v, i){ map['o'+i] = v; }); ch.all.forEach(function(v, i){ map['a'+i] = v; });
-  root.querySelectorAll('[data-tvhear]').forEach(function(b){ b.addEventListener('click', function(e){
-    e.stopPropagation(); var v = map[b.getAttribute('data-tvhear')]; if(!v) return;
-    stopNarration();
-    try{
-      var u = new SpeechSynthesisUtterance('Hello, I am your Pesa trainer. Tap any step to hear it again.');
-      u.voice = v; u.lang = v.lang || 'en-US'; u.rate = trainRate(); u.pitch = trainPitch();
-      window.speechSynthesis.speak(u);
-    }catch(x){}
-    if(cb.onHear) cb.onHear();
-  }); });
-  root.querySelectorAll('[data-tv]').forEach(function(r){ r.addEventListener('click', function(){
-    var v = map[r.getAttribute('data-tv')]; if(!v) return;
-    setTrainVoice(v.name); _narrationVoice = v;
-    root.querySelectorAll('[data-tv]').forEach(function(x){ x.classList.toggle('on', x === r); });
-    if(cb.onPick) cb.onPick(v);
-  }); });
-  var d = root.querySelector('#tvDeep'); if(d) d.addEventListener('change', function(){ setTrainDeep(d.checked); if(cb.onPick) cb.onPick(_narrationVoice); });
-}
-function pickNarrationVoice(voices){
-  if(!voices || !voices.length) return null;
-  var saved = trainVoiceSaved();
-  if(saved){ var sv = voices.filter(function(v){ return v.name === saved; })[0]; if(sv) return sv; }
-  var cc = trainVoiceChoices(voices); if(cc.us.length) return cc.us[0];
-  var english = voices.filter(function(v){ return /^en(-|_|$)/i.test(v.lang||''); });
-  var pool = english.length ? english : voices;
-  function score(v){
-    var name = (v.name||'').toLowerCase(), lang = (v.lang||'').toLowerCase(), s = 0;
-    if(MALE_VOICE_HINTS.some(function(h){ return name.indexOf(h)!==-1; })) s += 10;
-    if(name.indexOf('female')!==-1) s -= 10;
-    if(lang==='en-gb') s += 3;
-    if(lang==='en-us') s += 2;
-    if(v.localService) s += 1;
-    return s;
-  }
-  var best = pool[0], bestScore = -Infinity;
-  pool.forEach(function(v){ var s = score(v); if(s>bestScore){ bestScore=s; best=v; } });
-  return best;
-}
-function refreshNarrationVoice(){
-  try{
-    var voices = window.speechSynthesis.getVoices();
-    if(voices && voices.length) _narrationVoice = pickNarrationVoice(voices);
-  }catch(e){}
-}
-(function setupNarrationVoice(){
-  if(!speechSupported()) return;
-  try{
-    refreshNarrationVoice();
-    // Many browsers (notably Chrome) load their voice list asynchronously,
-    // so the very first getVoices() call above can come back empty. This
-    // event fires once the real list is ready, and we re-pick from it.
-    window.speechSynthesis.onvoiceschanged = refreshNarrationVoice;
-  }catch(e){}
-})();
-
+function stopNarration(){}   // kept so older calls still work; Training has no voice any more
 var TRAIN_DONE_KEY = 'pesa_train_done_v1', TRAIN_RATE_KEY = 'pesa_train_rate_v1';
 function trainDoneMap(){ try{ return JSON.parse(localStorage.getItem(TRAIN_DONE_KEY) || '{}') || {}; }catch(e){ return {}; } }
 function markLessonDone(id){ try{ var m = trainDoneMap(); m[id] = 1; localStorage.setItem(TRAIN_DONE_KEY, JSON.stringify(m)); }catch(e){} }
-function trainRate(){ try{ var r = parseFloat(localStorage.getItem(TRAIN_RATE_KEY)); if(r>0.3 && r<2) return r; }catch(e){} return 0.82; }
-function setTrainRate(r){ try{ localStorage.setItem(TRAIN_RATE_KEY, String(r)); }catch(e){} }
-var TRAIN_RATES = [ {r:0.7, label:'Slow'}, {r:0.82, label:'Normal'}, {r:1.0, label:'Fast'} ];
-function trainRateLabel(){
-  var r = trainRate(), best = TRAIN_RATES[1];
-  TRAIN_RATES.forEach(function(x){ if(Math.abs(x.r-r) < Math.abs(best.r-r)) best = x; });
-  return best;
-}
-(function addDateLessons(){
-  var rep = LESSONS.filter(function(l){ return l.id === 'reports'; })[0], inv = LESSONS.filter(function(l){ return l.id === 'invoices'; })[0];
-  if(rep) rep.slides.push({ title:'A report for any dates', text:'You are not limited to whole months. Pick any start and end date and Pesa gathers what happened on those days.',
-    where:'Reports → Report for any dates',
-    steps:['Open Reports and tap Report for any dates.','Tap a shortcut such as Today, This week or Last month, or type your own From and To dates.','Check the preview: sales, expenses, profit and VAT for those days.','Tap Download report, or Print.'],
-    tip:'The report is built from your records at that moment, so it always matches what is in Pesa.' });
-  if(inv) inv.slides.push({ title:'Invoices from your sales', text:'Instead of typing every line, let Pesa gather the sales for a date and fill the invoice for you.',
-    where:'Invoices → New invoice → Gather from sales',
-    steps:['Open a new invoice.','Under Gather from sales, choose the Sales from and Sales to dates. Pick a customer, or leave it on All sales.','Tap Gather sales and fill items. The items, the customer details and the invoice date are filled in.','Check the lines, change anything you need, then download or send the invoice.'],
-    tip:'The invoice date is set to the last date you picked, and you can change it.' });
-})();
 var _installEvt = null;
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); _installEvt = e; try{ if(State.session && State.tab === 'me') render(); }catch(x){} });
 window.addEventListener('appinstalled', function(){ _installEvt = null; });
@@ -16214,704 +16044,15 @@ function lessonsForRole(){
     return l.who === 'all' || (l.who === 'manager' && isManagerOrOwner()) || (l.who === 'owner' && isOwner());
   });
 }
-// Text as it should be SPOKEN (pronunciation tweaks; on-screen text is unchanged).
-function speakable(t){
-  return String(t)
-    .replace(/\bPesa\b/g, 'Pessa')
-    .replace(/Björn/g, 'Byorn')
-    .replace(/\bMula\b/g, 'Moola')
-    .replace(/\bSupabase\b/g, 'Soupa base')
-    .replace(/@/g, ' at ')
-    .replace(/\.com\b/g, ' dot com')
-    .replace(/N\$\s?([\d.,]+)/g, '$1 Namibia dollars')
-    .replace(/→/g, ', then ')
-    .replace(/&/g, ' and ')
-    .replace(/\bINV\b/g, 'invoice')
-    .replace(/\bCSV\b/g, 'C S V')
-    .replace(/\bPDF\b/g, 'P D F')
-    .replace(/\bSMS\b/g, 'S M S')
-    .replace(/\bVAT\b/g, 'V A T')
-    .replace(/\bNamRA\b/g, 'Nam R A')
-    .replace(/\bBIPA\b/g, 'Bipa')
-    .replace(/\bEFT\b/g, 'E F T')
-    .replace(/\bPIN\b/g, 'pin');
-}
-function slideParts(slide){
-  var parts = [{ kind:'intro', text: slide.title + '. ' + slide.text }];
-  (slide.steps || []).forEach(function(s, i){ parts.push({ kind:'step', i:i, text: 'Step ' + (i+1) + '. ' + s }); });
-  if(slide.tip) parts.push({ kind:'tip', text: 'Tip. ' + slide.tip });
-  return parts;
-}
-
-/* ============================== MY VOICE: recorded training narration ==============================
-   The owner records each training slide in their own voice. A recording is kept on this computer or device (IndexedDB)
-   and played instead of the computer's own speech voice. A slide with no recording still uses the speech voice.
-   Recordings can also be shipped inside the app as files under voice/ (see voice/index.json), so every device hears them. */
-var VC_DB = 'pesa_voice_v1', VC_ST = 'clips';
-/* ---- voice recordings travel with cloud sync: each recording is cut into pieces that fit the sync row limit ---- */
-var VC_CHUNK = 450000, VC_SYNC_MAX = 6 * 1024 * 1024;
-function vcSid(key){ return String(key).replace(/[^A-Za-z0-9]+/g, '-'); }
-function vcB64(blob){ return new Promise(function(res){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = function(){ res(''); }; fr.readAsDataURL(blob); }); }
-function vcFromB64(b, type){ var bin = atob(b), u = new Uint8Array(bin.length); for(var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
-function vcSyncOn(){ try{ if(Store.isCloud()) return true; var c = Sync.cfg(); return !!(c.on && c.url && c.key && c.code); }catch(e){ return false; } }
-function vcSyncPush(rec){
-  if(!refs.voiceclips || !vcSyncOn()) return;
-  if(rec.blob.size > VC_SYNC_MAX){ toast(tr('That recording is too big to share between devices, so it stays on this one. Keep each slide under 6 MB to share it.')); return; }
-  var sid = vcSid(rec.key), n = Math.max(1, Math.ceil(rec.blob.size / VC_CHUNK)), jobs = [];
-  for(var i = 0; i < n; i++){ (function(i){ jobs.push(vcB64(rec.blob.slice(i * VC_CHUNK, (i + 1) * VC_CHUNK)).then(function(b){ return refs.voiceclips.doc(sid + '_c' + i).set({ k:rec.key, i:i, at:rec.at, b:b }); })); })(i); }
-  Promise.all(jobs).then(function(){
-    return refs.voiceclips.doc(sid + '_m').set({ m:1, key:rec.key, lang:rec.lang, id:rec.id, idx:rec.idx, mime:rec.mime || 'audio/webm', dur:rec.dur || 0, ts:rec.ts || 0, te:rec.te || 0, hash:rec.hash || '', at:rec.at, n:n, size:rec.blob.size });
-  }).catch(function(){});
-}
-function vcSyncDelete(key, rec){
-  if(!refs.voiceclips || !vcSyncOn()) return;
-  var sid = vcSid(key), n = rec && rec.blob ? Math.max(1, Math.ceil(rec.blob.size / VC_CHUNK)) : 0;
-  refs.voiceclips.doc(sid + '_m').set({ m:1, key:key, deleted:true, at:new Date().toISOString() }).catch(function(){});
-  for(var i = 0; i < n; i++) refs.voiceclips.doc(sid + '_c' + i).delete().catch(function(){});
-}
-var _vcApplying = false, _vcAgain = null, _vcMetas = null;
-function vcApplyRemote(docs){
-  if(_vcApplying){ _vcAgain = docs; return; }
-  _vcApplying = true;
-  var metas = [], chunks = {};
-  _vcMetas = {};
-  docs.forEach(function(d){ var x = d.data; if(!x) return; if(x.m){ metas.push(x); _vcMetas[x.key] = x; } else if(x.k !== undefined) chunks[vcSid(x.k) + '|' + x.at + '|' + x.i] = x.b; });
-  var changed = false;
-  metas.reduce(function(pr, m){
-    return pr.then(function(){
-      return VoiceClips.getLocal(m.key).then(function(local){
-        if(m.deleted){ if(local && !local.bundled && String(local.at || '') <= String(m.at)){ changed = true; return VoiceClips.del(m.key, true); } return; }
-        if(local && String(local.at || '') >= String(m.at)) return;
-        var parts = [];
-        for(var i = 0; i < m.n; i++){ var c = chunks[vcSid(m.key) + '|' + m.at + '|' + i]; if(c === undefined) return; parts.push(vcFromB64(c)); }
-        changed = true;
-        return VoiceClips.put({ key:m.key, lang:m.lang, id:m.id, idx:m.idx, mime:m.mime, dur:m.dur, ts:m.ts, te:m.te, hash:m.hash, at:m.at, blob:new Blob(parts, { type:m.mime }), fromSync:true });
-      });
-    });
-  }, Promise.resolve()).catch(function(){}).then(function(){
-    _vcApplying = false;
-    if(_vcAgain){ var d = _vcAgain; _vcAgain = null; vcApplyRemote(d); }
-    else if(changed){ try{ if(typeof msgSyncChanged === 'function') toast(tr('Voice recordings updated from your other device')); }catch(e){} }
-  });
-}
-var VoiceClips = (function(){
-  var dbp = null, urls = {}, bund = null;
-  function open(){
-    if(dbp) return dbp;
-    dbp = new Promise(function(res, rej){
-      try{
-        var r = indexedDB.open(VC_DB, 1);
-        r.onupgradeneeded = function(){ r.result.createObjectStore(VC_ST, { keyPath:'key' }); };
-        r.onsuccess = function(){ res(r.result); };
-        r.onerror = function(){ rej(r.error); };
-      }catch(e){ rej(e); }
-    });
-    dbp.catch(function(){ dbp = null; });
-    return dbp;
-  }
-  function run(mode, fn){
-    return open().then(function(db){
-      return new Promise(function(res, rej){
-        var t = db.transaction(VC_ST, mode), req = fn(t.objectStore(VC_ST));
-        t.oncomplete = function(){ res(req ? req.result : undefined); };
-        t.onerror = t.onabort = function(){ rej(t.error); };
-      });
-    });
-  }
-  function key(lang, id, i){ return lang + '|' + id + '|' + i; }
-  function hash(s){ var h = 5381; s = String(s); for(var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(16); }
-  function drop(k){ var o = urls[k]; if(o){ try{ URL.revokeObjectURL(o.u); }catch(e){} delete urls[k]; } }
-  function put(rec){
-    var fs = rec.fromSync; delete rec.fromSync; if(!rec.at) rec.at = new Date().toISOString();
-    drop(rec.key);
-    return run('readwrite', function(s){ return s.put(rec); }).then(function(r){ if(!fs && rec.blob){ try{ vcSyncPush(rec); }catch(e){} } return r; });
-  }
-  function del(k, fromSync){
-    drop(k);
-    var pre = fromSync ? Promise.resolve(null) : getLocal(k);
-    return pre.then(function(rec){ return run('readwrite', function(s){ return s.delete(k); }).then(function(r){ if(!fromSync){ try{ vcSyncDelete(k, rec); }catch(e){} } return r; }); });
-  }
-  function clear(){
-    Object.keys(urls).forEach(drop);
-    return all().then(function(list){ return run('readwrite', function(s){ return s.clear(); }).then(function(r){ list.forEach(function(rec){ try{ vcSyncDelete(rec.key, rec); }catch(e){} }); return r; }); });
-  }
-  function getLocal(k){ return run('readonly', function(s){ return s.get(k); }).catch(function(){ return null; }); }
-  function all(){ return run('readonly', function(s){ return s.getAll(); }).then(function(a){ return a || []; }, function(){ return []; }); }
-  function bundled(){
-    if(!bund) bund = fetch('voice/index.json', { cache:'no-cache' }).then(function(r){ return r.ok ? r.json() : {}; }).catch(function(){ return {}; });
-    return bund;
-  }
-  function find(lang, id, i){
-    return getLocal(key(lang, id, i)).then(function(rec){
-      if(rec && rec.blob) return rec;
-      return bundled().then(function(ix){
-        var e = ix && ix[lang] && ix[lang][id + '-' + i];
-        if(!e) return null;
-        return fetch('voice/' + e.file).then(function(r){ if(!r.ok) throw new Error('missing'); return r.blob(); }).then(function(b){
-          return { key:key(lang, id, i), lang:lang, id:id, idx:i, blob:b, mime:e.mime || b.type, dur:e.dur || 0, ts:e.ts || 0, te:e.te || 0, hash:e.hash || '', bundled:true };
-        });
-      }).catch(function(){ return null; });
-    });
-  }
-  function loadLesson(lang, id, n){
-    var jobs = [];
-    for(var i = 0; i < n; i++) jobs.push(find(lang, id, i));
-    return Promise.all(jobs).then(function(arr){ var m = {}; arr.forEach(function(r, i){ if(r) m[i] = r; }); return m; });
-  }
-  function url(rec){
-    var o = urls[rec.key];
-    if(o && o.b === rec.blob) return o.u;
-    drop(rec.key);
-    var u = URL.createObjectURL(rec.blob);
-    urls[rec.key] = { b:rec.blob, u:u };
-    return u;
-  }
-  // true length of a recording (a browser recording has no length stored in the file itself)
-  function measure(blob){
-    return new Promise(function(res){
-      try{
-        var AC = window.AudioContext || window.webkitAudioContext;
-        if(!AC) return res(0);
-        var fr = new FileReader();
-        fr.onerror = function(){ res(0); };
-        fr.onload = function(){
-          var c, done = false;
-          function fin(d){ if(done) return; done = true; try{ c.close(); }catch(e){} res(d || 0); }
-          try{
-            c = new AC();
-            var p = c.decodeAudioData(fr.result, function(b){ fin(b.duration); }, function(){ fin(0); });
-            if(p && p.catch) p.catch(function(){ fin(0); });
-          }catch(e){ fin(0); }
-        };
-        fr.readAsArrayBuffer(blob);
-      }catch(e){ res(0); }
-    });
-  }
-  function toB64(blob){
-    return new Promise(function(res, rej){
-      var fr = new FileReader();
-      fr.onload = function(){ var s = String(fr.result); res(s.slice(s.indexOf(',') + 1)); };
-      fr.onerror = function(){ rej(fr.error); };
-      fr.readAsDataURL(blob);
-    });
-  }
-  function fromB64(b64, mime){
-    var bin = atob(b64), n = bin.length, u = new Uint8Array(n);
-    for(var i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
-    return new Blob([u], { type:mime || 'audio/webm' });
-  }
-  function exportPack(){
-    return all().then(function(list){
-      return Promise.all(list.map(function(r){
-        return toB64(r.blob).then(function(d){ return { key:r.key, lang:r.lang, id:r.id, idx:r.idx, mime:r.mime, dur:r.dur, ts:r.ts || 0, te:r.te || 0, hash:r.hash, at:r.at, data:d }; });
-      }));
-    }).then(function(clips){
-      return new Blob([JSON.stringify({ app:'pesa-voice', v:1, at:new Date().toISOString(), clips:clips })], { type:'application/json' });
-    });
-  }
-  function importPack(text){
-    var j;
-    try{ j = JSON.parse(text); }catch(e){ return Promise.reject(new Error('bad')); }
-    if(!j || j.app !== 'pesa-voice' || !Array.isArray(j.clips)) return Promise.reject(new Error('bad'));
-    var n = 0;
-    return j.clips.reduce(function(p, c){
-      return p.then(function(){
-        if(!c || !c.key || !c.data) return;
-        return getLocal(c.key).then(function(cur){
-          if(cur && cur.at && c.at && cur.at >= c.at) return;
-          return put({ key:c.key, lang:c.lang, id:c.id, idx:c.idx, mime:c.mime, dur:c.dur, ts:c.ts || 0, te:c.te || 0, hash:c.hash, at:c.at || new Date().toISOString(), blob:fromB64(c.data, c.mime) }).then(function(){ n++; });
-        });
-      });
-    }, Promise.resolve()).then(function(){ return n; });
-  }
-  return { key:key, hash:hash, put:put, del:del, clear:clear, all:all, find:find, getLocal:getLocal, loadLesson:loadLesson, url:url, measure:measure, exportPack:exportPack, importPack:importPack };
-})();
-
-var VC_LANG_NAMES = { en:'English', af:'Afrikaans', de:'Deutsch' };
-var VC_UP = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>';
-var VC_MIC = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>';
-// The words of one slide in the order they are read aloud (also used to notice when the text has changed since recording)
-function vcLines(slide){
-  var out = [tr(slide.title) + '. ' + tr(slide.text)];
-  (slide.steps || []).forEach(function(s, i){ out.push(tr('Step') + ' ' + (i+1) + '. ' + tr(s)); });
-  if(slide.tip) out.push(tr('Tip') + '. ' + tr(slide.tip));
-  return out;
-}
-function vcFmtTime(s){ s = Math.max(0, Math.round(s || 0)); return Math.floor(s/60) + ':' + ('0' + (s % 60)).slice(-2); }
-var VC_WELCOME = { id:'welcome', title:'Welcome greeting', slides:[ { title:'Welcome to Pesa', text:'Say the greeting you want people to hear when Pesa opens.', steps:[] } ] };
-
-function vcRecordedMap(lang){
-  return VoiceClips.all().then(function(list){
-    var m = {}; list.forEach(function(r){ if(r.lang === lang) m[r.id + '|' + r.idx] = r; });
-    return m;
-  });
-}
-
-function vcPushMissing(){
-  if(_vcMetas === null) return;
-  VoiceClips.all().then(function(list){ list.forEach(function(rec){ if(rec.blob && !rec.bundled){ var m = _vcMetas[rec.key]; if(!m || (!m.deleted && String(m.at) < String(rec.at || '')) || (m.deleted && String(m.at) < String(rec.at || ''))) vcSyncPush(Object.assign({}, rec, { at:rec.at || new Date().toISOString() })); } }); });
-}
-function openVoiceStudio(){
-  stopNarration();
-  try{ vcPushMissing(); }catch(e){}
-  var lang = currentLangCode();
-  vcRecordedMap(lang).then(function(have){
-    var total = 0, done = 0;
-    LESSONS.forEach(function(l){ l.slides.forEach(function(s, i){ total++; if(have[l.id + '|' + i]) done++; }); });
-    var wel = have['welcome|0'];
-    var html = '<div class="sheet-head"><button class="drawer-close" id="vsBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+tr('My voice')+'</h2></div>' +
-      '<div class="banner">'+tr('Record each training slide in your own voice, or upload audio files made by someone else. Open a lesson to upload. Your recording plays instead of the computer or device voice. Any slide you have not recorded keeps the computer voice.')+'</div>' +
-      '<div class="actions" style="margin-bottom:6px;"><button class="btn btn-primary btn-block" id="vsAuto" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record hands free')+'</span></button></div>' +
-      '<div style="font-size:12px;color:var(--text-muted);margin:0 2px 10px;line-height:1.5;">'+tr('Read the slides one after another and Pesa saves each one by itself. Or tap a lesson below to record slide by slide.')+'</div>' +
-      '<div style="font-size:13px;color:var(--text-muted);margin:2px 2px 10px;">'+tr('Recording language')+': <strong>'+esc(VC_LANG_NAMES[lang] || lang)+'</strong> · '+done+' '+tr('of')+' '+total+' '+tr('slides recorded')+'</div>' +
-      '<div class="rowlist">' +
-        '<div class="row" data-vs="welcome"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+VC_MIC+'</div>' +
-          '<div class="main"><div class="title">'+tr('Welcome greeting')+'</div><div class="sub">'+(wel ? vcFmtTime(wel.dur)+' · '+tr('Recorded') : tr('Said when Pesa opens'))+'</div></div>'+(wel ? '<div class="trail" style="color:var(--success);">'+ICONS.check+'</div>' : '')+'</div>' +
-        LESSONS.map(function(l, i){
-          var n = l.slides.length, c = 0;
-          l.slides.forEach(function(s, k){ if(have[l.id + '|' + k]) c++; });
-          return '<div class="row" data-vs="'+l.id+'"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(ICONS[l.icon]||ICONS.book)+'</div>' +
-            '<div class="main"><div class="title">'+(i+1)+'. '+esc(tr(l.title))+'</div><div class="sub">'+c+' '+tr('of')+' '+n+' '+tr('recorded')+'</div></div>' +
-            (c === n ? '<div class="trail" style="color:var(--success);">'+ICONS.check+'</div>' : '') + '</div>';
-        }).join('') +
-      '</div>' +
-      '<div class="actions" style="flex-direction:column;margin-top:14px;">' +
-        '<button class="btn btn-ghost btn-block" id="vsExport" type="button">'+tr('Save my voice pack')+'</button>' +
-        '<button class="btn btn-ghost btn-block" id="vsImport" type="button">'+tr('Load a voice pack')+'</button>' +
-        '<input type="file" id="vsFile" accept=".json,application/json" style="display:none;">' +
-        (done || wel ? '<button class="btn btn-danger btn-block" id="vsClear" type="button">'+tr('Delete my recordings')+'</button>' : '') +
-      '</div>' +
-      '<div style="font-size:12px;color:var(--text-muted);margin-top:10px;line-height:1.5;">'+tr('When cloud sync is on, your recordings and uploaded audio are shared with your other computers and devices by themselves. A file can be up to 6 MB to be shared. Otherwise, save a voice pack and load it there.')+'</div>';
-    var ov = openSheet(html);
-    ov.querySelector('#vsBack').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
-    ov.querySelector('#vsAuto').addEventListener('click', function(){ openVoiceAutoSetup(LESSONS, function(){ openVoiceStudio(); }); });
-    ov.querySelectorAll('[data-vs]').forEach(function(el){
-      el.addEventListener('click', function(){
-        var id = el.getAttribute('data-vs');
-        if(id === 'welcome') openVoiceLesson('welcome'); else openVoiceLesson(id);
-      });
-    });
-    ov.querySelector('#vsExport').addEventListener('click', function(){
-      VoiceClips.exportPack().then(function(blob){
-        if(!blob || blob.size < 120){ toast(tr('Nothing recorded yet')); return; }
-        saveBlobFile('pesa-voice-pack-' + new Date().toISOString().slice(0, 10) + '.json', blob).then(function(ok){ if(ok) toast(tr('Voice pack saved')); });
-      }).catch(function(){ toast(tr('Could not save the voice pack')); });
-    });
-    var fi = ov.querySelector('#vsFile');
-    ov.querySelector('#vsImport').addEventListener('click', function(){ fi.click(); });
-    fi.addEventListener('change', function(){
-      var f = fi.files && fi.files[0]; if(!f) return;
-      var fr = new FileReader();
-      fr.onload = function(){
-        VoiceClips.importPack(String(fr.result)).then(function(n){ toast(n + ' ' + tr('recordings loaded')); closeModal(); openVoiceStudio(); })
-          .catch(function(){ toast(tr('That is not a Pesa voice pack')); });
-      };
-      fr.readAsText(f);
-    });
-    var cl = ov.querySelector('#vsClear');
-    if(cl) cl.addEventListener('click', function(){
-      confirmSheet(tr('Delete my recordings'), tr('This deletes every voice recording on this computer or device. The computer voice will be used again.'), tr('Delete'), function(){
-        VoiceClips.clear().then(function(){ toast(tr('Recordings deleted')); openVoiceStudio(); });
-      }, true, true);
-    });
-  });
-}
-
-function vcLessonById(id){ return id === 'welcome' ? VC_WELCOME : LESSONS.filter(function(l){ return l.id === id; })[0]; }
-
-function openVoiceLesson(lessonId){
-  stopNarration();
-  var lesson = vcLessonById(lessonId); if(!lesson) return;
-  var lang = currentLangCode();
-  // a single slide (the welcome greeting) goes straight to the recorder
-  vcRecordedMap(lang).then(function(have){
-    var rows = lesson.slides.map(function(s, i){
-      var rec = have[lesson.id + '|' + i];
-      var stale = rec && rec.hash && rec.hash !== VoiceClips.hash(vcLines(s).join('|'));
-      return '<div class="row" data-vl="'+i+'"><div class="ico" style="width:36px;height:36px;border-radius:10px;background:var(--surface-2);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+VC_MIC+'</div>' +
-        '<div class="main"><div class="title">'+(i+1)+'. '+esc(tr(s.title))+'</div><div class="sub">'+
-          (rec ? vcFmtTime(rec.dur)+' · '+(stale ? '<span style="color:var(--warning,#b45309);">'+tr('Text changed since you recorded')+'</span>' : tr('Recorded')) : tr('Not recorded yet'))+'</div></div>' +
-        '<button class="icon-btn" data-up="'+i+'" type="button" aria-label="Upload audio" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);display:flex;align-items:center;justify-content:center;">'+VC_UP+'</button>' +
-        (rec ? '<button class="icon-btn" data-play="'+i+'" type="button" aria-label="Listen" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);display:flex;align-items:center;justify-content:center;">'+ICONS.play+'</button>' +
-          '<button class="icon-btn" data-del="'+i+'" type="button" aria-label="Delete" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--danger);display:flex;align-items:center;justify-content:center;margin-left:6px;">'+ICONS.trash+'</button>' : '') + '</div>';
-    }).join('');
-    var html = '<div class="sheet-head"><button class="drawer-close" id="vlBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+esc(tr(lesson.title))+'</h2></div>' +
-      '<div class="banner">'+tr('Tap a slide to record it. Read the words on the screen in your own way. You do not need to say them word for word.')+'</div>' +
-      '<div class="actions" style="margin-top:10px;flex-direction:column;"><button class="btn btn-ghost btn-block" id="vlUpAll" type="button">'+VC_UP+'<span style="margin-left:8px;">'+tr('Upload audio files for this lesson')+'</span></button></div><div style="font-size:12px;color:var(--text-muted);margin:6px 2px 0;line-height:1.5;">'+tr('Choose one audio file per slide, such as MP3 or M4A. They are matched to the slides in the order of their file names. Or tap the arrow on a slide to add one file for it.')+'</div><input type="file" id="vlFiles" accept="audio/*" multiple style="display:none;"><input type="file" id="vlFile1" accept="audio/*" style="display:none;">' +
-      (lesson.id !== 'welcome' ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-primary btn-block" id="vlAuto" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record this whole lesson hands free')+'</span></button></div>' : '') +
-      '<div class="rowlist" style="margin-top:10px;">'+rows+'</div>';
-    var ov = openSheet(html), cur = null;
-    function stopPrev(){ if(cur){ try{ cur.pause(); }catch(e){} cur = null; } }
-    ov.querySelector('#vlBack').addEventListener('click', function(){ stopPrev(); openVoiceStudio(); });
-    var va = ov.querySelector('#vlAuto'); if(va) va.addEventListener('click', function(){ stopPrev(); openVoiceAutoSetup([lesson], function(){ openVoiceLesson(lesson.id); }); });
-    ov.querySelectorAll('[data-vl]').forEach(function(el){
-      el.addEventListener('click', function(){ stopPrev(); openSlideRecorderFor(lesson, parseInt(el.getAttribute('data-vl'), 10)); });
-    });
-    function saveUpload(i, file){
-      if(file.size > 25*1024*1024) return Promise.resolve(false);
-      return VoiceClips.measure(file).then(function(d){
-        if(!(d > 0.5)) return false;
-        var sl = lesson.slides[i];
-        return VoiceClips.put({ key:VoiceClips.key(lang, lesson.id, i), lang:lang, id:lesson.id, idx:i, mime:file.type || 'audio/mpeg', dur:d, hash:VoiceClips.hash(vcLines(sl).join('|')), at:new Date().toISOString(), blob:file }).then(function(){ return true; });
-      }).catch(function(){ return false; });
-    }
-    var upAll = ov.querySelector('#vlUpAll'), filesIn = ov.querySelector('#vlFiles'), file1 = ov.querySelector('#vlFile1'), upIdx = 0;
-    if(upAll){ upAll.addEventListener('click', function(){ filesIn.click(); });
-      filesIn.addEventListener('change', function(){
-        var fl = Array.prototype.slice.call(filesIn.files || []).sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { numeric:true }); });
-        if(!fl.length) return;
-        if(fl.length > lesson.slides.length){ toast(tr('That is more files than slides. Pick at most')+' '+lesson.slides.length); return; }
-        toast(tr('Saving audio…'));
-        fl.reduce(function(pr, f, k){ return pr.then(function(n){ return saveUpload(k, f).then(function(ok){ return n + (ok ? 1 : 0); }); }); }, Promise.resolve(0)).then(function(n){
-          toast(n + ' ' + tr('of') + ' ' + fl.length + ' ' + tr('audio files saved')); openVoiceLesson(lesson.id);
-        });
-      }); }
-    ov.querySelectorAll('[data-up]').forEach(function(b){
-      b.addEventListener('click', function(e){ e.stopPropagation(); stopPrev(); upIdx = parseInt(b.getAttribute('data-up'), 10); file1.value = ''; file1.click(); });
-    });
-    if(file1) file1.addEventListener('change', function(){
-      var f = file1.files && file1.files[0]; if(!f) return;
-      saveUpload(upIdx, f).then(function(ok){ toast(ok ? tr('Saved') : tr('Pesa could not read that audio file.')); openVoiceLesson(lesson.id); });
-    });
-    ov.querySelectorAll('[data-play]').forEach(function(b){
-      b.addEventListener('click', function(e){
-        e.stopPropagation();
-        var rec = have[lesson.id + '|' + b.getAttribute('data-play')]; if(!rec) return;
-        var was = cur; stopPrev(); if(was && was._k === rec.key) return;
-        cur = new Audio(VoiceClips.url(rec)); cur._k = rec.key;
-        var p = cur.play(); if(p && p.catch) p.catch(function(){});
-      });
-    });
-    ov.querySelectorAll('[data-del]').forEach(function(b){
-      b.addEventListener('click', function(e){
-        e.stopPropagation(); stopPrev();
-        var i = parseInt(b.getAttribute('data-del'), 10);
-        confirmSheet(tr('Delete this recording'), tr('The computer voice will read this slide again.'), tr('Delete'), function(){
-          VoiceClips.del(VoiceClips.key(lang, lesson.id, i)).then(function(){ toast(tr('Recording deleted')); openVoiceLesson(lesson.id); });
-        }, true, false);
-      });
-    });
-  });
-}
-
-function openSlideRecorderFor(lesson, i){
-  var slide = lesson.slides[i], lang = currentLangCode();
-  var isWel = lesson.id === 'welcome';
-  openVoiceRecorder({
-    lang:lang, id:lesson.id, idx:i, title: tr(slide.title),
-    lines: isWel ? [tr('Welcome to Pesa')] : vcLines(slide),
-    hash: VoiceClips.hash(vcLines(slide).join('|')),
-    back: function(){ openVoiceLesson(lesson.id); },
-    next: (!isWel && i + 1 < lesson.slides.length) ? function(){ openSlideRecorderFor(lesson, i + 1); } : null
-  });
-}
-
-function openVoiceRecorder(t){
-  stopNarration();
-  var S = { mode:'idle', blob:null, dur:0, stream:null, mr:null, chunks:[], t0:0, timer:0, raf:0, ctx:null, an:null, prev:null, mime:'' };
-  var canRec = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-  var script = t.lines.map(function(l, k){
-    return '<p style="margin:'+(k ? '10px' : '0')+' 0 0;font-size:'+(k ? '15px' : '16px')+';line-height:1.55;'+(k ? '' : 'font-weight:600;')+'">'+esc(l)+'</p>';
-  }).join('');
-  var html = '<div class="sheet-head"><button class="drawer-close" id="vrBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+esc(t.title)+'</h2></div>' +
-    '<div style="font-size:12px;color:var(--text-muted);margin:0 2px 8px;">'+tr('Read this out loud')+' · '+esc(VC_LANG_NAMES[t.lang] || t.lang)+'</div>' +
-    '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;max-height:34vh;overflow:auto;">'+script+'</div>' +
-    '<div id="vrCtl" style="margin-top:14px;"></div>';
-  var ov = openSheet(html);
-  var ctl = ov.querySelector('#vrCtl');
-
-  function alive(){ return document.body.contains(ctl); }
-  function stopMeter(){ if(S.raf){ cancelAnimationFrame(S.raf); S.raf = 0; } if(S.ctx){ try{ S.ctx.close(); }catch(e){} S.ctx = null; } S.an = null; }
-  function stopStream(){ if(S.stream){ S.stream.getTracks().forEach(function(x){ try{ x.stop(); }catch(e){} }); S.stream = null; } }
-  function stopPrev(){ if(S.prev){ try{ S.prev.pause(); }catch(e){} S.prev = null; } }
-  function cleanup(){ if(S.timer){ clearInterval(S.timer); S.timer = 0; } stopMeter(); stopStream(); stopPrev(); if(S.mr && S.mr.state === 'recording'){ S.mr.onstop = null; try{ S.mr.stop(); }catch(e){} } }
-
-  function pickMime(){
-    var c = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
-    for(var i = 0; i < c.length; i++){ try{ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }catch(e){} }
-    return '';
-  }
-
-  function paint(msg){
-    var big = 'width:100%;';
-    if(S.mode === 'idle'){
-      ctl.innerHTML = (msg ? '<div style="color:var(--danger);font-size:13px;line-height:1.5;margin-bottom:10px;">'+esc(msg)+'</div>' : '') +
-        (canRec ? '<button class="btn btn-primary btn-block" id="vrRec" type="button" style="padding:14px;">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Start recording')+'</span></button>' : '<div style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-bottom:10px;">'+tr('This browser cannot record. Record on your computer or device with its voice recorder app, then add the file here.')+'</div>') +
-        '<button class="btn btn-ghost btn-block" id="vrUp" type="button" style="margin-top:8px;">'+tr('Add an audio file instead')+'</button>' +
-        '<input type="file" id="vrFile" accept="audio/*" style="display:none;">';
-      var r = ctl.querySelector('#vrRec'); if(r) r.addEventListener('click', start);
-      var u = ctl.querySelector('#vrUp'), f = ctl.querySelector('#vrFile');
-      u.addEventListener('click', function(){ f.click(); });
-      f.addEventListener('change', function(){
-        var file = f.files && f.files[0]; if(!file) return;
-        if(file.size > 25*1024*1024){ paint(tr('That file is too big. Keep each slide under 25 MB.')); return; }
-        S.blob = file; S.mime = file.type || 'audio/mpeg';
-        VoiceClips.measure(file).then(function(d){
-          if(!(d > 0.5)){ S.blob = null; paint(tr('Pesa could not read that audio file.')); return; }
-          S.dur = d; S.mode = 'review'; paint();
-        });
-      });
-    } else if(S.mode === 'rec'){
-      ctl.innerHTML = '<div style="text-align:center;"><div id="vrTime" style="font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--danger);">0:00</div>' +
-        '<div style="height:10px;background:var(--surface-3);border-radius:6px;overflow:hidden;margin:10px 0 14px;"><div id="vrLvl" style="height:100%;width:0;background:var(--primary);transition:width .06s;"></div></div></div>' +
-        '<button class="btn btn-danger btn-block" id="vrStop" type="button" style="padding:14px;">'+tr('Stop')+'</button>';
-      ctl.querySelector('#vrStop').addEventListener('click', stop);
-    } else {
-      ctl.innerHTML = '<div style="text-align:center;font-size:14px;margin-bottom:12px;">'+tr('Recorded')+': <strong>'+vcFmtTime(S.dur)+'</strong></div>' +
-        '<button class="btn btn-ghost btn-block" id="vrListen" type="button">'+ICONS.play+'<span style="margin-left:8px;">'+tr('Listen')+'</span></button>' +
-        '<div class="actions" style="margin-top:8px;flex-direction:column;">' +
-          '<button class="btn btn-primary btn-block" id="vrSave" type="button">'+tr('Save')+'</button>' +
-          (t.next ? '<button class="btn btn-primary btn-block" id="vrSaveNext" type="button">'+tr('Save and record next slide')+'</button>' : '') +
-          '<button class="btn btn-ghost btn-block" id="vrAgain" type="button">'+tr('Record again')+'</button>' +
-        '</div>';
-      ctl.querySelector('#vrListen').addEventListener('click', function(){
-        if(S.prev){ stopPrev(); return; }
-        S.prev = new Audio(URL.createObjectURL(S.blob));
-        S.prev.onended = function(){ S.prev = null; };
-        var p = S.prev.play(); if(p && p.catch) p.catch(function(){});
-      });
-      ctl.querySelector('#vrAgain').addEventListener('click', function(){ stopPrev(); S.blob = null; S.mode = 'idle'; paint(); });
-      function save(then){
-        stopPrev();
-        VoiceClips.put({ key:VoiceClips.key(t.lang, t.id, t.idx), lang:t.lang, id:t.id, idx:t.idx, mime:S.mime || (S.blob && S.blob.type) || 'audio/webm', dur:S.dur, hash:t.hash, at:new Date().toISOString(), blob:S.blob })
-          .then(function(){ toast(tr('Saved')); then(); }, function(){ toast(tr('Could not save the recording')); });
-      }
-      ctl.querySelector('#vrSave').addEventListener('click', function(){ save(function(){ t.back(); }); });
-      var sn = ctl.querySelector('#vrSaveNext'); if(sn) sn.addEventListener('click', function(){ save(function(){ t.next(); }); });
-    }
-  }
-
-  function start(){
-    var opts = { audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true } };
-    navigator.mediaDevices.getUserMedia(opts).then(function(stream){
-      if(!alive()){ stream.getTracks().forEach(function(x){ x.stop(); }); return; }
-      S.stream = stream; S.chunks = []; S.mime = pickMime();
-      var mr;
-      try{ mr = S.mime ? new MediaRecorder(stream, { mimeType:S.mime, audioBitsPerSecond:32000 }) : new MediaRecorder(stream); }
-      catch(e){ try{ mr = new MediaRecorder(stream); }catch(e2){ stopStream(); paint(tr('Could not start recording.')); return; } }
-      S.mr = mr;
-      mr.ondataavailable = function(e){ if(e.data && e.data.size) S.chunks.push(e.data); };
-      mr.onstop = function(){
-        if(S.timer){ clearInterval(S.timer); S.timer = 0; }
-        stopMeter(); stopStream();
-        var secs = (Date.now() - S.t0) / 1000;
-        if(secs < 1){ S.mode = 'idle'; S.blob = null; if(alive()) paint(tr('That was too short. Try again.')); return; }
-        S.mime = mr.mimeType || S.mime || 'audio/webm';
-        S.blob = new Blob(S.chunks, { type:S.mime });
-        S.dur = secs;
-        VoiceClips.measure(S.blob).then(function(d){ if(d > 0) S.dur = d; S.mode = 'review'; if(alive()) paint(); });
-      };
-      S.mode = 'rec'; S.t0 = Date.now(); paint();
-      mr.start(250);
-      S.timer = setInterval(function(){
-        if(!alive()){ cleanup(); return; }
-        var el = ctl.querySelector('#vrTime'), s = (Date.now() - S.t0) / 1000;
-        if(el) el.textContent = vcFmtTime(s);
-        if(s >= 180) stop();
-      }, 250);
-      try{
-        var AC = window.AudioContext || window.webkitAudioContext;
-        S.ctx = new AC(); var src = S.ctx.createMediaStreamSource(stream);
-        S.an = S.ctx.createAnalyser(); S.an.fftSize = 512; src.connect(S.an);
-        var buf = new Uint8Array(S.an.fftSize);
-        (function loop(){
-          if(!S.an || !alive()) return;
-          S.an.getByteTimeDomainData(buf);
-          var pk = 0; for(var k = 0; k < buf.length; k++){ var v = Math.abs(buf[k] - 128); if(v > pk) pk = v; }
-          var lv = ctl.querySelector('#vrLvl'); if(lv) lv.style.width = Math.min(100, Math.round(pk / 128 * 140)) + '%';
-          S.raf = requestAnimationFrame(loop);
-        })();
-      }catch(e){}
-    }).catch(function(err){
-      var denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
-      S.mode = 'idle';
-      paint(denied ? tr('Pesa is not allowed to use the microphone. Allow the microphone for this site in the browser, then try again.') : tr('Could not start the microphone. Check that one is connected.'));
-    });
-  }
-  function stop(){ if(S.mr && S.mr.state === 'recording'){ try{ S.mr.stop(); }catch(e){} } }
-
-  ov.querySelector('#vrBack').addEventListener('click', function(){ cleanup(); t.back(); });
-  paint();
-}
-
-/* ---- Hands free recording: read slide after slide, Pesa cuts and saves each one when you pause ---- */
-var VC_GAP_KEY = 'pesa_vc_gap';
-function vcGap(){ try{ var g = parseFloat(localStorage.getItem(VC_GAP_KEY)); if(g >= 1.2 && g <= 6) return g; }catch(e){} return 2.5; }
-function vcSetGap(g){ try{ localStorage.setItem(VC_GAP_KEY, String(g)); }catch(e){} }
-
-function openVoiceAutoSetup(lessons, back){
-  var lang = currentLangCode();
-  vcRecordedMap(lang).then(function(have){
-    var all = [], todo = [], chars = 0;
-    lessons.forEach(function(l){ l.slides.forEach(function(s, i){
-      var it = { lesson:l, i:i, slide:s }; all.push(it);
-      if(!have[l.id + '|' + i]) todo.push(it);
-    }); });
-    var gap = vcGap();
-    function est(list){ var c = 0; list.forEach(function(it){ c += vcLines(it.slide).join(' ').length; }); return Math.max(1, Math.round(c / 14 / 60)); }
-    var html = '<div class="sheet-head"><button class="drawer-close" id="vaBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+tr('Record hands free')+'</h2></div>' +
-      '<div class="banner">'+tr('Press Start, then read each slide out loud one after the other. When you stop talking for a moment, Pesa saves that slide and shows the next one. You do not need to touch the screen between slides.')+'</div>' +
-      '<div id="vaInfo" style="font-size:14px;margin:12px 2px;line-height:1.5;"></div>' +
-      '<label class="field" style="display:block;margin:6px 2px 12px;"><span style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">'+tr('Pause that ends a slide')+'</span>' +
-        '<select id="vaGap" class="input" style="width:100%;">' +
-          [[1.8, tr('Short')+' (2 '+tr('seconds')+')'], [2.5, tr('Normal')+' (3 '+tr('seconds')+')'], [3.5, tr('Long')+' (4 '+tr('seconds')+')']].map(function(o){ return '<option value="'+o[0]+'"'+(Math.abs(o[0]-gap) < 0.3 ? ' selected' : '')+'>'+o[1]+'</option>'; }).join('') +
-        '</select></label>' +
-      '<label id="vaRedoRow" style="display:flex;align-items:center;gap:8px;margin:0 2px 14px;font-size:14px;"><input type="checkbox" id="vaRedo"> '+tr('Record again the slides I already have')+'</label>' +
-      '<div class="actions"><button class="btn btn-primary btn-block" id="vaStart" type="button" style="padding:14px;">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Start')+'</span></button></div>' +
-      '<div style="font-size:12px;color:var(--text-muted);margin-top:10px;line-height:1.5;">'+tr('Find a quiet place. Pause for about 3 seconds after each slide. Pauses inside a slide, like between sentences, are fine.')+'</div>';
-    var ov = openSheet(html);
-    var info = ov.querySelector('#vaInfo'), redo = ov.querySelector('#vaRedo');
-    function paintInfo(){
-      var list = (redo.checked || !todo.length) ? all : todo;
-      info.innerHTML = '<strong>'+list.length+'</strong> '+tr('slides to record')+' · '+tr('about')+' <strong>'+est(list)+'</strong> '+tr('minutes') +
-        (!redo.checked && have && all.length - todo.length ? '<br><span style="color:var(--text-muted);font-size:13px;">'+(all.length - todo.length)+' '+tr('already recorded and skipped')+'</span>' : '');
-    }
-    if(!todo.length){ redo.checked = true; redo.disabled = true; }
-    redo.addEventListener('change', paintInfo); paintInfo();
-    ov.querySelector('#vaBack').addEventListener('click', function(){ back(); });
-    ov.querySelector('#vaStart').addEventListener('click', function(){
-      var g = parseFloat(ov.querySelector('#vaGap').value) || 2.5; vcSetGap(g);
-      var list = (redo.checked || !todo.length) ? all : todo;
-      if(!list.length){ toast(tr('Nothing to record')); return; }
-      openVoiceAuto(list, g, back);
-    });
-  });
-}
-
-function openVoiceAuto(queue, gapSec, back){
-  stopNarration();
-  var lang = currentLangCode();
-  var html = '<div class="sheet-head"><button class="drawer-close" id="vuBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;" id="vuTitle"></h2></div>' +
-    '<div id="vuBody"></div>';
-  var ov = openSheet(html);
-  var body = ov.querySelector('#vuBody'), titleEl = ov.querySelector('#vuTitle');
-  var Q = { i:0, stream:null, ctx:null, an:null, mr:null, chunks:[], t0:0, voiced:0, first:null, last:null, tick:0, floor:0, thr:0.02, calib:[], t00:0, mime:'', saved:0, flash:'', flashAt:0, over:false };
-  var canRec = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-  function alive(){ return document.body.contains(body); }
-  function pickMime(){
-    var c = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
-    for(var k = 0; k < c.length; k++){ try{ if(MediaRecorder.isTypeSupported(c[k])) return c[k]; }catch(e){} }
-    return '';
-  }
-  function cleanup(){
-    Q.over = true;
-    if(Q.tick){ clearInterval(Q.tick); Q.tick = 0; }
-    if(Q.mr && Q.mr.state === 'recording'){ Q.mr.onstop = null; try{ Q.mr.stop(); }catch(e){} }
-    if(Q.ctx){ try{ Q.ctx.close(); }catch(e){} Q.ctx = null; }
-    if(Q.stream){ Q.stream.getTracks().forEach(function(x){ try{ x.stop(); }catch(e){} }); Q.stream = null; }
-  }
-  ov.querySelector('#vuBack').addEventListener('click', function(){ cleanup(); back(); });
-
-  function paintSlide(){
-    var it = queue[Q.i];
-    titleEl.textContent = tr(it.lesson.title);
-    var lines = vcLines(it.slide);
-    var script = lines.map(function(l, k){ return '<p style="margin:'+(k ? '10px' : '0')+' 0 0;font-size:'+(k ? '15px' : '17px')+';line-height:1.55;'+(k ? '' : 'font-weight:700;')+'">'+esc(l)+'</p>'; }).join('');
-    body.innerHTML =
-      '<div style="font-size:12px;color:var(--text-muted);margin:0 2px 8px;">'+tr('Slide')+' '+(Q.i + 1)+' '+tr('of')+' '+queue.length+' · '+tr('Read this out loud')+'</div>' +
-      '<div style="height:6px;background:var(--surface-3);border-radius:4px;overflow:hidden;margin-bottom:10px;"><div style="height:100%;width:'+Math.round(Q.i / queue.length * 100)+'%;background:var(--primary);"></div></div>' +
-      '<div style="background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;max-height:36vh;overflow:auto;">'+script+'</div>' +
-      '<div id="vuStatus" style="text-align:center;font-size:14px;font-weight:600;margin:12px 0 6px;min-height:22px;"></div>' +
-      '<div style="height:10px;background:var(--surface-3);border-radius:6px;overflow:hidden;margin-bottom:14px;"><div id="vuLvl" style="height:100%;width:0;background:var(--primary);transition:width .06s;"></div></div>' +
-      '<div class="actions" style="gap:8px;">' +
-        '<button class="btn btn-ghost" id="vuRedo" type="button" style="flex:1;'+(Q.i === 0 ? 'opacity:.5;' : '')+'"'+(Q.i === 0 ? ' disabled' : '')+'>'+tr('Redo last slide')+'</button>' +
-        '<button class="btn btn-ghost" id="vuSkip" type="button" style="flex:1;">'+tr('Skip this slide')+'</button>' +
-      '</div>' +
-      '<div class="actions" style="margin-top:8px;"><button class="btn btn-danger btn-block" id="vuStop" type="button">'+tr('Stop recording')+'</button></div>';
-    body.querySelector('#vuRedo').addEventListener('click', function(){ if(Q.i > 0){ discardCurrent(); Q.i--; startRec(); paintSlide(); setStatus(tr('Read this slide again')); } });
-    body.querySelector('#vuSkip').addEventListener('click', function(){ discardCurrent(); Q.i++; if(Q.i >= queue.length) finish(); else { startRec(); paintSlide(); } });
-    body.querySelector('#vuStop').addEventListener('click', function(){ discardCurrent(); finish(true); });
-  }
-  function setStatus(s){ Q.flash = s; Q.flashAt = Date.now(); var el = body.querySelector('#vuStatus'); if(el) el.textContent = s; }
-  function discardCurrent(){ if(Q.mr && Q.mr.state === 'recording'){ Q.mr.onstop = null; try{ Q.mr.stop(); }catch(e){} } Q.mr = null; Q.chunks = []; }
-  function finish(early){
-    cleanup();
-    titleEl.textContent = tr('My voice');
-    body.innerHTML = '<div style="text-align:center;padding:24px 8px;"><div style="font-size:40px;color:var(--success);">'+ICONS.check+'</div>' +
-      '<h3 style="margin:10px 0 6px;">'+(early ? tr('Stopped') : tr('All done'))+'</h3>' +
-      '<p style="color:var(--text-muted);font-size:14px;line-height:1.5;">'+Q.saved+' '+tr('slides saved in your voice.')+'</p></div>' +
-      '<div class="actions"><button class="btn btn-primary btn-block" id="vuDone" type="button">'+tr('Done')+'</button></div>';
-    body.querySelector('#vuDone').addEventListener('click', function(){ back(); });
-  }
-  function startRec(){
-    var mr;
-    try{ mr = Q.mime ? new MediaRecorder(Q.stream, { mimeType:Q.mime, audioBitsPerSecond:32000 }) : new MediaRecorder(Q.stream); }
-    catch(e){ try{ mr = new MediaRecorder(Q.stream); }catch(e2){ return false; } }
-    var chunks = [];
-    mr.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
-    Q.mr = mr; Q.chunks = chunks; Q.t0 = performance.now(); Q.voiced = 0; Q.first = null; Q.last = null;
-    mr.start(250);
-    return true;
-  }
-  function endSegment(){
-    var mr = Q.mr, chunks = Q.chunks, t0 = Q.t0, fs = Q.first, ls = Q.last, idx = Q.i, it = queue[idx];
-    var mime = mr.mimeType || Q.mime || 'audio/webm';
-    mr.onstop = function(){
-      var blob = new Blob(chunks, { type:mime });
-      var ts = Math.max(0, (fs - t0) / 1000 - 0.3), te = (ls - t0) / 1000 + 0.5;
-      VoiceClips.measure(blob).then(function(d){
-        var dur = d > 0 ? d : (performance.now() - t0) / 1000;
-        te = Math.min(te, dur);
-        if(te - ts < 0.8){ ts = 0; te = 0; }
-        return VoiceClips.put({ key:VoiceClips.key(lang, it.lesson.id, it.i), lang:lang, id:it.lesson.id, idx:it.i, mime:mime, dur:dur, ts:ts, te:te,
-          hash:VoiceClips.hash(vcLines(it.slide).join('|')), at:new Date().toISOString(), blob:blob });
-      }).then(function(){ Q.saved++; }, function(){});
-    };
-    try{ mr.stop(); }catch(e){}
-    Q.i++;
-    if(Q.i >= queue.length){ setTimeout(function(){ if(alive()) finish(); }, 700); Q.mr = null; return; }
-    startRec(); paintSlide();
-    setStatus('✓ ' + tr('Saved') + ' · ' + tr('now the next slide'));
-  }
-  function loop(){
-    if(!alive()){ cleanup(); return; }
-    if(!Q.an) return;
-    var buf = Q.buf || (Q.buf = new Float32Array(Q.an.fftSize));
-    Q.an.getFloatTimeDomainData(buf);
-    var s = 0; for(var k = 0; k < buf.length; k++) s += buf[k] * buf[k];
-    var rms = Math.sqrt(s / buf.length), now = performance.now();
-    var lv = body.querySelector('#vuLvl'); if(lv) lv.style.width = Math.min(100, Math.round(rms * 600)) + '%';
-    if(now - Q.t00 < 700){ Q.calib.push(rms); if(Q.calib.length){ var a = 0; Q.calib.forEach(function(x){ a += x; }); Q.floor = a / Q.calib.length; Q.thr = Math.max(0.018, Math.min(0.08, Q.floor * 2.5 + 0.008)); } return; }
-    if(!Q.mr) return;
-    if(rms > Q.thr){ Q.last = now; Q.voiced += 50; if(Q.first == null && Q.voiced >= 150) Q.first = now - 150; }
-    var el = body.querySelector('#vuStatus');
-    if(el && Date.now() - Q.flashAt > 1500) el.textContent = Q.first == null ? tr('Waiting for you to start reading') : tr('Listening') + '…';
-    if(Q.first != null && Q.voiced >= 1200 && now - Q.last >= gapSec * 1000) endSegment();
-  }
-  function begin(){
-    navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:false, autoGainControl:true } }).then(function(stream){
-      if(!alive()){ stream.getTracks().forEach(function(x){ x.stop(); }); return; }
-      Q.stream = stream; Q.mime = pickMime();
-      try{
-        var AC = window.AudioContext || window.webkitAudioContext;
-        Q.ctx = new AC(); if(Q.ctx.resume) Q.ctx.resume();
-        var src = Q.ctx.createMediaStreamSource(stream);
-        Q.an = Q.ctx.createAnalyser(); Q.an.fftSize = 1024; src.connect(Q.an);
-      }catch(e){ cleanup(); body.innerHTML = '<div style="color:var(--danger);">'+tr('Could not start recording.')+'</div>'; return; }
-      if(!startRec()){ cleanup(); body.innerHTML = '<div style="color:var(--danger);">'+tr('Could not start recording.')+'</div>'; return; }
-      Q.t00 = performance.now(); paintSlide(); setStatus(tr('Getting ready') + '…');
-      Q.tick = setInterval(loop, 50);
-    }).catch(function(err){
-      var denied = err && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
-      body.innerHTML = '<div style="color:var(--danger);font-size:14px;line-height:1.5;">'+esc(denied ? tr('Pesa is not allowed to use the microphone. Allow the microphone for this site in the browser, then try again.') : tr('Could not start the microphone. Check that one is connected.'))+'</div>';
-    });
-  }
-  if(!canRec){ body.innerHTML = '<div style="font-size:14px;line-height:1.5;">'+tr('This browser cannot record. Record on your computer or device with its voice recorder app, then add the file here.')+'</div>'; return; }
-  begin();
-}
-
 function openTrainingSheet(){
-  stopNarration();
   _trainState.chain = false;
   var list = lessonsForRole();
   var done = trainDoneMap();
   var totalSlides = list.reduce(function(n, l){ return n + l.slides.length; }, 0);
   var html = '<div class="sheet-head"><h2>'+ICONS.book+'<span style="margin-left:8px;">'+tr('Training')+'</span></h2></div>' +
-    '<div class="banner">'+tr('Step by step lessons on every part of the app, with a voice that reads each step aloud. Pick a topic, or play them all in order.')+'</div>' +
+    '<div class="banner">'+tr('Step by step lessons on every part of the app. Pick a topic and read at your own pace.')+'</div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="trSearch" type="button">'+ICONS.search+'<span style="margin-left:8px;">'+tr('Search help')+'</span></button></div>' +
-    (isManagerOrOwner() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trVoice" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record or upload my voice')+'</span></button></div>' : '') +
-    (speechSupported() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trNarr" type="button">'+ICONS.soundOn+'<span style="margin-left:8px;">'+tr('Narrator voice')+'</span></button></div><div id="trNarrPanel"></div>' : '') +
-    (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPlayAll" type="button">'+ICONS.play+'<span style="margin-left:8px;">'+tr('Play all lessons')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
+    (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPdf" type="button">'+ICONS.fileup+'<span style="margin-left:8px;">'+tr('Download the full training manual (PDF)')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
     '<div class="rowlist" style="margin-top:12px;">' +
     list.map(function(l, i){
       var n = l.slides.length;
@@ -16925,45 +16066,27 @@ function openTrainingSheet(){
   ov.querySelectorAll('[data-lesson]').forEach(function(el){
     el.addEventListener('click', function(){ openLessonSlideshow(el.getAttribute('data-lesson')); });
   });
-  var pa = ov.querySelector('#trPlayAll');
-  if(pa) pa.addEventListener('click', function(){ openLessonSlideshow((list.filter(function(l){ return !l.silent; })[0] || list[0]).id, { chain:true }); });
   var tsr = ov.querySelector('#trSearch'); if(tsr) tsr.addEventListener('click', function(){ closeModal(); openHelpSearchSheet(); });
-  var tvo = ov.querySelector('#trVoice'); if(tvo) tvo.addEventListener('click', function(){ openVoiceStudio(); });
-  var tnb = ov.querySelector('#trNarr');
-  function showNarrPanel(){ var pn = ov.querySelector('#trNarrPanel'); if(!pn) return; if(!_narrationVoice) refreshNarrationVoice(); pn.innerHTML = trainVoicePanelHtml(); wireTrainVoicePanel(pn, {}); }
-  if(tnb){
-    tnb.addEventListener('click', function(){ var pn = ov.querySelector('#trNarrPanel'); if(pn.innerHTML){ pn.innerHTML = ''; stopNarration(); return; } showNarrPanel(); });
-    showNarrPanel();
-    try{ var _prevVC = window.speechSynthesis.onvoiceschanged; window.speechSynthesis.onvoiceschanged = function(){ try{ _prevVC && _prevVC(); }catch(e){} var pn = ov.querySelector('#trNarrPanel'); if(pn && pn.innerHTML) showNarrPanel(); }; }catch(e){}
-  }
+  var tp = ov.querySelector('#trPdf'); if(tp) tp.addEventListener('click', async function(){
+    var old = tp.innerHTML; tp.disabled = true; tp.textContent = tr('Preparing…');
+    var ready = await ensureJsPDF();
+    if(!ready){ tp.disabled = false; tp.innerHTML = old; toast(tr('Couldn’t load the PDF engine — check your connection and try again')); return; }
+    var built;
+    try{ built = generateTrainingPdf(); }catch(e){ tp.disabled = false; tp.innerHTML = old; toast(tr('The training manual could not be built. Please try again.')); return; }
+    saveGeneratedPdf(built.doc, 'pesa-training-manual.pdf').then(function(ok){
+      tp.disabled = false; tp.innerHTML = old;
+      if(ok){ logAudit('create', 'training_manual', built.verification.id, 'Training manual PDF generated: '+built.verification.id, new Date(built.verification.isoTimestamp)); toast(tr('Training manual downloaded')); }
+    });
+  });
 }
 
-function openLessonSlideshow(lessonId, opts){
-  opts = opts || {};
+function openLessonSlideshow(lessonId){
   var list = lessonsForRole();
   var lesson = list.filter(function(l){ return l.id===lessonId; })[0] || LESSONS.filter(function(l){ return l.id===lessonId; })[0];
   if(!lesson) return;
-  stopNarration();
   _trainState.lessonId = lessonId;
   _trainState.idx = 0;
-  _trainState.chain = !!opts.chain;
-  _trainState.tok = (_trainState.tok || 0) + 1;
-  var supported = speechSupported() && !lesson.silent;   // some lessons (Meet the developer) are for reading, with no voice
-  // opening a lesson is a tap, so narration may start straight away
-  var wantPlay = supported && State.settings.soundEnabled !== false;
-  var partIdx = 0;
-  var clips = {};   // slide number -> the owner's own recording, where there is one
-  function clipRate(){ return Math.max(0.8, Math.min(1.3, trainRate() / 0.82)); }
-
   function body(){ return document.querySelector('#modalRoot .sheet #lsBody'); }
-  function speechOn(){ return supported && State.settings.soundEnabled !== false; }
-
-  function highlight(p){
-    var b = body(); if(!b) return;
-    b.querySelectorAll('.speaking').forEach(function(x){ x.classList.remove('speaking'); });
-    var el = b.querySelector('[data-part="'+p+'"]');
-    if(el){ el.classList.add('speaking'); try{ el.scrollIntoView({block:'nearest', behavior:'smooth'}); }catch(e){} }
-  }
 
   function renderSlide(){
     var b = body(); if(!b) return;
@@ -16971,8 +16094,6 @@ function openLessonSlideshow(lessonId, opts){
     if(i >= n){ renderComplete(); return; }
     var slide = lesson.slides[i];
     var pct = Math.round(((i+1)/n)*100);
-    var muted = State.settings.soundEnabled === false;
-    var rate = trainRateLabel();
     var hasSteps = slide.steps && slide.steps.length;
     b.innerHTML =
       '<div class="lesson-progress">'+tr('Slide {0} of {1}').replace('{0}', i+1).replace('{1}', n)+'</div>' +
@@ -16980,26 +16101,23 @@ function openLessonSlideshow(lessonId, opts){
       '<div class="lesson-slide">'+(slide.photo ? '<div class="dev-photo"><img src="'+DEV_PHOTO_DATA_URL+'" alt="Björn Van Rensburg"><div class="dev-cap"><b>Björn Van Rensburg</b><span>'+tr('Developer of Pesa')+'</span></div></div>' : '<div class="ico">'+(ICONS[lesson.icon]||ICONS.book)+'</div>') +
         '<h3>'+esc(tr(slide.title))+'</h3>' +
         (slide.where ? '<div class="lesson-where">'+ICONS.search+'<span>'+esc(tr(slide.where))+'</span></div>' : '') +
-        '<p class="lesson-intro" data-part="0">'+esc(tr(slide.text))+'</p>' +
+        '<p class="lesson-intro">'+esc(tr(slide.text))+'</p>' +
         (hasSteps ? '<ol class="lesson-steps">' + slide.steps.map(function(s, k){
-          return '<li data-part="'+(k+1)+'"><span class="stepnum">'+(k+1)+'</span><span class="steptext">'+esc(tr(s))+'</span></li>';
+          return '<li><span class="stepnum">'+(k+1)+'</span><span class="steptext">'+esc(tr(s))+'</span></li>';
         }).join('') + '</ol>' : '') +
-        (slide.tip ? '<div class="lesson-tip" data-part="'+((slide.steps||[]).length+1)+'"><strong>'+tr('Tip')+':</strong> '+esc(tr(slide.tip))+'</div>' : '') +
+        (slide.tip ? '<div class="lesson-tip"><strong>'+tr('Tip')+':</strong> '+esc(tr(slide.tip))+'</div>' : '') +
       '</div>' +
       '<div class="lesson-controls">' +
         '<button class="icon-btn" id="lsPrev" type="button" aria-label="Previous" '+(i===0?'disabled style="opacity:.4;"':'')+'>'+ICONS.back+'</button>' +
-        (supported ? '<button class="icon-btn" id="lsMute" type="button" aria-label="Mute">'+(muted?ICONS.soundOff:ICONS.soundOn)+'</button>' : '') +
-        (speechOn() ? '<button class="btn btn-primary navbig" id="lsPlay" type="button">'+(_trainState.playing?ICONS.pause:ICONS.play)+'<span style="margin-left:6px;">'+(_trainState.playing?tr('Pause'):tr('Play'))+'</span></button>' : '<div class="navbig"></div>') +
+        '<div class="navbig"></div>' +
         '<button class="icon-btn" id="lsNext" type="button" aria-label="Next"><span style="display:inline-block;transform:rotate(180deg);">'+ICONS.back+'</span></button>' +
-      '</div>' +
-      (speechOn() ? '<div style="text-align:center;margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"><button class="btn btn-ghost" id="lsRate" type="button" style="padding:6px 12px;font-size:12px;">'+tr('Voice speed')+': '+tr(rate.label)+'</button><button class="btn btn-ghost" id="lsVoice" type="button" style="padding:6px 12px;font-size:12px;">'+tr('Narrator voice')+': '+esc(_narrationVoice ? trainVoiceLabel(_narrationVoice) : tr('Default'))+'</button></div><div id="lsVoicePanel"></div>' : '');
-    wire();
-    if(wantPlay && speechOn()){ playPart(0); } else { _trainState.playing = false; updatePlayBtn(); }
+      '</div>';
+    b.querySelector('#lsPrev').addEventListener('click', function(){ if(_trainState.idx>0) goTo(_trainState.idx-1); });
+    b.querySelector('#lsNext').addEventListener('click', function(){ goTo(_trainState.idx+1); });
   }
 
   function renderComplete(){
     var b = body(); if(!b) return;
-    stopNarration();
     markLessonDone(lesson.id);
     var idxInList = list.map(function(l){ return l.id; }).indexOf(lesson.id);
     var next = list[idxInList+1];
@@ -17009,157 +16127,96 @@ function openLessonSlideshow(lessonId, opts){
         '<p style="text-align:center;">'+esc(tr(lesson.title))+' — '+tr('well done!')+'</p></div>' +
       '<div class="actions" style="flex-direction:column;">' +
         (next ? '<button class="btn btn-primary btn-block" id="lsNextLesson" type="button">'+tr('Next lesson')+': '+esc(tr(next.title))+'</button>' : '') +
-        '<button class="btn btn-ghost btn-block" id="lsAgain" type="button">'+tr('Watch this lesson again')+'</button>' +
+        '<button class="btn btn-ghost btn-block" id="lsAgain" type="button">'+tr('Read this lesson again')+'</button>' +
         '<button class="btn btn-ghost btn-block" id="lsAll" type="button">'+tr('All lessons')+'</button>' +
       '</div>';
-    var nl = b.querySelector('#lsNextLesson'); if(nl) nl.addEventListener('click', function(){ openLessonSlideshow(next.id, { chain:_trainState.chain }); });
-    b.querySelector('#lsAgain').addEventListener('click', function(){ openLessonSlideshow(lesson.id, { chain:_trainState.chain }); });
+    var nl = b.querySelector('#lsNextLesson'); if(nl) nl.addEventListener('click', function(){ openLessonSlideshow(next.id); });
+    b.querySelector('#lsAgain').addEventListener('click', function(){ openLessonSlideshow(lesson.id); });
     b.querySelector('#lsAll').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
-    // "Play all": roll straight into the next lesson
-    if(_trainState.chain && next && wantPlay && speechOn()){
-      var tok = _trainState.tok;
-      _trainState.autoTimer = setTimeout(function(){ if(tok === _trainState.tok) openLessonSlideshow(next.id, { chain:true }); }, 2200);
-    }
-  }
-
-  function updatePlayBtn(){
-    var btn = document.getElementById('lsPlay'); if(!btn) return;
-    btn.innerHTML = (_trainState.playing ? ICONS.pause : ICONS.play) + '<span style="margin-left:6px;">'+(_trainState.playing ? tr('Pause') : tr('Play'))+'</span>';
-  }
-
-  function playClip(p){
-    var slide = lesson.slides[_trainState.idx], rec = clips[_trainState.idx];
-    var parts = slideParts(slide), tot = 0, starts = [];
-    parts.forEach(function(x){ starts.push(tot); tot += x.text.length; });
-    starts = starts.map(function(s){ return s / tot; });
-    stopClipAudio();
-    try{ if(speechSupported()) window.speechSynthesis.cancel(); }catch(e){}
-    var tok = ++_trainState.tok;
-    var a = new Audio(VoiceClips.url(rec));
-    a.playbackRate = clipRate();
-    _trainState.clip = a;
-    var dur = rec.dur || 0, ts = rec.ts || 0, te = rec.te || 0, last = p;
-    // a hands free recording has quiet before and after the speech: play only the spoken part
-    var trimmed = te > ts + 0.5;
-    var base = trimmed ? ts : 0, span = trimmed ? (te - ts) : dur;
-    partIdx = p;
-    a.onloadedmetadata = function(){
-      var at = base + (span ? span * starts[p] : 0);
-      if(at > 0.05){ try{ a.currentTime = at; }catch(e){} }
-    };
-    a.ontimeupdate = function(){
-      if(tok !== _trainState.tok) return;
-      if(trimmed && a.currentTime >= te){ stopClipAudio(); slideFinished(); return; }
-      var d = span || a.duration; if(!(d > 0) || !isFinite(d)) return;
-      var f = (a.currentTime - base) / d, k = 0;
-      for(var j = 0; j < starts.length; j++){ if(f >= starts[j] - 0.001) k = j; }
-      if(k !== last){ last = k; partIdx = k; highlight(k); }
-    };
-    a.onended = function(){ if(tok !== _trainState.tok) return; stopClipAudio(); slideFinished(); };
-    a.onerror = function(){
-      if(tok !== _trainState.tok) return;
-      stopClipAudio(); clips[_trainState.idx] = null;   // unreadable recording: use the computer voice for this slide
-      if(speechSupported()) playPart(p); else { _trainState.playing = false; updatePlayBtn(); }
-    };
-    _trainState.playing = true; updatePlayBtn(); highlight(p);
-    var pr = a.play();
-    if(pr && pr.catch) pr.catch(function(){ if(tok === _trainState.tok){ _trainState.playing = false; updatePlayBtn(); } });
-  }
-
-  function playPart(p){
-    var slide = lesson.slides[_trainState.idx]; if(!slide) return;
-    var parts = slideParts(slide);
-    if(p >= parts.length){ slideFinished(); return; }
-    if(clips[_trainState.idx]){ playClip(p); return; }
-    partIdx = p;
-    try{ window.speechSynthesis.cancel(); }catch(e){}
-    var tok = ++_trainState.tok;
-    var u = new SpeechSynthesisUtterance(speakable(tr(parts[p].text)));
-    if(!_narrationVoice) refreshNarrationVoice();
-    var lcode = currentLangCode(), lvoice = null;
-    if(lcode !== 'en'){ try{ lvoice = (window.speechSynthesis.getVoices() || []).find(function(x){ return String(x.lang).toLowerCase().indexOf(lcode) === 0; }) || null; }catch(e){} }
-    if(lvoice){ u.voice = lvoice; u.lang = lvoice.lang; }
-    else if(_narrationVoice){ u.voice = _narrationVoice; u.lang = _narrationVoice.lang || 'en-US'; } else { u.lang = 'en-US'; }
-    u.rate = trainRate(); u.pitch = lvoice ? 1 : trainPitch();
-    u.onstart = function(){ if(tok === _trainState.tok) highlight(p); };
-    u.onend = function(){
-      if(tok !== _trainState.tok) return;
-      _trainState.autoTimer = setTimeout(function(){ if(tok === _trainState.tok) playPart(p+1); }, 450);
-    };
-    u.onerror = function(){ if(tok === _trainState.tok){ _trainState.playing = false; updatePlayBtn(); } };
-    _trainState.playing = true; updatePlayBtn();
-    highlight(p);
-    try{ window.speechSynthesis.speak(u); }catch(e){ _trainState.playing = false; updatePlayBtn(); }
-  }
-
-  function slideFinished(){
-    var tok = _trainState.tok;
-    _trainState.playing = false; updatePlayBtn();
-    _trainState.autoTimer = setTimeout(function(){ if(tok === _trainState.tok) goTo(_trainState.idx + 1); }, 1400);
-  }
-
-  function pause(){
-    wantPlay = false;
-    stopNarration();
-    _trainState.tok++;
-    updatePlayBtn();
   }
 
   function goTo(newIdx){
-    stopNarration();
-    _trainState.tok++;
     _trainState.idx = Math.max(0, Math.min(lesson.slides.length, newIdx));
     renderSlide();
-  }
-
-  function wire(){
-    var b = body(); if(!b) return;
-    b.querySelector('#lsPrev').addEventListener('click', function(){ if(_trainState.idx>0) goTo(_trainState.idx-1); });
-    b.querySelector('#lsNext').addEventListener('click', function(){ goTo(_trainState.idx+1); });
-    var play = b.querySelector('#lsPlay');
-    if(play) play.addEventListener('click', function(){
-      if(_trainState.playing){ pause(); }
-      else { wantPlay = true; playPart(partIdx); }
-    });
-    var mute = b.querySelector('#lsMute');
-    if(mute) mute.addEventListener('click', function(){
-      var next = (State.settings.soundEnabled === false);
-      State.settings = Object.assign({}, State.settings, { soundEnabled: next });
-      refs.settings.set(State.settings);
-      if(!next){ pause(); } else { wantPlay = true; }
-      renderSlide();
-    });
-    var vbtn = b.querySelector('#lsVoice');
-    if(vbtn) vbtn.addEventListener('click', function(){
-      var pn = b.querySelector('#lsVoicePanel'); if(pn.innerHTML){ pn.innerHTML = ''; return; }
-      pn.innerHTML = trainVoicePanelHtml();
-      wireTrainVoicePanel(pn, {
-        onHear:function(){ _trainState.tok++; updatePlayBtn(); },
-        onPick:function(v){ vbtn.textContent = tr('Narrator voice')+': '+(v ? trainVoiceLabel(v) : tr('Default')); if(_trainState.playing && !_trainState.clip){ playPart(partIdx); } }
-      });
-    });
-    var rate = b.querySelector('#lsRate');
-    if(rate) rate.addEventListener('click', function(){
-      var cur = trainRateLabel(), ix = TRAIN_RATES.indexOf(cur);
-      setTrainRate(TRAIN_RATES[(ix+1) % TRAIN_RATES.length].r);
-      rate.textContent = tr('Voice speed')+': '+tr(trainRateLabel().label);
-      if(_trainState.playing){ if(_trainState.clip) _trainState.clip.playbackRate = clipRate(); else playPart(partIdx); }
-    });
-    // tap a step to hear it again
-    b.querySelectorAll('[data-part]').forEach(function(el){
-      el.addEventListener('click', function(){ if(speechOn()){ wantPlay = true; playPart(parseInt(el.getAttribute('data-part'), 10)); } });
-    });
   }
 
   var html = '<div class="sheet-head"><button class="drawer-close" id="lsBack" type="button" aria-label="Back">'+ICONS.back+'</button><h2 style="flex:1;">'+esc(tr(lesson.title))+'</h2></div>' +
     '<div id="lsBody"></div>';
   var ov = openSheet(html);
-  ov.querySelector('#lsBack').addEventListener('click', function(){ stopNarration(); _trainState.tok++; closeModal(); openTrainingSheet(); });
-  var tok0 = _trainState.tok;
-  VoiceClips.loadLesson(currentLangCode(), lesson.id, lesson.slides.length).then(function(m){
-    clips = m || {};
-    if(Object.keys(clips).length){ supported = true; wantPlay = State.settings.soundEnabled !== false; }
-  }, function(){}).then(function(){ if(tok0 === _trainState.tok) renderSlide(); });
+  ov.querySelector('#lsBack').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
+  renderSlide();
+}
+
+/* The whole training course as one PDF: every lesson and slide for this person's role, with the same header, stamp and verification line as the About Pesa document. */
+function generateTrainingPdf(){
+  var JsPDFCtor = getJsPDF();
+  var doc = newPdfDoc(JsPDFCtor, { unit:'mm', format:'a4' });
+  var now = new Date();
+  var head = drawDocHeader(doc, {plain:true});
+  var margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
+  var pal = head.pal, primary = pal.mid, muted = pal.muted, dark = pal.text;
+  var pageH = doc.internal.pageSize.getHeight(), bottomLimit = 265;
+  function pad2(n){ return n<10 ? '0'+n : ''+n; }
+  var stampTime = pad2(now.getHours())+':'+pad2(now.getMinutes());
+  function need(h){ if(y + h <= bottomLimit) return; doc.addPage(); var hd = drawDocHeader(doc, {plain:true}); y = hd.y; }
+  function para(txt, size, lh, color, bold, x, w){
+    doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(color[0], color[1], color[2]);
+    var lines = doc.splitTextToSize(txt, w || contentW);
+    need(lines.length*lh + 1.5);
+    doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(color[0], color[1], color[2]);
+    doc.text(lines, x == null ? margin : x, y); y += lines.length*lh + 1.5;
+  }
+  var lessons = lessonsForRole();
+  var slideCount = lessons.reduce(function(n, l){ return n + l.slides.length; }, 0);
+
+  var ty = y; y = pdTitle(doc, pal, margin, y, 'Pesa Training Manual');
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.text('Generated '+fmtDateNice(now)+' at '+stampTime, pageW-margin, ty+6, {align:'right'});
+  y += 1;
+  para('Your Mula, Your Pride. This manual holds every training lesson in the app, in the same order, so you can read it on paper or share it with your team. '+lessons.length+' lessons, '+slideCount+' slides.', 9.5, 4.6, dark, false);
+  y += 2;
+
+  pdSection(doc, pal, margin, y, contentW, 'Contents'); y += 8;
+  lessons.forEach(function(l, i){
+    var who = l.who === 'owner' ? '  (Owner)' : (l.who === 'manager' ? '  (Owner or Manager)' : '');
+    para((i+1)+'.  '+tr(l.title)+who+'  ·  '+l.slides.length+' slides', 9.5, 4.6, dark, false, margin+2, contentW-2);
+  });
+
+  lessons.forEach(function(l, li){
+    need(40); y += 8;
+    pdSection(doc, pal, margin, y, contentW, (li+1)+'. '+tr(l.title)); y += 9;
+    l.slides.forEach(function(sl, si){
+      need(24); y += 2;
+      if(sl.photo){
+        need(62);
+        try{ doc.addImage(DEV_PHOTO_DATA_URL, 'JPEG', margin, y, 40, 50); }catch(e){}
+        doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+        doc.text('Björn Van Rensburg', margin+46, y+8);
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text('Developer of Pesa', margin+46, y+13.5);
+        y += 59;
+      }
+      para('Slide '+(si+1)+' of '+l.slides.length+':  '+tr(sl.title), 10.5, 5, primary, true);
+      if(sl.where) para('Where to find it: '+tr(sl.where), 8.5, 4.2, muted, false);
+      para(tr(sl.text), 9.5, 4.6, dark, false);
+      (sl.steps || []).forEach(function(st, k){ para((k+1)+'.  '+tr(st), 9.5, 4.6, dark, false, margin+4, contentW-4); });
+      if(sl.tip) para('Tip: '+tr(sl.tip), 9, 4.4, primary, false, margin+4, contentW-4);
+    });
+  });
+
+  need(67);
+  doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y += 7;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
+  try{ doc.addImage(DEV_LOGO_DATA_URL, 'PNG', margin, y-4, 16, 16); }catch(e){}
+  doc.text(DEV_CREDIT_LINE, margin+19, y+1); y += 6.5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+  var crLines = doc.splitTextToSize(copyrightLine(), contentW-19);
+  doc.text(crLines, margin+19, y);
+  drawWetStamp(doc, pageW, pageH, now);
+  var verification = { id: genVerificationId(), status: 'VERIFIED', isoTimestamp: now.toISOString() };
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.text('Status: '+verification.status+'    Date: '+fmtStampDate(now)+'    Time: '+stampTime+'    Verification ID: '+verification.id, margin, 271.6);
+  return { doc: doc, verification: verification };
 }
 
 
@@ -18206,7 +17263,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.34';
+var APP_VERSION = '2026.10.35';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18398,6 +17455,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.35', items:[
+    'Training: every voice is gone and all lessons are for reading. New: download the full training manual, every lesson and slide, as one PDF'
+  ]},
   { v:'2026.10.34', items:[
     'Training: voice recordings and uploaded audio now sync between your devices with cloud sync, so you only add them once'
   ]},

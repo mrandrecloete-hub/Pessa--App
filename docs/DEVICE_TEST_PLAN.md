@@ -18,7 +18,7 @@ Devices to cover as a minimum: one cheap Android phone (Chrome), one newer Andro
 | 10 | Messages: send a text, a photo from the gallery, a photo from the camera, and a 10 second voice note. Play it on the other device. | |
 | 11 | Messages offline: switch the internet off, send a text. A clock shows. Switch on. It arrives and the clock goes. | |
 | 12 | Tap the phone button in a chat. The dialer opens with the right number. | |
-| 13 | Training: play a lesson. Open Narrator voice, pick a male American voice, tap Hear. | |
+| 13 | Training: open a lesson and read through it. Tap Download the full training manual and open the PDF. | |
 | 14 | Type in the chat with the keyboard open. The input stays visible and the chat does not jump. | |
 | 15 | Rotate the phone. Nothing is cut off. | |
 | 16 | Use Pesa for 15 minutes on a 2 GB RAM phone. It does not freeze or restart. | |

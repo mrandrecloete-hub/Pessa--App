@@ -92,7 +92,6 @@ Line numbers move, so regenerate this list with `python3 tools/section_map.py`.
  15266  NAMRA VAT SUMMARY
  15339  LICENCE AND FREE TRIAL
  15545  TRAINING
- 16132  MY VOICE: recorded training narration
  16961  PESA SMART TOOLS
  17354  RECONCILIATION PAGE
  17983  AUTOMATIC BACKUPS

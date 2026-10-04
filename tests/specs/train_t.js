@@ -1,0 +1,23 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?' -> '+JSON.stringify(x).slice(0,200):'')); if(!c)fail++; };
+(async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block',acceptDownloads:true}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.addInitScript(()=>{ window.__spoke=0; if(window.speechSynthesis){ const o=window.speechSynthesis.speak.bind(window.speechSynthesis); window.speechSynthesis.speak=function(u){window.__spoke++; return o(u)}; } });
+ await require('./biz_boot.js')(p);
+ await p.evaluate(()=>window.__t.openTrainingSheet()); await p.waitForTimeout(400);
+ const txt=await p.innerText('.sheet');
+ ck('no voice buttons', !/\bvoice|narrat|Play all/i.test(txt) && !(await p.$('#trNarr')) && !(await p.$('#trVoice')), txt.slice(0,200));
+ ck('PDF button there', !!(await p.$('#trPdf')));
+ await p.click('[data-lesson="developer"]'); await p.waitForTimeout(400);
+ ck('lesson shows photo and text', !!(await p.$('.dev-photo img')) && /Hello and welcome/.test(await p.innerText('#lsBody')));
+ ck('no play or voice controls in lesson', !(await p.$('#lsPlay')) && !(await p.$('#lsMute')) && !(await p.$('#lsVoice')));
+ for(let i=0;i<7;i++){ await p.click('#lsNext'); } await p.waitForTimeout(300);
+ ck('reaches lesson complete', /Lesson complete/.test(await p.innerText('#lsBody')) );
+ await p.click('#lsNextLesson'); await p.waitForTimeout(300); ck('next lesson opens', !!(await p.$('#lsNext')));
+ await p.click('#lsBack'); await p.waitForSelector('#trPdf');
+ const pdf=await p.evaluate(async()=>{ const t=window.__t; await t.ensureJsPDF(); const o=t.generateTrainingPdf(); const d=o.doc; return { pages:d.getNumberOfPages(), id:!!o.verification.id, lessons:t.lessonsForRole().length, slides:t.lessonsForRole().reduce((n,l)=>n+l.slides.length,0) }; });
+ console.log('   pdf',pdf); ck('PDF builds with stamp and many pages', pdf.pages>=8 && pdf.id, pdf);
+ const [dl]=await Promise.all([p.waitForEvent('download',{timeout:15000}).catch(()=>null), (async()=>{ await p.click('#trPdf'); await p.waitForSelector('#xpSel'); await p.selectOption('#xpSel','pdf'); await p.click('#xpGo'); })()]);
+ await p.waitForTimeout(1500); ck('PDF button gives a file', !!dl); if(dl){ await dl.saveAs('/tmp/manual.pdf'); }
+ ck('nothing was spoken', (await p.evaluate(()=>window.__spoke))===0);
+ ck('no page errors', errs.length===0); if(errs.length) console.log(errs);
+ console.log(fail?'FAILED '+fail:'ALL OK'); await b.close(); })();
