@@ -2454,6 +2454,7 @@ function initRefs(){
   refs.posDevices = Store.collection('posDevices');
   refs.posBatches = Store.collection('posBatches');
   refs.messages = Store.collection('messages');
+  refs.voiceclips = Store.collection('voiceclips');
   refs.workReports = Store.collection('workReports');
   refs.wastage = Store.collection('wastage');
   refs.auditLog = Store.collection('auditLog');
@@ -2547,6 +2548,7 @@ function subscribeAll(){
     State.posBatches = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.settledAt)-new Date(a.settledAt); });
     State.ready.posBatches = true;
   });
+  refs.voiceclips.onSnapshot(function(docs){ try{ vcApplyRemote(docs); }catch(e){} });
   refs.messages.onSnapshot(function(docs){
     State.messages = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
     State.ready.messages = true;
@@ -16246,6 +16248,52 @@ function slideParts(slide){
    and played instead of the computer's own speech voice. A slide with no recording still uses the speech voice.
    Recordings can also be shipped inside the app as files under voice/ (see voice/index.json), so every device hears them. */
 var VC_DB = 'pesa_voice_v1', VC_ST = 'clips';
+/* ---- voice recordings travel with cloud sync: each recording is cut into pieces that fit the sync row limit ---- */
+var VC_CHUNK = 450000, VC_SYNC_MAX = 6 * 1024 * 1024;
+function vcSid(key){ return String(key).replace(/[^A-Za-z0-9]+/g, '-'); }
+function vcB64(blob){ return new Promise(function(res){ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result).split(',')[1] || ''); }; fr.onerror = function(){ res(''); }; fr.readAsDataURL(blob); }); }
+function vcFromB64(b, type){ var bin = atob(b), u = new Uint8Array(bin.length); for(var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function vcSyncOn(){ try{ if(Store.isCloud()) return true; var c = Sync.cfg(); return !!(c.on && c.url && c.key && c.code); }catch(e){ return false; } }
+function vcSyncPush(rec){
+  if(!refs.voiceclips || !vcSyncOn()) return;
+  if(rec.blob.size > VC_SYNC_MAX){ toast(tr('That recording is too big to share between devices, so it stays on this one. Keep each slide under 6 MB to share it.')); return; }
+  var sid = vcSid(rec.key), n = Math.max(1, Math.ceil(rec.blob.size / VC_CHUNK)), jobs = [];
+  for(var i = 0; i < n; i++){ (function(i){ jobs.push(vcB64(rec.blob.slice(i * VC_CHUNK, (i + 1) * VC_CHUNK)).then(function(b){ return refs.voiceclips.doc(sid + '_c' + i).set({ k:rec.key, i:i, at:rec.at, b:b }); })); })(i); }
+  Promise.all(jobs).then(function(){
+    return refs.voiceclips.doc(sid + '_m').set({ m:1, key:rec.key, lang:rec.lang, id:rec.id, idx:rec.idx, mime:rec.mime || 'audio/webm', dur:rec.dur || 0, ts:rec.ts || 0, te:rec.te || 0, hash:rec.hash || '', at:rec.at, n:n, size:rec.blob.size });
+  }).catch(function(){});
+}
+function vcSyncDelete(key, rec){
+  if(!refs.voiceclips || !vcSyncOn()) return;
+  var sid = vcSid(key), n = rec && rec.blob ? Math.max(1, Math.ceil(rec.blob.size / VC_CHUNK)) : 0;
+  refs.voiceclips.doc(sid + '_m').set({ m:1, key:key, deleted:true, at:new Date().toISOString() }).catch(function(){});
+  for(var i = 0; i < n; i++) refs.voiceclips.doc(sid + '_c' + i).delete().catch(function(){});
+}
+var _vcApplying = false, _vcAgain = null, _vcMetas = null;
+function vcApplyRemote(docs){
+  if(_vcApplying){ _vcAgain = docs; return; }
+  _vcApplying = true;
+  var metas = [], chunks = {};
+  _vcMetas = {};
+  docs.forEach(function(d){ var x = d.data; if(!x) return; if(x.m){ metas.push(x); _vcMetas[x.key] = x; } else if(x.k !== undefined) chunks[vcSid(x.k) + '|' + x.at + '|' + x.i] = x.b; });
+  var changed = false;
+  metas.reduce(function(pr, m){
+    return pr.then(function(){
+      return VoiceClips.getLocal(m.key).then(function(local){
+        if(m.deleted){ if(local && !local.bundled && String(local.at || '') <= String(m.at)){ changed = true; return VoiceClips.del(m.key, true); } return; }
+        if(local && String(local.at || '') >= String(m.at)) return;
+        var parts = [];
+        for(var i = 0; i < m.n; i++){ var c = chunks[vcSid(m.key) + '|' + m.at + '|' + i]; if(c === undefined) return; parts.push(vcFromB64(c)); }
+        changed = true;
+        return VoiceClips.put({ key:m.key, lang:m.lang, id:m.id, idx:m.idx, mime:m.mime, dur:m.dur, ts:m.ts, te:m.te, hash:m.hash, at:m.at, blob:new Blob(parts, { type:m.mime }), fromSync:true });
+      });
+    });
+  }, Promise.resolve()).catch(function(){}).then(function(){
+    _vcApplying = false;
+    if(_vcAgain){ var d = _vcAgain; _vcAgain = null; vcApplyRemote(d); }
+    else if(changed){ try{ if(typeof msgSyncChanged === 'function') toast(tr('Voice recordings updated from your other device')); }catch(e){} }
+  });
+}
 var VoiceClips = (function(){
   var dbp = null, urls = {}, bund = null;
   function open(){
@@ -16273,9 +16321,20 @@ var VoiceClips = (function(){
   function key(lang, id, i){ return lang + '|' + id + '|' + i; }
   function hash(s){ var h = 5381; s = String(s); for(var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(16); }
   function drop(k){ var o = urls[k]; if(o){ try{ URL.revokeObjectURL(o.u); }catch(e){} delete urls[k]; } }
-  function put(rec){ drop(rec.key); return run('readwrite', function(s){ return s.put(rec); }); }
-  function del(k){ drop(k); return run('readwrite', function(s){ return s.delete(k); }); }
-  function clear(){ Object.keys(urls).forEach(drop); return run('readwrite', function(s){ return s.clear(); }); }
+  function put(rec){
+    var fs = rec.fromSync; delete rec.fromSync; if(!rec.at) rec.at = new Date().toISOString();
+    drop(rec.key);
+    return run('readwrite', function(s){ return s.put(rec); }).then(function(r){ if(!fs && rec.blob){ try{ vcSyncPush(rec); }catch(e){} } return r; });
+  }
+  function del(k, fromSync){
+    drop(k);
+    var pre = fromSync ? Promise.resolve(null) : getLocal(k);
+    return pre.then(function(rec){ return run('readwrite', function(s){ return s.delete(k); }).then(function(r){ if(!fromSync){ try{ vcSyncDelete(k, rec); }catch(e){} } return r; }); });
+  }
+  function clear(){
+    Object.keys(urls).forEach(drop);
+    return all().then(function(list){ return run('readwrite', function(s){ return s.clear(); }).then(function(r){ list.forEach(function(rec){ try{ vcSyncDelete(rec.key, rec); }catch(e){} }); return r; }); });
+  }
   function getLocal(k){ return run('readonly', function(s){ return s.get(k); }).catch(function(){ return null; }); }
   function all(){ return run('readonly', function(s){ return s.getAll(); }).then(function(a){ return a || []; }, function(){ return []; }); }
   function bundled(){
@@ -16388,8 +16447,13 @@ function vcRecordedMap(lang){
   });
 }
 
+function vcPushMissing(){
+  if(_vcMetas === null) return;
+  VoiceClips.all().then(function(list){ list.forEach(function(rec){ if(rec.blob && !rec.bundled){ var m = _vcMetas[rec.key]; if(!m || (!m.deleted && String(m.at) < String(rec.at || '')) || (m.deleted && String(m.at) < String(rec.at || ''))) vcSyncPush(Object.assign({}, rec, { at:rec.at || new Date().toISOString() })); } }); });
+}
 function openVoiceStudio(){
   stopNarration();
+  try{ vcPushMissing(); }catch(e){}
   var lang = currentLangCode();
   vcRecordedMap(lang).then(function(have){
     var total = 0, done = 0;
@@ -16417,7 +16481,7 @@ function openVoiceStudio(){
         '<input type="file" id="vsFile" accept=".json,application/json" style="display:none;">' +
         (done || wel ? '<button class="btn btn-danger btn-block" id="vsClear" type="button">'+tr('Delete my recordings')+'</button>' : '') +
       '</div>' +
-      '<div style="font-size:12px;color:var(--text-muted);margin-top:10px;line-height:1.5;">'+tr('Recordings are kept on this computer or device. To use them on other computers or devices, save a voice pack and load it there.')+'</div>';
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:10px;line-height:1.5;">'+tr('When cloud sync is on, your recordings and uploaded audio are shared with your other computers and devices by themselves. A file can be up to 6 MB to be shared. Otherwise, save a voice pack and load it there.')+'</div>';
     var ov = openSheet(html);
     ov.querySelector('#vsBack').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
     ov.querySelector('#vsAuto').addEventListener('click', function(){ openVoiceAutoSetup(LESSONS, function(){ openVoiceStudio(); }); });
@@ -18142,7 +18206,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.33';
+var APP_VERSION = '2026.10.34';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18334,6 +18398,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.34', items:[
+    'Training: voice recordings and uploaded audio now sync between your devices with cloud sync, so you only add them once'
+  ]},
   { v:'2026.10.33', items:[
     'Back button: the Back button of your phone or browser, and a new Back button on every page and sheet, now step back to where you were instead of leaving Pesa'
   ]},
