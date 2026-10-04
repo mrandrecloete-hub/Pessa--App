@@ -277,6 +277,15 @@
 
   /* ---------- content ---------- */
   .content{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px calc(20px + env(safe-area-inset-bottom,0px)); }
+  .st-grp{ border:1px solid var(--border); border-radius:14px; margin:10px 0; background:var(--surface); }
+  .st-grp > summary{ list-style:none; cursor:pointer; padding:13px 14px; display:flex; flex-direction:column; gap:2px; }
+  .st-grp > summary::-webkit-details-marker{ display:none; }
+  .st-grp > summary .st-t{ font-weight:700; font-size:15.5px; display:flex; justify-content:space-between; align-items:center; }
+  .st-grp > summary .st-t::after{ content:'+'; font-size:20px; color:var(--text-muted); }
+  .st-grp[open] > summary .st-t::after{ content:'\2212'; }
+  .st-grp > summary .st-h{ font-size:12.5px; color:var(--text-muted); }
+  .st-grp .st-b{ padding:0 14px 12px; }
+  .st-grp .st-b .section-title:first-child{ margin-top:4px; }
   .section-title{ font-size:var(--fs-section); font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--text-muted); margin: 18px 2px 8px; display:flex; align-items:center; justify-content:space-between; }
   .section-title:first-child{ margin-top:2px; }
   .section-title .see-all{ font-size:11.5px; font-weight:600; color:var(--primary-dim); text-transform:none; letter-spacing:0; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
@@ -13251,8 +13260,7 @@ function appShareLink(){
 }
 function shareAppHtml(){
   var l = appShareLink();
-  return '<div class="section-title">'+tr('Share Pesa')+'</div>' +
-    '<div class="field"><label>'+tr('App link')+'</label><input id="shLink" readonly value="'+esc(l)+'" style="font-size:13px;"></div>' +
+  return '<div class="field"><label>'+tr('App link')+'</label><input id="shLink" readonly value="'+esc(l)+'" style="font-size:13px;"></div>' +
     '<div class="actions">' +
       '<button class="btn btn-primary" id="shCopy" type="button">'+tr('Copy link')+'</button>' +
       '<button class="btn btn-ghost" id="shWa" type="button">WhatsApp</button>' +
@@ -13271,36 +13279,35 @@ function wireShareApp(root){
     else copyText(msg+appShareLink(), tr('Link copied'));
   });
 }
+function stGrp(title, hint, body, open){
+  return '<details class="st-grp"'+(open?' open':'')+'><summary><span class="st-t">'+tr(title)+'</span><span class="st-h">'+tr(hint)+'</span></summary><div class="st-b">'+body+'</div></details>';
+}
 function openSettingsSheet(){
   if(isRestricted()) return openCashierSettingsSheet();
   var s = State.settings;
   var html = '<div class="sheet-head"><h2>'+tr('Settings')+'</h2></div>' +
+    stGrp('Account','Your sign in and security',
+''+
     accountSectionHtml() +
-    shareAppHtml() +
-    '<div class="section-title">'+tr('Company &amp; team')+'</div>' +
+'', true) +
+    stGrp('Shop','Name, team, branches and stock alerts',
+''+
     '<div class="actions">' +
       '<button class="btn btn-ghost" id="openCompanyBtn" type="button">'+tr('Company details')+'</button>' +
       '<button class="btn btn-ghost" id="openTeamBtn" type="button">'+tr('Team')+' ('+State.users.length+')</button>' +
     '</div>' +
-
     (isOwner() && State.branches.length>0 ? (
       '<div class="field"><label>Viewing branch</label><select id="stBranchSelect">' +
         '<option value="all" '+((State.settings.currentBranchId||'all')==='all'?'selected':'')+'>All branches (combined)</option>' +
         State.branches.map(function(b){ return '<option value="'+b.id+'" '+(State.settings.currentBranchId===b.id?'selected':'')+'>'+esc(b.name)+'</option>'; }).join('') +
       '</select></div>'
     ) : '') +
-
     '<div class="field"><label>'+tr('Shop name')+'</label><input id="stName" value="'+esc(s.shopName)+'"></div>' +
     '<div class="field"><label>'+tr('Default low-stock alert')+'</label><input id="stLow" type="number" inputmode="numeric" value="'+s.lowStockDefault+'"></div>' +
     '<div class="banner">Applies to products that don’t have their own low-stock number set.</div>' +
-
-    '<div class="section-title">'+tr('Document and app font')+'</div>' +
-    '<div class="field"><label>'+tr('Font style')+'</label><select id="stFont">' +
-      Object.keys(FONT_SETS).map(function(k){ return '<option value="'+k+'" '+(currentFontKey()===k?'selected':'')+'>'+esc(FONT_SETS[k].label)+'</option>'; }).join('') +
-    '</select></div>' +
-    '<div class="banner" style="display:block;"><div id="stFontHead" style="font-family:var(--font-head);font-size:20px;font-weight:700;">Invoice INV-0001</div><div style="margin-top:4px;">Your Mula, Your Pride. N$1,250.00 · 12 items · Windhoek, Namibia</div></div>' +
-    '<div class="banner" style="display:block;">'+tr('Used for the headings and text in Pesa and on every invoice, receipt and report you generate.')+'</div>' +
-    '<div class="section-title">Language</div>' +
+'', false) +
+    stGrp('Language','What language Pesa uses',
+''+
     '<div class="field"><label>App language</label><select id="stLang">' +
       Object.keys(LANGS).map(function(code){
         var l = LANGS[code];
@@ -13308,7 +13315,9 @@ function openSettingsSheet(){
       }).join('') +
     '</select></div>' +
     '<div class="banner">'+ICONS.warn+'<span>Languages marked “partly translated” or “not yet translated” show their remaining screens in English until a native speaker reviews them — this matters most for money and invoice wording, so please double-check before relying on them with customers.</span></div>' +
-
+'', false) +
+    stGrp('Invoices and documents','Business details, logo, font and template',
+''+
     '<div class="section-title">'+tr('Invoice branding')+'</div>' +
     '<div class="field"><label>'+tr('Business details (shown on invoices)')+'</label><textarea id="stContact" rows="3" placeholder="Address, phone, email, VAT/registration number…">'+esc(s.businessContact||'')+'</textarea></div>' +
     '<div class="field">' +
@@ -13321,8 +13330,11 @@ function openSettingsSheet(){
       '<input type="file" id="stLogoInput" accept="image/*" style="display:none;">' +
     '</div>' +
     '<div class="field"><label>'+tr('Slogan / tagline (optional)')+'</label><input id="stSlogan" placeholder="e.g. Quality you can trust" value="'+esc(s.businessSlogan||'')+'"></div>' +
-    '<div class="banner">With your logo uploaded, your logo sits at the top left of every invoice, receipt and report and the Pesa mark at the top right, both the same size. Without a logo, the small Pesa mark is used at the top left.</div>' +
-
+    '<div class="section-title">'+tr('Document and app font')+'</div>' +
+    '<div class="field"><label>'+tr('Font style')+'</label><select id="stFont">' +
+      Object.keys(FONT_SETS).map(function(k){ return '<option value="'+k+'" '+(currentFontKey()===k?'selected':'')+'>'+esc(FONT_SETS[k].label)+'</option>'; }).join('') +
+    '</select></div>' +
+    '<div class="banner" style="display:block;"><div id="stFontHead" style="font-family:var(--font-head);font-size:20px;font-weight:700;">Invoice INV-0001</div><div style="margin-top:4px;">Your Mula, Your Pride. N$1,250.00 · 12 items · Windhoek, Namibia</div></div>' +
     '<div class="section-title">'+tr('Document template')+'</div>' +
     '<div id="tplGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       Object.keys(DOC_TEMPLATES).map(function(k){
@@ -13354,18 +13366,23 @@ function openSettingsSheet(){
       '<div class="field"><label>'+tr('Default note / wording')+'</label><textarea id="stTplNote" rows="2" placeholder="Thank you for your business…">'+esc((s.customTemplate&&s.customTemplate.note)||'')+'</textarea></div>' +
     '</div>' +
     '<button class="btn btn-ghost btn-block" id="stPreviewBtn" type="button" style="margin-top:10px;">Preview &amp; download sample invoice</button>' +
-
-    notificationSettingsHtml() +
-
-    (isOwner() ? syncSettingsHtml() : '') +
-
-    (isOwner() ? emailServiceSettingsHtml() : '') +
-
+'', false) +
+    stGrp('Sales and hardware','Cash drawer and tax records',
+''+
     (isOwner() && Store.mode() === 'local' ? '<div class="section-title">'+tr('Tax records (NamRA)')+'</div><div class="banner" style="display:block;">'+tr('Keep a numbered, tamper-proof tax record of every sale, ready for NamRA e-invoicing when it starts.')+'</div><div class="actions"><button class="btn btn-ghost btn-block" id="stTaxBtn" type="button">'+tr('Set up tax records')+'</button></div>' : '') +
     '<div class="section-title">'+tr('Cash drawer')+'</div>' +
     '<div class="field"><label><input type="checkbox" id="stDrawer"'+(State.settings.drawerKick===false?'':' checked')+' style="width:auto;margin-right:8px;">'+tr('Open the till drawer when a customer pays cash or takes cash back')+'</label></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="stDrawerTest" type="button">'+tr('Connect printer and test the drawer')+'</button></div>' +
     '<div style="font-size:12px;color:var(--text-muted);margin:6px 2px 14px;">'+tr('The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.')+'</div>' +
+'', false) +
+    stGrp('Notifications and email','Alerts and the email service',
+''+
+    notificationSettingsHtml() +
+    (isOwner() ? emailServiceSettingsHtml() : '') +
+'', false) +
+    stGrp('Cloud sync and backup','Keep your data safe and on every device',
+''+
+    (isOwner() ? syncSettingsHtml() : '') +
     '<div class="section-title">Backup &amp; data safety</div>' +
     '<div class="banner">'+(Store.isCloud()?'Your data is stored in your own private Pesa cloud space and kept only for you — no one else can see it unless you export and share a file yourself.':'Your data is stored only on this device. Export a backup regularly and keep a copy somewhere safe — clearing your browser data would otherwise erase it.')+'</div>' +
     '<div class="actions">' +
@@ -13373,7 +13390,11 @@ function openSettingsSheet(){
       '<button class="btn btn-ghost" id="stImportBtn" type="button">Restore from backup</button>' +
     '</div>' +
     '<input type="file" id="stImportInput" accept="application/json" style="display:none;">' +
-
+'', false) +
+    stGrp('Share Pesa','Send the app link to other people',
+''+
+    shareAppHtml() +
+'', false) +
     '<div class="actions"><button class="btn btn-primary btn-block" id="stSave">'+tr('Save settings')+'</button></div>' +
     settingsAboutFooterHtml();
   var ov = openSheet(html);
@@ -18030,7 +18051,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.24';
+var APP_VERSION = '2026.10.25';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18222,6 +18243,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.25', items:[
+    'Settings is now tidy: Account, Shop, Language, Invoices and documents, Sales and hardware, Notifications and email, Cloud sync and backup, and Share Pesa, each in its own section that opens and closes'
+  ]},
   { v:'2026.10.24', items:[
     'Settings: a new Share Pesa section with the app link, copy, WhatsApp and share buttons'
   ]},
