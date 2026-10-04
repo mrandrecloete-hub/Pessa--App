@@ -933,6 +933,13 @@
   .mv-thread > .tickbar{ padding:8px 10px; flex-wrap:wrap; flex:none; }
   .mv-wait{ text-align:center; color:var(--text-muted); font-size:13px; font-weight:600; padding:10px; border-top:1.5px solid var(--border); }
 
+  .tv-panel{ background:var(--surface-2); border-radius:14px; padding:10px; margin:8px 0 12px; text-align:left; }
+  .tv-h{ font-weight:800; font-size:13px; margin-bottom:6px; }
+  .tv-row{ display:flex; align-items:center; gap:10px; padding:8px; border-radius:12px; cursor:pointer; background:var(--surface); border:1.5px solid var(--border); margin-bottom:6px; } .tv-row.on{ border-color:var(--primary); background:linear-gradient(135deg,rgba(20,163,122,.14),var(--surface)); }
+  .tv-radio{ width:18px; height:18px; border-radius:50%; border:2px solid var(--border); flex:none; position:relative; } .tv-row.on .tv-radio{ border-color:var(--primary); } .tv-row.on .tv-radio::after{ content:""; position:absolute; inset:3px; border-radius:50%; background:var(--primary); }
+  .tv-row .main{ flex:1; min-width:0; } .tv-row b{ display:block; font-size:14px; } .tv-row small{ color:var(--text-muted); font-size:11.5px; } .tv-row .btn{ padding:6px 12px; font-size:12px; flex:none; }
+  .tv-none, .tv-note{ font-size:12px; color:var(--text-muted); line-height:1.45; margin:4px 0; } .tv-deep{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; margin-top:8px; } .tv-deep input{ width:auto; }
+
   /* ---------- messages: Pesa wallpaper chat ---------- */
   :root{ --mv-wall:#DDEEE4; --mv-bub-in:#FFFFFF; --mv-bar1:#064E3B; --mv-bar2:#0B7A5C; }
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --mv-wall:#0B1812; --mv-bub-in:#1C2B24; } }
@@ -948,7 +955,7 @@
   .mv-ib svg{ width:20px; height:20px; } .mv-ib:hover, .mv-ib.on{ background:rgba(255,255,255,.32); } .mv-ib.dark{ background:var(--surface-2); color:var(--text-muted); width:32px; height:32px; }
   .mv-bar > .btn{ flex:none; }
   .mv-wall{ position:relative; flex:1; min-height:0; overflow:hidden; background-color:var(--mv-wall); background-image:radial-gradient(circle at 12% 8%, rgba(245,158,11,.16), transparent 42%), radial-gradient(circle at 92% 88%, rgba(20,163,122,.22), transparent 46%); }
-  .mv-wall::before{ content:""; position:absolute; inset:0; background-image:var(--brand-logo-img); background-size:34px 34px; background-repeat:space; background-position:center; opacity:.06; transform:rotate(-12deg) scale(1.4); pointer-events:none; z-index:0; }
+  .mv-wall::before{ content:""; position:absolute; left:50%; top:50%; width:min(78%,330px); aspect-ratio:1/1; transform:translate(-50%,-50%) rotate(-6deg); background-image:var(--brand-logo-img); background-size:contain; background-repeat:no-repeat; background-position:center; opacity:.13; pointer-events:none; z-index:0; }
   .mv-wall .mv-chat{ position:absolute; inset:0; max-height:none; min-height:0; overflow-y:auto; padding:12px 10px 14px; gap:6px; scroll-behavior:auto; z-index:1; }
   .mv-wall .mv-list{ position:absolute; inset:0; max-height:none; overflow-y:auto; padding:10px; z-index:1; }
   .mv-wall .mv-card{ background:var(--mv-bub-in); } .mv-wall .mv-card.unread{ background:linear-gradient(135deg,rgba(20,163,122,.16),var(--mv-bub-in) 70%); }
@@ -1537,6 +1544,8 @@ Object.assign(LANGS.af.strings, {"Photo": "Foto", "Voice message": "Stemboodskap
 Object.assign(LANGS.de.strings, {"Photo": "Foto", "Voice message": "Sprachnachricht", "Voice note": "Sprachnotiz", "Camera": "Kamera", "Attach": "Anhängen", "Call": "Anrufen", "Call on this device": "Auf diesem Gerät anrufen", "Open WhatsApp chat": "WhatsApp-Chat öffnen", "Pesa opens the dialer on this device. The call is made by your phone network, not inside Pesa.": "Pesa öffnet die Wähltastatur auf diesem Gerät. Der Anruf wird über Ihr Telefonnetz geführt, nicht in Pesa.", "No phone number saved for": "Keine Telefonnummer gespeichert für", "this person": "diese Person", "Add it in the profile first.": "Tragen Sie sie zuerst im Profil ein.", "Play voice message": "Sprachnachricht abspielen", "Could not play this voice note.": "Diese Sprachnotiz konnte nicht abgespielt werden.", "Save photo": "Foto speichern", "Recording": "Aufnahme", "Stop the recording first": "Beenden Sie zuerst die Aufnahme", "Choose a photo.": "Wählen Sie ein Foto.", "Could not read that photo.": "Das Foto konnte nicht gelesen werden.", "That voice note is too long to send. Keep it under 2 minutes.": "Diese Sprachnotiz ist zu lang zum Senden. Halten Sie sie unter 2 Minuten.", "Add a caption": "Beschriftung hinzufügen", "Read": "Gelesen", "Messages work like a chat, on a Pesa wallpaper. Send photos, record voice notes of up to two minutes, add emojis, and see ticks that turn gold when a message is read. The call button opens the dialer on this computer or device, or a WhatsApp chat. Pesa does not place calls itself. Messages are saved on the device first, so you can write and send while offline and they go out when the connection returns, as long as Advanced Pesa Connection is on. Photos are shrunk and voice notes are limited so they can be stored and synced with your shop data": "Nachrichten funktionieren wie ein Chat, auf einem Pesa Hintergrund. Senden Sie Fotos, nehmen Sie Sprachnotizen von bis zu zwei Minuten auf, fügen Sie Emojis hinzu und sehen Sie Häkchen, die golden werden, wenn eine Nachricht gelesen wurde. Die Anruftaste öffnet die Wähltastatur auf diesem Computer oder Gerät oder einen WhatsApp Chat. Pesa führt selbst keine Anrufe. Nachrichten werden zuerst auf dem Gerät gespeichert, sodass Sie offline schreiben und senden können und sie abgehen, sobald die Verbindung zurück ist, solange Erweiterte Pesa Verbindung eingeschaltet ist. Fotos werden verkleinert und Sprachnotizen begrenzt, damit sie mit Ihren Shopdaten gespeichert und synchronisiert werden können"});
 Object.assign(LANGS.af.strings, {"Waiting to send": "Wag om te stuur", "You are offline. Messages are saved on this device and will send when you are back online.": "Jy is vanlyn. Boodskappe word op hierdie toestel gestoor en sal gestuur word wanneer jy weer aanlyn is.", "Advanced Pesa Connection is off, so messages stay on this device. Turn it on in Settings so other devices receive them.": "Gevorderde Pesa Verbinding is af, so boodskappe bly op hierdie toestel. Skakel dit aan in Instellings sodat ander toestelle dit ontvang."});
 Object.assign(LANGS.de.strings, {"Waiting to send": "Wartet auf Versand", "You are offline. Messages are saved on this device and will send when you are back online.": "Sie sind offline. Nachrichten werden auf diesem Gerät gespeichert und gesendet, sobald Sie wieder online sind.", "Advanced Pesa Connection is off, so messages stay on this device. Turn it on in Settings so other devices receive them.": "Die erweiterte Pesa Verbindung ist aus, daher bleiben Nachrichten auf diesem Gerät. Schalten Sie sie in den Einstellungen ein, damit andere Geräte sie erhalten."});
+Object.assign(LANGS.af.strings, {"Narrator voice": "Verteller stem", "Default": "Verstek", "Male": "Manlik", "On this device": "Op hierdie toestel", "Hear": "Luister", "Male American English voices": "Manlike Amerikaanse Engelse stemme", "No male American English voice is installed on this computer or device. Add one in the device settings under speech or text to speech voices, then reopen this page.": "Geen manlike Amerikaanse Engelse stem is op hierdie rekenaar of toestel geïnstalleer nie. Voeg een by in die toestelinstellings onder spraak of teks na spraak stemme, en maak dan hierdie bladsy weer oop.", "Other English male voices": "Ander manlike Engelse stemme", "Deeper tone, where the device allows it": "Dieper toon, waar die toestel dit toelaat", "The voices come from your computer or device, so the list can differ from one device to the next. Recordings you made under My voice still play instead of these voices.": "Die stemme kom van jou rekenaar of toestel, so die lys kan van een toestel tot die volgende verskil. Opnames wat jy onder My stem gemaak het, speel steeds in plaas van hierdie stemme.", "Training lessons are read aloud, and you can choose a male American English voice from the voices installed on your computer or device, hear a sample first, and make the tone deeper where the device allows it. Pesa does not add new voices itself, so the choice depends on what your device has": "Opleidingslesse word hardop voorgelees, en jy kan 'n manlike Amerikaanse Engelse stem kies uit die stemme wat op jou rekenaar of toestel geïnstalleer is, eers 'n voorbeeld hoor, en die toon dieper maak waar die toestel dit toelaat. Pesa voeg self nie nuwe stemme by nie, so die keuse hang af van wat jou toestel het"});
+Object.assign(LANGS.de.strings, {"Narrator voice": "Sprecherstimme", "Default": "Standard", "Male": "Männlich", "On this device": "Auf diesem Gerät", "Hear": "Anhören", "Male American English voices": "Männliche amerikanisch englische Stimmen", "No male American English voice is installed on this computer or device. Add one in the device settings under speech or text to speech voices, then reopen this page.": "Auf diesem Computer oder Gerät ist keine männliche amerikanisch englische Stimme installiert. Fügen Sie in den Geräteeinstellungen unter Sprache oder Text zu Sprache eine hinzu und öffnen Sie diese Seite dann erneut.", "Other English male voices": "Andere männliche englische Stimmen", "Deeper tone, where the device allows it": "Tieferer Ton, sofern das Gerät es erlaubt", "The voices come from your computer or device, so the list can differ from one device to the next. Recordings you made under My voice still play instead of these voices.": "Die Stimmen stammen von Ihrem Computer oder Gerät, die Liste kann also von Gerät zu Gerät abweichen. Aufnahmen unter Meine Stimme werden weiterhin anstelle dieser Stimmen abgespielt.", "Training lessons are read aloud, and you can choose a male American English voice from the voices installed on your computer or device, hear a sample first, and make the tone deeper where the device allows it. Pesa does not add new voices itself, so the choice depends on what your device has": "Die Schulungslektionen werden vorgelesen, und Sie können eine männliche amerikanisch englische Stimme aus den auf Ihrem Computer oder Gerät installierten Stimmen wählen, vorher eine Hörprobe anhören und den Ton tiefer machen, sofern das Gerät es erlaubt. Pesa fügt selbst keine neuen Stimmen hinzu, die Auswahl hängt also davon ab, was Ihr Gerät hat"});
 var I18N_PREFIX = ["For questions or concerns about privacy, contact the developer by email at","Accepted the confidentiality and privacy agreement, version","If you have any questions, please contact us on","Purchase order draft from reorder list,","This is a friendly reminder from","Please supply the following for","Friendly payment reminder from","Received — stock increased for","Verification stamp generated:","Generated interim report for","Filed monthly report for","Payment reminder sent to","Saving to Claude storage","Here are the details of","Please find attached","Generated by Pesa on","You can reach us on","Cloud connection:","Estimated total:","Monthly report —","Changes waiting:","Verification ID:","Changed own PIN","Created PO with","This till took","Credit sale to","Invoice date:","Kind regards,","Storage used:","Till closed:","Amount paid:","Last backup:","Amount due:","VAT number:","Low stock:","Report for","Due date:","Backup is","VAT rate:","Generated","Here is","Period:","VAT No.","Scope:","Date:","Due:","No."];
 function currentLangCode(){ return (State.settings && State.settings.language) || 'en'; }
 function tr(key){
@@ -15791,8 +15800,70 @@ function stopNarration(){
 // labelled male voice installed.
 var _narrationVoice = null;
 var MALE_VOICE_HINTS = ['male','david','mark','daniel','alex','fred','george','james','oliver','ryan','guy','tom','arthur','matthew','brian','eric','justin','paul','liam','ravi'];
+// ---- narrator voice chooser: male American English voices the device offers ----
+var TRAIN_VOICE_KEY = 'pesa_train_voice_v1', TRAIN_PITCH_KEY = 'pesa_train_pitch_v1';
+var TV_MALE = /\b(david|mark|guy|aaron|christopher|eric|roger|steffan|brandon|davis|jason|tony|alex|fred|tom|evan|nathan|reed|rocko|eddy|grandpa|ralph|junior|bruce|daniel|george|james|ryan|matthew|brian|justin|paul|liam|arthur|oliver|male)\b|en-us-x-(iol|iom|tpd)/i;
+var TV_FEMALE = /\b(female|zira|jenny|aria|samantha|allison|ava|susan|karen|victoria|nicky|joanna|salli|kendra|kimberly|ivy|emma|amber|ashley|cora|jane|sara|nancy|michelle|ana|libby|monica|moira|tessa|fiona|kathy|princess|vicki|agnes|serena|sonia|hazel|catherine|heather|zoe|flo|grandma|shelley|sandy|nora)\b/i;
+var TV_NOVELTY = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|deranged|hysterical)\b/i;
+function trainVoiceSaved(){ try{ return localStorage.getItem(TRAIN_VOICE_KEY) || ''; }catch(e){ return ''; } }
+function setTrainVoice(name){ try{ localStorage.setItem(TRAIN_VOICE_KEY, name || ''); }catch(e){} }
+function trainPitch(){ try{ if(localStorage.getItem(TRAIN_PITCH_KEY) === 'deep') return 0.8; }catch(e){} return 1; }
+function setTrainDeep(on){ try{ localStorage.setItem(TRAIN_PITCH_KEY, on ? 'deep' : ''); }catch(e){} }
+function trainVoiceChoices(voices){
+  voices = voices || (speechSupported() ? (window.speechSynthesis.getVoices() || []) : []);
+  var seen = {};
+  function male(v){ var n = (v.name||'')+' '+(v.voiceURI||''); return !TV_NOVELTY.test(n) && !TV_FEMALE.test(n) && TV_MALE.test(n); }
+  function uniq(v){ if(seen[v.name]) return false; seen[v.name] = 1; return true; }
+  function rank(v){ var n = (v.name||'').toLowerCase(); return (/natural|online/.test(n) ? 0 : 1) + (v.localService ? 0 : 0.5); }
+  var us = voices.filter(function(v){ return /^en[-_]us$/i.test(v.lang||'') && male(v); }).filter(uniq).sort(function(a,b){ return rank(a) - rank(b); });
+  var other = voices.filter(function(v){ return /^en([-_]|$)/i.test(v.lang||'') && !/^en[-_]us$/i.test(v.lang||'') && male(v); }).filter(uniq);
+  return { us:us, other:other };
+}
+function trainVoiceLabel(v){
+  var n = String(v.name||'').replace(/^Microsoft\s+/i,'').replace(/\s*-\s*English.*$/i,'').replace(/\s*Online\s*\(Natural\)/i,' (Natural)').replace(/en-us-x-(\w+)-local/i,'Voice $1').trim();
+  return n || 'Voice';
+}
+function trainVoicePanelHtml(){
+  var ch = trainVoiceChoices(), cur = _narrationVoice ? _narrationVoice.name : '';
+  function row(v, i, grp){
+    var on = v.name === cur;
+    return '<div class="tv-row'+(on?' on':'')+'" data-tv="'+grp+i+'"><span class="tv-radio"></span><div class="main"><b>'+esc(trainVoiceLabel(v))+'</b><small>'+esc((v.lang||'').replace('_','-'))+' · '+tr('Male')+' · '+tr(v.localService ? 'On this device' : 'Needs internet')+'</small></div><button type="button" class="btn btn-ghost" data-tvhear="'+grp+i+'">'+tr('Hear')+'</button></div>';
+  }
+  var h = '<div class="tv-panel"><div class="tv-h">'+tr('Male American English voices')+'</div>';
+  if(ch.us.length) h += ch.us.map(function(v, i){ return row(v, i, 'u'); }).join('');
+  else h += '<div class="tv-none">'+tr('No male American English voice is installed on this computer or device. Add one in the device settings under speech or text to speech voices, then reopen this page.')+'</div>';
+  if(ch.other.length && !ch.us.length) h += '<div class="tv-h" style="margin-top:8px;">'+tr('Other English male voices')+'</div>' + ch.other.map(function(v, i){ return row(v, i, 'o'); }).join('');
+  h += '<label class="tv-deep"><input type="checkbox" id="tvDeep"'+(trainPitch() < 1 ? ' checked' : '')+'> '+tr('Deeper tone, where the device allows it')+'</label>' +
+    '<div class="tv-note">'+tr('The voices come from your computer or device, so the list can differ from one device to the next. Recordings you made under My voice still play instead of these voices.')+'</div></div>';
+  return h;
+}
+function wireTrainVoicePanel(root, cb){
+  cb = cb || {};
+  var ch = trainVoiceChoices(), map = {};
+  ch.us.forEach(function(v, i){ map['u'+i] = v; }); ch.other.forEach(function(v, i){ map['o'+i] = v; });
+  root.querySelectorAll('[data-tvhear]').forEach(function(b){ b.addEventListener('click', function(e){
+    e.stopPropagation(); var v = map[b.getAttribute('data-tvhear')]; if(!v) return;
+    stopNarration();
+    try{
+      var u = new SpeechSynthesisUtterance('Hello, I am your Pesa trainer. Tap any step to hear it again.');
+      u.voice = v; u.lang = v.lang || 'en-US'; u.rate = trainRate(); u.pitch = trainPitch();
+      window.speechSynthesis.speak(u);
+    }catch(x){}
+    if(cb.onHear) cb.onHear();
+  }); });
+  root.querySelectorAll('[data-tv]').forEach(function(r){ r.addEventListener('click', function(){
+    var v = map[r.getAttribute('data-tv')]; if(!v) return;
+    setTrainVoice(v.name); _narrationVoice = v;
+    root.querySelectorAll('[data-tv]').forEach(function(x){ x.classList.toggle('on', x === r); });
+    if(cb.onPick) cb.onPick(v);
+  }); });
+  var d = root.querySelector('#tvDeep'); if(d) d.addEventListener('change', function(){ setTrainDeep(d.checked); if(cb.onPick) cb.onPick(_narrationVoice); });
+}
 function pickNarrationVoice(voices){
   if(!voices || !voices.length) return null;
+  var saved = trainVoiceSaved();
+  if(saved){ var sv = voices.filter(function(v){ return v.name === saved; })[0]; if(sv) return sv; }
+  var cc = trainVoiceChoices(voices); if(cc.us.length) return cc.us[0];
   var english = voices.filter(function(v){ return /^en(-|_|$)/i.test(v.lang||''); });
   var pool = english.length ? english : voices;
   function score(v){
@@ -16465,6 +16536,7 @@ function openTrainingSheet(){
     '<div class="banner">'+tr('Step by step lessons on every part of the app, with a voice that reads each step aloud. Pick a topic, or play them all in order.')+'</div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="trSearch" type="button">'+ICONS.search+'<span style="margin-left:8px;">'+tr('Search help')+'</span></button></div>' +
     (isManagerOrOwner() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trVoice" type="button">'+VC_MIC+'<span style="margin-left:8px;">'+tr('Record my voice')+'</span></button></div>' : '') +
+    (speechSupported() ? '<div class="actions"><button class="btn btn-ghost btn-block" id="trNarr" type="button">'+ICONS.soundOn+'<span style="margin-left:8px;">'+tr('Narrator voice')+'</span></button></div><div id="trNarrPanel"></div>' : '') +
     (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPlayAll" type="button">'+ICONS.play+'<span style="margin-left:8px;">'+tr('Play all lessons')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
     '<div class="rowlist" style="margin-top:12px;">' +
     list.map(function(l, i){
@@ -16483,6 +16555,11 @@ function openTrainingSheet(){
   if(pa) pa.addEventListener('click', function(){ openLessonSlideshow(list[0].id, { chain:true }); });
   var tsr = ov.querySelector('#trSearch'); if(tsr) tsr.addEventListener('click', function(){ closeModal(); openHelpSearchSheet(); });
   var tvo = ov.querySelector('#trVoice'); if(tvo) tvo.addEventListener('click', function(){ openVoiceStudio(); });
+  var tnb = ov.querySelector('#trNarr'); if(tnb) tnb.addEventListener('click', function(){
+    var pn = ov.querySelector('#trNarrPanel'); if(pn.innerHTML){ pn.innerHTML = ''; stopNarration(); return; }
+    if(!_narrationVoice) refreshNarrationVoice();
+    pn.innerHTML = trainVoicePanelHtml(); wireTrainVoicePanel(pn, {});
+  });
 }
 
 function openLessonSlideshow(lessonId, opts){
@@ -16539,7 +16616,7 @@ function openLessonSlideshow(lessonId, opts){
         (speechOn() ? '<button class="btn btn-primary navbig" id="lsPlay" type="button">'+(_trainState.playing?ICONS.pause:ICONS.play)+'<span style="margin-left:6px;">'+(_trainState.playing?tr('Pause'):tr('Play'))+'</span></button>' : '<div class="navbig"></div>') +
         '<button class="icon-btn" id="lsNext" type="button" aria-label="Next"><span style="display:inline-block;transform:rotate(180deg);">'+ICONS.back+'</span></button>' +
       '</div>' +
-      (speechOn() ? '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" id="lsRate" type="button" style="padding:6px 12px;font-size:12px;">'+tr('Voice speed')+': '+tr(rate.label)+'</button></div>' : '');
+      (speechOn() ? '<div style="text-align:center;margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"><button class="btn btn-ghost" id="lsRate" type="button" style="padding:6px 12px;font-size:12px;">'+tr('Voice speed')+': '+tr(rate.label)+'</button><button class="btn btn-ghost" id="lsVoice" type="button" style="padding:6px 12px;font-size:12px;">'+tr('Narrator voice')+': '+esc(_narrationVoice ? trainVoiceLabel(_narrationVoice) : tr('Default'))+'</button></div><div id="lsVoicePanel"></div>' : '');
     wire();
     if(wantPlay && speechOn()){ playPart(0); } else { _trainState.playing = false; updatePlayBtn(); }
   }
@@ -16627,7 +16704,7 @@ function openLessonSlideshow(lessonId, opts){
     if(lcode !== 'en'){ try{ lvoice = (window.speechSynthesis.getVoices() || []).find(function(x){ return String(x.lang).toLowerCase().indexOf(lcode) === 0; }) || null; }catch(e){} }
     if(lvoice){ u.voice = lvoice; u.lang = lvoice.lang; }
     else if(_narrationVoice){ u.voice = _narrationVoice; u.lang = _narrationVoice.lang || 'en-US'; } else { u.lang = 'en-US'; }
-    u.rate = trainRate(); u.pitch = 1;
+    u.rate = trainRate(); u.pitch = lvoice ? 1 : trainPitch();
     u.onstart = function(){ if(tok === _trainState.tok) highlight(p); };
     u.onend = function(){
       if(tok !== _trainState.tok) return;
@@ -16675,6 +16752,15 @@ function openLessonSlideshow(lessonId, opts){
       refs.settings.set(State.settings);
       if(!next){ pause(); } else { wantPlay = true; }
       renderSlide();
+    });
+    var vbtn = b.querySelector('#lsVoice');
+    if(vbtn) vbtn.addEventListener('click', function(){
+      var pn = b.querySelector('#lsVoicePanel'); if(pn.innerHTML){ pn.innerHTML = ''; return; }
+      pn.innerHTML = trainVoicePanelHtml();
+      wireTrainVoicePanel(pn, {
+        onHear:function(){ _trainState.tok++; updatePlayBtn(); },
+        onPick:function(v){ vbtn.textContent = tr('Narrator voice')+': '+(v ? trainVoiceLabel(v) : tr('Default')); if(_trainState.playing && !_trainState.clip){ playPart(partIdx); } }
+      });
     });
     var rate = b.querySelector('#lsRate');
     if(rate) rate.addEventListener('click', function(){
@@ -17744,7 +17830,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.20';
+var APP_VERSION = '2026.10.21';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17936,6 +18022,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.21', items:[
+    'Training: choose the narrator from the male American English voices installed on your computer or device, hear a sample first, and make the tone deeper where the device allows it',
+    'The Messages wallpaper now shows one large Pesa logo instead of many small ones'
+  ]},
   { v:'2026.10.20', items:[
     'Messages work offline: they are saved on the device first, show a clock until they are sent, and go out when the connection returns. A strip in the chat says when you are offline or when Advanced Pesa Connection is off',
     'Syncing photos and voice notes is gentler: records are sent in batches of about 1.5 MB and downloaded in smaller pages'
@@ -18478,6 +18568,7 @@ var ABOUT_FEATURES = [
   "Tax invoices show your TIN and VAT registration number, the buyer's TIN, and a net, VAT, zero rated, exempt and gross breakdown. Stock is listed under department headers, and you can tick several products at a time on invoices, quotes and purchase orders",
   "Accountant: double entry books built to the cent from your sales, expenses, supplier invoices and payments, wastage and customer payments. Each finished month is filed automatically the first time the owner or a manager opens Pesa after month end, with a trial balance, income statement, VAT working figures and a hash that shows if a filed month was changed. Documents can also be run on demand. Pesa does not see your bank, and the documents are not approved by NamRA or an accountant",
   'Messages work like a chat, on a Pesa wallpaper. Send photos, record voice notes of up to two minutes, add emojis, and see ticks that turn gold when a message is read. The call button opens the dialer on this computer or device, or a WhatsApp chat. Pesa does not place calls itself. Messages are saved on the device first, so you can write and send while offline and they go out when the connection returns, as long as Advanced Pesa Connection is on. Photos are shrunk and voice notes are limited so they can be stored and synced with your shop data',
+  'Training lessons are read aloud, and you can choose a male American English voice from the voices installed on your computer or device, hear a sample first, and make the tone deeper where the device allows it. Pesa does not add new voices itself, so the choice depends on what your device has',
   'A welcome animation when Pesa opens, which you can skip or turn off',
   'Licence and subscription: when your Pesa provider switches it on, the owner enters a licence key and Pesa checks the plan on the device'
 ];
