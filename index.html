@@ -1296,6 +1296,87 @@
   .app-emblem small{ font-size:10px; font-weight:600; letter-spacing:0.03em; color:var(--text-muted); margin-top:-1px; }
   html.intro-on, html.intro-on body{ overflow:hidden; }
   .app-emblem span{ font-size:11px; font-weight:700; letter-spacing:0.04em; color:var(--text-muted); }
+
+  /* ---------- employee home: modern plates (Pesa green and gold) ---------- */
+  #content .me-hero{
+    gap:16px; padding:20px 18px; border-radius:24px; margin-bottom:14px; color:#fff;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(255,214,102,.55) 0%, rgba(255,214,102,0) 46%),
+      radial-gradient(90% 120% at 0% 100%, rgba(43,212,160,.7) 0%, rgba(43,212,160,0) 60%),
+      linear-gradient(135deg,#075E47 0%,#0B7A5C 45%,#14A37A 100%);
+    box-shadow:0 18px 34px -18px rgba(7,94,71,.85), inset 0 1px 0 rgba(255,255,255,.28);
+  }
+  #content .me-hero::after{ width:190px; height:190px; right:-50px; top:-70px; background:radial-gradient(circle, rgba(255,255,255,.2), rgba(255,255,255,0) 68%); }
+  #content .me-hero::before{ content:''; position:absolute; left:-40px; bottom:-60px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle, rgba(242,181,58,.28), rgba(242,181,58,0) 70%); }
+  #content .me-hero .me-av{
+    width:60px; height:60px; font-size:22px; z-index:1; color:#fff;
+    background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(255,255,255,.1));
+    border:2px solid rgba(255,214,102,.95); box-shadow:0 0 0 4px rgba(255,255,255,.14), 0 8px 18px -6px rgba(0,0,0,.4);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  }
+  #content .me-hero .me-hi{ position:relative; z-index:1; min-width:0; }
+  #content .me-hero .hi{ font-size:13px; font-weight:600; opacity:.92; }
+  #content .me-hero .nm{ font-size:26px; font-weight:800; letter-spacing:-.02em; line-height:1.15; text-shadow:0 2px 10px rgba(0,40,28,.35); }
+  #content .me-hero .meta{ display:inline-block; margin-top:6px; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; background:rgba(255,255,255,.18); box-shadow:inset 0 0 0 1px rgba(255,255,255,.3); }
+
+  #content .me-actions{ gap:10px; }
+  #content .me-act{
+    position:relative; flex-direction:column; align-items:flex-start; gap:10px; padding:14px 14px 13px; border-radius:20px;
+    border:1px solid var(--border); font-size:14px; font-weight:700; color:var(--text);
+    background:linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
+    box-shadow:0 10px 22px -16px rgba(11,122,92,.55), 0 1px 0 rgba(255,255,255,.6) inset;
+  }
+  #content .me-act svg{
+    width:40px; height:40px; padding:10px; border-radius:14px; color:#fff; flex:none;
+    background:linear-gradient(145deg,#14A37A,#0B7A5C); box-shadow:0 8px 14px -8px rgba(11,122,92,.9), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  #content .me-act:nth-child(2) svg{ background:linear-gradient(145deg,#F2B53A,#E8871E); box-shadow:0 8px 14px -8px rgba(232,135,30,.9), inset 0 1px 0 rgba(255,255,255,.4); }
+  #content .me-act:active{ transform:scale(.97); }
+  @media (hover:hover){ #content .me-act:hover{ transform:translateY(-2px); border-color:#14A37A; box-shadow:0 16px 26px -16px rgba(11,122,92,.7); } }
+
+  #content .me-grid{ gap:10px; }
+  #content .me-stat{
+    position:relative; overflow:hidden; border:1px solid var(--border); border-top:1px solid var(--border); border-radius:20px; padding:13px 14px 12px;
+    background:linear-gradient(160deg, var(--surface) 55%, var(--surface-2) 100%);
+    box-shadow:0 10px 22px -18px rgba(11,122,92,.6);
+  }
+  #content .me-stat::before{ content:''; position:absolute; left:0; top:14px; bottom:14px; width:4px; border-radius:0 4px 4px 0; background:linear-gradient(180deg,#2BD4A0,#0B7A5C); }
+  #content .me-grid .me-stat:nth-child(even)::before{ background:linear-gradient(180deg,#F2B53A,#E8871E); }
+  #content .me-grid .me-stat:nth-child(n){ border-top-color:var(--border); }
+  #content .me-stat .l{ padding-left:4px; font-size:11px; font-weight:700; letter-spacing:.05em; }
+  #content .me-grid .me-stat .v{ padding-left:4px; font-size:24px; font-weight:800; letter-spacing:-.025em; background:linear-gradient(135deg,#075E47,#14A37A); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
+  #content .me-grid .me-stat:nth-child(even) .v{ background:linear-gradient(135deg,#B86100,#E8871E); -webkit-background-clip:text; background-clip:text; }
+  :root[data-theme="dark"] #content .me-grid .me-stat .v{ background:linear-gradient(135deg,#7CF2C8,#2BD4A0); -webkit-background-clip:text; background-clip:text; }
+  :root[data-theme="dark"] #content .me-grid .me-stat:nth-child(even) .v{ background:linear-gradient(135deg,#FFD27A,#F2B53A); -webkit-background-clip:text; background-clip:text; }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]) #content .me-grid .me-stat .v{ background:linear-gradient(135deg,#7CF2C8,#2BD4A0); -webkit-background-clip:text; background-clip:text; }
+    :root:not([data-theme="light"]) #content .me-grid .me-stat:nth-child(even) .v{ background:linear-gradient(135deg,#FFD27A,#F2B53A); -webkit-background-clip:text; background-clip:text; }
+  }
+
+  #content .me-goal{
+    position:relative; overflow:hidden; border-radius:22px; padding:16px; border:1px solid #F2C867;
+    background:radial-gradient(120% 140% at 100% 0%, rgba(255,255,255,.7), rgba(255,255,255,0) 55%), linear-gradient(135deg,#FFF3CC,#FFDB8A);
+    box-shadow:0 14px 26px -18px rgba(232,135,30,.8);
+  }
+  #content .me-goal .gt b{ font-size:24px; font-weight:800; color:#7A4300; }
+  #content .me-goal .gbar{ height:12px; background:rgba(122,67,0,.14); box-shadow:inset 0 1px 2px rgba(0,0,0,.15); }
+  #content .me-goal .gbar i{ position:relative; background:linear-gradient(90deg,#F2B53A,#E8871E 55%,#14A37A); box-shadow:0 0 10px rgba(232,135,30,.6); }
+
+  #content .tillcard{
+    position:relative; overflow:hidden; border-radius:22px; padding:16px 16px 14px; border:1px solid var(--border);
+    background:linear-gradient(160deg, var(--surface) 50%, var(--surface-2) 100%); box-shadow:0 12px 24px -18px rgba(11,122,92,.6);
+  }
+  #content .tillcard::before{ content:''; position:absolute; left:0; top:0; right:0; height:4px; background:linear-gradient(90deg,#0B7A5C,#2BD4A0 55%,#F2B53A); }
+  #content .tillrow{ padding:7px 0; }
+
+  #content .me-msg{ border-left-width:0; border-radius:20px; padding:13px 15px 13px 18px; position:relative; overflow:hidden; background:linear-gradient(160deg, var(--surface) 40%, var(--surface-2)); border:1px solid var(--border); }
+  #content .me-msg::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:linear-gradient(180deg,#2BD4A0,#0B7A5C); }
+  #content .me-msg.urgent::before{ background:linear-gradient(180deg,#FF7A59,#D93A1E); }
+  #content .me-msg.stock::before{ background:linear-gradient(180deg,#F2B53A,#E8871E); }
+
+  #content .me-week{ height:84px; gap:8px; padding:8px 8px 0; border-radius:20px; background:linear-gradient(160deg, var(--surface) 50%, var(--surface-2)); border:1px solid var(--border); }
+  #content .me-week i{ border-radius:8px 8px 3px 3px; opacity:1; background:linear-gradient(180deg,#2BD4A0,#0B7A5C); box-shadow:0 6px 12px -6px rgba(11,122,92,.8); }
+  #content .me-week i:last-child{ background:linear-gradient(180deg,#F8CF6B,#E8871E); box-shadow:0 6px 12px -6px rgba(232,135,30,.9); }
 </style>
 
 <script>
@@ -18487,7 +18568,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.72';
+var APP_VERSION = '2026.10.73';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18679,6 +18760,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.73', items:[
+    'The employee home screen has a fresh look: richer welcome banner, icon tiles, brighter sales cards and a polished till and weekly chart, in Pesa green and gold'
+  ]},
   { v:'2026.10.72', items:[
     'Pesa now opens on slow or restricted mobile data: the font and PDF libraries no longer hold the app back, and a loading screen shows while the app downloads'
   ]},
