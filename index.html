@@ -572,6 +572,9 @@
   }
   .sheet > *{ position:relative; z-index:1; }
   .sheet .sheet-head{ padding-right:40px; }
+  .sheet-head .pg-ico{ width:44px; height:44px; flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-left:-2px; }
+  .sheet-head .pg-ico img{ width:100%; height:100%; display:block; filter:drop-shadow(0 1px 1.5px rgba(8,46,34,.18)); }
+  .sheet-head .pg-ico .gear-tile{ width:40px; height:40px; }
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .sheet::before{ opacity:0.1; } }
   :root[data-theme="dark"] .sheet::before{ opacity:0.1; }
   #authModalRoot .overlay{ z-index:500; }
@@ -7668,8 +7671,38 @@ function openSheet(innerHtml, opts){
       bb.addEventListener('click', function(){ NavBack.back(); });
       sh.insertBefore(bb, sh.firstChild && sh.firstChild.classList && sh.firstChild.classList.contains('sheet-handle') ? sh.firstChild.nextSibling : sh.firstChild);
     }
+    if(!opts.center){
+      decorateSheetIcon(sh);
+      if(window.MutationObserver){ var mo = new MutationObserver(function(){ if(!document.body.contains(sh)){ mo.disconnect(); return; } decorateSheetIcon(sh); }); mo.observe(sh, { childList:true, subtree:true }); }
+    }
   }catch(e){}
   return overlay;
+}
+/* Each page shows its own icon at the top left, beside its title (the Pesa logo sits at the top right). */
+var PAGE_ICON_RULES = [
+  [/pay for pesa/i,'pay'],[/wastage|shrinkage/i,'wastage'],[/supplier/i,'suppliers'],[/purchase order/i,'purchase'],
+  [/stock take|opening balances|review & post/i,'stocktake'],[/stock|reorder|expiry|barcode|scan|product|bulk/i,'stock'],
+  [/vat|tax records|namra|past month/i,'vat'],[/branch/i,'branches'],[/activity log/i,'audit'],
+  [/cart|charge|sale recorded|point of sale/i,'sell'],[/till|cash up|card batch|card terminal|end of day|mobile money/i,'till'],
+  [/invoice|quote|recurring/i,'invoices'],[/who owes|credit|customer|reminder|loyalty|payment/i,'credit'],[/expense/i,'expenses'],
+  [/insight|profit|targets/i,'insights'],[/report|risk|staff performance|work report/i,'reports'],
+  [/team|staff member|invite|my profile|change (pin|password)/i,'team'],[/message|alert centre/i,'messages'],
+  [/smart/i,'smart'],[/business tools|import|currency|calculator|labels/i,'bizhub'],
+  [/^settings$/i,'gear'],[/setup|licence|security|data health|backup|link this device|connect to|wi-fi|company details|speed check/i,'setup'],
+  [/feedback/i,'feedback'],[/text size/i,'display'],[/check this computer/i,'compat'],[/search help/i,'helpsearch'],
+  [/terms|privacy|confidential/i,'legal'],[/about pesa|what.s new/i,'about'],[/training|lesson/i,'training'],[/install/i,'install'],[/accountant/i,'accountant']
+];
+function pageIconFor(title){
+  for(var i = 0; i < PAGE_ICON_RULES.length; i++) if(PAGE_ICON_RULES[i][0].test(title)) return PAGE_ICON_RULES[i][1];
+  return '';
+}
+function decorateSheetIcon(sh){
+  var head = sh.querySelector('.sheet-head'); if(!head || head.querySelector('.pg-ico, img')) return;
+  var h = head.querySelector('h2'); if(!h) return;
+  var name = pageIconFor((h.textContent || '').trim()); if(!name) return;
+  var html = name === 'gear' ? GEAR_ICON_SMALL : ico3(name); if(!html) return;
+  var sp = document.createElement('span'); sp.className = 'pg-ico'; sp.setAttribute('aria-hidden', 'true'); sp.innerHTML = html;
+  head.insertBefore(sp, head.firstChild);
 }
 function confirmSheet(title, body, confirmLabel, onConfirm, danger, sensitive){
   var html =
@@ -17519,7 +17552,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.47';
+var APP_VERSION = '2026.10.48';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17711,6 +17744,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.48', items:[
+    'Every page now shows its own icon at the top left, with the Pesa logo at the top right'
+  ]},
   { v:'2026.10.47', items:[
     'New Pay for Pesa icon, standing on its own without a frame'
   ]},
