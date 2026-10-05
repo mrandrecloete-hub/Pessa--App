@@ -18139,7 +18139,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.62';
+var APP_VERSION = '2026.10.63';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18331,6 +18331,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.63', items:[
+    'Opening animation: fixed it restarting from the beginning when an app update arrived while it was cracking. The cracks are now the colours of the Namibian flag (blue, red with white edges, green) and the animation is a little shorter'
+  ]},
   { v:'2026.10.62', items:[
     'Opening animation upgraded: black cracks with fine forks, a richer emerald and gold look with a soft floor reflection, glass shards with dark edges and a glassy sheen, a gentler flash, and realistic billowing smoke. It no longer plays a second splash after it, so the start is one smooth flow'
   ]},
@@ -19484,7 +19487,7 @@ document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=4.5 draws one still frame at 4.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var TL = { logoIn:0.35, shimmer:1.55, crack:2.15, brk:4.05, wave:7.5, waveDur:1.6 };   // wave/waveDur now mean: when the smoke starts to clear, and how long it takes   // seconds
+  var TL = { logoIn:0.3, shimmer:1.25, crack:1.75, brk:3.45, wave:6.4, waveDur:1.4 };   // wave/waveDur now mean: when the smoke starts to clear, and how long it takes   // seconds
   var VEIL = null, cvs = null, ctx = null, img = null;
   var W = 0, H = 0, DPR = 1, L = 240, sc = 1, cx = 0, cy = 0, Lw = 240, Lh = 233, B = 200;
   var spr = {}, geo = null, layer = null, lctx = null, grain = null;
@@ -19700,21 +19703,28 @@ var PesaIntro = (function(){
       var n = e.pts.length - 1, upto = prog * n, whole = Math.floor(upto), part = upto - whole, pts = [];
       for(var i = 0; i <= whole && i <= n; i++) pts.push(e.pts[i]);
       if(whole < n){ var a = e.pts[whole], b = e.pts[whole + 1]; pts.push([a[0] + (b[0] - a[0]) * part, a[1] + (b[1] - a[1]) * part]); }
+      var mp = e.pts[(e.pts.length / 2) | 0], dx = mp[0] - geo.cxl, dy = mp[1] - geo.cyl, rr2 = Math.sqrt(dx * dx + dy * dy) || 1, cc = (dx + dy) / (rr2 * 1.4142);
+      pts.flag = Math.abs(cc) < .34 ? 1 : (cc < 0 ? 0 : 2);      // 0 blue (upper left), 1 red (the diagonal band), 2 green (lower right): the flag of Namibia
       tiers[e.kind === 'b' ? 2 : (e.r0 < geo.rmax * .42 ? 0 : 1)].push(pts);
     });
-    var W3 = [2.9 * sc, 1.9 * sc, 1.05 * sc];
+    var W3 = [3.1 * sc, 2.1 * sc, 1.25 * sc], FLAG = ['#1b5fe0', '#e5173f', '#10b35b'];
     function stroke(c, list, w, col, blur, bc){
       if(!list.length) return;
       c.beginPath(); list.forEach(function(pts){ c.moveTo(pts[0][0], pts[0][1]); for(var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); });
       c.lineWidth = w; c.strokeStyle = col; c.lineJoin = 'round'; c.lineCap = 'round'; if(blur){ c.shadowColor = bc; c.shadowBlur = blur; } else { c.shadowBlur = 0; c.shadowColor = 'transparent'; } c.stroke(); c.shadowBlur = 0;
     }
+    function ofFlag(list, f){ return list.filter(function(pts){ return pts.flag === f; }); }
     maskedLayer(function(c){
-      // a little warm light leaking out of the deepest cracks as the glass is about to give way
-      if(q > .45){ c.globalCompositeOperation = 'lighter'; [0, 1].forEach(function(k){ stroke(c, tiers[k], W3[k] * 2.4, 'rgba(255,190,70,' + (.26 * sm((q - .45) / .5)).toFixed(3) + ')', 9 * sc, 'rgba(255,170,40,.9)'); }); c.globalCompositeOperation = 'source-over'; }
+      // the sun's warm light leaking out of the deepest cracks as the glass is about to give way
+      if(q > .45){ c.globalCompositeOperation = 'lighter'; [0, 1].forEach(function(k){ stroke(c, tiers[k], W3[k] * 2.4, 'rgba(255,200,40,' + (.26 * sm((q - .45) / .5)).toFixed(3) + ')', 9 * sc, 'rgba(255,190,30,.9)'); }); c.globalCompositeOperation = 'source-over'; }
       for(var k = 2; k >= 0; k--){
-        stroke(c, tiers[k], W3[k] * 2.3, 'rgba(0,0,0,.34)', 4 * sc, 'rgba(0,0,0,.85)');          // soft depth around the crack
-        stroke(c, tiers[k], W3[k], 'rgba(2,4,4,.98)');                                            // the crack itself: black
-        c.save(); c.translate(.75 * sc, .95 * sc); stroke(c, tiers[k], Math.max(.45, W3[k] * .32), 'rgba(235,255,245,.34)'); c.restore();   // thin bright lip on one side, so it reads as a break in glass
+        stroke(c, tiers[k], W3[k] * 2.4, 'rgba(0,0,0,.45)', 4 * sc, 'rgba(0,0,0,.9)');           // dark depth so every colour stays crisp on the glass
+        for(var f = 0; f < 3; f++){
+          var L2 = ofFlag(tiers[k], f);
+          stroke(c, L2, W3[k] * 1.25, 'rgba(2,6,10,.95)');                                          // thin black edge
+          stroke(c, L2, W3[k], FLAG[f]);                                                            // the flag colour
+          c.save(); c.translate(.6 * sc, .8 * sc); stroke(c, L2, Math.max(.45, W3[k] * .3), f === 1 ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.5)'); c.restore();   // white lip, like the white edges of the flag band
+        }
       }
     });
     putLayer('source-over', 1);
@@ -19872,7 +19882,7 @@ var PesaIntro = (function(){
   }
 
   function start(o){
-    o = o || {}; VEIL = document.getElementById('introVeil'); if(!VEIL) return; window.__introStarted = true;
+    o = o || {}; VEIL = document.getElementById('introVeil'); if(!VEIL) return; window.__introStarted = true; try{ sessionStorage.setItem('pesa_intro_seen', '1'); }catch(e){}
     var lite = /\blite\b/.test(document.documentElement.className), reduce = false;
     try{ reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
     if(/[?&]introLite=0/.test(location.search)) lite = false;
@@ -20539,6 +20549,8 @@ setInterval(updateHeader, 60000);
           var hadController = !!navigator.serviceWorker.controller, reloaded = false;
           navigator.serviceWorker.addEventListener('controllerchange', function(){
             if(!hadController || reloaded) return; reloaded = true;
+            // an update that lands while the opening animation plays must not restart it: this page already loaded the newest files from the network, so it just carries on and the new copy is used from the next start
+            try{ if(window.__introStarted && document.getElementById('introVeil')) return; }catch(e){}
             try{ window.location.reload(); }catch(e){}
           });
         }).catch(function(){ /* not available in this host — ignore */ });

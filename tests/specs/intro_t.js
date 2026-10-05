@@ -6,6 +6,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await p.addInitScript(()=>{ window.__splashSeen=false; setInterval(()=>{ if(document.querySelector('.splash-wrap')) window.__splashSeen=true; },50); });
  await p.goto('http://localhost:8933/index.html?intro=force');
  await p.waitForSelector('#introVeil'); ck('the opening animation starts', true);
+ await p.waitForTimeout(800); ck('a restart in the middle of it would not replay it (marked as seen at the start)', (await p.evaluate(()=>sessionStorage.getItem('pesa_intro_seen')))==='1');
  await p.waitForFunction(()=>!document.getElementById('introVeil'),null,{timeout:20000}); ck('the opening animation ends by itself within 20 s', true);
  await p.waitForTimeout(3000);
  ck('no second splash follows it', !(await p.evaluate(()=>window.__splashSeen)));
