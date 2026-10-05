@@ -2708,6 +2708,7 @@ var State = {
   clockLogs: [],       // {id, userId, userName, inAt, outAt|null, auto, edited}
   tips: [],            // {id, userId, userName, amount, method, note, createdAt, pool}
   calEvents: [],       // {id, title, date:'YYYY-MM-DD', time, note}
+  courseProgress: [],  // one document per person: {id:userId, courses:{cid:{modules:{mid:{read,practical,reflection,best,attempts}}, final, certs, completedAt}}, ext:{}}
   payRuns: [],         // monthly pay runs: {id:'YYYY-MM', month, lines, totalNet, status:'saved'|'paid'}
   accountingPeriods: [], // frozen monthly accounting packs: {id:'YYYY-MM', periodKey, revision, tb, pl, vat, bs, hash, prevHash, ...}
   wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
@@ -2839,6 +2840,7 @@ function initRefs(){
   refs.loyaltyLog = Store.collection('loyaltyLog');
   refs.accountingPeriods = Store.collection('accountingPeriods');
   refs.payRuns = Store.collection('payRuns');
+  refs.courseProgress = Store.collection('courseProgress');
   refs.clockLogs = Store.collection('clockLogs');
   refs.tips = Store.collection('tips');
   refs.calEvents = Store.collection('calEvents');
@@ -2960,7 +2962,7 @@ function subscribeAll(){
       if(State.tab === 'reconcile' && document.getElementById('app').style.display !== 'none') render();
     });
   });
-  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog'],['payRuns','payRuns']].forEach(function(c){
+  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog'],['payRuns','payRuns'],['courseProgress','courseProgress']].forEach(function(c){
     refs[c[0]].onSnapshot(function(docs){
       State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
     });
@@ -4321,6 +4323,380 @@ document.addEventListener('click', function(e){
 });
 setInterval(function(){ try{ document.querySelectorAll('[data-clocktimer]').forEach(function(el){ var iso = el.getAttribute('data-clocktimer'); el.textContent = fmtClock(iso) + ' (' + fmtHM(Date.now() - new Date(iso)) + ')'; }); }catch(e){} }, 30000);
 
+/* ============================== REAL PRACTICAL TRAINING: THEORY AND PRACTICAL ==============================
+   Courses (content in tools/courses.js) with reading, slides, a practical activity and a quiz for every module, then a final
+   exam. Marks are saved per person in the courseProgress collection. A pass is 60 percent. Finishing earns a statement of
+   results and a certificate of completion, signed by the owner. Finishing all the reading and practicals earns a certificate of
+   attendance. These are for skills enhancement and are not an accredited qualification. */
+var CRS_PASS = 60;
+function crsUser(uid){ var u = State.users.find(function(x){ return x.id === uid; }) || {}; return { id:uid, name:u.name || (State.session && State.session.userId === uid ? State.session.name : 'Learner'), employeeNo:u.employeeNo || '', jobTitle:u.jobTitle || '' }; }
+function crsMeId(){ return State.session ? State.session.userId : ''; }
+function crsCourse(cid){ return COURSES.find(function(c){ return c.id === cid; }); }
+function crsProgOf(uid){ return State.courseProgress.find(function(p){ return p.id === uid; }) || { id:uid, courses:{}, ext:{} }; }
+function crsClone(p){ return JSON.parse(JSON.stringify(p)); }
+function crsWrite(p){
+  var i = State.courseProgress.findIndex(function(x){ return x.id === p.id; });
+  if(i >= 0) State.courseProgress[i] = p; else State.courseProgress.push(p);
+  var d = crsClone(p); delete d.id; refs.courseProgress.doc(p.id).set(d);
+}
+function crsMut(uid, fn){ var p = crsClone(crsProgOf(uid)); p.courses = p.courses || {}; p.ext = p.ext || {}; fn(p); p.updatedAt = new Date().toISOString(); crsWrite(p); }
+function crsCP(uid, cid){ var c = (crsProgOf(uid).courses || {})[cid] || {}; c.modules = c.modules || {}; return c; }
+function crsGrade(pct){ return pct >= 80 ? { sym:'A', word:'Distinction', pass:true } : (pct >= 70 ? { sym:'B', word:'Merit', pass:true } : (pct >= 60 ? { sym:'C', word:'Pass', pass:true } : (pct >= 50 ? { sym:'D', word:'Fail', pass:false } : { sym:'E', word:'Fail', pass:false }))); }
+function crsModState(uid, cid, mid){ var m = crsCP(uid, cid).modules[mid] || {}; return { read:!!m.read, practical:!!m.practical, reflection:m.reflection || '', best:m.best == null ? null : m.best, attempts:m.attempts || 0, pass:m.best != null && m.best >= CRS_PASS }; }
+function crsModDone(s){ return s.read && s.practical && s.pass; }
+function crsSummary(uid, cid){
+  var c = crsCourse(cid), cp = crsCP(uid, cid), mods = c.modules.map(function(m){ return Object.assign({ m:m }, crsModState(uid, cid, m.id)); });
+  var done = mods.filter(crsModDone).length, allRead = mods.every(function(x){ return x.read && x.practical; });
+  var attempted = mods.filter(function(x){ return x.best != null; });
+  var avg = attempted.length ? attempted.reduce(function(a, x){ return a + x.best; }, 0) / mods.length : null;
+  var fin = cp.final || {}, finBest = fin.best == null ? null : fin.best, finPass = finBest != null && finBest >= CRS_PASS;
+  var overall = (mods.every(function(x){ return x.best != null; }) && finBest != null) ? Math.round(0.6 * (mods.reduce(function(a, x){ return a + x.best; }, 0) / mods.length) + 0.4 * finBest) : null;
+  var complete = done === mods.length && finPass && overall != null && overall >= CRS_PASS;
+  return { c:c, cp:cp, mods:mods, done:done, total:mods.length, allRead:allRead, finBest:finBest, finPass:finPass, finAttempts:fin.attempts || 0, overall:overall, complete:complete, started:!!(Object.keys(cp.modules).length || fin.attempts), pct:Math.round((done + (finPass ? 1 : 0)) / (mods.length + 1) * 100) };
+}
+function crsOwnerName(){ var o = State.users.find(function(u){ return u.role === 'owner'; }); return (State.company && State.company.ownerName) || (o && o.name) || ''; }
+function crsCertNo(cid, kind){ var d = new Date(); return cid.toUpperCase() + '-' + (kind === 'attendance' ? 'A' : 'C') + '-' + todayKey(d).replace(/-/g, '') + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(); }
+function crsIssue(uid, cid, kind){
+  var cp = crsCP(uid, cid), certs = cp.certs || {};
+  if(certs[kind]) return certs[kind];
+  var rec = { no:crsCertNo(cid, kind), at:new Date().toISOString() };
+  crsMut(uid, function(p){ p.courses[cid] = p.courses[cid] || { modules:{} }; p.courses[cid].certs = Object.assign({}, p.courses[cid].certs || {}, (function(o){ o[kind] = rec; return o; })({})); });
+  logAudit('create', 'certificate', uid, (kind === 'attendance' ? 'Certificate of attendance' : 'Certificate of completion') + ' ' + rec.no + ' issued to ' + crsUser(uid).name);
+  return rec;
+}
+function crsShuffle(a){ a = a.slice(); for(var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+/* ---- screens ---- */
+function openCoursesSheet(){
+  var me = crsMeId(), mgr = isManagerOrOwner();
+  var html = '<div class="sheet-head"><h2>' + ICONS.book + '<span style="margin-left:8px;">' + tr('Real practical training') + '</span></h2></div>' +
+    '<div class="banner" style="display:block;"><b>' + tr('Theory and practical') + '</b><br>' + tr('Read the notes, watch the slides, do the practical activity at work, then take the quiz. Finish a course to earn a certificate from your shop.') + '</div>' +
+    '<div class="section-title">' + tr('Courses') + '</div><div class="rowlist">' + COURSES.map(function(c){
+      var s = crsSummary(me, c.id), g = s.overall != null ? crsGrade(s.overall) : null;
+      return '<button class="row" type="button" data-course="' + c.id + '" style="width:100%;text-align:left;"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:' + c.color + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">' + esc(c.code) + '</div>' +
+        '<div class="main"><div class="title">' + esc(tr(c.title)) + '</div><div class="sub">' + c.modules.length + ' ' + tr('modules') + ' · ' + c.hours + ' ' + tr('hours') + ' · ' + tr('Theory and practical') + '</div>' + btBar(s.pct, c.color) + '</div>' +
+        '<div class="trail" style="font-size:12px;font-weight:700;color:' + (s.complete ? 'var(--success)' : 'var(--text-muted)') + ';">' + (s.complete ? tr('Completed') + (g ? ' ' + g.sym : '') : (s.started ? s.pct + '%' : tr('Start'))) + '</div></button>';
+    }).join('') + '</div>' +
+    '<div class="section-title">' + tr('Free courses to grow') + '</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">' + tr('These open on other websites and need the internet. They are free to study and run by other organisations, so their certificates are theirs, not your shop’s. Mark them here to keep a record on your statement.') + '</div>' +
+    '<div class="rowlist">' + EXT_COURSES.map(function(e){
+      var st = ((crsProgOf(me).ext || {})[e.id] || {}).status || '';
+      return '<div class="row"><div class="main"><div class="title">' + esc(e.title) + '</div><div class="sub">' + esc(e.by) + ' · ' + esc(e.hours) + '<br>' + esc(e.note) + '</div></div><div class="trail"><button class="btn btn-ghost" type="button" data-extopen="' + e.id + '" style="padding:5px 11px;">' + tr('Open') + '</button><br><button class="btn btn-ghost" type="button" data-extmark="' + e.id + '" style="padding:4px 10px;margin-top:4px;font-size:11.5px;">' + (st === 'completed' ? tr('Completed') : (st === 'started' ? tr('Started') : tr('Mark'))) + '</button></div></div>';
+    }).join('') + '</div>' +
+    (mgr ? '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="crTeam" type="button">' + tr('Team progress and certificates') + '</button></div>' : '') +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="crBack" type="button">' + tr('Back to Training') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-course]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openCourseSheet(b.getAttribute('data-course')); }); });
+  ov.querySelectorAll('[data-extopen]').forEach(function(b){ b.addEventListener('click', function(){ var e = EXT_COURSES.find(function(x){ return x.id === b.getAttribute('data-extopen'); }); if(e) window.open(e.url, '_blank'); }); });
+  ov.querySelectorAll('[data-extmark]').forEach(function(b){ b.addEventListener('click', function(){ var id = b.getAttribute('data-extmark'), cur = ((crsProgOf(me).ext || {})[id] || {}).status || ''; var nx = cur === '' ? 'started' : (cur === 'started' ? 'completed' : ''); crsMut(me, function(p){ if(nx) p.ext[id] = { status:nx, at:new Date().toISOString() }; else delete p.ext[id]; }); closeModal(); openCoursesSheet(); }); });
+  var tm = ov.querySelector('#crTeam'); if(tm) tm.addEventListener('click', function(){ closeModal(); openCourseTeamSheet(); });
+  ov.querySelector('#crBack').addEventListener('click', function(){ closeModal(); openTrainingSheet(); });
+}
+function openCourseSheet(cid, uid){
+  uid = uid || crsMeId(); var c = crsCourse(cid); if(!c) return; var s = crsSummary(uid, cid), mine = uid === crsMeId();
+  var html = '<div class="sheet-head"><h2>' + esc(tr(c.title)) + '</h2></div>' +
+    '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;">' + esc(c.code) + ' · ' + c.hours + ' ' + tr('hours') + ' · ' + tr('Theory and practical') + (mine ? '' : ' · ' + esc(crsUser(uid).name)) + '</div>' +
+    '<div style="font-size:13.5px;line-height:1.55;margin-bottom:8px;">' + esc(tr(c.summary)) + '</div>' +
+    '<div class="section-title" style="margin-top:6px;">' + tr('What you will be able to do') + '</div><ul style="margin:0 0 10px 18px;padding:0;font-size:13px;line-height:1.55;">' + c.outcomes.map(function(o){ return '<li>' + esc(tr(o)) + '</li>'; }).join('') + '</ul>' +
+    '<div class="section-title">' + tr('Modules') + '</div><div class="rowlist">' + s.mods.map(function(x, i){
+      var g = x.best != null ? crsGrade(x.best) : null, chips = (x.read ? '✓ ' + tr('Read') : tr('Not read')) + ' · ' + (x.practical ? '✓ ' + tr('Practical') : tr('Practical to do')) + ' · ' + (x.best != null ? x.best + '% ' + g.sym : tr('Quiz not taken'));
+      return '<button class="row" type="button" data-mod="' + x.m.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + (i + 1) + '. ' + esc(tr(x.m.title)) + '</div><div class="sub">' + x.m.mins + ' ' + tr('minutes') + '<br>' + chips + '</div></div><div class="trail" style="color:' + (crsModDone(x) ? 'var(--success)' : 'var(--text-muted)') + ';">' + (crsModDone(x) ? ICONS.check : '') + '</div></button>';
+    }).join('') + '</div>' +
+    '<div class="section-title">' + tr('Final exam') + '</div>' +
+    '<div class="tillcard"><div style="font-size:13px;line-height:1.5;">' + (s.done === s.total ? tr('All modules are done. You can take the final exam.') : tr('Finish every module (read, practical and a quiz pass of 60 percent) to unlock the final exam.')) + '</div>' +
+    (s.finBest != null ? '<div class="tillrow" style="margin-top:8px;"><span class="l">' + tr('Best exam mark') + '</span><span class="v num">' + s.finBest + '% ' + crsGrade(s.finBest).sym + '</span></div>' : '') +
+    (mine ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-primary btn-block" id="cFinal" type="button"' + (s.done === s.total ? '' : ' disabled') + '>' + (s.finBest != null ? tr('Retake the final exam') : tr('Start the final exam')) + '</button></div>' : '') + '</div>' +
+    '<div class="section-title">' + tr('Results and certificates') + '</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="cWork" type="button">' + tr('Course workbook (PDF)') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="cStmt" type="button">' + tr('Statement of results (PDF)') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn ' + (s.complete ? 'btn-primary' : 'btn-ghost') + ' btn-block" id="cCert" type="button"' + (s.complete ? '' : ' disabled') + '>' + tr('Certificate of completion (PDF)') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn ' + (s.allRead ? 'btn-accent' : 'btn-ghost') + ' btn-block" id="cAtt" type="button"' + (s.allRead ? '' : ' disabled') + '>' + tr('Certificate of attendance (PDF)') + '</button></div>' +
+    '<div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;line-height:1.5;">' + tr('The certificate of attendance needs every module read and every practical done. The certificate of completion also needs a pass in every quiz and in the final exam. Certificates are for skills enhancement and are not an accredited qualification.') + '</div>' +
+    (isOwner() ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="cSign" type="button">' + tr('Owner signature for certificates') + '</button></div>' : '') +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="cBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-mod]').forEach(function(b){ b.addEventListener('click', function(){ if(!mine){ toast(tr('Only the learner can open the modules')); return; } closeModal(); openModuleSheet(cid, b.getAttribute('data-mod'), 'read'); }); });
+  ov.querySelector('#cBack').addEventListener('click', function(){ closeModal(); if(mine) openCoursesSheet(); else openCourseUserSheet(uid); });
+  var fin = ov.querySelector('#cFinal'); if(fin) fin.addEventListener('click', function(){ closeModal(); crsStartFinal(cid); });
+  async function pdf(kind, print){
+    var doc;
+    if(kind === 'work') doc = await crsWorkbookPdf(c);
+    else if(kind === 'stmt') doc = await crsStatementPdf(uid, cid);
+    else doc = await crsCertPdf(uid, cid, kind);
+    if(!doc) return;
+    var nm = { work:'workbook', stmt:'statement-of-results', completion:'certificate', attendance:'certificate-of-attendance' }[kind] + '-' + c.code + (kind === 'work' ? '' : '-' + crsUser(uid).name.replace(/\s+/g, '-')) + '.pdf';
+    saveGeneratedPdf(doc, nm).then(function(ok){ if(ok) toast(tr('Downloaded')); });
+  }
+  ov.querySelector('#cWork').addEventListener('click', function(){ pdf('work'); });
+  ov.querySelector('#cStmt').addEventListener('click', function(){ pdf('stmt'); });
+  ov.querySelector('#cCert').addEventListener('click', function(){ if(s.complete) pdf('completion'); });
+  ov.querySelector('#cAtt').addEventListener('click', function(){ if(s.allRead) pdf('attendance'); });
+  var sg = ov.querySelector('#cSign'); if(sg) sg.addEventListener('click', function(){ closeModal(); openSignatureSheet(function(){ openCourseSheet(cid, uid); }); });
+}
+function openModuleSheet(cid, mid, tab){
+  var c = crsCourse(cid), m = c.modules.find(function(x){ return x.id === mid; }), uid = crsMeId(), st = crsModState(uid, cid, mid);
+  var idx = c.modules.indexOf(m) + 1; tab = tab || 'read';
+  var tabs = [['read', 'Read'], ['slides', 'Slides'], ['practical', 'Practical'], ['quiz', 'Quiz']];
+  var body = '';
+  if(tab === 'read'){
+    body = m.reading.map(function(s){ return '<div class="section-title" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);">' + esc(tr(s.h)) + '</div>' + s.p.map(function(p){ return '<p style="font-size:14px;line-height:1.65;margin:0 0 10px;">' + esc(tr(p)) + '</p>'; }).join(''); }).join('') +
+      '<div class="actions" style="margin-top:12px;">' + (st.read ? '<div class="banner" style="display:block;color:var(--success);">✓ ' + tr('You have read this module.') + '</div>' : '<button class="btn btn-primary btn-block" id="mdRead" type="button">' + tr('I have read this module') + '</button>') + '</div>' +
+      '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="mdNotes" type="button">' + tr('Download the notes (PDF)') + '</button></div>';
+  } else if(tab === 'slides'){
+    body = '<div id="slView"></div><div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="mdSlides" type="button">' + tr('Download the slides (PDF)') + '</button></div>';
+  } else if(tab === 'practical'){
+    var pr = m.practical;
+    body = '<div class="section-title" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--text);">' + esc(tr(pr.title)) + '</div><p style="font-size:13.5px;line-height:1.6;margin:0 0 8px;">' + esc(tr(pr.intro)) + '</p>' +
+      '<div class="rowlist">' + pr.tasks.map(function(t, i){ return '<label class="row" style="cursor:pointer;"><input type="checkbox" data-pt="' + i + '" style="width:20px;height:20px;margin-right:10px;"' + (st.practical ? ' checked' : '') + '><div class="main"><div class="sub" style="font-size:13.5px;color:var(--text);">' + esc(tr(t)) + '</div></div></label>'; }).join('') + '</div>' +
+      '<div class="field" style="margin-top:10px;"><label>' + esc(tr(pr.reflect)) + '</label><textarea id="mdRef" rows="4" placeholder="' + tr('Write your answer in your own words') + '">' + esc(st.reflection) + '</textarea></div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block" id="mdPrac" type="button">' + (st.practical ? tr('Save my answer') : tr('Mark the practical as done')) + '</button></div>';
+  } else {
+    body = '<div class="tillcard"><div class="tillrow"><span class="l">' + tr('Questions') + '</span><span class="v num">' + m.quiz.length + '</span></div><div class="tillrow"><span class="l">' + tr('Pass mark') + '</span><span class="v num">' + CRS_PASS + '%</span></div>' +
+      '<div class="tillrow"><span class="l">' + tr('Your best mark') + '</span><span class="v num">' + (st.best != null ? st.best + '% ' + crsGrade(st.best).sym : tr('Not taken')) + '</span></div><div class="tillrow"><span class="l">' + tr('Attempts') + '</span><span class="v num">' + st.attempts + '</span></div></div>' +
+      '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="mdQuiz" type="button">' + (st.attempts ? tr('Take the quiz again') : tr('Start the quiz')) + '</button></div>' +
+      (st.read && st.practical ? '' : '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">' + tr('Remember: the module counts as finished only when you have read it, done the practical and passed the quiz.') + '</div>');
+  }
+  var html = '<div class="sheet-head"><h2>' + idx + '. ' + esc(tr(m.title)) + '</h2></div>' +
+    '<div class="segbtns" style="margin-bottom:12px;">' + tabs.map(function(t){ return '<button type="button" class="segbtn' + (tab === t[0] ? ' active' : '') + '" data-mt="' + t[0] + '">' + tr(t[1]) + '</button>'; }).join('') + '</div>' + body +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-ghost btn-block" id="mdBack" type="button">' + esc(tr(c.title)) + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-mt]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openModuleSheet(cid, mid, b.getAttribute('data-mt')); }); });
+  ov.querySelector('#mdBack').addEventListener('click', function(){ closeModal(); openCourseSheet(cid); });
+  var rd = ov.querySelector('#mdRead'); if(rd) rd.addEventListener('click', function(){ crsMut(uid, function(p){ var cc = p.courses[cid] = p.courses[cid] || { modules:{} }; cc.modules[mid] = Object.assign({}, cc.modules[mid] || {}, { read:true, readAt:new Date().toISOString() }); }); toast(tr('Saved')); closeModal(); openModuleSheet(cid, mid, 'slides'); });
+  var nt = ov.querySelector('#mdNotes'); if(nt) nt.addEventListener('click', async function(){ var doc = await crsNotesPdf(c, m); if(doc) saveGeneratedPdf(doc, 'notes-' + c.code + '-module-' + idx + '.pdf').then(function(ok){ if(ok) toast(tr('Downloaded')); }); });
+  var sd = ov.querySelector('#mdSlides'); if(sd) sd.addEventListener('click', async function(){ var doc = await crsSlidesPdf(c, m); if(doc) saveGeneratedPdf(doc, 'slides-' + c.code + '-module-' + idx + '.pdf').then(function(ok){ if(ok) toast(tr('Downloaded')); }); });
+  if(tab === 'slides'){
+    var si = 0, view = ov.querySelector('#slView');
+    var paint = function(){
+      var s = m.slides[si];
+      view.innerHTML = '<div style="border-radius:16px;padding:18px 16px;background:linear-gradient(150deg,' + c.color + ',#0a3a2c);color:#fff;min-height:210px;"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.8;">' + esc(c.code) + ' · ' + (si + 1) + ' / ' + m.slides.length + '</div><div style="font:700 21px/1.25 Georgia,serif;margin:10px 0 12px;">' + esc(tr(s.t)) + '</div>' +
+        '<ul style="margin:0 0 0 18px;padding:0;font-size:15px;line-height:1.75;">' + s.pts.map(function(p){ return '<li>' + esc(tr(p)) + '</li>'; }).join('') + '</ul></div>' +
+        '<div style="display:flex;gap:8px;margin-top:10px;"><button class="btn btn-ghost btn-block" id="slPrev" type="button"' + (si === 0 ? ' disabled' : '') + '>' + tr('Previous') + '</button><button class="btn btn-primary btn-block" id="slNext" type="button"' + (si === m.slides.length - 1 ? ' disabled' : '') + '>' + tr('Next') + '</button></div>';
+      view.querySelector('#slPrev').addEventListener('click', function(){ si--; paint(); }); view.querySelector('#slNext').addEventListener('click', function(){ si++; paint(); });
+    }; paint();
+  }
+  var pb = ov.querySelector('#mdPrac'); if(pb) pb.addEventListener('click', function(){
+    var all = [].slice.call(ov.querySelectorAll('[data-pt]')).every(function(x){ return x.checked; }), ref = ov.querySelector('#mdRef').value.trim();
+    if(!all){ toast(tr('Tick every task when you have done it')); return; }
+    if(ref.length < 15){ toast(tr('Write a short answer in your own words')); return; }
+    crsMut(uid, function(p){ var cc = p.courses[cid] = p.courses[cid] || { modules:{} }; cc.modules[mid] = Object.assign({}, cc.modules[mid] || {}, { practical:true, reflection:ref, practicalAt:new Date().toISOString() }); }); toast(tr('Practical saved')); closeModal(); openModuleSheet(cid, mid, 'quiz');
+  });
+  var qb = ov.querySelector('#mdQuiz'); if(qb) qb.addEventListener('click', function(){ closeModal(); crsRunQuiz(m.title, m.quiz, function(pct){ crsMut(uid, function(p){ var cc = p.courses[cid] = p.courses[cid] || { modules:{} }, cur = cc.modules[mid] || {}; cc.modules[mid] = Object.assign({}, cur, { best:Math.max(cur.best == null ? 0 : cur.best, pct), last:pct, attempts:(cur.attempts || 0) + 1, quizAt:new Date().toISOString() }); }); }, function(){ openModuleSheet(cid, mid, 'quiz'); }); });
+}
+function crsStartFinal(cid){
+  var c = crsCourse(cid), uid = crsMeId(), qs = [];
+  c.modules.forEach(function(m){ m.exam.forEach(function(q){ qs.push(q); }); });
+  crsRunQuiz(c.title + ': final exam', qs, function(pct){ crsMut(uid, function(p){ var cc = p.courses[cid] = p.courses[cid] || { modules:{} }, f = cc.final || {}; cc.final = { best:Math.max(f.best == null ? 0 : f.best, pct), last:pct, attempts:(f.attempts || 0) + 1, at:new Date().toISOString() }; var s = crsSummary(uid, cid); if(!cc.completedAt && s.complete) cc.completedAt = new Date().toISOString(); }); }, function(){ openCourseSheet(cid); });
+}
+function crsRunQuiz(title, questions, onSave, onDone){
+  var qs = crsShuffle(questions).map(function(q){ var order = crsShuffle(q.o.map(function(_, i){ return i; })); return { q:q.q, o:order.map(function(i){ return q.o[i]; }), a:order.indexOf(q.a), why:q.why }; });
+  var i = 0, right = 0, answers = [];
+  var ov = openSheet('<div class="sheet-head"><h2>' + esc(tr(title)) + '</h2></div><div id="qzBody"></div>');
+  var body = ov.querySelector('#qzBody');
+  function ask(){
+    var q = qs[i];
+    body.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">' + tr('Question') + ' ' + (i + 1) + ' ' + tr('of') + ' ' + qs.length + '</div>' + btBar(i / qs.length * 100, 'var(--primary)') +
+      '<div style="font:600 16px/1.45 Georgia,serif;margin:12px 0;">' + esc(tr(q.q)) + '</div><div class="rowlist">' + q.o.map(function(o, k){ return '<button class="row" type="button" data-qo="' + k + '" style="width:100%;text-align:left;"><div class="main"><div class="title" style="font-weight:500;">' + esc(tr(o)) + '</div></div></button>'; }).join('') + '</div><div id="qzFb"></div>';
+    body.querySelectorAll('[data-qo]').forEach(function(b){ b.addEventListener('click', function(){
+      var k = parseInt(b.getAttribute('data-qo'), 10), ok = k === q.a; if(ok) right++; answers.push({ q:q, pick:k, ok:ok });
+      body.querySelectorAll('[data-qo]').forEach(function(x){ x.disabled = true; var xi = parseInt(x.getAttribute('data-qo'), 10); if(xi === q.a) x.style.borderColor = 'var(--success)'; else if(xi === k) x.style.borderColor = 'var(--danger)'; });
+      body.querySelector('#qzFb').innerHTML = '<div class="banner" style="display:block;margin-top:10px;color:' + (ok ? 'var(--success)' : 'var(--danger)') + ';"><b>' + (ok ? tr('Correct') : tr('Not quite')) + '.</b> <span style="color:var(--text);">' + esc(tr(q.why)) + '</span></div><div class="actions" style="margin-top:10px;"><button class="btn btn-primary btn-block" id="qzNext" type="button">' + (i === qs.length - 1 ? tr('See my result') : tr('Next question')) + '</button></div>';
+      body.querySelector('#qzNext').addEventListener('click', function(){ i++; if(i < qs.length) ask(); else finish(); });
+    }); });
+  }
+  function finish(){
+    var pct = Math.round(right / qs.length * 100), g = crsGrade(pct); try{ onSave(pct); }catch(e){}
+    body.innerHTML = '<div style="text-align:center;padding:10px 0;"><div style="font:800 46px/1 Georgia,serif;color:' + (g.pass ? 'var(--success)' : 'var(--danger)') + ';">' + pct + '%</div><div style="font-size:15px;margin-top:6px;"><b>' + tr('Grade') + ' ' + g.sym + '</b> · ' + (g.pass ? tr('PASS') : tr('FAIL')) + '</div><div style="font-size:13px;color:var(--text-muted);margin-top:4px;">' + right + ' ' + tr('of') + ' ' + qs.length + ' ' + tr('correct') + ' · ' + tr('Pass mark') + ' ' + CRS_PASS + '%</div></div>' +
+      '<div class="section-title">' + tr('Review') + '</div><div class="rowlist">' + answers.map(function(a){ return '<div class="row"><div class="main"><div class="title" style="font-weight:500;font-size:13.5px;">' + (a.ok ? '✓ ' : '✗ ') + esc(tr(a.q.q)) + '</div>' + (a.ok ? '' : '<div class="sub">' + tr('Right answer') + ': ' + esc(tr(a.q.o[a.q.a])) + '</div>') + '</div></div>'; }).join('') + '</div>' +
+      '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="qzDone" type="button">' + tr('Done') + '</button></div>';
+    body.querySelector('#qzDone').addEventListener('click', function(){ closeModal(); if(onDone) onDone(); });
+  }
+  ask();
+}
+function openSignatureSheet(after){
+  var cur = State.settings.ownerSignature || '';
+  var html = '<div class="sheet-head"><h2>' + tr('Owner signature') + '</h2></div><div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + tr('Sign with your finger or mouse. This signature is printed on every certificate and statement the shop issues.') + '</div>' +
+    '<canvas id="sgPad" width="640" height="220" style="width:100%;height:auto;aspect-ratio:640/220;border:1px dashed var(--border);border-radius:12px;background:#fff;touch-action:none;"></canvas>' +
+    (cur ? '<div style="font-size:11.5px;color:var(--text-muted);margin-top:6px;">' + tr('A signature is saved already. Drawing a new one replaces it.') + '</div>' : '') +
+    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost" id="sgClear" type="button">' + tr('Clear') + '</button><button class="btn btn-primary btn-block" id="sgSave" type="button">' + tr('Save signature') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;">' + (cur ? '<button class="btn btn-ghost btn-block" id="sgDel" type="button">' + tr('Remove saved signature') + '</button>' : '') + '<button class="btn btn-ghost btn-block" id="sgBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html), cv = ov.querySelector('#sgPad'), x = cv.getContext('2d'), down = false, ink = false;
+  x.lineWidth = 3.2; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#10223a';
+  function pos(e){ var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; }
+  cv.addEventListener('pointerdown', function(e){ down = true; ink = true; var p = pos(e); x.beginPath(); x.moveTo(p[0], p[1]); try{ cv.setPointerCapture(e.pointerId); }catch(z){} e.preventDefault(); });
+  cv.addEventListener('pointermove', function(e){ if(!down) return; var p = pos(e); x.lineTo(p[0], p[1]); x.stroke(); e.preventDefault(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(n){ cv.addEventListener(n, function(){ down = false; }); });
+  ov.querySelector('#sgClear').addEventListener('click', function(){ x.clearRect(0, 0, cv.width, cv.height); ink = false; });
+  ov.querySelector('#sgBack').addEventListener('click', function(){ closeModal(); if(after) after(); });
+  var del = ov.querySelector('#sgDel'); if(del) del.addEventListener('click', function(){ btSave({ ownerSignature:null }); toast(tr('Signature removed')); closeModal(); if(after) after(); });
+  ov.querySelector('#sgSave').addEventListener('click', function(){
+    if(!ink){ toast(tr('Draw your signature first')); return; }
+    var id = x.getImageData(0, 0, cv.width, cv.height).data, x0 = cv.width, y0 = cv.height, x1 = 0, y1 = 0;
+    for(var yy = 0; yy < cv.height; yy++) for(var xx = 0; xx < cv.width; xx++){ if(id[(yy * cv.width + xx) * 4 + 3] > 20){ if(xx < x0) x0 = xx; if(xx > x1) x1 = xx; if(yy < y0) y0 = yy; if(yy > y1) y1 = yy; } }
+    var w = Math.max(10, x1 - x0 + 1), h = Math.max(10, y1 - y0 + 1), out = document.createElement('canvas'); out.width = w + 16; out.height = h + 16; out.getContext('2d').drawImage(cv, x0, y0, w, h, 8, 8, w, h);
+    btSave({ ownerSignature:out.toDataURL('image/png'), ownerSignatureAspect:(h + 16) / (w + 16) }); logAudit('update', 'signature', null, 'Owner signature saved for certificates'); toast(tr('Signature saved')); closeModal(); if(after) after();
+  });
+}
+function openCourseTeamSheet(){
+  var staff = State.users.filter(function(u){ return u.role !== 'pending' && !u.disabled; });
+  var html = '<div class="sheet-head"><h2>' + tr('Team progress') + '</h2></div><div class="rowlist">' + staff.map(function(u){
+    var done = COURSES.filter(function(c){ return crsSummary(u.id, c.id).complete; }).length, started = COURSES.filter(function(c){ return crsSummary(u.id, c.id).started; }).length;
+    return '<button class="row" type="button" data-cu="' + u.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(u.name) + '</div><div class="sub">' + esc(tr(ROLE_LABELS[u.role] || u.role)) + '</div></div><div class="trail num" style="font-size:12.5px;">' + done + ' ' + tr('completed') + '<br>' + started + ' ' + tr('started') + '</div></button>';
+  }).join('') + '</div><div class="actions" style="margin-top:12px;"><button class="btn btn-ghost btn-block" id="ctBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-cu]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openCourseUserSheet(b.getAttribute('data-cu')); }); });
+  ov.querySelector('#ctBack').addEventListener('click', function(){ closeModal(); openCoursesSheet(); });
+}
+function openCourseUserSheet(uid){
+  var u = crsUser(uid);
+  var html = '<div class="sheet-head"><h2>' + esc(u.name) + '</h2></div><div class="rowlist">' + COURSES.map(function(c){
+    var s = crsSummary(uid, c.id), g = s.overall != null ? crsGrade(s.overall) : null;
+    return '<button class="row" type="button" data-cc="' + c.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(tr(c.title)) + '</div><div class="sub">' + s.done + ' / ' + s.total + ' ' + tr('modules') + ' · ' + (s.finBest != null ? tr('Exam') + ' ' + s.finBest + '%' : tr('Exam not taken')) + '</div></div><div class="trail" style="font-size:12px;font-weight:700;color:' + (s.complete ? 'var(--success)' : 'var(--text-muted)') + ';">' + (s.complete ? tr('Completed') + ' ' + (g ? g.sym : '') : (s.started ? s.pct + '%' : '')) + '</div></button>';
+  }).join('') + '</div><div class="actions" style="margin-top:12px;"><button class="btn btn-ghost btn-block" id="cuBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-cc]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openCourseSheet(b.getAttribute('data-cc'), uid); }); });
+  ov.querySelector('#cuBack').addEventListener('click', function(){ closeModal(); openCourseTeamSheet(); });
+}
+/* ---- PDFs ---- */
+async function crsDoc(orientation){
+  var ok = await ensureJsPDF(); if(!ok){ toast('Couldn’t load the PDF engine, check your connection and try again'); return null; }
+  var C = getJsPDF(); if(!C) return null;
+  return newPdfDoc(C, { unit:'mm', format:'a4', orientation:orientation || 'p' });
+}
+async function crsSlidesPdf(c, m){
+  var doc = await crsDoc('l'); if(!doc) return null;
+  var pal = pdPal(getActiveTemplate()), W = 297, H = 210, shop = btShop();
+  var slides = [{ t:m.title, pts:[c.title + ' (' + c.code + ')', m.mins + ' minutes'], cover:true }].concat(m.slides).concat([{ t:'Practical activity: ' + m.practical.title, pts:m.practical.tasks }]);
+  slides.forEach(function(s, i){
+    if(i) doc.addPage('a4', 'l');
+    pdGrad(doc, 0, 0, W, 30, pal.deep, pal.light);
+    pdSet(doc, 'f', pal.gold); doc.rect(0, 30, W, 1.6, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); pdSet(doc, 't', [255, 255, 255]); pdCS(doc, 1); doc.text(c.code + '  ' + c.title.toUpperCase(), 14, 18); pdCS(doc, 0);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); pdSet(doc, 't', pal.gold2); doc.text(shop, W - 14, 18, { align:'right' });
+    var y = 62;
+    doc.setFont('times', 'bold'); doc.setFontSize(s.cover ? 34 : 30); pdSet(doc, 't', pal.mid);
+    var tl = doc.splitTextToSize(String(s.t), W - 40); doc.text(tl, 20, y); y += tl.length * (s.cover ? 14 : 12.5) + 8;
+    pdSet(doc, 'f', pal.gold); doc.rect(20, y - 4, 40, 1.4, 'F'); y += 12;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(s.cover ? 18 : 20); pdSet(doc, 't', pal.text);
+    s.pts.forEach(function(p){
+      var ls = doc.splitTextToSize(String(p), W - 60); if(y + ls.length * 8 > H - 26) return;
+      pdSet(doc, 'f', pal.gold); doc.circle(24, y - 2, 1.6, 'F'); doc.text(ls, 31, y); y += ls.length * 8.6 + 5;
+    });
+    doc.setFontSize(9); pdSet(doc, 't', pal.muted); doc.text(shop + ' · Training', 14, H - 10); doc.text((i + 1) + ' / ' + slides.length, W - 14, H - 10, { align:'right' });
+    try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', W / 2 - 4, H - 17, 8 / PESA_LOGO_ASPECT, 8); }catch(e){}
+  });
+  return doc;
+}
+function crsNotesInto(doc, head, c, m, idx, state){
+  var pal = head.pal, mm = head.margin, w = head.contentW, y = state.y;
+  function need(h){ if(y + h > head.limit){ doc.addPage(); y = pdTop(doc, 16); } }
+  y = pdTitle(doc, pal, mm, y, 'Module ' + idx + ' notes');
+  y += pdStrip(doc, pal, mm, y, w, 'Course', [['Course', c.title], ['Code', c.code], ['Module', m.title], ['Study time', m.mins + ' minutes']]) + 7;
+  m.reading.forEach(function(s){
+    need(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); pdSet(doc, 't', pal.mid); doc.text(s.h, mm, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.6); pdSet(doc, 't', pal.text);
+    s.p.forEach(function(p){ var ls = doc.splitTextToSize(p, w); for(var k = 0; k < ls.length; k++){ need(6); doc.text(ls[k], mm, y); y += 4.7; } y += 2.5; });
+    y += 2;
+  });
+  need(30); pdSection(doc, pal, mm, y + 3, w, 'Key points'); y += 11;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.6); pdSet(doc, 't', pal.text);
+  m.slides.forEach(function(s){ need(8); pdSet(doc, 'f', pal.gold); doc.circle(mm + 1.5, y - 1.2, 0.9, 'F'); var l = doc.splitTextToSize(s.t + ': ' + s.pts.join('. '), w - 6); for(var k = 0; k < l.length; k++){ need(5); doc.text(l[k], mm + 5, y); y += 4.6; } y += 1.5; });
+  need(40); pdSection(doc, pal, mm, y + 3, w, 'Practical activity: ' + m.practical.title); y += 11;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.6); pdSet(doc, 't', pal.text);
+  var intro = doc.splitTextToSize(m.practical.intro, w); doc.text(intro, mm, y); y += intro.length * 4.7 + 2;
+  m.practical.tasks.forEach(function(t, i){ var l = doc.splitTextToSize((i + 1) + '.  ' + t, w - 8); need(l.length * 4.7 + 3); pdSet(doc, 'd', pal.line); doc.rect(mm, y - 3.2, 3.6, 3.6); doc.text(l, mm + 7, y); y += l.length * 4.7 + 2; });
+  y += 2; need(48); doc.setFont('helvetica', 'bold'); pdSet(doc, 't', pal.mid); var rl = doc.splitTextToSize(m.practical.reflect, w); doc.text(rl, mm, y); y += rl.length * 4.7 + 3;
+  pdSet(doc, 'd', pal.border); for(var r = 0; r < 5; r++){ doc.line(mm, y, mm + w, y); y += 8; }
+  state.y = y;
+}
+async function crsNotesPdf(c, m){
+  var doc = await crsDoc('p'); if(!doc) return null;
+  var head = drawDocHeader(doc); crsNotesInto(doc, head, c, m, c.modules.indexOf(m) + 1, { y:head.y }); return doc;
+}
+async function crsWorkbookPdf(c){
+  var doc = await crsDoc('p'); if(!doc) return null;
+  var head = drawDocHeader(doc), pal = head.pal, mm = head.margin, w = head.contentW, y = head.y;
+  y = pdTitle(doc, pal, mm, y, 'Course workbook');
+  doc.setFont('times', 'bold'); doc.setFontSize(20); pdSet(doc, 't', pal.mid); var tl = doc.splitTextToSize(c.title, w); doc.text(tl, mm, y + 4); y += tl.length * 9 + 4;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); pdSet(doc, 't', pal.text); var sm = doc.splitTextToSize(c.summary, w); doc.text(sm, mm, y); y += sm.length * 5 + 4;
+  pdSection(doc, pal, mm, y + 3, w, 'What you will be able to do'); y += 11;
+  c.outcomes.forEach(function(o){ pdSet(doc, 'f', pal.gold); doc.circle(mm + 1.5, y - 1.2, 0.9, 'F'); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); pdSet(doc, 't', pal.text); var l = doc.splitTextToSize(o, w - 6); doc.text(l, mm + 5, y); y += l.length * 5 + 1.5; });
+  y += 4; pdSection(doc, pal, mm, y + 3, w, 'Modules'); y += 11;
+  y = pdfTable(doc, { x:mm, y:y, width:w, columns:[{label:'Module',width:w - 36},{label:'Minutes',width:36,align:'right'}], rows:c.modules.map(function(m, i){ return [(i + 1) + '. ' + m.title, String(m.mins)]; }) }) + 6;
+  doc.setFontSize(9); pdSet(doc, 't', pal.muted); var gl = doc.splitTextToSize('Pass mark ' + CRS_PASS + ' percent. Grades: A 80 to 100 Distinction, B 70 to 79 Merit, C 60 to 69 Pass, D 50 to 59 Fail, E below 50 Fail. Certificates are for skills enhancement and are not an accredited qualification.', w); doc.text(gl, mm, y);
+  c.modules.forEach(function(m, i){ doc.addPage(); crsNotesInto(doc, head, c, m, i + 1, { y:pdTop(doc, 16) }); });
+  return doc;
+}
+function crsSignatureBlock(doc, x, y, w, ownerName, shop, pal){
+  var sig = State.settings.ownerSignature;
+  if(sig){ var asp = State.settings.ownerSignatureAspect || 0.35, sw = Math.min(44, w), sh = sw * asp; try{ doc.addImage(sig, 'PNG', x + (w - sw) / 2, y - sh - 1, sw, sh); }catch(e){} }
+  else { doc.setFont('times', 'bolditalic'); doc.setFontSize(20); pdSet(doc, 't', [16, 34, 58]); doc.text(ownerName || '', x + w / 2, y - 3, { align:'center' }); }
+  pdSet(doc, 'd', pal.mid); doc.setLineWidth(0.4); doc.line(x, y, x + w, y);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); pdSet(doc, 't', pal.text); doc.text(ownerName || 'Owner', x + w / 2, y + 5, { align:'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); pdSet(doc, 't', pal.muted); doc.text('Owner, ' + shop, x + w / 2, y + 9.5, { align:'center' });
+}
+async function crsCertPdf(uid, cid, kind){
+  var c = crsCourse(cid), s = crsSummary(uid, cid), u = crsUser(uid);
+  if(kind === 'completion' && !s.complete){ toast(tr('Finish the course first')); return null; }
+  if(kind === 'attendance' && !s.allRead){ toast(tr('Finish all the reading and practicals first')); return null; }
+  var rec = crsIssue(uid, cid, kind), doc = await crsDoc('l'); if(!doc) return null;
+  var pal = pdPal(getActiveTemplate()), W = 297, H = 210, shop = btShop(), owner = crsOwnerName(), g = s.overall != null ? crsGrade(s.overall) : null;
+  doc.setFillColor(255, 253, 247); doc.rect(0, 0, W, H, 'F');
+  pdSet(doc, 'd', pal.gold); doc.setLineWidth(1.6); doc.rect(8, 8, W - 16, H - 16); pdSet(doc, 'd', pal.mid); doc.setLineWidth(0.35); doc.rect(11.5, 11.5, W - 23, H - 23);
+  [[11.5, 11.5], [W - 11.5, 11.5], [11.5, H - 11.5], [W - 11.5, H - 11.5]].forEach(function(p){ pdSet(doc, 'f', pal.gold); doc.circle(p[0], p[1], 2.2, 'F'); });
+  pdGrad(doc, 14, 14, W - 28, 26, pal.deep, pal.light); pdSet(doc, 'f', pal.gold); doc.rect(14, 40, W - 28, 1.2, 'F');
+  var lg = State.settings.logoDataUrl, light = State.settings.logoLightDataUrl, meta = State.settings.logoImgMeta || {};
+  var useLogo = (meta.clean && meta.tone < 0.45 && light) ? light : lg, drewLogo = false;
+  if(useLogo && meta.clean){ var lh = 17, lw = lh * (meta.w || 1) / (meta.h || 1); if(lw > 50){ lw = 50; lh = 50 * (meta.h || 1) / (meta.w || 1); } try{ doc.addImage(useLogo, logoImgType(useLogo), 22, 14 + (26 - lh) / 2, lw, lh); drewLogo = true; }catch(e){} }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(drewLogo ? 9 : 14); pdSet(doc, 't', [255, 255, 255]);
+  if(!drewLogo) doc.text(doc.splitTextToSize(shop, 100)[0], 22, 29);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); pdSet(doc, 't', pal.gold2); pdCS(doc, 1.6); doc.text('SKILLS TRAINING CERTIFICATE', W - 22 - 1.6, 29, { align:'right' }); pdCS(doc, 0);
+  doc.setFont('times', 'bold'); doc.setFontSize(35); pdSet(doc, 't', pal.deep); doc.text(kind === 'attendance' ? 'Certificate of Attendance' : 'Certificate of Completion', W / 2, 66, { align:'center' });
+  doc.setFont('times', 'italic'); doc.setFontSize(13); pdSet(doc, 't', pal.muted); doc.text('This is to certify that', W / 2, 78, { align:'center' });
+  doc.setFont('times', 'bolditalic'); doc.setFontSize(36); pdSet(doc, 't', pal.mid); doc.text(u.name, W / 2, 94, { align:'center' });
+  var nw = Math.min(150, doc.getTextWidth(u.name) + 20); pdSet(doc, 'd', pal.gold); doc.setLineWidth(0.6); doc.line(W / 2 - nw / 2, 98, W / 2 + nw / 2, 98);
+  doc.setFont('times', 'italic'); doc.setFontSize(13); pdSet(doc, 't', pal.muted); doc.text(kind === 'attendance' ? 'attended and took part in every module and practical activity of' : 'has successfully completed the theory and practical training course', W / 2, 108, { align:'center' });
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(21); pdSet(doc, 't', pal.deep); doc.text(c.title, W / 2, 121, { align:'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); pdSet(doc, 't', pal.text);
+  var det = c.code + '  ·  ' + c.modules.length + ' modules  ·  ' + c.hours + ' hours of study' + (kind === 'completion' && g ? '  ·  Final result ' + s.overall + ' percent, Grade ' + g.sym + ' (' + g.word + '), PASS' : '');
+  doc.text(det, W / 2, 130, { align:'center' });
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted);
+  var dl = doc.splitTextToSize('This certificate is issued by ' + shop + ' for skills enhancement and personal development. It is not an accredited or registered qualification.', 190); doc.text(dl, W / 2, 138, { align:'center' });
+  crsSignatureBlock(doc, 30, 170, 70, owner, shop, pal);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); pdSet(doc, 't', pal.text); doc.text(fmtDateNice(rec.at), W - 65, 165, { align:'center' }); pdSet(doc, 'd', pal.mid); doc.setLineWidth(0.4); doc.line(W - 100, 170, W - 30, 170);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); pdSet(doc, 't', pal.muted); doc.text('Date of issue', W - 65, 175, { align:'center' });
+  var cx = W / 2, cy = 160; pdSet(doc, 'd', pal.gold); doc.setLineWidth(1); doc.circle(cx, cy, 13); doc.setLineWidth(0.3); doc.circle(cx, cy, 10.5); pdSet(doc, 'f', pal.gold); doc.circle(cx, cy, 2.2, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(5.8); pdSet(doc, 't', pal.mid); doc.text('SKILLS', cx, cy - 4.5, { align:'center' }); doc.text('TRAINING', cx, cy + 7.2, { align:'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted); doc.text('Certificate no. ' + rec.no + '  ·  Issued digitally with Pesa  ·  ' + shop, W / 2, H - 16, { align:'center' });
+  return doc;
+}
+async function crsStatementPdf(uid, cid){
+  var c = crsCourse(cid), s = crsSummary(uid, cid), u = crsUser(uid), doc = await crsDoc('p'); if(!doc) return null;
+  var head = drawDocHeader(doc), pal = head.pal, mm = head.margin, w = head.contentW, y = head.y, g = s.overall != null ? crsGrade(s.overall) : null, certs = s.cp.certs || {};
+  y = pdTitle(doc, pal, mm, y, 'Statement of results');
+  y += pdStrip(doc, pal, mm, y, w, 'Learner', [['Name', u.name], ['Employee no.', u.employeeNo], ['Course', c.title], ['Code', c.code]]) + 5;
+  y += pdStrip(doc, pal, mm, y, w, 'Issued', [['Date', fmtDateNice(new Date())], ['Issued by', btShop()], ['Pass mark', CRS_PASS + ' percent']]) + 8;
+  var rows = s.mods.map(function(x, i){ var g1 = x.best != null ? crsGrade(x.best) : null; return [(i + 1) + '. ' + x.m.title, x.practical ? 'Done' : 'Not done', x.best != null ? x.best + '%' : '', g1 ? g1.sym : '', x.best == null ? 'Not taken' : (g1.pass && x.read && x.practical ? 'PASS' : (g1.pass ? 'Incomplete' : 'FAIL'))]; });
+  var fg = s.finBest != null ? crsGrade(s.finBest) : null;
+  rows.push(['Final exam', '', s.finBest != null ? s.finBest + '%' : '', fg ? fg.sym : '', s.finBest == null ? 'Not taken' : (fg.pass ? 'PASS' : 'FAIL')]);
+  rows.push(['Overall result (60 percent modules, 40 percent exam)', '', s.overall != null ? s.overall + '%' : '', g ? g.sym : '', s.complete ? 'PASS' : (s.overall != null ? 'FAIL' : 'In progress')]);
+  y = pdfTable(doc, { x:mm, y:y, width:w, columns:[{label:'Module',width:w - 86},{label:'Practical',width:20},{label:'Mark',width:16,align:'right'},{label:'Symbol',width:18,align:'right'},{label:'Result',width:32,align:'right'}], rows:rows, boldRows:[rows.length - 1] }) + 8;
+  if(y + 70 > head.limit){ doc.addPage(); y = pdTop(doc, 16); }
+  pdSection(doc, pal, mm, y + 3, w, 'Grade key'); y += 11;
+  y = pdfTable(doc, { x:mm, y:y, width:w, columns:[{label:'Mark',width:50},{label:'Symbol',width:30},{label:'Meaning',width:w - 130},{label:'Result',width:50,align:'right'}], rows:[['80 to 100 percent', 'A', 'Distinction', 'PASS'], ['70 to 79 percent', 'B', 'Merit', 'PASS'], ['60 to 69 percent', 'C', 'Pass', 'PASS'], ['50 to 59 percent', 'D', 'Not yet competent', 'FAIL'], ['Below 50 percent', 'E', 'Not yet competent', 'FAIL']] }) + 6;
+  var ext = EXT_COURSES.filter(function(e){ return ((crsProgOf(uid).ext || {})[e.id] || {}).status; });
+  if(ext.length){
+    if(y + 40 > head.limit){ doc.addPage(); y = pdTop(doc, 16); }
+    pdSection(doc, pal, mm, y + 3, w, 'Other learning recorded by the learner'); y += 11;
+    y = pdfTable(doc, { x:mm, y:y, width:w, columns:[{label:'Course',width:w - 90},{label:'Provider',width:60},{label:'Status',width:30,align:'right'}], rows:ext.map(function(e){ return [e.title, e.by.replace(' (OpenLearn)', ''), ((crsProgOf(uid).ext || {})[e.id].status === 'completed') ? 'Completed' : 'Started']; }) }) + 4;
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8); pdSet(doc, 't', pal.muted); doc.text('Recorded by the learner. These courses are not assessed by ' + btShop() + '.', mm, y); y += 6;
+  }
+  if(y + 52 > head.limit){ doc.addPage(); y = pdTop(doc, 16); }
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted);
+  var ct = (certs.completion ? 'Certificate of completion no. ' + certs.completion.no + '. ' : '') + (certs.attendance ? 'Certificate of attendance no. ' + certs.attendance.no + '. ' : '');
+  var note = doc.splitTextToSize(ct + 'This statement is issued by ' + btShop() + ' for skills enhancement. It is not an accredited or registered qualification.', w); doc.text(note, mm, y); y += note.length * 4 + 18;
+  crsSignatureBlock(doc, mm, y + 8, 62, crsOwnerName(), btShop(), pal);
+  return doc;
+}
 /* ============================== CUSTOMER STATEMENT OF ACCOUNT ==============================
    A dated statement per customer: opening balance, every credit sale and payment with a running balance, closing balance,
    and how old the amount owed is. Download, print or send the summary by WhatsApp. */
@@ -17964,6 +18340,8 @@ function openTrainingSheet(){
   var totalSlides = list.reduce(function(n, l){ return n + l.slides.length; }, 0);
   var html = '<div class="sheet-head"><h2>'+ICONS.book+'<span style="margin-left:8px;">'+tr('Training')+'</span></h2></div>' +
     '<div class="banner">'+tr('Step by step lessons on every part of the app. Pick a topic and read at your own pace.')+'</div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="trCourses" type="button" style="padding:16px;">'+ICONS.book+'<span style="margin-left:8px;">'+tr('Real practical training')+'<br><span style="font-size:12px;font-weight:500;opacity:.9;">'+tr('Theory and practical')+'</span></span></button></div>' +
+    '<div class="section-title">'+tr('App lessons')+'</div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="trSearch" type="button">'+ICONS.search+'<span style="margin-left:8px;">'+tr('Search help')+'</span></button></div>' +
     (list.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="trPdf" type="button">'+ICONS.fileup+'<span style="margin-left:8px;">'+tr('Download the full training manual (PDF)')+' ('+list.length+' · '+totalSlides+' '+tr('slides')+')</span></button></div>' : '') +
     '<div class="rowlist" style="margin-top:12px;">' +
@@ -17979,6 +18357,7 @@ function openTrainingSheet(){
   ov.querySelectorAll('[data-lesson]').forEach(function(el){
     el.addEventListener('click', function(){ openLessonSlideshow(el.getAttribute('data-lesson')); });
   });
+  var tcs = ov.querySelector('#trCourses'); if(tcs) tcs.addEventListener('click', function(){ closeModal(); openCoursesSheet(); });
   var tsr = ov.querySelector('#trSearch'); if(tsr) tsr.addEventListener('click', function(){ closeModal(); openHelpSearchSheet(); });
   var tp = ov.querySelector('#trPdf'); if(tp) tp.addEventListener('click', async function(){
     var old = tp.innerHTML; tp.disabled = true; tp.textContent = tr('Preparing…');
@@ -19444,7 +19823,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.83';
+var APP_VERSION = '2026.10.84';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19490,7 +19869,7 @@ function backupPayload(){
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
     posDevices: State.posDevices, posBatches: State.posBatches, messages: State.messages, workReports: State.workReports,
     stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements,
-    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns, clockLogs: State.clockLogs, tips: State.tips, calEvents: State.calEvents
+    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns, courseProgress: State.courseProgress, clockLogs: State.clockLogs, tips: State.tips, calEvents: State.calEvents
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -19522,7 +19901,7 @@ async function restoreBackupData(data){
   await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches); await put(refs.messages, data.messages); await put(refs.workReports, data.workReports);
   await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
   await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
-  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns); await put(refs.clockLogs, data.clockLogs); await put(refs.tips, data.tips); await put(refs.calEvents, data.calEvents);
+  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns); await put(refs.courseProgress, data.courseProgress); await put(refs.clockLogs, data.clockLogs); await put(refs.tips, data.tips); await put(refs.calEvents, data.calEvents);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
@@ -19671,6 +20050,13 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.84', items:[
+    'New: Real practical training under Training, with theory and practical work. Read the notes, watch the slides, do the practical activity at work, then take the quiz',
+    'New: Customer Service Excellence course (6 modules), plus Personal Effectiveness and Money Skills courses, each with reading, slides, practical tasks, module quizzes and a final exam',
+    'New: Download PDF slides, notes and a workbook for every module',
+    'New: Certificate of completion and certificate of attendance, signed by the shop owner (draw your signature once), with a statement of results showing every module, mark, symbol and PASS or FAIL',
+    'New: Free external courses for self advancement, with progress tracking. Certificates are for skills enhancement and are not accredited'
+  ]},
   { v:'2026.10.83', items:[
     'New: Clock in and clock out for every employee (on the home page), with an Attendance page for owners and managers: who is on shift, hours per person, missed shifts, and a spreadsheet timesheet',
     'New: Staff tips. Record a tip for one person or share it equally between everyone on shift. Tips are paid on top of net pay in payroll, and payroll now fills hours and days from the clock records',
@@ -20885,6 +21271,309 @@ function generateAboutPdf(){
 document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
 document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer);
 
+/*COURSES:START (generated by tools/embed_courses.py, edit tools/courses.js instead)*/
+/* Course content for Pesa Training (Theory and practical). Edit this file, then run: python3 tools/embed_courses.py
+   Wording rule for the whole app: no dashes. Use full stops, commas and the word "to". */
+var COURSES = [
+{
+  id:"cs101", code:"CS101", title:"Customer Service Excellence", level:"Beginner", hours:6, who:"all", color:"#0B7A5C",
+  summary:"A practical course for everyone who serves customers: greeting, listening, understanding needs, handling complaints and building loyal customers.",
+  outcomes:["Explain why customer service decides whether a shop grows or fails","Greet, present yourself and speak to customers in a professional way","Listen well and ask questions that find out what the customer needs","Handle complaints and difficult customers calmly, using a clear method","Handle money, queues and messages with honesty and care"],
+  modules:[
+  { id:"m1", title:"Why customer service matters", mins:50,
+    reading:[
+      {h:"Service is part of what you sell", p:["When a customer walks into a shop, they are buying more than a product. They are buying the way they are treated. In most towns a customer can find similar goods at two or three shops. What they remember, and what brings them back, is whether they felt welcome, respected and helped.","A customer who feels respected comes back, brings family and tells neighbours. A customer who feels ignored takes their money to the shop next door and tells people why. In Namibia, where communities are close and news travels fast on WhatsApp and Facebook groups, your reputation is built one customer at a time."]},
+      {h:"Moments of truth", p:["Every contact between a customer and your business is a moment of truth, a chance to impress or to disappoint. Think of the whole journey: seeing the shop from outside, walking in, being greeted, finding the product, asking a question, paying, getting a receipt and leaving.","A shop can do nine of these things well and lose the customer on the tenth. Good service means paying attention to every step, not only the sale itself."]},
+      {h:"What a lost customer costs", p:["Imagine a regular customer who spends N$150 a week with you. Over a year that is N$7,800. Over five years it is N$39,000. If one rude moment makes that customer leave, the shop has not lost N$150. It has lost thousands, plus every friend that customer would have sent.","Winning a new customer costs far more effort than keeping an old one. That is why looking after existing customers is the cheapest and surest way to grow."]},
+      {h:"Internal customers", p:["Your colleagues are customers too. The cashier depends on the stock clerk for products on the shelf. The stock clerk depends on the manager for clear orders. When people inside the shop help each other well, customers feel the difference without knowing why."]}
+    ],
+    slides:[
+      {t:"What is customer service?", pts:["Everything you do before, during and after a sale","Helping the customer get what they need","Treating every person with respect","Making it easy to buy from you"]},
+      {t:"Why it matters in a small shop", pts:["Customers have a choice of where to spend","People remember how they were treated","Word of mouth spreads fast on WhatsApp","Good service costs little and earns a lot"]},
+      {t:"Moments of truth", pts:["Seeing the shop","The greeting","Finding the product","Asking for help","Paying and receipt","Saying goodbye"]},
+      {t:"The cost of a lost customer", pts:["N$150 a week is N$7,800 a year","Over five years it is N$39,000","One bad moment can lose all of it","Keeping a customer is cheaper than finding a new one"]},
+      {t:"Internal customers", pts:["Colleagues depend on each other","Help your team the way you help customers","Good teamwork shows at the till"]},
+      {t:"Key points", pts:["Service is part of the product","Every contact matters","Look after the customers you already have"]}
+    ],
+    practical:{ title:"Walk the customer path", intro:"Do this during a quiet time at work, or on your next visit to any shop as a customer.", tasks:["Walk through your shop the way a customer does, from outside the door to the till.","Write down five moments of truth you find along the way.","Give each moment a mark from 1 (poor) to 5 (excellent).","Choose the lowest mark and decide one small thing you can do this week to improve it."], reflect:"Which moment will you improve this week, and what exactly will you do?" },
+    quiz:[
+      {q:"What do customers remember most about a shop?", o:["The colour of the walls","How they were treated","The name on the sign","The shop’s opening date"], a:1, why:"Customers can often buy similar goods elsewhere. How they were treated is what they remember and what brings them back."},
+      {q:"A regular customer spends N$150 a week. About how much is that in a year?", o:["N$1,500","N$3,000","N$7,800","N$15,000"], a:2, why:"N$150 multiplied by 52 weeks is N$7,800."},
+      {q:"What is a moment of truth?", o:["A time the manager checks the till","Any contact where a customer forms an opinion of the business","A refund","A staff meeting"], a:1, why:"Each contact is a chance to impress or disappoint."},
+      {q:"Who are your internal customers?", o:["Only people who pay","Your colleagues who depend on your work","The shop’s suppliers only","Nobody"], a:1, why:"Colleagues depend on each other, and good teamwork shows in the service customers receive."}
+    ],
+    exam:[
+      {q:"Why is keeping an existing customer usually better than finding a new one?", o:["It costs less effort and the customer already trusts you","New customers never pay","Old customers always spend more","It is the law"], a:0, why:"Winning a new customer takes far more effort than looking after one you already have."},
+      {q:"One rude moment at the till can cost the shop:", o:["Nothing, the product was sold","Only that one sale","Years of sales and the customer’s friends","Only the cashier’s job"], a:2, why:"The loss includes all future sales and the people that customer would have sent."}
+    ]},
+  { id:"m2", title:"First impressions and professional presentation", mins:50,
+    reading:[
+      {h:"The first ten seconds", p:["People form an opinion about you and your shop within seconds. A warm greeting in the first ten seconds, with a smile and eye contact, tells the customer they are welcome. Say something simple: “Good morning, welcome to our shop. How can I help you today?”","Do not wait for the customer to speak first. Even if you are busy with another customer, look up, smile and say, “I will be with you in a moment.” This small act stops people feeling ignored."]},
+      {h:"How you look and how your workplace looks", p:["Be clean, neat and ready to work. Wear your uniform or clothes that suit the job. Keep your hands clean, especially if you handle food. A tidy till area, clean counter and well arranged shelves tell customers that the business is careful and can be trusted with their money.","Keep your phone away while you serve. Looking at a screen while a customer is talking is one of the quickest ways to show you do not care."]},
+      {h:"Body language and tone", p:["Customers read your body before they hear your words. Stand or sit upright, keep your arms uncrossed and face the customer. Nod to show you are listening. Avoid sighing, rolling your eyes or looking past the person.","Your tone matters as much as your words. The same sentence can sound friendly or rude depending on how it is said. Speak clearly, at a calm pace, and smile. A smile can be heard, even on the phone."]},
+      {h:"Phone and WhatsApp manners", p:["Answer calls quickly and say the shop name and your name. Speak slowly and write down the message if you must pass it on. On WhatsApp, greet first, write in full and polite sentences, reply within the time you promise and never share another customer’s details.","Respect language and culture. Namibia has many languages. Learn a greeting in the languages your customers speak by asking a colleague to teach you. Even one word shows respect."]}
+    ],
+    slides:[
+      {t:"The first ten seconds", pts:["Look up and smile","Make eye contact","Greet with the shop name","If busy, say “I will be with you in a moment”"]},
+      {t:"Look ready to serve", pts:["Neat, clean and in uniform","Clean hands and a tidy counter","Phone away while serving"]},
+      {t:"Body language", pts:["Upright, open and facing the customer","Nod to show you listen","Do not sigh, roll eyes or look past people"]},
+      {t:"Tone of voice", pts:["Calm, clear and friendly","A smile can be heard","Same words, different tone, different message"]},
+      {t:"Phone and WhatsApp", pts:["Answer quickly, say shop and your name","Greet and write polite full sentences","Reply when you promised","Protect customer privacy"]},
+      {t:"Respect every culture", pts:["Learn greetings in your customers’ languages","Never mock accents or languages","Treat everyone the same"]}
+    ],
+    practical:{ title:"Greeting practice", intro:"Practise with a colleague or friend, then use it on real customers during your shift.", tasks:["Practise your greeting out loud three times, with a smile and eye contact.","Ask a colleague to watch your body language for five minutes and tell you one thing to improve.","Greet every customer in the first ten seconds for one full shift.","Ask a colleague to teach you a greeting in another language your customers speak."], reflect:"What did customers do when you greeted them within ten seconds? What will you keep doing?" },
+    quiz:[
+      {q:"Within how many seconds should a customer be greeted?", o:["About ten","Sixty","Five minutes","Only after they speak"], a:0, why:"A greeting in the first ten seconds tells the customer they are welcome."},
+      {q:"You are busy with one customer and another walks in. What is best?", o:["Ignore them until you finish","Look up, smile and say you will be with them in a moment","Ask them to come back later","Wave them away"], a:1, why:"A quick acknowledgement stops people feeling ignored."},
+      {q:"Which body language shows you are listening?", o:["Arms crossed and looking at your phone","Facing the person, upright, nodding","Looking past them","Sighing"], a:1, why:"Open posture, eye contact and nodding show attention."},
+      {q:"On WhatsApp with a customer you should:", o:["Reply in short rude words","Greet, write polite full sentences and reply when you promised","Share their details with friends","Ignore messages after closing time"], a:1, why:"Polite, reliable messages build trust and protect privacy."}
+    ],
+    exam:[
+      {q:"Why keep your phone away while serving?", o:["It uses battery","It shows the customer you do not care","The manager is watching","Phones are not allowed"], a:1, why:"Looking at a screen while a customer speaks quickly tells them they are not important."},
+      {q:"A good way to respect language and culture is to:", o:["Ignore other languages","Learn a greeting in the languages your customers speak","Only speak to people who speak your language","Laugh at accents"], a:1, why:"Even one word in their language shows respect."}
+    ]},
+  { id:"m3", title:"Communication and listening", mins:55,
+    reading:[
+      {h:"Listening is the main skill", p:["Most service problems start when we do not listen. Active listening means giving the customer your full attention, letting them finish without interrupting and showing that you understood. Look at the person, nod and put other tasks aside.","After they speak, say back what you heard in your own words: “So you need a battery for a remote control, and you want it to last long. Is that right?” This is called paraphrasing and it prevents mistakes."]},
+      {h:"Asking good questions", p:["Open questions start with words like what, which, how or when. They get the customer talking: “What will you use it for?” Closed questions get a yes or no: “Is it for cooking?” Use open questions to find out the need, then closed questions to confirm details.","Ask one question at a time and wait for the answer. Do not ask so many questions that the customer feels questioned by the police."]},
+      {h:"Speaking clearly", p:["Use simple words that the customer understands. Avoid shop jargon, technical terms and short forms they may not know. Speak at a steady pace and a normal volume. If a customer speaks another language, find a colleague who can help, rather than guess.","Say what you can do, not only what you cannot. Instead of “We do not have that,” say “We do not have that today, but I can order it for you for Thursday, or show you a similar one.”"]},
+      {h:"Written and digital messages", p:["Messages should be short, polite and complete. Include the product, price and when it will be ready. Read the message again before you send it. Never write in capital letters, which look like shouting."]}
+    ],
+    slides:[
+      {t:"Active listening", pts:["Give full attention","Do not interrupt","Nod and keep eye contact","Put other tasks aside"]},
+      {t:"Say it back", pts:["Paraphrase what you heard","Check you understood","Prevents mistakes and wasted time"]},
+      {t:"Open and closed questions", pts:["Open: what, which, how, when","Closed: yes or no","Open to find the need","Closed to confirm"]},
+      {t:"Speak simply", pts:["Everyday words, no jargon","Steady pace, normal volume","Get help when language is a barrier"]},
+      {t:"Say what you CAN do", pts:["Not: “We do not have it”","But: “I can order it for Thursday”","Offer an option every time"]},
+      {t:"Messages", pts:["Short, polite and complete","Product, price and time","No capital letters"]}
+    ],
+    practical:{ title:"Listen and repeat", intro:"Use this with customers or with a friend who plays the customer.", tasks:["With three customers, repeat back what they asked for before you act.","Ask each customer at least one open question about what they need.","Replace one “We do not have it” with an option you can offer.","Write down one time that listening properly stopped a mistake."], reflect:"Describe one conversation where listening and repeating back helped the customer." },
+    quiz:[
+      {q:"What does paraphrasing mean?", o:["Repeating what you heard in your own words to check it","Talking louder","Writing it down only","Changing the subject"], a:0, why:"Saying it back checks that you understood."},
+      {q:"Which is an open question?", o:["Is it for cooking?","Do you want the large one?","What will you use it for?","Is that all?"], a:2, why:"Open questions begin with what, which, how or when and make the customer talk."},
+      {q:"A customer asks for an item you do not have. Best reply?", o:["We do not have it.","Come back next week.","We do not have it today, but I can order it or show you a similar one.","Why do you want that?"], a:2, why:"Say what you can do, and offer options."},
+      {q:"Writing a message in capital letters:", o:["Is polite","Looks like shouting","Is faster to read","Is required"], a:1, why:"Capital letters read as shouting."}
+    ],
+    exam:[
+      {q:"Why avoid shop jargon with customers?", o:["Customers may not understand it","It is illegal","It is slow","It costs money"], a:0, why:"Simple everyday words make sure the customer understands."},
+      {q:"Which shows active listening?", o:["Interrupting to save time","Looking at your phone","Letting them finish, nodding and repeating back","Answering before they ask"], a:2, why:"Full attention, no interrupting and checking understanding."}
+    ]},
+  { id:"m4", title:"Understanding customer needs and product knowledge", mins:55,
+    reading:[
+      {h:"Needs and wants", p:["A need is the problem a customer wants solved. A want is the specific thing they think will solve it. A customer may ask for the cheapest paint, but the need is a wall that stays dry in the rainy season. When you understand the need, you can recommend something that really helps and the customer trusts you for it.","Ask what the product is for, who will use it and how often. Then recommend the best fit, not the most expensive item."]},
+      {h:"Know your products", p:["You cannot help with something you do not know. Learn what you sell: what it is, what it costs, where it is on the shelf, what it goes with and what the alternatives are. Read labels and ask the owner or supplier when you are unsure.","If you do not know the answer, say so honestly and find out: “Let me check that for you.” Customers respect honesty far more than a wrong answer."]},
+      {h:"Recommending and honest extra sales", p:["Suggesting an extra item is good service when it truly helps. A customer buying a phone cover may also need a screen protector. Mention it once, politely, and accept the answer. Never pressure people to buy what they do not need. A customer who feels pushed does not come back.","Offer choices, such as a good, better and best option, and explain the difference in price and value."]},
+      {h:"Follow up", p:["Good service continues after the sale. If you promised to order an item, tell the customer when it arrives. If a customer bought something new, ask next time how it is working. Small follow ups show that you care and bring people back."]}
+    ],
+    slides:[
+      {t:"Need or want?", pts:["Need: the problem to solve","Want: the item they have in mind","Find the need, then recommend"]},
+      {t:"Ask the right things", pts:["What is it for?","Who will use it?","How often?","What is your budget?"]},
+      {t:"Know what you sell", pts:["Price and place on the shelf","What it goes with","The alternatives","Ask when unsure"]},
+      {t:"If you do not know", pts:["Say so honestly","“Let me check that for you”","Find the right answer"]},
+      {t:"Honest extra sales", pts:["Suggest only what truly helps","Mention once, politely","Accept no for an answer"]},
+      {t:"Follow up", pts:["Tell customers when orders arrive","Ask how it is working","Small effort, loyal customers"]}
+    ],
+    practical:{ title:"Product knowledge check", intro:"Do this during a quiet time with the stock in front of you.", tasks:["Pick five products that customers often ask about.","For each one, write the price, where it is, one benefit and one alternative.","Ask a colleague to quiz you on those five.","Make one honest suggestion to a customer this week and note their response."], reflect:"What did you learn about your products that you did not know before?" },
+    quiz:[
+      {q:"A customer asks for the cheapest paint. What is likely their real need?", o:["To spend as little as possible no matter what","A finish that lasts and solves their wall problem at a fair price","To talk to you","Nothing"], a:1, why:"Look behind the request to the problem they want solved."},
+      {q:"You do not know the answer to a question. Best action?", o:["Guess","Say “Let me check that for you” and find out","Say you do not know and walk away","Change the subject"], a:1, why:"Honest checking builds trust."},
+      {q:"An honest extra sale means:", o:["Pushing the most expensive item","Suggesting something that truly helps, once, and accepting no","Hiding prices","Selling anything"], a:1, why:"Helpful, polite suggestions without pressure."},
+      {q:"Why follow up after a sale?", o:["It wastes time","It shows care and brings customers back","It is not allowed","Nobody likes it"], a:1, why:"Follow ups build loyalty."}
+    ],
+    exam:[
+      {q:"Which question helps find the customer’s need?", o:["What will you use it for?","Are you sure?","Is that all?","Do you have money?"], a:0, why:"It opens the conversation about the real need."},
+      {q:"Offering good, better and best options helps because:", o:["The customer can choose what suits their budget and need","It hides prices","It confuses people","It is quicker"], a:0, why:"Choices respect the customer’s decision and budget."}
+    ]},
+  { id:"m5", title:"Handling complaints and difficult customers", mins:60,
+    reading:[
+      {h:"A complaint is a gift", p:["Most unhappy customers never complain. They just leave and tell others. A customer who complains is giving you a chance to fix the problem and keep their business. Research on service shows that customers whose complaint is solved well often become more loyal than those who never had a problem.","Do not take complaints personally. The customer is upset about a product or situation, not about you as a person."]},
+      {h:"The LAST method", p:["Use four steps. L is for Listen: let the customer explain without interrupting and show you understand. A is for Apologise: say sorry for the problem or the inconvenience, even if it was not your fault. S is for Solve: offer a solution, or two options, and do it quickly. T is for Thank: thank the customer for telling you and for their patience.","For example: “I am sorry the bread was stale. Thank you for telling me. I can replace it now or give you a refund. Which do you prefer?”"]},
+      {h:"Staying calm", p:["When a customer is angry, breathe slowly, lower your voice and speak slowly. Never argue, blame the customer or blame a colleague. Use the customer’s name. Stand at the same level and keep a respectful distance. A calm voice calms the other person.","Do not promise what you cannot do. If you need the manager, say so politely: “Let me ask my manager so that I can help you properly.”"]},
+      {h:"Know your limits and stay safe", p:["Know the shop’s policy on refunds, exchanges and repairs, and what you may decide yourself. Hand over to the manager when a request is outside your authority. If a customer threatens you or becomes violent, step back, do not argue, call the manager or security and protect yourself and others. No sale is worth your safety."]}
+    ],
+    slides:[
+      {t:"A complaint is a gift", pts:["Most unhappy customers just leave","A complaint gives you a second chance","A solved problem can build loyalty"]},
+      {t:"LAST: Listen", pts:["Let them explain fully","No interrupting","Show you understand"]},
+      {t:"LAST: Apologise", pts:["Say sorry for the problem","Even if it is not your fault","Sound sincere"]},
+      {t:"LAST: Solve", pts:["Offer a solution or two options","Act quickly","Do what you promised"]},
+      {t:"LAST: Thank", pts:["Thank them for telling you","Thank them for patience","End on a positive note"]},
+      {t:"Stay calm and safe", pts:["Slow breath, low voice","Do not argue or blame","Know your limits and call the manager","Safety comes first"]}
+    ],
+    practical:{ title:"Role play a complaint", intro:"Do this with a colleague who plays the unhappy customer. Then swap.", tasks:["Pick a real type of complaint from your shop, such as a wrong price, a faulty item or a long wait.","Role play it using LAST. The colleague must be a little difficult.","Ask your colleague how calm and respectful you sounded, from 1 to 5.","Write down the shop’s refund and exchange rules in your own words, and who to call when you cannot decide."], reflect:"Which part of LAST do you find hardest, and how will you practise it?" },
+    quiz:[
+      {q:"What does LAST stand for?", o:["Look, Ask, Sell, Tell","Listen, Apologise, Solve, Thank","Leave, Argue, Shout, Talk","Learn, Act, Smile, Trade"], a:1, why:"Listen, Apologise, Solve, Thank."},
+      {q:"A customer is shouting about a faulty item. What first?", o:["Shout back","Listen calmly without interrupting","Walk away","Blame a colleague"], a:1, why:"Listening first calms the situation."},
+      {q:"You cannot approve a refund yourself. Best action?", o:["Refuse rudely","Say you will ask the manager so you can help properly","Ignore the customer","Give the money from the till"], a:1, why:"Know your limits and hand over politely."},
+      {q:"A customer becomes violent. What do you do?", o:["Argue back","Step back, call the manager or security and protect yourself","Take the customer’s phone","Lock them in"], a:1, why:"Safety comes first."}
+    ],
+    exam:[
+      {q:"Why apologise even when it was not your fault?", o:["To admit guilt in court","To show you care about the customer’s problem","Because the manager says so","It is never needed"], a:1, why:"You are sorry the customer had a problem, which shows care."},
+      {q:"Most unhappy customers:", o:["Always complain loudly","Say nothing and just leave","Return the next day","Call the police"], a:1, why:"That is why a complaint is a chance to fix the problem."}
+    ]},
+  { id:"m6", title:"Service in practice: money, queues and loyalty", mins:60,
+    reading:[
+      {h:"Handling money with honesty", p:["Customers trust you with their money. Count change aloud and hand it back with the receipt. Check notes if your shop policy asks you to. Never put a customer’s money in your pocket, even for a moment. Always enter the sale in the till or in Pesa so that records are true.","Make sure the price you charge is the price the customer was shown. If you notice a mistake, fix it and explain politely. Honest mistakes handled openly build trust."]},
+      {h:"Busy times and queues", p:["Queues are the most common cause of frustration. Acknowledge waiting customers with a smile, work steadily, and ask a colleague to open another till if the queue grows. Say thank you for waiting. Tidy as you go so that the next customer has a clean counter.","Never serve friends or family first while others wait. Everyone in the queue is a customer."]},
+      {h:"After the sale", p:["Give a receipt, say thank you and invite the customer back. Explain any return or warranty rules. If something was ordered, write down the customer’s name and number, and tell them when it arrives.","Keep customer information private. Phone numbers and credit balances are not for sharing with anyone else."]},
+      {h:"Building loyalty", p:["Remember regular customers by name, their usual items and their preferences. Use the loyalty features in Pesa to reward them. Say thank you for their business. Ask for feedback and act on what they tell you.","Good service is a habit. Repeat the basics every day: greet, listen, help, thank. Do this and customers will choose you."]}
+    ],
+    slides:[
+      {t:"Money with honesty", pts:["Count change aloud","Give a receipt","Never pocket money","Enter every sale"]},
+      {t:"Correct prices", pts:["Charge the price shown","Fix mistakes openly","Explain politely"]},
+      {t:"Queues", pts:["Acknowledge waiting customers","Ask for help before the queue is long","Thank people for waiting","No queue jumping for friends"]},
+      {t:"After the sale", pts:["Receipt and thank you","Explain returns and warranty","Write down orders"]},
+      {t:"Privacy", pts:["Do not share phone numbers or balances","Protect customer information"]},
+      {t:"Build loyalty", pts:["Remember names and favourites","Use loyalty rewards","Ask for feedback","Greet, listen, help, thank"]}
+    ],
+    practical:{ title:"My service promise", intro:"Finish the course by writing your own promise and using it.", tasks:["Write a service promise of three sentences that you will keep every shift.","Count change aloud for every cash sale for one full shift.","Greet and thank every customer in the queue for one busy period.","Ask three regular customers what you could do better, and write down what they say."], reflect:"Write your three sentence service promise here." },
+    quiz:[
+      {q:"What should you do with change?", o:["Hand it over quickly without counting","Count it aloud and hand it back with the receipt","Keep small coins","Leave it on the counter"], a:1, why:"Counting aloud builds trust and prevents mistakes."},
+      {q:"A friend walks in while others are waiting. You should:", o:["Serve the friend first","Serve people in order","Close the till","Ask the friend to wait outside"], a:1, why:"Everyone in the queue is a customer."},
+      {q:"Customer phone numbers and balances should be:", o:["Shared with friends","Kept private","Posted online","Written on the counter"], a:1, why:"Protect customer information."},
+      {q:"Which helps build loyalty?", o:["Remembering names and usual items","Ignoring feedback","Raising prices","Closing early"], a:0, why:"Personal service makes customers feel valued."}
+    ],
+    exam:[
+      {q:"You notice you charged the wrong price. What is best?", o:["Say nothing","Fix it and explain politely","Blame the customer","Hide the receipt"], a:1, why:"Honest mistakes handled openly build trust."},
+      {q:"How should you treat a long queue?", o:["Ignore it","Acknowledge people, work steadily and ask for help","Leave the till","Close the shop"], a:1, why:"Acknowledging and acting reduces frustration."}
+    ]}
+  ]
+},
+{
+  id:"sa101", code:"SA101", title:"Personal Effectiveness and Time Management", level:"Beginner", hours:3, who:"all", color:"#3B82F6",
+  summary:"Set clear goals, plan your day, use your time well and keep learning. A short self advancement course for every member of staff.",
+  outcomes:["Set clear, realistic goals","Sort tasks into urgent and important","Plan a work day and avoid common time wasters","Build habits for learning and growing at work"],
+  modules:[
+  { id:"m1", title:"Goals and priorities", mins:50,
+    reading:[
+      {h:"Why goals matter", p:["People who know where they want to go, get there faster. A goal turns a wish into a plan. “I want to earn more” is a wish. “I will learn to run the till without help and ask for a supervisor role by June” is a goal.","Good goals are SMART: Specific, Measurable, Achievable, Realistic and Timed. Write them down. A goal that is written is far more likely to happen."]},
+      {h:"Urgent and important", p:["Not everything that is urgent is important, and not everything important is urgent. Urgent tasks demand attention now, like a ringing phone. Important tasks move you toward your goals, like learning a new skill.","Do important and urgent tasks first. Plan important but not urgent tasks into your week. Delegate or limit urgent but not important tasks. Drop tasks that are neither."]},
+      {h:"Breaking a goal into steps", p:["Large goals are easier when split into small steps. Write the next three steps and the date for each. Check your progress each week and celebrate small wins."]}
+    ],
+    slides:[
+      {t:"Goals turn wishes into plans", pts:["A wish: I want to earn more","A goal: a clear action and a date"]},
+      {t:"SMART goals", pts:["Specific","Measurable","Achievable","Realistic","Timed"]},
+      {t:"Urgent and important", pts:["Urgent and important: do now","Important, not urgent: plan it","Urgent, not important: limit or delegate","Neither: drop it"]},
+      {t:"Small steps", pts:["Split big goals","Write three next steps with dates","Review weekly"]}
+    ],
+    practical:{ title:"My first SMART goal", intro:"Spend ten minutes on this.", tasks:["Write one work goal for the next three months.","Check it against SMART and rewrite it if needed.","Write three steps with a date for each.","Share your goal with a colleague or supervisor."], reflect:"Write your SMART goal here." },
+    quiz:[
+      {q:"What does the S in SMART stand for?", o:["Simple","Specific","Sales","Soon"], a:1, why:"Specific."},
+      {q:"A task that is important but not urgent should be:", o:["Dropped","Planned into your week","Done in a rush","Ignored"], a:1, why:"Planning important tasks stops them becoming emergencies."},
+      {q:"Which is a goal rather than a wish?", o:["I want to be rich","I will learn the stock system and count stock without help by March","Things should be better","I hope for a raise"], a:1, why:"It is specific and has a date."}
+    ],
+    exam:[{q:"Why write goals down?", o:["It looks neat","Written goals are more likely to happen","It is a rule","Nobody checks"], a:1, why:"Writing makes the goal clear and easier to follow."}]},
+  { id:"m2", title:"Managing your time at work", mins:55,
+    reading:[
+      {h:"Plan your day", p:["Spend five minutes at the start of each shift deciding what must be done. Write a short list with the most important task at the top. Do the hardest or most important task when you are fresh. Tick off tasks as you finish them.","Plan for the unexpected by leaving gaps. A day packed with no space for surprises falls apart at the first problem."]},
+      {h:"Common time wasters", p:["The biggest time wasters at work are phones, chatting during busy periods, searching for things that have no fixed place, starting tasks and not finishing and saying yes to everything. Put your phone away, give every item a place and finish one task before starting another.","Arriving on time is part of managing time. Being late costs you respect and costs the shop money."]},
+      {h:"Working with others", p:["Tell colleagues what you will finish and by when. Ask for help early rather than late. Keep promises on deadlines, and if you cannot, say so before the deadline passes."]}
+    ],
+    slides:[
+      {t:"Plan your shift", pts:["Five minutes at the start","Short list, important first","Leave gaps for surprises"]},
+      {t:"Time wasters", pts:["Phone","Chatting in busy periods","Searching for things","Starting and not finishing"]},
+      {t:"Be on time", pts:["Late costs respect and money","Plan to arrive early"]},
+      {t:"Teamwork", pts:["Say what you will do and when","Ask for help early","Warn before a deadline is missed"]}
+    ],
+    practical:{ title:"A planned shift", intro:"Use a notebook or your phone notes.", tasks:["At the start of your next shift, write your list of tasks with the most important on top.","Tick tasks off as you finish them.","At the end, write what you finished, what was left and why.","Choose one time waster to reduce next week."], reflect:"What was the biggest difference when you planned your shift?" },
+    quiz:[
+      {q:"When should you do the most important task?", o:["Last","When you are fresh and ready","Never","When the manager shouts"], a:1, why:"You do your best work when fresh."},
+      {q:"Which is a common time waster?", o:["Writing a task list","Looking at your phone during work","Arriving on time","Finishing a task"], a:1, why:"Phones interrupt work."},
+      {q:"If you may miss a deadline, you should:", o:["Say nothing","Tell people before the deadline passes","Blame others","Leave work"], a:1, why:"Early warning lets others plan."}
+    ],
+    exam:[{q:"Why leave gaps in your plan?", o:["To rest all day","Surprises will happen and you need room for them","It is a rule","To avoid work"], a:1, why:"Gaps keep the day from falling apart."}]},
+  { id:"m3", title:"Growing yourself at work", mins:50,
+    reading:[
+      {h:"Learn every day", p:["The people who grow fastest are the ones who keep learning. Ask questions, watch people who are good at their jobs and read, even a little each day. Free courses and short videos can teach valuable skills on your phone.","Learning is not only for school. Each new skill makes you more useful and gives you more choices."]},
+      {h:"Using feedback", p:["Feedback is information that helps you improve. Ask your supervisor, “What is one thing I can do better?” Listen without defending yourself, say thank you and try the suggestion. Feedback that feels uncomfortable is often the most useful."]},
+      {h:"Attitude and teamwork", p:["A positive attitude is a choice. Come to work ready to help, speak politely and solve problems instead of complaining. People notice who is reliable and who helps others, and those people get chances to grow."]}
+    ],
+    slides:[
+      {t:"Keep learning", pts:["Ask questions","Watch the best at work","Free courses on your phone"]},
+      {t:"Use feedback", pts:["Ask: what can I do better?","Listen without defending","Say thank you and try it"]},
+      {t:"Attitude", pts:["Be reliable","Be polite","Solve problems, do not only complain"]}
+    ],
+    practical:{ title:"A feedback conversation", intro:"Be brave. It gets easier.", tasks:["Ask your supervisor or a trusted colleague, “What is one thing I can do better?”","Listen, say thank you and write the answer down.","Try it for one week.","Choose one free course from the Free courses list in Training to start."], reflect:"What feedback did you receive and what will you change?" },
+    quiz:[
+      {q:"When you get feedback you should:", o:["Argue","Listen, thank the person and try the suggestion","Ignore it","Complain to others"], a:1, why:"Feedback helps you improve."},
+      {q:"Which is a way to keep learning?", o:["Never ask questions","Ask questions and watch people who are good at the job","Wait for the manager to teach you everything","Skip training"], a:1, why:"Curiosity builds skill."},
+      {q:"A positive attitude is:", o:["Something you are born with","A choice you make each day","Not important","Only for managers"], a:1, why:"You can choose it."}
+    ],
+    exam:[{q:"Why is uncomfortable feedback often useful?", o:["It points to something you can improve","It is always wrong","It means you are fired","It is only opinion"], a:0, why:"It shows what to work on."}]}
+  ]
+},
+{
+  id:"sa102", code:"SA102", title:"Money Skills for Work and Life", level:"Beginner", hours:3, who:"all", color:"#E8A21E",
+  summary:"Understand your pay, make a simple budget, save a little and stay safe from debt traps and scams. A short self advancement course for every member of staff.",
+  outcomes:["Read a payslip and tell gross pay from net pay","Make a simple monthly budget","Start an emergency saving habit","Recognise costly debt and common money scams"],
+  modules:[
+  { id:"m1", title:"Understanding your pay", mins:50,
+    reading:[
+      {h:"Gross pay and net pay", p:["Gross pay is the full amount you earn before anything is taken off. Net pay is what you receive after deductions such as tax and social security contributions. Your payslip shows both. Always check that the hours, rate and deductions are correct.","If something looks wrong, ask politely and early. Keep your payslips in a safe place."]},
+      {h:"Other money from work", p:["Some staff also earn commission, bonuses, allowances or tips. Know which are guaranteed and which change from month to month. Do not plan your budget around money that is not certain."]},
+      {h:"Know your pay day", p:["Know the date you are paid and how: bank or cash. Plan expenses around it. Rent, transport and food come first."]}
+    ],
+    slides:[
+      {t:"Gross and net", pts:["Gross: before deductions","Net: what you receive","Check both on your payslip"]},
+      {t:"Other earnings", pts:["Commission and bonuses","Allowances","Tips","Not all are guaranteed"]},
+      {t:"Pay day planning", pts:["Know the date","Cover rent, transport and food first","Keep payslips safe"]}
+    ],
+    practical:{ title:"Read your payslip", intro:"Use your latest payslip, or the sample payslip from the Payroll page if you have none.", tasks:["Find your gross pay, deductions and net pay.","Check the hours or days worked and the rate.","Write down which parts of your income are not guaranteed.","Ask your manager about anything that is unclear."], reflect:"What did you learn from your payslip that you had not noticed before?" },
+    quiz:[
+      {q:"Net pay is:", o:["Pay before deductions","What you receive after deductions","A bonus","A loan"], a:1, why:"Net is what is left after deductions."},
+      {q:"You see a mistake on your payslip. What do you do?", o:["Ignore it","Ask politely and early","Shout at the manager","Quit"], a:1, why:"Early, polite questions fix errors."},
+      {q:"Which income is least certain?", o:["Basic monthly salary","Tips","Agreed allowance","Agreed hourly rate"], a:1, why:"Tips change from day to day."}
+    ],
+    exam:[{q:"Why keep your payslips?", o:["To prove what you earned and check mistakes","To decorate","They have no use","To lend to others"], a:0, why:"They are proof of pay and help you spot errors."}]},
+  { id:"m2", title:"Budgeting and saving", mins:55,
+    reading:[
+      {h:"A simple budget", p:["A budget is a plan for your money. Write your income at the top, then list what you must pay (needs), what you would like (wants) and what you save. A common guide is about half for needs, about a third for wants and the rest for saving. Your numbers may differ, so adjust.","Track your spending for a month. Most people are surprised by how many small purchases add up."]},
+      {h:"Saving a little each month", p:["Start with a small emergency fund. Aim first for one month of basic costs, then more. Save on pay day before you spend, even a small amount, such as N$100. Keep savings where you cannot spend them too easily."]},
+      {h:"Needs and wants", p:["A need is something you must have: food, housing, transport to work. A want is a nice extra. Before buying a want, wait a day. If you still want it, and your budget allows, buy it."]}
+    ],
+    slides:[
+      {t:"What is a budget?", pts:["A plan for your money","Income first, then needs, wants and saving"]},
+      {t:"Track your spending", pts:["Write down purchases for a month","Small spends add up"]},
+      {t:"Save on pay day", pts:["Save first, then spend","Start small","Build one month of costs"]},
+      {t:"Wait a day", pts:["Wants can wait a day","Check the budget first"]}
+    ],
+    practical:{ title:"My one page budget", intro:"Use pen and paper or a phone note.", tasks:["Write your monthly income.","List your needs and add them up.","List your wants and your saving amount.","Set one saving goal in N$ and a date."], reflect:"What is your saving goal and when will you reach it?" },
+    quiz:[
+      {q:"What goes first in a budget?", o:["Wants","Income","Debts only","Gifts"], a:1, why:"Start with what comes in."},
+      {q:"When should you save?", o:["After you have spent everything","On pay day before spending","Never","Only at year end"], a:1, why:"Pay yourself first."},
+      {q:"Which is a need?", o:["Latest phone","Transport to work","Takeaway every day","A new game"], a:1, why:"Getting to work is essential."}
+    ],
+    exam:[{q:"Why wait a day before buying a want?", o:["The shop might close","It stops impulse buying and lets you check your budget","It saves petrol","It is a rule"], a:1, why:"A pause helps you decide."}]},
+  { id:"m3", title:"Debt, credit and staying safe", mins:55,
+    reading:[
+      {h:"Borrowing carefully", p:["Borrowing is costly. Interest is the extra you pay for using someone else’s money. Before you borrow, ask: How much will I pay back in total? What is the monthly payment? What happens if I miss one? If you cannot answer, do not sign.","Compare offers. Borrow only what you need. Try to repay quickly. Avoid loans to pay for wants."]},
+      {h:"Choose registered lenders", p:["Only borrow from lenders that are registered. In Namibia, financial institutions such as banks and microlenders are supervised by NAMFISA, the Namibia Financial Institutions Supervisory Authority. If a lender is not registered, or pressures you, walk away. Never give your bank card and PIN to a lender as security."]},
+      {h:"Scams and mobile money safety", p:["Scammers pretend to be banks, mobile wallets, employers or prize givers and ask for your PIN, a code or a small fee to release money. Real banks and wallets never ask for your PIN or one time code. Do not share them with anyone, including people who say they are from the company.","If you receive a message that sounds too good to be true, it is. Talk to a trusted person first. If you are scammed, report it to your bank or wallet provider and the police quickly."]}
+    ],
+    slides:[
+      {t:"The cost of borrowing", pts:["Interest is the extra you pay","Ask the total you will pay back","Ask what happens if you miss a payment"]},
+      {t:"Registered lenders", pts:["Check the lender is registered with NAMFISA","Walk away from pressure","Never give your card and PIN"]},
+      {t:"Scams", pts:["Fake bank or prize messages","Asks for PIN, code or a fee","Too good to be true is a scam"]},
+      {t:"If scammed", pts:["Tell your bank or wallet provider at once","Report to the police","Do not be ashamed, tell someone"]}
+    ],
+    practical:{ title:"Scam check", intro:"Ten minutes with a colleague.", tasks:["Write down three messages you or someone you know received that look like scams.","For each, list the warning signs.","Write your own rule for your PIN and one time codes.","Share one safety tip with a family member this week."], reflect:"Write your personal rule for PINs and codes." },
+    quiz:[
+      {q:"What is interest?", o:["A hobby","The extra you pay for using someone else’s money","A tax refund","A gift"], a:1, why:"It is the cost of borrowing."},
+      {q:"A caller says they are from your bank and asks for your PIN. You:", o:["Give it","Refuse and contact the bank yourself","Give half of it","Give it if they sound polite"], a:1, why:"Banks never ask for your PIN."},
+      {q:"Before taking a loan you should ask:", o:["Nothing","How much I will pay back in total","What colour the paper is","Who else borrowed"], a:1, why:"Know the total cost."}
+    ],
+    exam:[{q:"A lender asks for your bank card and PIN as security. You should:", o:["Hand them over","Walk away","Give the card but not the PIN","Ask a friend to give it"], a:1, why:"Never hand over your card and PIN."}]}
+  ]
+}
+];
+var EXT_COURSES = [
+  { id:"ol_customers", title:"Understanding your customers", by:"The Open University (OpenLearn)", hours:"8 hours", level:"Intermediate", url:"https://www.open.edu/openlearn/money-business/understanding-your-customers", note:"Free. A statement of participation is available from OpenLearn." },
+  { id:"ol_money", title:"Managing my money", by:"The Open University (OpenLearn)", hours:"Self paced", level:"Beginner", url:"https://www.open.edu/openlearn/money-business/managing-my-money", note:"Free. Budgeting, saving and borrowing basics." },
+  { id:"ol_skills", title:"Skills for work", by:"The Open University (OpenLearn)", hours:"Self paced", level:"Beginner", url:"https://www.open.edu/openlearn/education-development/skills-work-0", note:"Free. Short courses on working skills." },
+  { id:"ol_ready", title:"Career ready courses", by:"The Open University (OpenLearn)", hours:"Self paced", level:"Beginner", url:"https://www.open.edu/openlearn/miscellaneous/career-ready-courses", note:"Free. Prepare for the next step in your career." },
+  { id:"ol_badged", title:"Free badged courses", by:"The Open University (OpenLearn)", hours:"Varies", level:"Varies", url:"https://www.open.edu/openlearn/badged-courses", note:"Free courses that earn a digital badge when you pass the quizzes." },
+  { id:"alison_cs", title:"Customer service skills", by:"Alison", hours:"Self paced", level:"Beginner", url:"https://alison.com/course/customer-service-skills", note:"Free to study. A certificate from Alison may cost money." }
+];
+/*COURSES:END*/
 /*INTRO:START (generated by tools/embed_intro.py, edit tools/intro.js instead)*/
 /* ============================== OPENING ANIMATION ==============================
    Plays once each time Pesa starts: the Pesa logo drops in, bounces three times over water (with its reflection and
