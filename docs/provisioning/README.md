@@ -13,4 +13,25 @@ For a shop that started before encryption existed: on the owner device tap Upgra
 
 The optional accounting ledger table for a shop that wants its books in SQL as well is `docs/accounting/002_accounting_ledger.sql`.
 
-Not covered here, because it is yours to do: your own domain and Cloudflare settings (see `docs/cloud-security-checklist.md`), licence keys (`tools/issuer.html`), prices and the lawyer's review (see `docs/LAUNCH_CHECKLIST.md`).
+Not covered here, because it is yours to do: your own domain and Cloudflare settings (see `docs/cloud-security-checklist.md`), licence keys (see Licence server below), prices and the lawyer's review (see `docs/LAUNCH_CHECKLIST.md`).
+
+# Licence server (once, for you, not per shop)
+
+This is what makes licence keys automatic. It lives in YOUR OWN Supabase project, separate from every shop's sync project.
+
+1. Create a Supabase project. In the SQL Editor run `03_licence_requests.sql`.
+2. Open `tools/issuer.html`, make the signing key pair. Keep the **private** key secret. It is the only thing that can make valid keys.
+3. Install the Supabase CLI and log in. From the repo folder run:
+   `supabase link --project-ref <your-project-ref>`
+4. Set the secrets (the private key is the JSON from the issuer tool, on one line):
+   `supabase secrets set LICENCE_PRIVATE_JWK='{"kty":"EC",...}' ADMIN_TOKEN='<a long random phrase only you know>' RESEND_API_KEY='re_...' MAIL_FROM='Pesa Namibia <licences@your-domain>'`
+5. Deploy: `supabase functions deploy licence --no-verify-jwt`
+   The address is `https://<your-project-ref>.supabase.co/functions/v1/licence`.
+6. In `index.html` set `LIC_PUBLIC_KEY` (public key JSON), `LIC_SERVER` (the address above) and `LIC_ENFORCE_FROM` (the day trials start counting). Fill `PAY_DETAILS`. Publish.
+7. Open `tools/approve.html`, enter the address and the admin token, tap Save. Pending payments appear there.
+
+Daily use: a shop taps I have paid, you see it in `tools/approve.html`, check the money arrived in your bank, enter the amount and bank reference, tap Payment received, approve. The client gets the proof of payment and licence certificate by email and the app activates by itself within about half an hour, or at once when the owner taps Check now. Renewals add a month to the current end date.
+
+Email: Resend needs a verified sending address or domain. Until it is set up, approving still works and the key reaches the app; the page tells you the email was not sent and you can use `tools/issuer.html` to make the PDFs.
+
+Tests: `node tests/handler_t.mjs` checks the server logic.

@@ -15525,6 +15525,7 @@ function openVatSummarySheet(){
 var LIC_PUBLIC_KEY = null;     // paste the public key from the issuer tool here, for example {"kty":"EC","crv":"P-256","x":"...","y":"..."}
 var LIC_TRIAL_DAYS = 14, LIC_GRACE_DAYS = 7;
 var LIC_ENFORCE_FROM = '';     // "YYYY-MM-DD": businesses created before this day start their trial on it
+var LIC_SERVER = '';           // the web address of the licence server (supabase/functions/licence). Blank: keys are sent by hand on WhatsApp
 // users = most active staff accounts (the owner counts), branches = most branches (the main shop counts). 0 means no limit.
 var LIC_PLANS = {
   starter:  { name:'Starter',  users:3,  branches:1 },
@@ -15650,11 +15651,63 @@ function licCheck(){
   licRefresh().then(function(){
     var s = licStatus();
     licRenderGate(s);
+    if(licServerOn() && isOwner() && (licPendingGet() || s.state === 'grace' || s.state === 'expired' || (s.state === 'active' && s.daysLeft <= 3))) licPoll().then(function(r){ if(r === 'applied') _licNotified = true; });
     if(!_licNotified && (s.state === 'trial' || s.state === 'grace' || (s.state === 'active' && s.daysLeft <= 7))){
       _licNotified = true;
       setTimeout(function(){ toast(licBannerText(s)); }, 2500);
     }
   });
+}
+/** Saves a checked key as this business's licence. Used by Activate key and by the automatic check. */
+function licApply(key, payload, silent){
+  State.settings = Object.assign({}, State.settings, { licenseKey:key });
+  refs.settings.set(State.settings);
+  _licInfo = { rawKey:key, payload:payload };
+  try{ localStorage.setItem('pesa_lic_seen', String(Date.now())); }catch(e){}
+  try{ logAudit('update', 'licence', null, 'Licence key ' + (silent ? 'received automatically' : 'activated') + ': ' + payload.plan + ' until ' + payload.exp); }catch(e){}
+  licRenderGate(licStatus());
+}
+/* The licence server: a shop taps "I have paid", the seller approves the payment, and the key arrives here by itself. */
+function licServerOn(){ return !!(LIC_SERVER && licOn()); }
+function licPendingGet(){ try{ var o = JSON.parse(localStorage.getItem('pesa_lic_req_' + licRef()) || 'null'); if(o && Date.now() - o.at < 45 * 86400000) return o; }catch(e){} return null; }
+function licPendingSet(o){ try{ if(o) localStorage.setItem('pesa_lic_req_' + licRef(), JSON.stringify(o)); else localStorage.removeItem('pesa_lic_req_' + licRef()); }catch(e){} }
+function licOwnerEmail(){
+  try{ var me = (State.users || []).find(function(x){ return x.id === (State.session || {}).userId; }) || {}; var e = String(me.email || '').trim(); if(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) return e; }catch(x){}
+  return '';
+}
+function licServerFetch(action, body){
+  var url = LIC_SERVER + (LIC_SERVER.indexOf('?') < 0 ? '?' : '&') + 'a=' + action + (body ? '' : '&ref=' + encodeURIComponent(licRef()));
+  var opt = body ? { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify(body) } : { method:'GET' };
+  return fetch(url, opt).then(function(r){ return r.json().then(function(j){ if(!r.ok) throw new Error(j && j.error || ('http ' + r.status)); return j; }); });
+}
+/** Tells the server this business has paid. Resolves when it is recorded. */
+function licSendRequest(plan, period){
+  var shop = (State.settings && State.settings.shopName) || (State.company && (State.company.tradingName || State.company.companyName)) || '';
+  return licServerFetch('request', { ref:licRef(), shop:shop, email:licOwnerEmail(), plan:plan, period:period }).then(function(){
+    licPendingSet({ plan:plan, period:period, at:Date.now() }); return true;
+  });
+}
+var _licPolling = false;
+/** Asks the server whether a key is ready. Applies it when it is valid, for this business and newer than the one in use. Resolves 'applied', 'pending', 'none' or 'error'. */
+function licPoll(){
+  if(!licServerOn() || !State.session || !State.company || _licPolling) return Promise.resolve('none');
+  if(!isOwner() || !State.ready.settings) return Promise.resolve('none');
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve('error');
+  _licPolling = true;
+  return licServerFetch('status').then(function(j){
+    if(j.status === 'approved' && j.key){
+      return licVerify(j.key).then(function(res){
+        if(res.error) return 'error';
+        var cur = _licInfo && _licInfo.payload;
+        if(cur && cur.exp >= res.payload.exp){ if(licPendingGet() && !(j.status === 'pending')) licPendingSet(null); return 'none'; }
+        licApply(licNorm(j.key), res.payload, true); licPendingSet(null);
+        toast(tr('Licence activated. Thank you!')); try{ render(); }catch(e){}
+        return 'applied';
+      });
+    }
+    if(j.status !== 'pending' && licPendingGet()) licPendingSet(null);
+    return j.status === 'pending' ? 'pending' : 'none';
+  }).catch(function(){ return 'error'; }).then(function(r){ _licPolling = false; return r; });
 }
 function licBannerText(s){
   if(s.state === 'trial') return tr('Free trial: {0} days left.').replace('{0}', Math.max(0, s.daysLeft));
@@ -15699,6 +15752,27 @@ function openPaySheet(){
   function copyRow(label, value){
     return '<div class="row"><div class="main"><div class="title">'+esc(tr(label))+'</div></div><div class="trail"><b style="font-family:monospace;">'+esc(value)+'</b> <button class="btn btn-ghost" type="button" data-paycopy="'+esc(value)+'" style="padding:4px 10px;">'+tr('Copy')+'</button></div></div>';
   }
+  var srv = { busy:false, msg:'', bad:false };
+  function payServerHtml(){
+    var pend = licPendingGet(), mail = licOwnerEmail();
+    var h = '<div class="section-title">'+tr('After you have paid')+'</div>';
+    if(pend){
+      h += '<div class="banner" id="payWaiting" style="display:block;">'+ICONS.info+'<span>'+tr('Waiting for confirmation of your {0} payment. Your licence switches on by itself as soon as we confirm it.').replace('{0}', esc(tr((LIC_PLANS[pend.plan]||{name:pend.plan}).name)))+'</span></div>' +
+        '<div class="actions"><button class="btn btn-ghost btn-block" id="payCheck" type="button">'+tr('Check now')+'</button></div>';
+    } else {
+      h += '<div class="actions"><button class="btn btn-primary btn-block" id="payPaid" type="button"'+(srv.busy ? ' disabled' : '')+'>'+tr('I have paid')+'</button></div>' +
+        '<div class="small" style="font-size:12px;color:var(--text-muted);">'+(mail ? tr('We will email your proof of payment and licence certificate to {0}.').replace('{0}', esc(mail)) : tr('Add your email address in your profile to receive your proof of payment and licence certificate.'))+'</div>';
+    }
+    if(srv.msg) h += '<div class="banner" id="payMsg" style="margin-top:8px;">'+(srv.bad ? ICONS.warn : ICONS.check)+'<span>'+esc(srv.msg)+'</span></div>';
+    return h;
+  }
+  function payAfterPoll(r){
+    if(r === 'applied'){ closeModal(); return; }
+    if(r === 'error'){ srv.msg = tr('Could not reach the server. Check your internet connection and try again.'); srv.bad = true; }
+    else if(r === 'pending'){ srv.msg = tr('Not confirmed yet. We will switch it on as soon as your payment is confirmed.'); srv.bad = false; }
+    else { srv.msg = ''; }
+    if(document.body.contains(ov)) draw();
+  }
   function draw(){
     var amt = payAmount(sel.plan, sel.period), ref = licRef();
     var plans = Object.keys(PAY_PLANS).map(function(k){
@@ -15731,17 +15805,30 @@ function openPaySheet(){
       det +
       '<div class="rowlist" style="margin-top:8px;">'+(ref ? copyRow('Payment reference', ref) : '')+'</div>' +
       '<div class="banner" style="margin-top:8px;">'+ICONS.info+'<span>'+tr('Use the payment reference exactly as shown, so we can match your payment to your business.')+'</span></div>' +
-      '<div class="actions" style="flex-direction:column;"><a class="btn btn-primary btn-block" id="payWa" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, payWhatsAppText(sel.plan, sel.period)))+'">'+tr('Send proof of payment on WhatsApp')+'</a>' +
+      (licServerOn() ? payServerHtml() : '') +
+      '<div class="actions" style="flex-direction:column;"><a class="btn '+(licServerOn() ? 'btn-ghost' : 'btn-primary')+' btn-block" id="payWa" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, payWhatsAppText(sel.plan, sel.period)))+'">'+tr('Send proof of payment on WhatsApp')+'</a>' +
       '<button class="btn btn-ghost btn-block" id="payKey" type="button">'+tr('I have a licence key')+'</button>' +
       '<button class="btn btn-ghost btn-block" id="payClose" type="button">'+tr('Close')+'</button></div>' +
-      '<div class="small" style="margin-top:10px;font-size:12px;color:var(--text-muted);">'+tr('Pesa does not take payments itself. After we confirm your payment we send you a licence key to paste into Pesa.')+'</div>';
+      '<div class="small" style="margin-top:10px;font-size:12px;color:var(--text-muted);">'+(licServerOn() ? tr('Pesa does not take payments itself. After we confirm your payment your licence switches on by itself and we email you your proof of payment and licence certificate.') : tr('Pesa does not take payments itself. After we confirm your payment we send you a licence key to paste into Pesa.'))+'</div>';
     ov.querySelectorAll('[data-payplan]').forEach(function(b){ b.addEventListener('click', function(){ sel.plan = b.getAttribute('data-payplan'); draw(); }); });
     ov.querySelectorAll('[data-payper]').forEach(function(b){ b.addEventListener('click', function(){ sel.period = b.getAttribute('data-payper'); draw(); }); });
     ov.querySelectorAll('[data-paycopy]').forEach(function(b){ b.addEventListener('click', function(){ copyText(b.getAttribute('data-paycopy'), tr('Copied')); }); });
     ov.querySelector('#payClose').addEventListener('click', closeModal);
+    var paid = ov.querySelector('#payPaid');
+    if(paid) paid.addEventListener('click', function(){
+      if(!isOwner()){ srv.msg = tr('Only the owner can do this.'); srv.bad = true; return draw(); }
+      srv.busy = true; srv.msg = tr('Sending…'); srv.bad = false; draw();
+      licSendRequest(sel.plan, sel.period).then(function(){ srv.busy = false; srv.msg = tr('Thank you. We will confirm your payment and your licence switches on by itself.'); srv.bad = false; draw(); },
+        function(){ srv.busy = false; srv.msg = tr('Could not reach the server. Check your internet connection and try again.'); srv.bad = true; draw(); });
+    });
+    var chk = ov.querySelector('#payCheck'); if(chk) chk.addEventListener('click', function(){ srv.msg = tr('Checking…'); srv.bad = false; draw(); licPoll().then(payAfterPoll); });
     ov.querySelector('#payKey').addEventListener('click', function(){ if(licOn()){ closeModal(); setTimeout(openLicenceSheet, 60); } else toast(tr('Licence keys will be switched on soon.')); });
   }
   draw();
+  if(licServerOn()){
+    licPoll().then(function(r){ if(r === 'applied') closeModal(); else if(r === 'pending' && document.body.contains(ov)) draw(); });
+    var tmr = setInterval(function(){ if(!document.body.contains(ov) || !ov.querySelector('#payWaiting')){ if(!document.body.contains(ov)) clearInterval(tmr); return; } licPoll().then(function(r){ if(r === 'applied'){ clearInterval(tmr); closeModal(); } }); }, 15000);
+  }
 }
 
 function openLicenceSheet(){
@@ -15780,12 +15867,7 @@ function openLicenceSheet(){
       if(res.error) return say(res.error, false);
       var cur = _licInfo && _licInfo.payload;
       if(cur && cur.exp > res.payload.exp) return say(tr('You already have a key that lasts longer than this one.'), false);
-      State.settings = Object.assign({}, State.settings, { licenseKey:key });
-      refs.settings.set(State.settings);
-      _licInfo = { rawKey:key, payload:res.payload };
-      try{ localStorage.setItem('pesa_lic_seen', String(Date.now())); }catch(e){}
-      try{ logAudit('update', 'licence', null, 'Licence key activated: ' + res.payload.plan + ' until ' + res.payload.exp); }catch(e){}
-      licRenderGate(licStatus());
+      licApply(key, res.payload, false); licPendingSet(null);
       closeModal();
       toast(tr('Licence activated. Thank you!'));
       render();
@@ -17433,7 +17515,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.44';
+var APP_VERSION = '2026.10.45';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17625,6 +17707,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.45', items:[
+    'Pay for Pesa now has an I have paid button. Once your payment is confirmed your licence switches on by itself, and your proof of payment and licence certificate arrive by email'
+  ]},
   { v:'2026.10.44', items:[
     'New Pay for Pesa screen with monthly and yearly plans, how to pay, your payment reference and a WhatsApp button for proof of payment'
   ]},

@@ -1,0 +1,52 @@
+// Node test of the licence server handler. Run: node tests/handler_t.mjs
+import { handle } from '../supabase/functions/_shared/handler.mjs';
+import { make } from '../supabase/functions/_shared/licdocs.mjs';
+import { ASSETS } from '../supabase/functions/_shared/assets.mjs';
+import { verifyLicence } from '../supabase/functions/_shared/sign.mjs';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { jsPDF } = require('jspdf');
+let fails = 0; const ok = (c, m) => { if(!c){ fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
+const kp = await crypto.subtle.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign','verify']);
+const priv = await crypto.subtle.exportKey('jwk', kp.privateKey), pub = await crypto.subtle.exportKey('jwk', kp.publicKey);
+const rows = []; let n = 0, now = Date.parse('2026-10-05T10:00:00Z'); const sent = [];
+const db = { byRef: async r => rows.filter(x => x.ref === r).map(x => ({...x})), insert: async r => { rows.push({...r}); }, update: async (id, p) => Object.assign(rows.find(x => x.id === id), p), pending: async () => rows.filter(x => x.status === 'pending') };
+const SELLER = { name:'Pesa Namibia', email:'x@y.z', whatsapp:'081 821 1692', place:'Windhoek, Namibia' };
+const deps = { db, mail: async m => { sent.push(m); }, now: () => now, privJwk: priv, adminToken:'secret-token', seller: SELLER, makeDocs: () => make(jsPDF, ASSETS, SELLER), genId: () => 'id' + (++n) };
+const A = { headers:{ 'x-admin-token':'secret-token' } };
+const call = (action, o) => handle(Object.assign({ method:'POST', action, query:{}, headers:{}, body:{} }, o), deps);
+const REF = 'PESA-AB12-CD34';
+let r = await call('request', { body:{ ref:REF, shop:'Test Shop', email:'a@b.com', plan:'starter', period:'monthly' } });
+ok(r.status === 200 && r.body.status === 'pending', 'request accepted');
+r = await call('request', { body:{ ref:REF, shop:'Test Shop 2', email:'a@b.com', plan:'business', period:'monthly' } });
+ok(rows.length === 1 && rows[0].plan === 'business', 'second request updates the same pending row');
+ok((await call('request', { body:{ ref:'bad', plan:'starter' } })).status === 400, 'bad ref rejected');
+ok((await call('request', { body:{ ref:REF, plan:'gold' } })).status === 400, 'bad plan rejected');
+ok((await call('request', { body:{ ref:REF, plan:'starter', email:'nope' } })).status === 400, 'bad email rejected');
+r = await call('status', { method:'GET', query:{ ref:REF } }); ok(r.body.status === 'pending' && !r.body.key, 'status pending, no key');
+r = await call('status', { method:'GET', query:{ ref:'PESA-ZZZZ-ZZZZ' } }); ok(r.body.status === 'none', 'status none');
+ok((await call('list', {})).status === 401, 'list needs token');
+ok((await call('approve', { body:{ ref:REF, amount:900 } })).status === 401, 'approve needs token');
+ok((await call('approve', { headers:{ 'x-admin-token':'secret-tokem' }, body:{ ref:REF, amount:900 } })).status === 401, 'wrong token rejected');
+r = await call('list', A); ok(r.body.requests.length === 1 && r.body.requests[0].amount_due === 900, 'list shows pending with amount due');
+ok((await call('approve', { ...A, body:{ ref:REF, amount:'abc' } })).status === 400, 'bad amount rejected');
+r = await call('approve', { ...A, body:{ ref:REF, amount:900, method:'EFT', bankRef:'FNB123', paidDate:'2026-10-05' } });
+ok(r.status === 200 && r.body.emailed && r.body.exp === '2026-11-05', 'approve: key, exp 2026-11-05, emailed ' + r.body.mailError);
+const p = await verifyLicence(pub, r.body.key); ok(p && p.ref === REF && p.plan === 'business' && p.exp === '2026-11-05', 'key verifies with public key');
+ok(sent.length === 1 && sent[0].attachments.length === 2, 'email has two attachments');
+for(const a of sent[0].attachments){ const buf = Buffer.from(a.base64, 'base64'); const pages = (buf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length; ok(buf.slice(0,4).toString() === '%PDF' && pages === 1, a.filename + ' is a one page PDF'); if(/Proof/.test(a.filename)) ok(!buf.toString('latin1').includes(r.body.key.slice(10, 40)), 'proof does not carry the key'); }
+r = await call('status', { method:'GET', query:{ ref:REF } }); ok(r.body.status === 'approved' && r.body.key && r.body.exp === '2026-11-05', 'status returns key after approval');
+ok((await call('list', A)).body.requests.length === 0, 'list empty after approval');
+// renewal two weeks later extends from the current end
+now = Date.parse('2026-10-20T08:00:00Z');
+await call('request', { body:{ ref:REF, shop:'Test Shop', email:'a@b.com', plan:'business', period:'monthly' } });
+r = await call('status', { method:'GET', query:{ ref:REF } }); ok(r.body.status === 'approved', 'old key still served while renewal pending');
+r = await call('approve', { ...A, body:{ ref:REF, amount:900 } }); ok(r.body.exp === '2026-12-05', 'renewal extends from 2026-11-05 to ' + r.body.exp);
+r = await call('status', { method:'GET', query:{ ref:REF } }); ok(r.body.exp === '2026-12-05', 'status serves the newest key');
+// ad hoc approve with no request, mail failure does not lose the key
+deps.mail = async () => { throw new Error('smtp down'); };
+r = await call('approve', { ...A, body:{ ref:'PESA-ZZ99-YY88', amount:500, plan:'starter', shop:'Walk In', email:'w@x.com' } });
+ok(r.status === 200 && r.body.key && !r.body.emailed && /smtp/.test(r.body.mailError), 'ad hoc approve works, mail failure reported');
+ok((await call('approve', { ...A, body:{ ref:'PESA-QQ11-QQ22', amount:500 } })).status === 404, 'approve unknown ref without plan is 404');
+ok((await call('nope', {})).status === 404, 'unknown action');
+console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

@@ -45,3 +45,16 @@ What is built and tested is listed in the app's About page and changelog. This p
 * Splitting `index.html` into modules. It works as one file, but it is large. `docs/ARCHITECTURE.md` maps it.
 
 **Client documents.** After you create a licence key in `tools/issuer.html`, the same page prepares two separate PDFs for the client: a proof of payment and a licence certificate that carries the key. Fill in the client name, email, amount and payment date, download both, and attach them to the email. Run `python3 tools/embed_issuer_assets.py` if the logo or stamp artwork changes.
+
+## Automatic licences (licence server)
+
+Keys are made by the licence server, not by hand. A shop taps **I have paid** in Pay for Pesa, you check your bank, open `tools/approve.html`, tap **Payment received, approve**, and the server makes the key, emails the client the proof of payment and licence certificate, and the shop's app switches the licence on by itself. `tools/issuer.html` stays as the manual fallback.
+
+To switch it on, do these once (details in `docs/provisioning/README.md`, section Licence server):
+- [ ] Create your own Supabase project for the licence server and run `03_licence_requests.sql`
+- [ ] Make the signing key pair in `tools/issuer.html`; keep the private key secret
+- [ ] Set the function secrets and deploy the `licence` function
+- [ ] Create a Resend account, verify your sending address, set `RESEND_API_KEY` and `MAIL_FROM`
+- [ ] Paste the public key into `LIC_PUBLIC_KEY` and the function address into `LIC_SERVER` in `index.html`; set `LIC_ENFORCE_FROM`
+- [ ] Fill `PAY_DETAILS` with your business bank account
+- [ ] Test with one real payment of your own before telling clients

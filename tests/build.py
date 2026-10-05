@@ -13,7 +13,7 @@ body = s[:end]
 names = set(re.findall(r'^function (\w+)\(', body, re.M)) | set(re.findall(r'^(?:var|const|let) (\w+)\b', body, re.M)) | set(re.findall(r'^async function (\w+)\(', body, re.M))
 names.discard('window')
 items = ','.join("%s:(typeof %s!=='undefined'?%s:undefined)" % (n, n, n) for n in sorted(names))
-extras = ("setLic:function(o){ if(o.pub!==undefined) LIC_PUBLIC_KEY=o.pub; if(o.enforce!==undefined) LIC_ENFORCE_FROM=o.enforce; _licInfo=null; _licNotified=false; },"
+extras = ("setLic:function(o){ if(o.pub!==undefined) LIC_PUBLIC_KEY=o.pub; if(o.enforce!==undefined) LIC_ENFORCE_FROM=o.enforce; if(o.server!==undefined) LIC_SERVER=o.server; _licInfo=null; _licNotified=false; },"
           "trainState:function(){return _trainState;},"
           "ABOUT:{P:ABOUT_PARAGRAPHS,F:ABOUT_FEATURES,I:ABOUT_INTERNET,C:ABOUT_CONNECTION,S:ABOUT_SMART,CT:ABOUT_CONNECTION_TITLE,ST:ABOUT_SMART_TITLE,FT:ABOUT_FEATURES_TITLE},"
           "PRIV:{I:PRIVACY_INTRO,S:PRIVACY_SECTIONS}")
