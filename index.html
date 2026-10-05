@@ -10235,8 +10235,10 @@ function pdBandRaw(doc, st, H, compact){
     var lg = S.logoImgMeta || {}, LH = 15, LW = 15, MAXW = 52;
     if(lg.w && lg.h){ LW = LH*lg.w/lg.h; if(LW > MAXW){ LW = MAXW; LH = MAXW*lg.h/lg.w; } }
     var px = pageW - 14 - LW - 3, py = 8.5 - 1.5 + (15 - LH)/2;
-    doc.setFillColor(255,255,255); doc.roundedRect(px, py, LW + 3, LH + 3, 2.2, 2.2, 'F');
-    try{ doc.addImage(S.logoDataUrl, 'JPEG', px + 1.5, py + 1.5, LW, LH); }catch(e){}
+    // a cleaned (transparent) logo sits straight on the header like the Pesa mark; only a dark one gets a soft round plate so it stays readable
+    var plate = !(lg.clean && lg.tone >= 0.45), rr = (lg.clean && !plate) ? 0 : (lg.clean ? (Math.min(LW, LH) + 3)/2 : 2.2);
+    if(plate){ doc.setFillColor(255,255,255); doc.roundedRect(px, py, LW + 3, LH + 3, rr, rr, 'F'); }
+    try{ doc.addImage(S.logoDataUrl, logoImgType(S.logoDataUrl), px + 1.5, py + 1.5, LW, LH); }catch(e){}
   } else if(name){
     doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
     var nl = doc.splitTextToSize(name, 92).slice(0, 2);
@@ -12059,7 +12061,7 @@ function buildReceiptPdf(draft){
     // ---- header: colour logo at the top left, shop details beside it
     var LOGO = 10, boxW = 10, boxH = 10, logoData = null, logoType = 'PNG';
     if(State.settings.logoDataUrl){
-      logoData = State.settings.logoDataUrl; logoType = 'JPEG';
+      logoData = State.settings.logoDataUrl; logoType = logoImgType(logoData);
       var lg = State.settings.logoImgMeta || {};
       if(lg.w && lg.h){ boxH = Math.max(6, Math.min(LOGO, 22*lg.h/lg.w)); boxW = boxH*lg.w/lg.h; }   // same height as the Pesa mark, wide logos kept readable
     } else {
@@ -14123,11 +14125,12 @@ function openSettingsSheet(){
     '<div class="field">' +
       '<label>'+tr('Logo')+'</label>' +
       '<div style="display:flex;align-items:center;gap:10px;">' +
-        (s.logoDataUrl ? '<img src="'+s.logoDataUrl+'" style="width:44px;height:44px;object-fit:contain;border:1px solid var(--border);border-radius:8px;background:#fff;flex-shrink:0;">' : '<div style="width:44px;height:44px;border:1px dashed var(--border);border-radius:8px;flex-shrink:0;"></div>') +
+        (s.logoDataUrl ? '<img src="'+s.logoDataUrl+'" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:repeating-conic-gradient(var(--surface-3) 0% 25%, var(--surface) 0% 50%) 0 0/10px 10px;flex-shrink:0;">' : '<div style="width:44px;height:44px;border:1px dashed var(--border);border-radius:8px;flex-shrink:0;"></div>') +
         '<label class="btn btn-ghost" for="stLogoInput" style="cursor:pointer;flex:1;margin:0;font-size:14.5px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;justify-content:center;">'+tr('Choose image')+'</label>' +
         (s.logoDataUrl ? '<button class="bulk-del" id="stLogoRemove" type="button">×</button>' : '') +
       '</div>' +
       '<input type="file" id="stLogoInput" accept="image/*" style="display:none;">' +
+      '<label class="pf-tg" style="margin-top:10px;"><input type="checkbox" id="stLogoAuto"'+(s.logoAutoClean === false ? '' : ' checked')+'><span><b>'+tr('Remove the logo frame and background')+'</b><i>'+tr('Takes off a square frame or plain background so your logo blends into invoices and reports, like the Pesa mark.')+'</i></span></label>' +
     '</div>' +
     '<div class="field"><label>'+tr('Slogan / tagline (optional)')+'</label><input id="stSlogan" placeholder="e.g. Quality you can trust" value="'+esc(s.businessSlogan||'')+'"></div>' +
     '<div class="section-title">'+tr('Document and app font')+'</div>' +
@@ -14269,6 +14272,10 @@ function openSettingsSheet(){
   ov.querySelector('#stLogoInput').addEventListener('change', function(e){
     if(e.target.files && e.target.files[0]) handleBrandImageUpload(e.target.files[0], 'logo');
   });
+  ov.querySelector('#stLogoAuto').addEventListener('change', function(e){
+    var on = e.target.checked;
+    logoApplyAuto(on).then(function(){ closeModal(); openSettingsSheet(); });
+  });
   var logoRemove = ov.querySelector('#stLogoRemove');
   if(logoRemove) logoRemove.addEventListener('click', function(){ removeBrandImage('logo'); });
   wireAccountSection(ov);
@@ -14309,24 +14316,158 @@ function importDataFromFile(file){
   reader.readAsText(file);
 }
 
+/* ---- logo clean up: takes off a square frame or plain background so the logo sits on documents like the Pesa mark ---- */
+function logoLoadCanvas(srcUrlOrFile, maxDim){
+  return new Promise(function(resolve, reject){
+    function fromUrl(url){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.naturalWidth, h = img.naturalHeight, sc = Math.min(1, maxDim/Math.max(w,h));
+        var cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(w*sc)); cv.height = Math.max(1, Math.round(h*sc));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); resolve(cv);
+      };
+      img.onerror = function(){ reject(new Error('bad image')); };
+      img.src = url;
+    }
+    if(typeof srcUrlOrFile === 'string') return fromUrl(srcUrlOrFile);
+    var r = new FileReader(); r.onload = function(){ fromUrl(String(r.result||'')); }; r.onerror = function(){ reject(new Error('read failed')); }; r.readAsDataURL(srcUrlOrFile);
+  });
+}
+function logoCleanCanvas(cv){
+  var W = cv.width, H = cv.height, N = W*H, ctx = cv.getContext('2d'), id = ctx.getImageData(0, 0, W, H), d = id.data;
+  var gone = new Uint8Array(N), hadAlpha = 0, i;
+  for(i=0; i<N; i++){ if(d[i*4+3] < 200){ gone[i] = 1; hadAlpha++; } }
+  var TOL = 40, bgs = [], goneCount = hadAlpha, changed = false;
+  function lum(r,g,b){ return (0.2126*r + 0.7152*g + 0.0722*b)/255; }
+  function dist(k, c){ var dr = d[k*4]-c[0], dg = d[k*4+1]-c[1], db = d[k*4+2]-c[2]; return Math.sqrt(dr*dr + dg*dg + db*db); }
+  for(var pass=0; pass<5; pass++){
+    // the colour found along the edge of what is already clear (or the picture border on the first pass)
+    var votes = {}, cnt = 0;
+    function consider(k){
+      if(gone[k]) return;
+      var key = (d[k*4]>>4)+','+(d[k*4+1]>>4)+','+(d[k*4+2]>>4), v = votes[key] || (votes[key] = { n:0, r:0, g:0, b:0 });
+      v.n++; v.r += d[k*4]; v.g += d[k*4+1]; v.b += d[k*4+2]; cnt++;
+    }
+    var seeds = [];
+    if(goneCount === 0){
+      for(var x=0; x<W; x++){ consider(x); consider((H-1)*W + x); seeds.push(x, (H-1)*W + x); }
+      for(var y=1; y<H-1; y++){ consider(y*W); consider(y*W + W-1); seeds.push(y*W, y*W + W-1); }
+    } else {
+      for(i=0; i<N; i++){
+        if(gone[i]) continue;
+        var x2 = i % W, y2 = (i - x2)/W;
+        if((x2>0 && gone[i-1]) || (x2<W-1 && gone[i+1]) || (y2>0 && gone[i-W]) || (y2<H-1 && gone[i+W])){ consider(i); seeds.push(i); }
+      }
+    }
+    if(!cnt) break;
+    var best = null; for(var key in votes){ if(!best || votes[key].n > best.n) best = votes[key]; }
+    var c = [best.r/best.n, best.g/best.n, best.b/best.n];
+    var near = 0; for(var si=0; si<seeds.length; si++){ var sk0 = seeds[si]; if(!gone[sk0] && dist(sk0, c) <= TOL*1.6) near++; }
+    if(near/Math.max(1, seeds.length) < 0.55) break;
+    var q = new Int32Array(N), qh = 0, qt = 0, mark = new Uint8Array(N);
+    for(i=0; i<seeds.length; i++){ var sk = seeds[i]; if(!mark[sk] && !gone[sk] && dist(sk, c) <= TOL){ mark[sk] = 1; q[qt++] = sk; } }
+    while(qh < qt){
+      var k = q[qh++], kx = k % W, ky = (k - kx)/W, nb = [];
+      if(kx>0) nb.push(k-1); if(kx<W-1) nb.push(k+1); if(ky>0) nb.push(k-W); if(ky<H-1) nb.push(k+W);
+      for(var j=0; j<nb.length; j++){ var m = nb[j]; if(!mark[m] && !gone[m] && dist(m, c) <= TOL){ mark[m] = 1; q[qt++] = m; } }
+    }
+    var remainingBefore = N - goneCount;
+    if(!qt) break;
+    if(pass === 0){ if(lum(c[0],c[1],c[2]) < 0.8 && qt/N > 0.45) break; }   // a solid colour badge is part of the design, keep it
+    else {
+      var same = false; for(var bj=0; bj<bgs.length; bj++){ var q0 = bgs[bj]; if(Math.sqrt(Math.pow(q0[0]-c[0],2)+Math.pow(q0[1]-c[1],2)+Math.pow(q0[2]-c[2],2)) < TOL) same = true; }
+      if(!same && qt > 0.35*remainingBefore) break;
+      if(same && qt > 0.9*remainingBefore) break;
+    }                                  // later passes only take thin frames, never the logo itself
+    for(i=0; i<qt; i++) gone[q[i]] = 1;
+    goneCount += qt; bgs.push(c); changed = true;
+  }
+  if(!changed && !hadAlpha) return { changed:false };
+  if(N - goneCount < 0.03*N) return { changed:false };
+  // soften the rim so no pale halo is left around the shape
+  var out = new Uint8ClampedArray(d);
+  for(i=0; i<N; i++){
+    if(gone[i]){ out[i*4+3] = 0; continue; }
+    var xx = i % W, yy = (i - xx)/W;
+    var edge = (xx>0 && gone[i-1]) || (xx<W-1 && gone[i+1]) || (yy>0 && gone[i-W]) || (yy<H-1 && gone[i+W]);
+    if(!edge || !bgs.length) continue;
+    var md = 1e9, bc = bgs[0]; for(var bi=0; bi<bgs.length; bi++){ var dd = dist(i, bgs[bi]); if(dd < md){ md = dd; bc = bgs[bi]; } }
+    if(md < TOL*2.4){
+      var a = Math.max(0, Math.min(1, (md - TOL*0.6)/(TOL*1.8)));
+      if(a < 0.04){ out[i*4+3] = 0; continue; }
+      for(var ch=0; ch<3; ch++){ out[i*4+ch] = Math.max(0, Math.min(255, (d[i*4+ch] - (1-a)*bc[ch])/a)); }
+      out[i*4+3] = Math.round(a*255);
+    }
+  }
+  // trim to the logo, with a little breathing room
+  var x0 = W, y0 = H, x1 = -1, y1 = -1, sum = 0, n = 0;
+  for(i=0; i<N; i++){
+    if(out[i*4+3] > 10){
+      var px = i % W, py = (i - px)/W; if(px<x0) x0=px; if(px>x1) x1=px; if(py<y0) y0=py; if(py>y1) y1=py;
+      if(out[i*4+3] > 128){ sum += lum(out[i*4], out[i*4+1], out[i*4+2]); n++; }
+    }
+  }
+  if(x1 < 0 || !n) return { changed:false };
+  var tone = sum/n;
+  if(tone > 0.96 && bgs.length && lum(bgs[0][0], bgs[0][1], bgs[0][2]) < 0.9) return { changed:false };   // would leave white shapes that vanish on paper
+  var pad = Math.round(Math.max(x1-x0, y1-y0)*0.04), cw = x1-x0+1 + pad*2, ch2 = y1-y0+1 + pad*2;
+  var full = document.createElement('canvas'); full.width = W; full.height = H;
+  full.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
+  var res = document.createElement('canvas'); res.width = cw; res.height = ch2;
+  res.getContext('2d').drawImage(full, x0, y0, x1-x0+1, y1-y0+1, pad, pad, x1-x0+1, y1-y0+1);
+  return { changed:true, canvas:res, tone:tone };
+}
+function logoToneOf(cv){
+  try{
+    var id = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, sum = 0, n = 0;
+    for(var i=0; i<id.length; i+=4){ if(id[i+3] > 128){ sum += (0.2126*id[i] + 0.7152*id[i+1] + 0.0722*id[i+2])/255; n++; } }
+    return n ? sum/n : 0.5;
+  }catch(e){ return 0.5; }
+}
+// builds the stored logo from a source picture: cleaned (transparent PNG) when asked and possible, otherwise as given
+function logoBuild(cv, clean){
+  var r = clean ? logoCleanCanvas(cv) : { changed:false };
+  var use = r.changed ? r.canvas : cv, tone = r.changed ? r.tone : logoToneOf(cv);
+  var side = Math.max(use.width, use.height);
+  if(side > 480){ var sc = 480/side, c2 = document.createElement('canvas'); c2.width = Math.round(use.width*sc); c2.height = Math.round(use.height*sc); c2.getContext('2d').drawImage(use, 0, 0, c2.width, c2.height); use = c2; }
+  return { dataUrl: use.toDataURL('image/png'), w:use.width, h:use.height, tone:tone, cleaned:!!r.changed };
+}
+function logoSaveBuilt(res, srcUrl){
+  var patch = { logoDataUrl:res.dataUrl, logoImgMeta:{ w:res.w, h:res.h, tone:res.tone, clean:res.cleaned } };
+  if(srcUrl) patch.logoSrcDataUrl = srcUrl;
+  State.settings = Object.assign({}, State.settings, patch);
+  refs.settings.set(State.settings);
+}
 function handleBrandImageUpload(file, kind){
   toast('Processing image…');
-  resizeImageFile(file, 300, 0.85).then(function(result){
-    var patch = {};
-    patch.logoDataUrl = result.dataUrl; patch.logoImgMeta = {w:result.w,h:result.h};
-    State.settings = Object.assign({}, State.settings, patch);
-    refs.settings.set(State.settings);
+  logoLoadCanvas(file, 700).then(function(cv){
+    var srcUrl = cv.toDataURL(file.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', 0.9);
+    var auto = State.settings.logoAutoClean !== false, res = logoBuild(cv, auto);
+    logoSaveBuilt(res, srcUrl);
     closeModal();
     openSettingsSheet();
-    toast('Logo updated');
+    toast(res.cleaned ? tr('Logo updated. The frame and background were removed.') : tr('Logo updated'));
   }).catch(function(){
     toast('Couldn’t process that image, try a different file');
   });
 }
+// switch the automatic clean up on or off for the saved logo
+function logoApplyAuto(on){
+  var s = State.settings;
+  State.settings = Object.assign({}, s, { logoAutoClean:on });
+  var src = s.logoSrcDataUrl || s.logoDataUrl;
+  if(!src){ refs.settings.set(State.settings); return Promise.resolve(); }
+  return logoLoadCanvas(src, 700).then(function(cv){
+    var res = logoBuild(cv, on);
+    logoSaveBuilt(res, s.logoSrcDataUrl || s.logoDataUrl);
+    toast(on ? (res.cleaned ? tr('Frame and background removed') : tr('No frame or plain background found on this logo')) : tr('Original logo restored'));
+  }).catch(function(){ refs.settings.set(State.settings); });
+}
+function logoImgType(url){ return /^data:image\/png/i.test(url || '') ? 'PNG' : 'JPEG'; }
 
 function removeBrandImage(kind){
   var patch = {};
-  patch.logoDataUrl = null; patch.logoImgMeta = null;
+  patch.logoDataUrl = null; patch.logoImgMeta = null; patch.logoSrcDataUrl = null;
   State.settings = Object.assign({}, State.settings, patch);
   refs.settings.set(State.settings);
   closeModal();
@@ -18677,7 +18818,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.76';
+var APP_VERSION = '2026.10.77';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -18904,6 +19045,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.77', items:[
+    'Company logos now have their square frame and plain background removed automatically, so they blend into invoices, receipts and reports like the Pesa mark (can be switched off in Settings)'
+  ]},
   { v:'2026.10.76', items:[
     'A new loading screen with the Pesa logo bouncing over water, with its reflection and ripples'
   ]},
