@@ -1042,6 +1042,11 @@
   @media (prefers-reduced-motion: reduce){
     .regpage .reg-logo, .regpage .reg-map, .regpage .reg-spark, .regpage .reg-go::before{ animation:none; }
   }
+  .bizrow{ display:flex; align-items:stretch; gap:8px; }
+  .bizrow > .stafftile, .bizrow > .reg-biz{ flex:1; min-width:0; }
+  .bizdel{ flex:none; width:44px; border:1.5px solid var(--border); background:var(--surface); color:var(--text-muted); border-radius:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-bottom:8px; }
+  .bizdel:hover, .bizdel:focus-visible{ color:var(--danger); background:var(--danger-bg); border-color:var(--danger); }
+  .bizdel svg{ width:19px; height:19px; }
   .stafftile{
     display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--surface-2);
     border:2px solid transparent; border-radius:14px; padding:11px 13px; cursor:pointer; margin-bottom:8px;
@@ -2001,6 +2006,18 @@ var Persist = (function(){
     data: function(){ return MEM; },
     replaceAll: function(all){ MEM = all || {}; Object.keys(MEM).forEach(function(cp){ Object.keys(MEM[cp] || {}).forEach(function(id){ mark(cp+SEP+id); }); }); schedule(); },
     touch: function(cp, id){ mark(cp+SEP+id); schedule(); },
+    // erase every record of one business space (rid 'default' = the first business, otherwise its ws_<id>__ collections)
+    dropWs: function(rid){
+      var pre = rid === 'default' ? '' : 'ws_' + rid + '__';
+      Object.keys(MEM).forEach(function(cp){
+        var mine = rid === 'default' ? cp.indexOf('ws_') !== 0 : cp.indexOf(pre) === 0;
+        if(!mine) return;
+        Object.keys(MEM[cp] || {}).forEach(function(id){ delete MEM[cp][id]; mark(cp+SEP+id); });
+        delete MEM[cp];
+      });
+      if(rid !== 'default') Object.keys(KVMEM).forEach(function(k){ if(k.indexOf('ws_'+rid) >= 0){ delete KVMEM[k]; kvDirty[k] = (kvDirty[k]||0) + 1; } });
+      schedule();
+    },
     flush: flushNow,
     // resolves once everything changed so far is safely written to the device database
     saved: async function(){
@@ -6082,20 +6099,59 @@ function switchBusiness(id){
   WS.setActive(id);
   location.reload();
 }
+/* Delete a business that is stored on this device. Protected by that business's Owner password. */
+function openDeleteBusinessSheet(rid){
+  var w = WS.list().filter(function(x){ return x.id === rid; })[0];
+  if(!w || rid === WS.id) return;
+  var owners = WS.accounts().filter(function(a){ return a.ws === rid && a.role === 'owner' && a.passHash; });
+  var html = '<div class="sheet-head"><h2>'+tr('Delete this business')+'</h2></div>' +
+    '<div class="banner">'+ICONS.warn+'<span>'+esc(w.name)+' — '+tr('This permanently erases this business from this device: its products, sales, customers, staff and records. It cannot be undone. Export a backup first if you may need it. Data already synced to the cloud is not removed by this.')+'</span></div>';
+  if(!owners.length){
+    html += '<div class="banner">'+ICONS.warn+'<span>'+tr('This device does not hold the Owner password for this business, so it cannot be deleted from here. Open the business and use Settings, or ask the Owner.')+'</span></div>' +
+      '<div class="actions"><button class="btn btn-ghost btn-block" id="dbCancel" type="button">'+tr('Close')+'</button></div>';
+    var ov0 = openSheet(html); ov0.querySelector('#dbCancel').addEventListener('click', closeModal); return;
+  }
+  html += '<div class="field"><label>'+tr('Owner password of this business')+'</label><input id="dbPass" type="password" autocomplete="off" placeholder="'+esc(tr('Enter the Owner password'))+'"></div>' +
+    '<div id="dbErr"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="dbGo" type="button">'+tr('Delete business permanently')+'</button>' +
+    '<button class="btn btn-ghost btn-block" id="dbCancel" type="button" style="margin-top:8px;">'+tr('Cancel')+'</button></div>';
+  var ov = openSheet(html), pass = ov.querySelector('#dbPass'), err = ov.querySelector('#dbErr'), go = ov.querySelector('#dbGo');
+  pass.focus();
+  ov.querySelector('#dbCancel').addEventListener('click', closeModal);
+  function attempt(){
+    var val = pass.value; if(!val) return;
+    go.disabled = true;
+    Promise.all(owners.map(function(o){ return pwCheck(val, o.passHash); })).then(function(rs){
+      if(!rs.some(Boolean)){
+        go.disabled = false; pass.value = ''; pass.focus();
+        err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Incorrect password.')+'</span></div>';
+        return;
+      }
+      try{ Persist.dropWs(rid); }catch(e){}
+      WS.remove(rid);
+      Persist.saved().then(function(){ closeModal(); try{ toast(tr('Business deleted from this device.')); }catch(e){} setTimeout(function(){ location.reload(); }, 500); });
+    });
+  }
+  go.addEventListener('click', attempt);
+  pass.addEventListener('keydown', function(e){ if(e.key === 'Enter') attempt(); });
+}
 function otherBusinessesHtml(title){
   var others = WS.others();
   if(!others.length) return '';
   return '<div class="section-title" style="margin-top:14px;">'+esc(title)+'</div>' +
     others.map(function(w){
-      return '<button type="button" class="stafftile" data-ws="'+esc(w.id)+'">' +
+      return '<div class="bizrow"><button type="button" class="stafftile" data-ws="'+esc(w.id)+'">' +
         '<div class="avatar">'+esc(initials(w.name))+'</div>' +
         '<div class="main"><div class="n">'+esc(w.name)+'</div><div class="r">'+tr('Open this business')+'</div></div>' +
-      '</button>';
+      '</button><button type="button" class="bizdel" data-wsdel="'+esc(w.id)+'" aria-label="'+esc(tr('Delete this business'))+'" title="'+esc(tr('Delete this business'))+'">'+ICONS.trash+'</button></div>';
     }).join('');
 }
 function wireBusinessSwitcher(root){
   root.querySelectorAll('[data-ws]').forEach(function(b){
     b.addEventListener('click', function(){ switchBusiness(b.getAttribute('data-ws')); });
+  });
+  root.querySelectorAll('[data-wsdel]').forEach(function(b){
+    b.addEventListener('click', function(e){ e.stopPropagation(); openDeleteBusinessSheet(b.getAttribute('data-wsdel')); });
   });
   root.querySelectorAll('[data-forgot]').forEach(function(f){ f.addEventListener('click', function(){ showAuthScreen('forgot'); }); });
   var nb = root.querySelector('[data-newbiz]');
@@ -6183,8 +6239,9 @@ function regOtherBusinessesHtml(){
   return '<div class="reg-already"><div class="reg-already-l"><span class="reg-already-ic">'+regIc('device')+'</span>' +
     '<div class="reg-already-t"><b>'+esc(head)+'</b>'+(tail ? '<span>'+esc(tail)+'</span>' : '')+'</div></div>' +
     '<div class="reg-biz-list">' + others.map(function(w){
-      return '<button type="button" class="reg-biz" data-ws="'+esc(w.id)+'"><span class="reg-av">'+esc(initials(w.name))+'</span>' +
-        '<span class="reg-bt"><b>'+esc(w.name)+'</b><i>'+tr('Open this business')+'</i></span>'+regIc('chev')+'</button>';
+      return '<div class="bizrow"><button type="button" class="reg-biz" data-ws="'+esc(w.id)+'"><span class="reg-av">'+esc(initials(w.name))+'</span>' +
+        '<span class="reg-bt"><b>'+esc(w.name)+'</b><i>'+tr('Open this business')+'</i></span>'+regIc('chev')+'</button>' +
+        '<button type="button" class="bizdel" data-wsdel="'+esc(w.id)+'" aria-label="'+esc(tr('Delete this business'))+'" title="'+esc(tr('Delete this business'))+'">'+ICONS.trash+'</button></div>';
     }).join('') + '</div></div>';
 }
 function regHeroHtml(){
@@ -18388,7 +18445,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.66';
+var APP_VERSION = '2026.10.67';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18580,6 +18637,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.67', items:[
+    'A business saved on this device can now be deleted from the register and sign-in pages, protected by that business’s Owner password'
+  ]},
   { v:'2026.10.66', items:[
     'The registration page now fills the whole screen on computers and tablets, with business details and owner account side by side (phones are unchanged)'
   ]},
