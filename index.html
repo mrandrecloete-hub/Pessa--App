@@ -17591,7 +17591,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.51';
+var APP_VERSION = '2026.10.52';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17783,6 +17783,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.52', items:[
+    'If Pesa shows a snag message, Terms, privacy and support now has a button to send the last error to support. It sends only the error text, never your records'
+  ]},
   { v:'2026.10.51', items:[
     'Cleaner documents: the yellow lines beside and under headings are gone from every PDF'
   ]},
@@ -18366,6 +18369,8 @@ function openLegalDoc(key){
 function openLegalSheet(){
   var shop = (State.settings && State.settings.shopName) || '';
   var note = 'Hello, I need help with Pesa'+(shop ? ' ('+shop+')' : '')+'. Version '+APP_VERSION+(licOn() && licRef() ? '. Licence reference '+licRef() : '')+'.';
+  var lastErr = ''; try{ lastErr = localStorage.getItem('pesa_lasterr') || ''; }catch(e){}
+  var errNote = 'Pesa error report. Version '+APP_VERSION+'. Last error: '+lastErr.slice(0,260)+'. Browser: '+String(navigator.userAgent||'').slice(0,120)+'.';
   function row(k, t, sub){ return '<button class="drawer-row" type="button" data-legal="'+k+'"><span>'+esc(tr(t))+'</span></button>'; }
   var html = '<div class="sheet-head"><h2>'+tr('Terms, privacy and support')+'</h2></div>' +
     '<div style="display:flex;flex-direction:column;gap:6px;">' +
@@ -18373,6 +18378,7 @@ function openLegalSheet(){
     '</div>' +
     '<div class="actions" style="margin-top:14px;"><a class="btn btn-primary" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, note))+'">'+tr('Message support on WhatsApp')+'</a>' +
     '<a class="btn btn-ghost" style="text-decoration:none;justify-content:center;" href="'+esc(buildMailtoUrl(DEV_EMAIL, 'Pesa support', note))+'">'+tr('Email support')+'</a></div>' +
+    (lastErr ? '<div class="actions" style="margin-top:8px;"><a class="btn btn-ghost btn-block" id="lgErrReport" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, errNote))+'">'+tr('Send my last error to support')+'</a></div><div class="small" style="margin-top:6px;font-size:12px;color:var(--text-muted);">'+tr('Sends only the error text, the Pesa version and your browser name. No sales, stock or customer records. You see the message before it is sent.')+'</div>' : '') +
     '<div class="small" style="margin-top:12px;font-size:12px;color:var(--text-muted);">Pesa '+esc(APP_VERSION)+' · '+tr('Documents version')+' '+esc(LEGAL_VERSION)+'</div>';
   var ov = openSheet(html);
   Array.prototype.forEach.call(ov.querySelectorAll('[data-legal]'), function(b){ b.addEventListener('click', function(){ closeModal(); openLegalDoc(b.getAttribute('data-legal')); }); });
