@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Copies the Pesa logo and the wet stamp image out of index.html into tools/issuer.html, between the ASSETS markers.
+Run it after the artwork changes. Safe to run again."""
+import re, os
+root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+app = open(os.path.join(root, 'index.html'), encoding='utf-8').read()
+logo = re.search(r'var PESA_LOGO_DATA_URL = "(data:[^"]+)"', app).group(1)
+stamp = re.search(r'var STAMP_IMG_DATA_URL = "(data:[^"]+)"', app).group(1)
+p = os.path.join(root, 'tools', 'issuer.html'); s = open(p, encoding='utf-8').read()
+block = "/*ASSETS:START*/\n  var ASSETS = { logo:'%s', stamp:'%s' };\n/*ASSETS:END*/" % (logo, stamp)
+s2, n = re.subn(r'/\*ASSETS:START\*/.*?/\*ASSETS:END\*/', lambda m: block, s, flags=re.S)
+assert n == 1, 'markers not found'
+open(p, 'w', encoding='utf-8').write(s2); print('issuer assets updated', len(block) // 1024, 'KB')

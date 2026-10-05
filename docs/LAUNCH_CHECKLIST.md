@@ -43,3 +43,5 @@ What is built and tested is listed in the app's About page and changelog. This p
 * Per person cloud accounts (today anyone with the sync code is trusted as the business).
 * Moving chat photos to file storage instead of the record table if shops send many.
 * Splitting `index.html` into modules. It works as one file, but it is large. `docs/ARCHITECTURE.md` maps it.
+
+**Client documents.** After you create a licence key in `tools/issuer.html`, the same page prepares two separate PDFs for the client: a proof of payment and a licence certificate that carries the key. Fill in the client name, email, amount and payment date, download both, and attach them to the email. Run `python3 tools/embed_issuer_assets.py` if the logo or stamp artwork changes.

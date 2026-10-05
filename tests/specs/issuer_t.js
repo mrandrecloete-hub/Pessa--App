@@ -1,0 +1,28 @@
+const { chromium } = require('playwright'); const fs=require('fs'), cp=require('child_process'), path=require('path');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,400):'')); if(!c) fail++; };
+(async()=>{
+ const root=path.join(__dirname,'..','..'); const jspdf=fs.readFileSync(path.join(root,'node_modules/jspdf/dist/jspdf.umd.min.js'));
+ const b=await chromium.launch(); const ctx=await b.newContext({acceptDownloads:true}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await ctx.route('https://cdnjs.cloudflare.com/**',r=>r.fulfill({status:200,contentType:'application/javascript',body:jspdf}));
+ await p.goto('file://'+path.join(root,'tools/issuer.html'));
+ await p.click('#kGen'); await p.waitForTimeout(600);
+ await p.fill('#iRef','PESAK85VEGU9'); await p.fill('#iShop','Dinner Shop'); await p.selectOption('#iPlan','business'); await p.click('#iGo'); await p.waitForTimeout(800);
+ ck('licence key created', /^PESA1\./.test(await p.inputValue('#iOut')));
+ ck('document fields prefilled', (await p.inputValue('#dName'))==='Dinner Shop' && (await p.inputValue('#dAmount'))==='900.00', [await p.inputValue('#dName'), await p.inputValue('#dAmount')]);
+ await p.fill('#dEmail','client@example.com'); await p.fill('#dBankRef','FNB 77123');
+ const [d1]=await Promise.all([p.waitForEvent('download'), p.click('#dProof')]); const f1='/tmp/proof.pdf'; await d1.saveAs(f1);
+ const [d2]=await Promise.all([p.waitForEvent('download'), p.click('#dCert')]); const f2='/tmp/cert.pdf'; await d2.saveAs(f2);
+ ck('file names are clear', /Proof-of-Payment/.test(d1.suggestedFilename()) && /Licence-Certificate/.test(d2.suggestedFilename()), [d1.suggestedFilename(), d2.suggestedFilename()]);
+ const key=await p.inputValue('#iOut');
+ const t1=cp.execSync('pdftotext -layout '+f1+' -').toString(), t2=cp.execSync('pdftotext -layout '+f2+' -').toString();
+ const pages=f=>+/Pages:\s+(\d+)/.exec(cp.execSync('pdfinfo '+f).toString())[1];
+ ck('proof is one page', pages(f1)===1, pages(f1)); ck('certificate is one page', pages(f2)===1, pages(f2));
+ ck('proof says PROOF OF PAYMENT and PAID', /PROOF OF PAYMENT/.test(t1) && /PAID/.test(t1), t1);
+ ck('proof shows client, email, amount, reference', /Dinner Shop/.test(t1)&&/client@example.com/.test(t1)&&/N\$900\.00/.test(t1)&&/PESA-K85V-EGU9/.test(t1)&&/FNB 77123/.test(t1), t1);
+ ck('proof does NOT contain the licence key', !t1.includes('PESA1.') && !t1.replace(/\s/g,'').includes(key.slice(0,40)));
+ ck('certificate carries the full key', t2.replace(/\s/g,'').includes(key), t2);
+ ck('certificate has activation steps and plan', /How to switch your licence on/i.test(t2)&&/Business plan/.test(t2)&&/Activate key/.test(t2), t2);
+ await p.fill('#dEmail',''); await p.click('#dMail'); ck('email needs an address', /client email/i.test(await p.innerText('#docMsg')));
+ ck('no page errors', errs.length===0, errs);
+ await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
+})();
