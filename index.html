@@ -13198,6 +13198,7 @@ function menuRowsHtml(){
     rows += drawerRowHtml('vat', ICONS.percent, 'NamRA VAT summary');
     rows += drawerRowHtml('accountant', ICONS.chartbar, 'Accountant');
   }
+  if(isOwner()) rows += drawerRowHtml('pay', ICONS.receipt, 'Pay for Pesa');
   rows += '<div class="drawer-sub">More</div>';
   rows += drawerRowHtml('settings', GEAR_ICON_SMALL, 'Settings', pfDue() ? '!' : null);
   rows += comingSoonHtml();
@@ -13407,6 +13408,7 @@ function openSettingsSheet(){
   if(isRestricted()) return openCashierSettingsSheet();
   var s = State.settings;
   var html = '<div class="sheet-head"><h2>'+tr('Settings')+'</h2></div>' +
+    (isOwner() ? '<div class="rowlist" style="margin-bottom:10px;"><button class="row" type="button" data-more="pay" style="width:100%;text-align:left;"><div class="main"><div class="title">'+tr('Pay for Pesa')+'</div><div class="sub">'+tr('Plans, prices and how to pay')+'</div></div></button></div>' : '') +
     stGrp('Account','Your sign in and security',
 ''+
     accountSectionHtml() +
@@ -17515,7 +17517,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.45';
+var APP_VERSION = '2026.10.46';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17707,6 +17709,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.46', items:[
+    'Pay for Pesa is now easy to find: it is in the main menu and at the top of Settings'
+  ]},
   { v:'2026.10.45', items:[
     'Pay for Pesa now has an I have paid button. Once your payment is confirmed your licence switches on by itself, and your proof of payment and licence certificate arrive by email'
   ]},
