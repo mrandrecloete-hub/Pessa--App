@@ -1,0 +1,20 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
+(async()=>{
+ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
+ await p.fill('#rcCompanyName','Demo Shop'); await p.fill('#rcOwnerName','A'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+ await p.evaluate(()=>window.__t.openPaySheet()); await p.waitForSelector('#payDemo'); await p.click('#payDemo'); await p.waitForSelector('#pdNext');
+ const t=()=>p.innerText('#pdRoot');
+ ck('demo banner', /DEMO ONLY/.test(await t()));
+ await p.click('[data-dplan="starter"]'); await p.click('[data-dper="yearly"]'); await p.click('#pdNext'); await p.waitForSelector('#pdPaid');
+ let x=await t(); ck('fake details and amount', /0000000000/.test(x)&&/Demo Bank/.test(x)&&/N\$5,000\.00/.test(x), x);
+ await p.click('#pdPaid'); await p.waitForSelector('#pdApprove'); await p.click('#pdApprove'); await p.waitForSelector('#pdAgain');
+ x=await t(); ck('confirmed screen with plan, amount, valid until', /Payment confirmed/.test(x)&&/Starter/.test(x)&&/N\$5,000\.00/.test(x)&&/Valid until/.test(x), x);
+ ck('real settings untouched', await p.evaluate(()=>!window.__t.State.settings.licenseKey));
+ await p.click('#pdAgain'); await p.waitForSelector('#pdNext'); await p.click('#pdClose').catch(()=>{});
+ ck('no page errors', errs.length===0, errs);
+ await p.screenshot({path:'/tmp/claude-0/-home-claude-pessa--app/73aa318b-575e-5162-b07f-671ca33508ad/scratchpad/demo.png'});
+ await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
+})();

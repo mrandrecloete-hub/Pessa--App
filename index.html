@@ -7680,7 +7680,7 @@ function openSheet(innerHtml, opts){
 }
 /* Each page shows its own icon at the top left, beside its title (the Pesa logo sits at the top right). */
 var PAGE_ICON_RULES = [
-  [/pay for pesa/i,'pay'],[/wastage|shrinkage/i,'wastage'],[/supplier/i,'suppliers'],[/purchase order/i,'purchase'],
+  [/pay for pesa|practice payment/i,'pay'],[/wastage|shrinkage/i,'wastage'],[/supplier/i,'suppliers'],[/purchase order/i,'purchase'],
   [/stock take|opening balances|review & post/i,'stocktake'],[/stock|reorder|expiry|barcode|scan|product|bulk/i,'stock'],
   [/vat|tax records|namra|past month/i,'vat'],[/branch/i,'branches'],[/activity log/i,'audit'],
   [/cart|charge|sale recorded|point of sale/i,'sell'],[/till|cash up|card batch|card terminal|end of day|mobile money/i,'till'],
@@ -15844,6 +15844,7 @@ function openPaySheet(){
       '<div class="banner" style="margin-top:8px;">'+ICONS.info+'<span>'+tr('Use the payment reference exactly as shown, so we can match your payment to your business.')+'</span></div>' +
       (licServerOn() ? payServerHtml() : '') +
       '<div class="actions" style="flex-direction:column;"><a class="btn '+(licServerOn() ? 'btn-ghost' : 'btn-primary')+' btn-block" id="payWa" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, payWhatsAppText(sel.plan, sel.period)))+'">'+tr('Send proof of payment on WhatsApp')+'</a>' +
+      '<button class="btn btn-ghost btn-block" id="payDemo" type="button">'+tr('Try a practice payment (demo)')+'</button>' +
       '<button class="btn btn-ghost btn-block" id="payKey" type="button">'+tr('I have a licence key')+'</button>' +
       '<button class="btn btn-ghost btn-block" id="payClose" type="button">'+tr('Close')+'</button></div>' +
       '<div class="small" style="margin-top:10px;font-size:12px;color:var(--text-muted);">'+(licServerOn() ? tr('Pesa does not take payments itself. After we confirm your payment your licence switches on by itself and we email you your proof of payment and licence certificate.') : tr('Pesa does not take payments itself. After we confirm your payment we send you a licence key to paste into Pesa.'))+'</div>';
@@ -15851,6 +15852,7 @@ function openPaySheet(){
     ov.querySelectorAll('[data-payper]').forEach(function(b){ b.addEventListener('click', function(){ sel.period = b.getAttribute('data-payper'); draw(); }); });
     ov.querySelectorAll('[data-paycopy]').forEach(function(b){ b.addEventListener('click', function(){ copyText(b.getAttribute('data-paycopy'), tr('Copied')); }); });
     ov.querySelector('#payClose').addEventListener('click', closeModal);
+    ov.querySelector('#payDemo').addEventListener('click', function(){ closeModal(); setTimeout(openPayDemoSheet, 60); });
     var paid = ov.querySelector('#payPaid');
     if(paid) paid.addEventListener('click', function(){
       if(!isOwner()){ srv.msg = tr('Only the owner can do this.'); srv.bad = true; return draw(); }
@@ -15866,6 +15868,45 @@ function openPaySheet(){
     licPoll().then(function(r){ if(r === 'applied') closeModal(); else if(r === 'pending' && document.body.contains(ov)) draw(); });
     var tmr = setInterval(function(){ if(!document.body.contains(ov) || !ov.querySelector('#payWaiting')){ if(!document.body.contains(ov)) clearInterval(tmr); return; } licPoll().then(function(r){ if(r === 'applied'){ clearInterval(tmr); closeModal(); } }); }, 15000);
   }
+}
+
+/** A practice run of paying for Pesa. No bank, no money and no real licence: it only shows the steps, with made up account details. */
+var PAY_DEMO_DETAILS = { accountName:'PESA DEMO ACCOUNT', bankName:'Demo Bank Namibia', accountNumber:'0000000000', branchCode:'000000', accountType:'Practice only' };
+function openPayDemoSheet(){
+  var d = { step:1, plan:'business', period:'monthly' };
+  var ov = openSheet('<div id="pdRoot"></div>', { noBack:false });
+  function row(l, v){ return '<div class="row"><div class="main"><div class="title">'+esc(tr(l))+'</div></div><div class="trail"><b style="font-family:monospace;">'+esc(v)+'</b></div></div>'; }
+  function endDate(){ var t = new Date(); t.setMonth(t.getMonth() + (d.period === 'yearly' ? 12 : 1)); return licDate(t.getTime()); }
+  function draw(){
+    var amt = payAmount(d.plan, d.period), ref = licRef() || 'PESA-DEMO-0000', h = '<div class="sheet-head"><h2>'+tr('Practice payment')+'</h2></div>' +
+      '<div class="banner" style="display:block;border-color:#C98A1B;"><b>'+tr('DEMO ONLY')+'</b> '+tr('No real money, bank or licence is used. This only shows you the steps.')+'</div>';
+    if(d.step === 1){
+      h += '<div style="display:flex;gap:8px;margin:10px 0;"><button type="button" class="btn '+(d.period === 'monthly' ? 'btn-primary' : 'btn-ghost')+'" data-dper="monthly" style="flex:1;">'+tr('Monthly')+'</button><button type="button" class="btn '+(d.period === 'yearly' ? 'btn-primary' : 'btn-ghost')+'" data-dper="yearly" style="flex:1;">'+tr('Yearly')+'</button></div>' +
+        '<div class="rowlist">' + Object.keys(PAY_PLANS).map(function(k){ var on = d.plan === k; return '<button type="button" class="row" data-dplan="'+k+'" style="width:100%;text-align:left;'+(on ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary) inset;' : '')+'"><div class="main"><div class="title">'+esc(tr(LIC_PLANS[k].name))+(on ? ' ✓' : '')+'</div></div><div class="trail"><b>'+fmtMoney(payAmount(k, d.period))+'</b></div></button>'; }).join('') + '</div>' +
+        '<div class="actions"><button class="btn btn-primary btn-block" id="pdNext" type="button">'+tr('Continue to payment details')+'</button></div>';
+    } else if(d.step === 2){
+      h += '<div class="section-title">'+tr('Pay this amount')+'</div><div class="banner" style="display:block;"><div class="num" style="font-size:22px;font-weight:800;">'+fmtMoney(amt)+'</div></div>' +
+        '<div class="rowlist">'+row('Account name', PAY_DEMO_DETAILS.accountName)+row('Bank', PAY_DEMO_DETAILS.bankName)+row('Account number', PAY_DEMO_DETAILS.accountNumber)+row('Branch code', PAY_DEMO_DETAILS.branchCode)+row('Payment reference', ref)+'</div>' +
+        '<div class="small" style="margin:8px 0;font-size:12px;color:var(--text-muted);">'+tr('In real life you pay in your banking app, using this reference. Here, just tap the button.')+'</div>' +
+        '<div class="actions" style="flex-direction:column;"><button class="btn btn-primary btn-block" id="pdPaid" type="button">'+tr('I have paid (demo)')+'</button><button class="btn btn-ghost btn-block" id="pdBack" type="button">'+tr('Back')+'</button></div>';
+    } else if(d.step === 3){
+      h += '<div class="banner" style="display:block;">'+ICONS.info+'<span>'+tr('Waiting for confirmation of your payment. In real life the seller checks the bank and approves it.')+'</span></div>' +
+        '<div class="actions" style="flex-direction:column;"><button class="btn btn-primary btn-block" id="pdApprove" type="button">'+tr('Approve as the seller (demo)')+'</button></div>';
+    } else {
+      h += '<div class="banner" style="display:block;border-color:#2F7D4F;">'+ICONS.check+'<span><b>'+tr('Payment confirmed')+'</b><br>'+tr('Your licence switched on by itself.')+'</span></div>' +
+        '<div class="rowlist">'+row('Proof of payment', 'PP-DEMO-'+ref.slice(-4))+row('Plan', tr(LIC_PLANS[d.plan].name)+' ('+(d.period === 'yearly' ? tr('yearly') : tr('monthly'))+')')+row('Amount received', fmtMoney(amt))+row('Valid until', fmtDateNice(endDate()))+'</div>' +
+        '<div class="small" style="margin:8px 0;font-size:12px;color:var(--text-muted);">'+tr('In real life the client also gets an email with the proof of payment and the licence certificate. Nothing was changed on your business in this practice run.')+'</div>' +
+        '<div class="actions"><button class="btn btn-ghost" id="pdAgain" type="button">'+tr('Practice again')+'</button><button class="btn btn-primary" id="pdClose" type="button">'+tr('Done')+'</button></div>';
+    }
+    ov.querySelector('#pdRoot').innerHTML = h;
+    ov.querySelectorAll('[data-dper]').forEach(function(b){ b.addEventListener('click', function(){ d.period = b.getAttribute('data-dper'); draw(); }); });
+    ov.querySelectorAll('[data-dplan]').forEach(function(b){ b.addEventListener('click', function(){ d.plan = b.getAttribute('data-dplan'); draw(); }); });
+    function on(id, fn){ var e = ov.querySelector(id); if(e) e.addEventListener('click', fn); }
+    on('#pdNext', function(){ d.step = 2; draw(); }); on('#pdBack', function(){ d.step = 1; draw(); });
+    on('#pdPaid', function(){ d.step = 3; draw(); }); on('#pdApprove', function(){ d.step = 4; draw(); });
+    on('#pdAgain', function(){ d.step = 1; draw(); }); on('#pdClose', closeModal);
+  }
+  draw();
 }
 
 function openLicenceSheet(){
@@ -17552,7 +17593,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.48';
+var APP_VERSION = '2026.10.49';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17744,6 +17785,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.49', items:[
+    'New practice payment on the Pay for Pesa screen, so you can try every step with made up bank details and no real money'
+  ]},
   { v:'2026.10.48', items:[
     'Every page now shows its own icon at the top left, with the Pesa logo at the top right'
   ]},
