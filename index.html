@@ -10232,7 +10232,7 @@ function pdBandRaw(doc, st, H, compact){
     doc.setFont('helvetica','bold'); doc.setFontSize(6.5); pdSet(doc, 't', pal.gold2);
     doc.text(tr('CONTINUED'), pageW - 14, 16.6, { align:'right' });
   } else if(S.logoDataUrl){
-    var lg = S.logoImgMeta || {}, LH = 15, LW = 15, MAXW = 52;
+    var lg = S.logoImgMeta || {}, LH = 19, LW = 19, MAXW = 62;   // a little bigger than the Pesa mark (15)
     if(lg.w && lg.h){ LW = LH*lg.w/lg.h; if(LW > MAXW){ LW = MAXW; LH = MAXW*lg.h/lg.w; } }
     var px = pageW - 14 - LW - 3, py = 8.5 - 1.5 + (15 - LH)/2;
     // a cleaned (transparent) logo sits straight on the header like the Pesa mark; only a dark one gets a soft round plate so it stays readable
@@ -12060,18 +12060,18 @@ function buildReceiptPdf(draft){
   function draw(doc){
     var y = margin;
     // ---- header: colour logo at the top left, shop details beside it
-    var LOGO = 10, boxW = 10, boxH = 10, logoData = null, logoType = 'PNG';
+    var LOGO = 13, boxW = 13, boxH = 13, logoData = null, logoType = 'PNG';
     if(State.settings.logoDataUrl){
       logoData = State.settings.logoDataUrl; logoType = logoImgType(logoData);
       var lg = State.settings.logoImgMeta || {};
-      if(lg.w && lg.h){ boxH = Math.max(6, Math.min(LOGO, 22*lg.h/lg.w)); boxW = boxH*lg.w/lg.h; }   // same height as the Pesa mark, wide logos kept readable
+      if(lg.w && lg.h){ boxH = Math.max(7, Math.min(LOGO, 30*lg.h/lg.w)); boxW = boxH*lg.w/lg.h; }   // same height as the Pesa mark, wide logos kept readable
     } else {
       logoData = PESA_LOGO_DATA_URL; boxW = LOGO / PESA_LOGO_ASPECT; boxH = LOGO; if(boxW > LOGO){ boxH = LOGO / (boxW/LOGO); boxW = LOGO; }
     }
     try{ doc.addImage(logoData, logoType, margin, y, boxW, boxH); }catch(e){}
     var pesaW = 0;
     if(State.settings.logoDataUrl){   // company logo left, Pesa mark right, same size
-      var ph = boxH; pesaW = ph / PESA_LOGO_ASPECT;
+      var ph = Math.min(boxH, 10); pesaW = ph / PESA_LOGO_ASPECT;
       try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', pageW-margin-pesaW, y, pesaW, ph); }catch(e){}
     }
     var tx = margin + boxW + 3, leftW = contentW - boxW - 3 - (pesaW ? pesaW + 3 : 0), ly = y + 3;
@@ -14429,8 +14429,12 @@ function logoToneOf(cv){
 function logoBuild(cv, clean){
   var r = clean ? logoCleanCanvas(cv) : { changed:false };
   var use = r.changed ? r.canvas : cv, tone = r.changed ? r.tone : logoToneOf(cv);
+  try{   // make the colours bright and clear
+    var bc2 = document.createElement('canvas'); bc2.width = use.width; bc2.height = use.height; var bx = bc2.getContext('2d');
+    if('filter' in bx){ bx.filter = 'saturate(1.22) contrast(1.08) brightness(1.04)'; bx.drawImage(use, 0, 0); bx.filter = 'none'; use = bc2; }
+  }catch(e){}
   var side = Math.max(use.width, use.height);
-  if(side > 480){ var sc = 480/side, c2 = document.createElement('canvas'); c2.width = Math.round(use.width*sc); c2.height = Math.round(use.height*sc); c2.getContext('2d').drawImage(use, 0, 0, c2.width, c2.height); use = c2; }
+  if(side > 640){ var sc = 640/side, c2 = document.createElement('canvas'); c2.width = Math.round(use.width*sc); c2.height = Math.round(use.height*sc); c2.getContext('2d').drawImage(use, 0, 0, c2.width, c2.height); use = c2; }
   var light = null;
   if(r.changed && tone < 0.45){   // a dark logo gets a white twin so it can stand on a dark header with no plate or frame behind it
     var lc = document.createElement('canvas'); lc.width = use.width; lc.height = use.height;
@@ -18834,7 +18838,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.79';
+var APP_VERSION = '2026.10.80';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19061,6 +19065,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.80', items:[
+    'Company logos are now a little bigger than the Pesa mark on invoices, quotes and receipts, with brighter, clearer colours'
+  ]},
   { v:'2026.10.79', items:[
     'The opening animation is now the bouncing Pesa logo over water: it bounces three times, spins fast and disappears, then the welcome page appears'
   ]},
