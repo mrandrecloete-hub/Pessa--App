@@ -7834,7 +7834,7 @@ function renderSell(){
       '<div style="margin-top:14px;"><button class="btn btn-primary" id="goStock">'+tr('Go to Stock')+'</button></div></div>';
   }
 
-  var html = namePriceBannerHtml() + '<div style="display:flex;gap:8px;align-items:center;">' +
+  var html = namePriceBannerHtml() + brainCardHtml() + '<div style="display:flex;gap:8px;align-items:center;">' +
     '<div class="searchbar" style="flex:1;">' + ICONS.search + '<input id="sellSearchInput" placeholder="Search products…" value="'+esc(State.sellSearch)+'"></div>' +
     (voiceSupported() ? '<button class="icon-btn" id="sellVoiceBtn" type="button" title="Voice search" style="flex:0 0 auto;">'+MIC_ICON+'</button>' : '') +
     '<button class="icon-btn" id="sellScanBtn" type="button" title="Scan barcode" style="flex:0 0 auto;">'+ICONS.search+'</button>' +
@@ -8054,7 +8054,7 @@ function cartSheetHtml(){
     '</div>';
   }).join('');
   return '<div class="sheet-head"><h2>'+tr('Cart')+'</h2><button class="icon-btn" id="clearCartBtn" style="background:var(--surface-2);border-color:var(--border);color:var(--text-muted);">'+ICONS.warn+'</button></div>' +
-    '<div id="cartSheetBody">' + items + '</div>' +
+    '<div id="cartSheetBody">' + items + '</div>' + brainTogetherHtml() +
     '<div style="margin-top:6px;">' +
       '<div class="sumline total"><span>Total</span><span class="num">'+fmtMoney(cartTotal())+'</span></div>' +
     '</div>' +
@@ -8073,6 +8073,7 @@ function wireCartSheet(ov){
   if(clearBtn) clearBtn.addEventListener('click', function(){
     confirmSheet('Clear cart?', 'This removes all items from the current sale.', 'Clear', function(){ State.cart=[]; renderCartBar(); }, true);
   });
+  ov.querySelectorAll('[data-br-add]').forEach(function(b){ b.addEventListener('click', function(){ addToCart(b.getAttribute('data-br-add')); renderCartSheetInPlace(); }); });
   var chargeBtn = ov.querySelector('#chargeBtn');
   if(chargeBtn) chargeBtn.addEventListener('click', openChargeSheet);
 }
@@ -13814,6 +13815,7 @@ function wireContent(){
   content.querySelectorAll('[data-add]').forEach(function(el){
     el.addEventListener('click', function(){ addToCart(el.getAttribute('data-add')); });
   });
+  var brCard = content.querySelector('#brainCard'); if(brCard) brCard.addEventListener('click', openBrainSheet);
   var searchInput = content.querySelector('#sellSearchInput');
   if(searchInput){
     searchInput.addEventListener('input', debounce(function(){
@@ -16647,9 +16649,264 @@ function smartAlerts(){
     if(ss.state === 'error') al.push({ id:'syncerr', level:'med', title:'Cloud connection has a problem', body:'Changes are kept safely on this device and will send when the problem clears.' });
   }catch(e){}
   try{ al = al.concat(btExtraAlerts()); }catch(e){}
+  try{ al = al.concat(brainAlerts()); }catch(e){}
   return al;
 }
 function smartAlertCount(){ try{ return smartAlerts().length; }catch(e){ return 0; } }
+/* ============================== PESA BRAIN ==============================
+   The "thinking" part of Pesa. It reads the shop's own records on this device and works out what is
+   unusual, what will run out, what is not selling and what to do next. It can also answer plain
+   questions typed or spoken in the Ask Pesa box. Nothing is sent anywhere. Owners and managers only. */
+function brainDaySales(dayKey){
+  var t = 0, n = 0;
+  State.sales.forEach(function(s){ if(todayKey(new Date(s.createdAt)) === dayKey){ t += Number(s.total)||0; n++; } });
+  return { total:t, count:n };
+}
+// share of a normal day's takings that has usually come in before this hour (from the last 28 days)
+function brainShareByNow(now){
+  var since = now.getTime() - 28*DAY_MS, all = 0, before = 0, h = now.getHours() + now.getMinutes()/60;
+  State.sales.forEach(function(s){
+    var d = new Date(s.createdAt), t = d.getTime();
+    if(t < since || t >= now.getTime()) return;
+    if(todayKey(d) === todayKey(now)) return;
+    var v = Number(s.total)||0; all += v; if(d.getHours() + d.getMinutes()/60 < h) before += v;
+  });
+  return all > 0 ? before/all : null;
+}
+function brainToday(now){
+  now = now || new Date();
+  var today = brainDaySales(todayKey(now)), tot = 0, wk = 0;
+  for(var w = 1; w <= 4; w++){
+    var d = new Date(now.getTime() - 7*w*DAY_MS), v = brainDaySales(todayKey(d)).total;
+    if(v > 0){ tot += v; wk++; }
+  }
+  var usual = wk ? tot/wk : 0, share = brainShareByNow(now);
+  var expected = usual && share != null ? usual*share : null;
+  return { total:today.total, count:today.count, usual:usual, weeks:wk, expectedNow:expected, share:share,
+           pct: expected && expected > 0 ? Math.round((today.total - expected)/expected*100) : null };
+}
+function brainLastSale(){
+  var m = {};
+  State.sales.forEach(function(s){ var t = new Date(s.createdAt).getTime(); (s.items||[]).forEach(function(it){ var k = it.productId || it.name; if(!m[k] || t > m[k]) m[k] = t; }); });
+  return m;
+}
+// stock that has not sold for a long time, with the cash tied up in it
+function brainDeadStock(days){
+  days = days || 45;
+  var last = brainLastSale(), limit = smartNow() - days*DAY_MS, out = [];
+  State.products.forEach(function(p){
+    if(!((p.stockQty||0) > 0)) return;
+    var made = p.createdAt ? new Date(p.createdAt).getTime() : 0;
+    if(made && made > limit) return;
+    var t = last[p.id] || last[p.name] || 0;
+    if(t && t > limit) return;
+    out.push({ product:p, idleDays: t ? Math.floor((smartNow()-t)/DAY_MS) : null, tied:(p.stockQty||0)*(p.costPrice||0) });
+  });
+  return out.sort(function(a,b){ return b.tied - a.tied; });
+}
+// products selling much faster or slower this week than their recent weekly average
+function brainTrends(){
+  var now = smartNow(), a = {}, b = {};
+  State.sales.forEach(function(s){
+    var t = new Date(s.createdAt).getTime(), age = now - t;
+    if(age < 0 || age > 28*DAY_MS) return;
+    (s.items||[]).forEach(function(it){
+      var k = it.productId || it.name; if(!a[k]) a[k] = { name:it.name, week:0, before:0 };
+      if(age <= 7*DAY_MS) a[k].week += it.qty||0; else a[k].before += it.qty||0;
+    });
+  });
+  var up = [], down = [];
+  Object.keys(a).forEach(function(k){
+    var r = a[k], avg = r.before/3;
+    if(r.week >= 5 && r.week >= avg*1.5) up.push({ name:r.name, week:r.week, avg:avg });
+    else if(avg >= 5 && r.week <= avg*0.5) down.push({ name:r.name, week:r.week, avg:avg });
+  });
+  up.sort(function(x,y){ return (y.week-y.avg) - (x.week-x.avg); }); down.sort(function(x,y){ return (y.avg-y.week) - (x.avg-x.week); });
+  return { up:up, down:down };
+}
+// selling at or near cost
+function brainThinMargin(){
+  return State.products.filter(function(p){ return (p.costPrice||0) > 0 && p.sellPrice != null && (p.sellPrice - p.costPrice)/p.sellPrice < 0.10; })
+    .map(function(p){ return { product:p, margin: Math.round((p.sellPrice - p.costPrice)/p.sellPrice*100) }; })
+    .sort(function(x,y){ return x.margin - y.margin; });
+}
+// what people usually buy together with the items in the cart (last 90 days of sales)
+var _brTog = { len:-1, last:'', pairs:null };
+function brainPairs(){
+  var len = State.sales.length, last = len ? String(State.sales[len-1].id||State.sales[len-1].createdAt) : '';
+  if(_brTog.pairs && _brTog.len === len && _brTog.last === last) return _brTog.pairs;
+  var since = smartNow() - 90*DAY_MS, pairs = {};
+  State.sales.forEach(function(s){
+    if(new Date(s.createdAt).getTime() < since) return;
+    var ids = []; (s.items||[]).forEach(function(it){ if(it.productId && ids.indexOf(it.productId) < 0) ids.push(it.productId); });
+    if(ids.length < 2 || ids.length > 12) return;
+    ids.forEach(function(x){ ids.forEach(function(y){ if(x !== y){ var m = pairs[x] || (pairs[x] = {}); m[y] = (m[y]||0) + 1; } }); });
+  });
+  _brTog = { len:len, last:last, pairs:pairs };
+  return pairs;
+}
+function brainTogether(cart, max){
+  var pairs = brainPairs(), inCart = {}, score = {};
+  cart.forEach(function(i){ inCart[i.productId] = true; });
+  cart.forEach(function(i){ var m = pairs[i.productId]; if(m) Object.keys(m).forEach(function(y){ if(!inCart[y]) score[y] = (score[y]||0) + m[y]; }); });
+  return Object.keys(score).filter(function(id){ return score[id] >= 2; }).sort(function(x,y){ return score[y] - score[x]; })
+    .map(function(id){ return State.products.find(function(p){ return p.id === id; }); })
+    .filter(function(p){ return p && !(p.stockQty != null && p.stockQty <= 0); }).slice(0, max || 3);
+}
+function brainTogetherHtml(){
+  try{
+    if(!State.session || isRestricted() || !State.cart.length) return '';
+    var list = brainTogether(State.cart, 3); if(!list.length) return '';
+    return '<div id="brTogether" style="margin-top:10px;"><div class="sub" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">'+tr('Often bought together')+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+      list.map(function(p){ return '<button class="btn btn-ghost" type="button" data-br-add="'+p.id+'" style="padding:6px 10px;font-size:13px;">+ '+esc(p.name)+' '+esc(fmtMoney(p.sellPrice))+'</button>'; }).join('') + '</div></div>';
+  }catch(e){ return ''; }
+}
+function brainFmtPct(p){ return (p >= 0 ? 'up ' : 'down ') + Math.abs(p) + '%'; }
+// the briefing: a short list of things worth knowing right now, most useful first
+function brainBriefing(){
+  var items = [], now = new Date(), t = brainToday(now);
+  if(t.count || t.usual){
+    var line = 'Today so far: '+fmtMoney(t.total)+' from '+t.count+' '+(t.count===1?'sale':'sales')+'.';
+    if(t.pct != null && t.usual) line += ' By now you usually have about '+fmtMoney(t.expectedNow)+', so you are '+brainFmtPct(t.pct)+'.';
+    else if(t.usual) line += ' A normal '+['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]+' brings about '+fmtMoney(t.usual)+'.';
+    items.push({ id:'today', level: t.pct != null && t.pct <= -35 && now.getHours() >= 12 ? 'med' : 'info', text:line });
+  }
+  var re = reorderSuggestions();
+  if(re.length){
+    var r0 = re[0], when = r0.stock <= 0 ? 'is out of stock' : (r0.daysLeft === Infinity ? 'is low' : 'will run out in about '+Math.max(1,Math.round(r0.daysLeft))+' '+(Math.round(r0.daysLeft)<=1?'day':'days'));
+    items.push({ id:'reorder', level:'med', text:r0.product.name+' '+when+(re.length>1 ? ', and '+(re.length-1)+' more '+(re.length===2?'product needs':'products need')+' restocking.' : '.'), go:'reorder', label:'Open reorder list' });
+  }
+  var late = lateCustomers();
+  if(late.length){ var owed = late.reduce(function(s,c){ return s+c.balance; },0); items.push({ id:'late', level:'high', text:late.length+' '+(late.length===1?'customer has':'customers have')+' not paid for over '+CREDIT_LATE_DAYS+' days, '+fmtMoney(owed)+' in all. '+late[0].name+' owes the most.', go:'customers', label:'Open customers' }); }
+  var tr2 = brainTrends();
+  if(tr2.up.length) items.push({ id:'up', level:'info', text:tr2.up[0].name+' is selling faster than usual: '+tr2.up[0].week+' this week against '+(tr2.up[0].avg < 1 ? 'almost none' : 'about '+Math.round(tr2.up[0].avg))+' in a normal week. Check you have enough.' });
+  if(tr2.down.length) items.push({ id:'down', level:'info', text:tr2.down[0].name+' has slowed down: '+tr2.down[0].week+' this week against about '+Math.round(tr2.down[0].avg)+' in a normal week.' });
+  var dead = brainDeadStock(45);
+  if(dead.length){ var tied = dead.reduce(function(s,d){ return s+d.tied; },0); items.push({ id:'dead', level:'info', text:dead.length+' '+(dead.length===1?'product has':'products have')+' not sold in 45 days'+(tied>0 ? ' and '+fmtMoney(tied)+' of your money sits in them' : '')+'. Consider a special price. The biggest is '+dead[0].product.name+'.', go:'insights', label:'Deeper insights' }); }
+  var thin = brainThinMargin();
+  if(thin.length) items.push({ id:'thin', level:'med', text:thin[0].product.name+' earns only '+thin[0].margin+'% after cost'+(thin.length>1 ? ', and '+(thin.length-1)+' more earn under 10%' : '')+'. Check the price.', go:'risk', label:'Risk warnings' });
+  return items;
+}
+function brainAlerts(){
+  var out = [];
+  try{
+    var now = new Date(), t = brainToday(now);
+    if(t.pct != null && t.usual && now.getHours() >= 13 && t.pct <= -40 && t.expectedNow > 0)
+      out.push({ id:'slowday', level:'info', notify:true, title:'Quiet day so far', body:'Sales are '+Math.abs(t.pct)+'% below what you usually have by now.' });
+    var dead = brainDeadStock(60);
+    if(dead.length >= 3) out.push({ id:'deadstock', level:'info', title:dead.length+' products have not sold in 60 days', body:'Open Pesa Brain to see them and the money tied up.', go:'brain', label:'Open Pesa Brain' });
+    var thin = brainThinMargin();
+    if(thin.length) out.push({ id:'thinmargin', level:'info', title:thin.length+' '+(thin.length===1?'product earns':'products earn')+' under 10% after cost', body:thin[0].product.name+' earns '+thin[0].margin+'%.', go:'brain', label:'Open Pesa Brain' });
+  }catch(e){}
+  return out;
+}
+/* ---- Ask Pesa: plain questions answered from the shop's records ---- */
+function brainPeriod(q){
+  var now = new Date(), s = new Date(now.getFullYear(), now.getMonth(), now.getDate()), e = new Date(s.getTime()+DAY_MS), label = 'today';
+  if(/yesterday/.test(q)){ s = new Date(s.getTime()-DAY_MS); e = new Date(s.getTime()+DAY_MS); label = 'yesterday'; }
+  else if(/last month/.test(q)){ s = new Date(now.getFullYear(), now.getMonth()-1, 1); e = new Date(now.getFullYear(), now.getMonth(), 1); label = 'last month'; }
+  else if(/(this )?month/.test(q)){ s = new Date(now.getFullYear(), now.getMonth(), 1); e = new Date(now.getTime()+1); label = 'this month'; }
+  else if(/week/.test(q)){ s = new Date(now.getTime()-6*DAY_MS); s = new Date(s.getFullYear(), s.getMonth(), s.getDate()); e = new Date(now.getTime()+1); label = 'the last 7 days'; }
+  else if(/year/.test(q)){ s = new Date(now.getFullYear(), 0, 1); e = new Date(now.getTime()+1); label = 'this year'; }
+  return { s:s.getTime(), e:e.getTime(), label:label };
+}
+function brainFindProducts(q){
+  var stop = /\b(how|many|much|do|i|we|have|has|is|are|the|of|a|an|in|on|stock|left|price|cost|costs|what|whats|what's|for|my|me|show|tell|got|much|does|to|sell|sold|sells|selling|quantity|qty|there|any|of|and)\b/g;
+  var rest = q.replace(stop, ' ').replace(/[?.,!]/g, ' ').replace(/\s+/g, ' ').trim();
+  return rest ? searchProducts(State.products, rest).slice(0, 4) : [];
+}
+function brainAnswer(raw){
+  var q = String(raw||'').toLowerCase().trim();
+  if(!q) return { text:'Type or say a question, for example: how much did I sell today?' };
+  var per = brainPeriod(q);
+  var sales = State.sales.filter(function(s){ var t = new Date(s.createdAt).getTime(); return t >= per.s && t < per.e; });
+  var total = sales.reduce(function(a,s){ return a + (Number(s.total)||0); }, 0), cost = sales.reduce(function(a,s){ return a + (Number(s.cost)||0); }, 0);
+  if(/(owe|owes|debt|debtor|credit|unpaid|late)/.test(q) && !/(sell|sold|sale)/.test(q)){
+    var d = State.customers.filter(function(c){ return c.balance > 0; }).sort(function(a,b){ return b.balance - a.balance; });
+    if(!d.length) return { text:'Nobody owes you anything right now.' };
+    return { text:d.length+' '+(d.length===1?'customer owes':'customers owe')+' you '+fmtMoney(d.reduce(function(s,c){ return s+c.balance; },0))+' in all.', lines:d.slice(0,5).map(function(c){ return c.name+': '+fmtMoney(c.balance)+(customerDaysLate(c) >= CREDIT_LATE_DAYS ? ' (late)' : ''); }) };
+  }
+  if(/(profit|earn|made|margin)/.test(q) && !/(low|thin)/.test(q))
+    return { text:'Profit for '+per.label+' is about '+fmtMoney(total-cost)+' on sales of '+fmtMoney(total)+' ('+(total>0?Math.round((total-cost)/total*100):0)+'% margin).' };
+  if(/(expense|spent|spend)/.test(q)){
+    var ex = State.expenses.filter(function(e){ var t = new Date(e.createdAt).getTime(); return t >= per.s && t < per.e; }).reduce(function(a,e){ return a + (Number(e.amount)||0); }, 0);
+    return { text:'You spent '+fmtMoney(ex)+' on expenses '+per.label+'.' };
+  }
+  if(/(best|top|most popular|bestseller|best seller|popular)/.test(q)){
+    var v = smartVelocity(30), arr = Object.keys(v).map(function(k){ return v[k]; }).sort(function(a,b){ return b.qty - a.qty; }).slice(0,5);
+    if(!arr.length) return { text:'There are no sales in the last 30 days yet.' };
+    return { text:'Your best sellers over the last 30 days:', lines:arr.map(function(a,i){ return (i+1)+'. '+a.name+': '+a.qty+' sold, '+fmtMoney(a.revenue); }) };
+  }
+  if(/(restock|reorder|re-order|run out|running out|running low|low stock|need to order|should i order|order)/.test(q)){
+    var re = reorderSuggestions().slice(0,6);
+    if(!re.length) return { text:'Nothing needs reordering. Every product has enough stock for now.' };
+    return { text:re.length+' '+(re.length===1?'product needs':'products need')+' attention:', lines:re.map(function(r){ return r.product.name+': '+r.stock+' left'+(r.daysLeft===Infinity?'':', about '+Math.max(0,Math.floor(r.daysLeft))+' days')+', order about '+r.qty; }), go:'reorder', label:'Open reorder list' };
+  }
+  if(/(not selling|slow|dead|idle|stuck|nobody buys|no one buys)/.test(q)){
+    var dd = brainDeadStock(45).slice(0,6);
+    if(!dd.length) return { text:'Everything in stock has sold within the last 45 days.' };
+    return { text:'These have not sold in 45 days:', lines:dd.map(function(x){ return x.product.name+': '+x.product.stockQty+' in stock'+(x.tied>0?', '+fmtMoney(x.tied)+' tied up':''); }) };
+  }
+  if(/(busy|peak|rush|hour|time of day|quiet)/.test(q)){
+    var hrs = new Array(24).fill(0); smartSalesSince(30).forEach(function(s){ hrs[new Date(s.createdAt).getHours()] += Number(s.total)||0; });
+    var top = hrs.map(function(x,h){ return {h:h,v:x}; }).filter(function(x){ return x.v>0; }).sort(function(a,b){ return b.v-a.v; }).slice(0,3);
+    if(!top.length) return { text:'There are no sales in the last 30 days yet.' };
+    return { text:'Your busiest hours over the last 30 days:', lines:top.map(function(x){ return String(x.h).padStart(2,'0')+':00 to '+String((x.h+1)%24).padStart(2,'0')+':00: '+fmtMoney(x.v); }) };
+  }
+  if(/(sold|sell|sales|sale|revenue|takings|turnover|made|income|how much did)/.test(q) && !/(how many).*(stock|have)/.test(q) && !brainFindProducts(q).length)
+    return { text:'Sales for '+per.label+': '+fmtMoney(total)+' from '+sales.length+' '+(sales.length===1?'sale':'sales')+'.' };
+  var found = brainFindProducts(q);
+  if(found.length){
+    return { text: found.length === 1 ? found[0].name : 'I found '+found.length+' products:', lines:found.map(function(p){
+      var qty = p.stockQty == null ? 'stock not tracked' : p.stockQty+' '+(p.unit||'')+' in stock';
+      var sold = smartVelocity(30)[p.id]; return p.name+': '+fmtMoney(p.sellPrice)+', '+qty.trim()+(sold ? ', '+sold.qty+' sold in 30 days' : ''); }) };
+  }
+  if(/(sold|sell|sales|revenue|takings)/.test(q)) return { text:'Sales for '+per.label+': '+fmtMoney(total)+' from '+sales.length+' '+(sales.length===1?'sale':'sales')+'.' };
+  return { text:'I did not understand that yet. Try one of the examples below, or type a product name.' };
+}
+function brainCardHtml(){
+  try{
+    if(!State.session || isRestricted() || !State.ready.sales || !State.sales.length) return '';
+    var b = brainBriefing(); if(!b.length) return '';
+    var head = b[0].id === 'today' ? b[0].text : b[0].text;
+    var more = Math.max(0, b.length - 1);
+    return '<button type="button" id="brainCard" class="banner" style="display:block;width:100%;text-align:left;margin:8px 0;cursor:pointer;">' +
+      '<div style="font-weight:600;margin-bottom:2px;">'+tr('Pesa Brain')+'</div><div style="font-size:13px;">'+esc(head)+'</div>' +
+      (more ? '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+more+' '+tr(more===1?'more thing to look at':'more things to look at')+'</div>' : '') + '</button>';
+  }catch(e){ return ''; }
+}
+function openBrainSheet(){
+  var items = brainBriefing(), col = { high:'var(--danger)', med:'var(--warn, #d98e2b)', info:'var(--text)' };
+  var ex = ['How much did I sell today?','What is my profit this week?','Who owes me money?','What should I reorder?','What is not selling?','Best sellers','When am I busiest?'];
+  var html = '<div class="sheet-head"><h2>'+tr('Pesa Brain')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Pesa studies your own records on this device and tells you what needs attention. Nothing is sent to anyone.')+'</div>' +
+    '<div class="field" style="margin-top:10px;"><label>'+tr('Ask Pesa')+'</label><div style="display:flex;gap:8px;align-items:center;"><div class="searchbar" style="flex:1;"><input id="brQ" placeholder="'+esc(tr('Ask about your shop…'))+'" autocomplete="off"></div>' +
+      (voiceSupported() ? '<button class="icon-btn" id="brMic" type="button" title="'+esc(tr('Voice search'))+'" style="flex:0 0 auto;">'+MIC_ICON+'</button>' : '') +
+      '<button class="btn btn-primary" id="brGo" type="button">'+tr('Ask')+'</button></div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">'+ex.map(function(e){ return '<button class="btn btn-ghost" type="button" data-br-ex="'+esc(e)+'" style="padding:5px 9px;font-size:12px;">'+esc(tr(e))+'</button>'; }).join('')+'</div></div>' +
+    '<div id="brAns" aria-live="polite"></div>' +
+    '<div class="sheet-head" style="margin-top:14px;"><h3 style="margin:0;font-size:15px;">'+tr('Right now')+'</h3></div>' +
+    (items.length ? '<div class="rowlist">' + items.map(function(a,i){
+      return '<div class="row"><div class="main"><div class="sub" style="color:'+col[a.level]+';white-space:normal;">'+esc(a.text)+'</div></div>' +
+        (a.go ? '<div class="trail"><button class="btn btn-ghost" data-br-go="'+i+'" type="button">'+tr(a.label||'Open')+'</button></div>' : '') + '</div>';
+    }).join('') + '</div>' : '<div class="empty"><div class="t">'+tr('All clear')+'</div><div class="s">'+tr('Make a few sales and Pesa Brain will start learning your shop.')+'</div></div>') +
+    smartBackBtn();
+  var ov = openSheet(html);
+  wireSmartBack(ov);
+  var inp = ov.querySelector('#brQ'), ans = ov.querySelector('#brAns');
+  function ask(t){
+    var r = brainAnswer(t); if(inp) inp.value = t;
+    ans.innerHTML = '<div class="banner" style="display:block;margin-top:10px;"><div style="font-weight:600;">'+esc(r.text)+'</div>' +
+      (r.lines ? '<div style="margin-top:6px;font-size:13px;line-height:1.5;">'+r.lines.map(function(l){ return '<div>'+esc(l)+'</div>'; }).join('')+'</div>' : '') +
+      (r.go ? '<div style="margin-top:8px;"><button class="btn btn-ghost" id="brAnsGo" type="button">'+tr(r.label||'Open')+'</button></div>' : '') + '</div>';
+    var g = ans.querySelector('#brAnsGo'); if(g) g.addEventListener('click', function(){ closeModal(); openSmartSection(r.go); });
+  }
+  ov.querySelector('#brGo').addEventListener('click', function(){ ask(inp.value); });
+  inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); ask(inp.value); } });
+  ov.querySelectorAll('[data-br-ex]').forEach(function(b){ b.addEventListener('click', function(){ ask(b.getAttribute('data-br-ex')); }); });
+  var mic = ov.querySelector('#brMic'); if(mic) mic.addEventListener('click', function(){ startVoiceSearch(mic, ask); });
+  ov.querySelectorAll('[data-br-go]').forEach(function(b){ b.addEventListener('click', function(){ var a = items[+b.getAttribute('data-br-go')]; closeModal(); openSmartSection(a.go); }); });
+}
 // Runs quietly: at most one device notification per alert per day.
 function smartTick(){
   try{
@@ -16675,6 +16932,7 @@ function smartBar(pct, color){ return '<div style="height:8px;border-radius:4px;
 function openSmartToolsSheet(){
   var al = smartAlerts();
   var tiles = [
+    ['brain','Pesa Brain','Ask Pesa, daily briefing, what to do next'],
     ['alerts','Alert centre', al.length ? al.length+' need attention' : 'All clear'],
     ['reorder','Reorder list', reorderSuggestions().length+' suggested'],
     ['insights','Deeper insights','Best sellers, busy hours, forecast'],
@@ -16698,7 +16956,8 @@ function openSmartToolsSheet(){
   });
 }
 function openSmartSection(k){
-  if(k==='alerts') openAlertCentreSheet();
+  if(k==='brain') openBrainSheet();
+  else if(k==='alerts') openAlertCentreSheet();
   else if(k==='reorder') openReorderSheet();
   else if(k==='insights') openDeepInsightsSheet();
   else if(k==='risk') openRiskSheet();
@@ -17611,7 +17870,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.53';
+var APP_VERSION = '2026.10.54';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17803,6 +18062,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.54', items:[
+    'Pesa Brain: a daily briefing on the Sell screen, an Ask Pesa box (type or speak: how much did I sell today, who owes me, what should I reorder), warnings for quiet days, stock that is not selling and thin margins, and often bought together suggestions in the cart. All worked out on your device, nothing is sent anywhere'
+  ]},
   { v:'2026.10.53', items:[
     'Faster, more accurate product search in Sell, the till and Stock. Type words in any order, accents are ignored, and names that start with your word come first'
   ]},
