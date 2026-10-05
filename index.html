@@ -18628,7 +18628,42 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.74';
+var APP_VERSION = '2026.10.75';
+/* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
+function pesaVerNewer(a, b){
+  var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
+  for(var i=0; i<Math.max(x.length, y.length); i++){ var d = (x[i]||0) - (y[i]||0); if(d) return d > 0; }
+  return false;
+}
+function pesaCheckVersion(manual){
+  try{
+    if(navigator.onLine === false){ if(manual) toast(tr('You are offline. Pesa keeps working and will update when you are connected.')); return; }
+    fetch('version.json?t=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : Promise.reject(); }).then(function(j){
+      if(j && pesaVerNewer(j.version, APP_VERSION)) pesaShowUpdateBar(j.version);
+      else if(manual) toast(tr('You already have the newest version.') + ' (' + APP_VERSION + ')');
+    }).catch(function(){ if(manual) toast(tr('Could not check for updates right now. Try again when the connection is better.')); });
+  }catch(e){}
+}
+function pesaShowUpdateBar(v){
+  if(document.getElementById('pesaUpdBar')) return;
+  var b = document.createElement('div'); b.id = 'pesaUpdBar';
+  b.setAttribute('style', 'position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:9998;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:16px;background:linear-gradient(135deg,#075E47,#0B7A5C 55%,#14A37A);color:#fff;box-shadow:0 14px 30px -12px rgba(0,60,40,.7);font:600 13.5px Inter,system-ui,sans-serif;max-width:520px;margin:0 auto;');
+  b.innerHTML = '<span style="flex:1;min-width:0;">' + esc(tr('A newer version of Pesa is ready')) + ' (' + esc(v) + ')</span>' +
+    '<button type="button" id="pesaUpdGo" style="border:0;border-radius:12px;padding:8px 14px;font:800 13px Inter,system-ui,sans-serif;background:#F2B53A;color:#3D2A02;cursor:pointer;">' + esc(tr('Update now')) + '</button>' +
+    '<button type="button" id="pesaUpdX" aria-label="' + esc(tr('Close')) + '" style="border:0;background:transparent;color:#fff;font-size:20px;line-height:1;cursor:pointer;padding:0 4px;">×</button>';
+  document.body.appendChild(b);
+  b.querySelector('#pesaUpdX').addEventListener('click', function(){ b.remove(); });
+  b.querySelector('#pesaUpdGo').addEventListener('click', pesaForceRefresh);
+}
+function pesaForceRefresh(){
+  var go = function(){ try{ location.reload(); }catch(e){} };
+  // only clear the saved copy once the newest page is confirmed reachable, so going offline mid-update never leaves Pesa without a copy
+  fetch('index.html', { cache:'no-store' }).then(function(r){
+    if(!r.ok) throw new Error('x');
+    var upd = (navigator.serviceWorker && navigator.serviceWorker.getRegistration) ? navigator.serviceWorker.getRegistration().then(function(reg){ try{ return reg && reg.update(); }catch(e){} }).catch(function(){}) : Promise.resolve();
+    return upd.then(function(){ return (window.caches && caches.keys) ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }) : null; });
+  }).then(go, function(){ try{ toast(tr('Could not download the update. Try again when the connection is better.')); }catch(e){} });
+}
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18820,6 +18855,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.75', items:[
+    'Pesa now tells you when a newer version is ready and updates with one tap (About Pesa also has Check for updates)'
+  ]},
   { v:'2026.10.74', items:[
     'Employees can add a profile photo, and set their preferred shift, an emergency contact and personal work options (stock alerts, best day goal, tips) in My profile'
   ]},
@@ -19761,6 +19799,7 @@ function openAboutSheet(){
     aboutSheetSection(ABOUT_CONNECTION_TITLE, aboutGroupsHtml(ABOUT_CONNECTION)) +
     aboutSheetSection(ABOUT_SMART_TITLE, aboutGroupsHtml(ABOUT_SMART)) +
     aboutSheetSection('Your privacy and confidentiality', privacyAgreementHtml()) +
+    '<div class="actions" style="margin-bottom:8px;"><button class="btn btn-ghost btn-block" id="aboutUpdBtn" type="button">'+tr('Check for updates')+' ('+APP_VERSION+')</button></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="aboutPdfBtn" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download')+'</span></button></div>' +
     '<div style="margin-top:30px;border-top:1px solid var(--border,#e2e6df);padding-top:22px;">' +
       '<div style="font-weight:800;font-size:17px;margin-bottom:12px;color:var(--primary);">'+tr('Contact the developer')+'</div>' +
@@ -19772,6 +19811,7 @@ function openAboutSheet(){
       devCreditHtml(40) +
     '</div>';
   var ov = openSheet(html);
+  ov.querySelector('#aboutUpdBtn').addEventListener('click', function(){ pesaCheckVersion(true); });
   ov.querySelector('#aboutPdfBtn').addEventListener('click', async function(){
     var btn = ov.querySelector('#aboutPdfBtn');
     btn.disabled = true; var old = btn.textContent; btn.textContent = tr('Preparing…');
@@ -21074,6 +21114,10 @@ setInterval(updateHeader, 60000);
           window.addEventListener('online', checkUpdate);
           document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkUpdate(); });
           setInterval(checkUpdate, 10*60000);
+          window.addEventListener('online', function(){ pesaCheckVersion(false); });
+          document.addEventListener('visibilitychange', function(){ if(!document.hidden) pesaCheckVersion(false); });
+          setInterval(function(){ pesaCheckVersion(false); }, 10*60000);
+          setTimeout(function(){ pesaCheckVersion(false); }, 8000);
           var hadController = !!navigator.serviceWorker.controller, reloaded = false;
           navigator.serviceWorker.addEventListener('controllerchange', function(){
             if(!hadController || reloaded) return; reloaded = true;

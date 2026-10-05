@@ -16,6 +16,8 @@ mm = re.search(r'const SYNC_SQL = ("(?:[^"\\]|\\.)*");', s)
 sqlfile = open(os.path.join(root, 'docs', 'provisioning', '01_pesa_sync_table.sql'), encoding='utf-8').read()
 same = bool(mm) and _json.loads(mm.group(1)) in sqlfile
 print('provisioning SQL matches the app:', 'ok' if same else 'OUT OF DATE, re-export SYNC_SQL'); ok = ok and same
+vj = json.load(open(os.path.join(root, 'version.json')))['version']
+print('version.json', vj, 'ok' if vj == ver else 'MISMATCH, update version.json'); ok = ok and vj == ver
 sw = open(os.path.join(root, 'sw.js')).read()
 print('service worker cache', re.search(r"var CACHE = '([^']+)'", sw).group(1))
 sys.exit(0 if ok else 1)

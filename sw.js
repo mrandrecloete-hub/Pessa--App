@@ -5,7 +5,7 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v107';
+var CACHE = 'pesa-shell-v108';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
@@ -25,7 +25,8 @@ self.addEventListener('install', function(evt){
   evt.waitUntil(
     caches.open(CACHE).then(function(cache){
       var jobs = SHELL.map(function(u){
-        return cache.add(u).catch(function(){ /* ignore individual failures */ });
+        // 'reload' skips the browser's own saved copy, so a new version is never stored from a stale download
+        return cache.add(new Request(u, { cache:'reload' })).catch(function(){ /* ignore individual failures */ });
       });
       EXTERNAL.forEach(function(u){
         jobs.push(fetch(new Request(u, {mode:'no-cors'})).then(function(res){ return cache.put(u, res); }).catch(function(){}));
@@ -52,6 +53,8 @@ self.addEventListener('fetch', function(evt){
   var url = evt.request.url;
   // Video files are streamed by the browser itself (range requests), never kept by the shell cache.
   if(/\.(mp4|webm)(\?|$)/i.test(url)) return;
+  // the tiny version note is always read straight from the network (never from the saved copy)
+  if(/version\.json(\?|$)/i.test(url)) return;
 
   if(isNetworkFirst(url)){
     // Network-first so the newest page wins, but never make the user wait on a weak
