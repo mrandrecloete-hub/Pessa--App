@@ -1,0 +1,26 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
+(async()=>{
+ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:900},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
+ await p.fill('#rcCompanyName','Prof'); await p.fill('#rcOwnerName','Own'); await p.fill('#rcOwnerPassword','secret99'); await p.fill('#rcOwnerPassword2','secret99'); await p.click('#rcSubmit');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.waitForTimeout(600);
+ await p.evaluate(()=>{ const t=window.__t; t.State.session.role='cashier'; t.State.tab='me'; t.render(); });
+ await p.waitForSelector('.me-hero');
+ await p.evaluate(()=>window.__t.openMyProfileSheet()); await p.waitForSelector('#mpPhotoFile',{state:'attached'});
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==','base64');
+ await p.setInputFiles('#mpPhotoFile',{name:'me.png',mimeType:'image/png',buffer:png});
+ await p.waitForSelector('#mpPhoto img',{timeout:8000});
+ ck('photo saved and shown in profile', await p.isVisible('#mpPhoto img'));
+ ck('photo shown on home banner', await p.evaluate(()=>!!document.querySelector('.me-hero .me-av img')));
+ await p.fill('#mpEmName','Mum'); await p.fill('#mpEmPhone','0811111111'); await p.selectOption('#mpShift','Morning'); await p.uncheck('#mpGoal'); await p.uncheck('#mpStockAl');
+ await p.click('#mpSave'); await p.waitForTimeout(500);
+ const u=await p.evaluate(()=>{const t=window.__t; return t.State.users.find(x=>x.id===t.State.session.userId);});
+ ck('work settings saved', u.emName==='Mum'&&u.emPhone==='0811111111'&&u.shift==='Morning'&&u.showGoal===false&&u.stockAlerts===false&&!!u.photo, u);
+ await p.evaluate(()=>window.__t.openMyProfileSheet()); await p.waitForSelector('#mpPhotoDel');
+ await p.click('#mpPhotoDel'); await p.waitForTimeout(700);
+ const u2=await p.evaluate(()=>{const t=window.__t; return t.State.users.find(x=>x.id===t.State.session.userId).photo;});
+ ck('photo can be removed', !u2, u2);
+ ck('no page errors', errs.length===0, errs);
+ await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
+})();

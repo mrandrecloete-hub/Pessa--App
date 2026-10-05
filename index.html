@@ -1297,6 +1297,15 @@
   html.intro-on, html.intro-on body{ overflow:hidden; }
   .app-emblem span{ font-size:11px; font-weight:700; letter-spacing:0.04em; color:var(--text-muted); }
 
+  .avatar, .me-av{ overflow:hidden; } .avatar img, .me-av img{ width:100%; height:100%; object-fit:cover; display:block; border-radius:inherit; }
+  .pf-photo{ display:flex; align-items:center; gap:14px; margin:4px 0 12px; }
+  .pf-ph{ width:84px; height:84px; flex:none; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; color:#fff; background:linear-gradient(145deg,#14A37A,#0B7A5C); border:3px solid #F2B53A; box-shadow:0 10px 20px -10px rgba(11,122,92,.8); }
+  .pf-ph img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .pf-phb{ display:flex; flex-direction:column; gap:8px; min-width:0; } .pf-phb .btn svg{ width:16px; height:16px; vertical-align:-3px; }
+  .pf-tg{ display:flex; align-items:flex-start; gap:12px; padding:11px 12px; margin-bottom:8px; border:1px solid var(--border); border-radius:14px; background:var(--surface-2); cursor:pointer; }
+  .pf-tg input{ width:20px; height:20px; margin-top:2px; accent-color:#0B7A5C; flex:none; }
+  .pf-tg span{ display:flex; flex-direction:column; gap:2px; } .pf-tg b{ font-size:14px; } .pf-tg i{ font-style:normal; font-size:12.5px; color:var(--text-muted); }
+
   /* ---------- employee home: modern plates (Pesa green and gold) ---------- */
   #content .me-hero{
     gap:16px; padding:20px 18px; border-radius:24px; margin-bottom:14px; color:#fff;
@@ -6655,7 +6664,7 @@ function renderMe(){
   var me = State.users.find(function(x){ return x.id === (State.session||{}).userId; }) || {};
   var role = State.session.role, tk = todayKey(), co = State.company || {};
   var h = new Date().getHours(), hi = h < 12 ? tr('Good morning') : (h < 18 ? tr('Good afternoon') : tr('Good evening'));
-  var out = '<div class="me-hero"><div class="me-av">'+esc(initials(State.session.name))+'</div><div class="me-hi"><div class="hi">'+hi+' 👋</div><div class="nm">'+esc(State.session.name)+'</div><div class="meta">'+esc(me.jobTitle || tr(ROLE_LABELS[role]||role))+(me.employeeNo?' · '+esc(me.employeeNo):'')+' · '+esc(co.tradingName||co.companyName||'')+'</div></div></div>';
+  var out = '<div class="me-hero"><div class="me-av">'+userAvatarInner(me.photo ? me : { name:State.session.name })+'</div><div class="me-hi"><div class="hi">'+hi+' 👋</div><div class="nm">'+esc(State.session.name)+'</div><div class="meta">'+esc(me.jobTitle || tr(ROLE_LABELS[role]||role))+(me.employeeNo?' · '+esc(me.employeeNo):'')+' · '+esc(co.tradingName||co.companyName||'')+'</div></div></div>';
   out += meTopHtml();
   var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); }).sort(function(a,b){ return a.stockQty - b.stockQty; });
   var lowHtml = '<div class="section-title" data-lowlist="1">'+tr('Running low')+' ('+low.length+')</div>' + (low.length ? '<div class="rowlist">'+low.slice(0,6).map(function(p){
@@ -6679,7 +6688,7 @@ function renderMe(){
     '<div class="me-stat"><div class="l">'+tr('Cash')+'</div><div class="v num">'+fmtMoney(by.cash)+'</div></div><div class="me-stat"><div class="l">'+tr('Card')+'</div><div class="v num">'+fmtMoney(by.card)+'</div></div>' +
     '<div class="me-stat"><div class="l">'+tr('Mobile wallet')+'</div><div class="v num">'+fmtMoney(by.wallet)+'</div></div><div class="me-stat"><div class="l">'+tr('Credit')+'</div><div class="v num">'+fmtMoney(by.credit)+'</div></div></div>';
   var _todayT = posSum(mine), _best = 0; for(var bi=1; bi<=7; bi++){ var bd = new Date(); bd.setDate(bd.getDate()-bi); var bk = todayKey(bd); _best = Math.max(_best, posSum(all.filter(function(s){ return todayKey(new Date(s.createdAt)) === bk; }))); }
-  if(_best > 0 || _todayT > 0){
+  if((_best > 0 || _todayT > 0) && me.showGoal !== false){
     var pct = _best > 0 ? Math.min(100, Math.round(_todayT/_best*100)) : 100;
     out += '<div class="me-goal"><div class="gt"><span>'+(_todayT >= _best && _todayT > 0 ? '🏆 '+tr('New best day!') : '🎯 '+tr('Beat your best day'))+'</span><b class="num">'+pct+'%</b></div><div class="gbar"><i style="width:'+pct+'%"></i></div><div class="gs">'+(_todayT >= _best && _todayT > 0 ? tr('Well done, keep going!') : fmtMoney(Math.max(0,_best-_todayT))+' '+tr('to go'))+'</div></div>';
   }
@@ -6698,7 +6707,7 @@ function meTopHtml(){
   if(um.length){ var m0 = um[0]; out += '<div class="me-msg'+(um.some(function(m){ return m.urgent; })?' urgent':'')+'" data-me="inbox"><div class="t">'+ICONS.bolt+'<span>'+um.length+' '+tr(um.length===1?'new message':'new messages')+'</span></div><div class="s">'+esc(m0.fromName)+': '+esc((m0.title||msgPreview(m0)).slice(0,90))+'</div></div>'; }
   var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); }), outN = low.filter(function(p){ return p.stockQty <= 0; }).length;
   if(low.length) out += '<div class="me-msg stock" data-me="'+(State.session.role==='stockclerk'?'stock':'lowlist')+'"><div class="t">'+ICONS.warn+'<span>'+tr('Stock alert')+': '+low.length+' '+tr('products need stock')+(outN?' ('+outN+' '+tr('out of stock')+')':'')+'</span></div><div class="s">'+esc(low.slice(0,3).map(function(p){ return p.name; }).join(', '))+(low.length>3?'…':'')+'</div></div>';
-  if(!isInstalledApp()) out += '<div class="me-msg" data-me="install"><div class="t">'+ICONS.info+'<span>'+tr('Install Pesa on this device')+'</span></div><div class="s">'+tr('Opens in its own window and works offline.')+'</div></div>';
+  if(!isInstalledApp() && !(function(){ var m = State.users.find(function(x){ return x.id === (State.session||{}).userId; }); return m && m.showHints === false; })()) out += '<div class="me-msg" data-me="install"><div class="t">'+ICONS.info+'<span>'+tr('Install Pesa on this device')+'</span></div><div class="s">'+tr('Opens in its own window and works offline.')+'</div></div>';
   out += '<div class="me-actions" style="grid-template-columns:repeat(3,1fr);"><button class="me-act" data-me="inbox">'+ICONS.bolt+tr('Messages')+(um.length?' ('+um.length+')':'')+'</button><button class="me-act" data-me="report">'+ICONS.chartbar+tr('Work report')+'</button><button class="me-act" data-me="records">'+ICONS.clipboard+tr('My records')+'</button></div>';
   out += pilotCardHtml();
   return out;
@@ -6717,20 +6726,70 @@ function wireMe(root){
   empStockAlertTick();
   root.querySelectorAll('[data-me-sale]').forEach(function(b){ b.addEventListener('click', function(){ openPosSaleDetail(b.getAttribute('data-me-sale')); }); });
 }
+// centre-cropped square profile photo, small enough to store and sync
+function squarePhoto(file, size, quality){
+  return new Promise(function(resolve, reject){
+    var r = new FileReader();
+    r.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
+        var c = document.createElement('canvas'); c.width = c.height = size;
+        var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, size, size);
+        x.drawImage(img, (w-m)/2, (h-m)/2, m, m, 0, 0, size, size);
+        resolve(c.toDataURL('image/jpeg', quality || 0.82));
+      };
+      img.onerror = function(){ reject(new Error('bad image')); };
+      img.src = String(r.result || '');
+    };
+    r.onerror = function(){ reject(new Error('read failed')); };
+    r.readAsDataURL(file);
+  });
+}
+function userAvatarInner(u){
+  if(u && u.photo) return '<img alt="" src="'+esc(u.photo)+'">';
+  return esc(initials((u && u.name) || ''));
+}
 function openMyProfileSheet(){
   var me = State.users.find(function(x){ return x.id === (State.session||{}).userId; }); if(!me) return;
   var ri = ROLE_INFO[me.role] || { can:[], cannot:[] };
   function line(a,b){ return b ? '<div class="sumline"><span>'+a+'</span><span style="text-align:right;">'+esc(b)+'</span></div>' : ''; }
   var html = '<div class="sheet-head"><h2>'+tr('My profile')+'</h2></div>' +
+    '<div class="pf-photo"><div class="pf-ph" id="mpPhoto">'+userAvatarInner(me)+'</div><div class="pf-phb">' +
+      '<button class="btn btn-ghost" id="mpPhotoBtn" type="button">'+ICONS.plus+' '+(me.photo ? tr('Change photo') : tr('Upload photo'))+'</button>' +
+      (me.photo ? '<button class="btn btn-ghost" id="mpPhotoDel" type="button">'+ICONS.trash+' '+tr('Remove photo')+'</button>' : '') +
+      '<input type="file" id="mpPhotoFile" accept="image/*" style="display:none">' +
+    '</div></div><div id="mpPhotoMsg"></div>' +
     line(tr('Name'), me.name) + line(tr('Job'), me.jobTitle || tr(ROLE_LABELS[me.role]||me.role)) + line(tr('Employee number'), me.employeeNo) + line(tr('Joined'), me.joinedAt ? fmtDateTime(me.joinedAt) : '') +
     '<div class="field" style="margin-top:10px;"><label>'+tr('Phone')+'</label><input id="mpPhone" value="'+esc(me.phone||'')+'"></div>' +
     '<div class="field"><label>'+tr('Email')+'</label><input id="mpEmail" type="email" value="'+esc(me.email||'')+'"></div>' +
+    '<div class="section-title">'+tr('My work settings')+'</div>' +
+    '<div class="field"><label>'+tr('Preferred shift')+'</label><select id="mpShift">'+['','Morning','Afternoon','Evening','Flexible'].map(function(x){ return '<option value="'+x+'"'+((me.shift||'')===x?' selected':'')+'>'+(x?tr(x):tr('Not set'))+'</option>'; }).join('')+'</select></div>' +
+    '<div class="field-row"><div class="field"><label>'+tr('Emergency contact name')+'</label><input id="mpEmName" value="'+esc(me.emName||'')+'" placeholder="'+esc(tr('Who we call'))+'"></div>' +
+    '<div class="field"><label>'+tr('Emergency contact phone')+'</label><input id="mpEmPhone" inputmode="tel" value="'+esc(me.emPhone||'')+'" placeholder="081 234 5678"></div></div>' +
+    '<label class="pf-tg"><input type="checkbox" id="mpStockAl"'+(me.stockAlerts===false?'':' checked')+'><span><b>'+tr('Low stock alerts')+'</b><i>'+tr('Tell me on this device when products run low')+'</i></span></label>' +
+    '<label class="pf-tg"><input type="checkbox" id="mpGoal"'+(me.showGoal===false?'':' checked')+'><span><b>'+tr('Best day goal')+'</b><i>'+tr('Show the beat your best day bar on my home screen')+'</i></span></label>' +
+    '<label class="pf-tg"><input type="checkbox" id="mpHints"'+(me.showHints===false?'':' checked')+'><span><b>'+tr('Install and sync tips')+'</b><i>'+tr('Show tips about installing Pesa and syncing on my home screen')+'</i></span></label>' +
     '<div class="section-title">'+tr('What I can do')+'</div><div style="font-size:13px;line-height:1.7;">'+ri.can.map(function(x){ return '✓ '+esc(tr(x)); }).join('<br>')+'</div>' +
     '<div class="section-title">'+tr('Not allowed')+'</div><div style="font-size:13px;line-height:1.7;color:var(--text-muted);">'+ri.cannot.map(function(x){ return '✗ '+esc(tr(x)); }).join('<br>')+'</div>' +
     '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="mpSave" type="button">'+tr('Save details')+'</button></div>' +
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="mpPw" type="button">'+(me.role==='cashier'?tr('Change PIN'):tr('Change password'))+'</button><button class="btn btn-ghost btn-block" id="mpOut" type="button">'+tr('Log out')+'</button></div>';
   var ov = openSheet(html);
-  ov.querySelector('#mpSave').addEventListener('click', function(){ refs.users.doc(me.id).update({ phone:ov.querySelector('#mpPhone').value.trim(), email:ov.querySelector('#mpEmail').value.trim().toLowerCase() }); toast(tr('Saved')); closeModal(); });
+  var pfMsg = ov.querySelector('#mpPhotoMsg'), pfFile = ov.querySelector('#mpPhotoFile');
+  ov.querySelector('#mpPhotoBtn').addEventListener('click', function(){ pfFile.click(); });
+  var pfDel = ov.querySelector('#mpPhotoDel');
+  if(pfDel) pfDel.addEventListener('click', function(){ refs.users.doc(me.id).update({ photo:'' }); toast(tr('Photo removed')); closeModal(); setTimeout(function(){ render(); openMyProfileSheet(); }, 150); });
+  pfFile.addEventListener('change', function(){
+    var f = pfFile.files && pfFile.files[0]; if(!f) return;
+    pfMsg.innerHTML = '<div class="banner">'+ICONS.info+'<span>'+tr('Preparing your photo…')+'</span></div>';
+    squarePhoto(f, 320, 0.82).then(function(url){
+      refs.users.doc(me.id).update({ photo:url }); toast(tr('Photo saved')); closeModal();
+      setTimeout(function(){ render(); openMyProfileSheet(); }, 150);
+    }, function(){ pfMsg.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('That file is not a picture Pesa can read. Choose a JPG or PNG photo.')+'</span></div>'; });
+  });
+  ov.querySelector('#mpSave').addEventListener('click', function(){ refs.users.doc(me.id).update({ phone:ov.querySelector('#mpPhone').value.trim(), email:ov.querySelector('#mpEmail').value.trim().toLowerCase(),
+    shift:ov.querySelector('#mpShift').value, emName:ov.querySelector('#mpEmName').value.trim(), emPhone:ov.querySelector('#mpEmPhone').value.trim(),
+    stockAlerts:ov.querySelector('#mpStockAl').checked, showGoal:ov.querySelector('#mpGoal').checked, showHints:ov.querySelector('#mpHints').checked }); toast(tr('Saved')); closeModal(); });
   ov.querySelector('#mpPw').addEventListener('click', openChangePasswordSheet);
   ov.querySelector('#mpOut').addEventListener('click', logout);
 }
@@ -6820,7 +6879,7 @@ function renderTeamTracking(){
     var tillTxt = s.openTill ? tr('Till open')+' · '+fmtMoney(s.expected)+' '+tr('expected') : tr('Till closed');
     var varTxt = s.closed.length ? (Math.abs(s.variance) < 0.01 ? tr('Cash ups balanced') : (s.variance < 0 ? tr('Short')+' '+fmtMoney(Math.abs(s.variance)) : tr('Over')+' '+fmtMoney(s.variance))) : '';
     var main = u.role === 'stockclerk' ? s.waste.length+' '+tr('wastage records') : s.count+' '+tr('sales')+' · '+tr('avg')+' '+fmtMoney(s.avg);
-    return '<div class="row" data-trku="'+u.id+'"><div class="avatar">'+esc(initials(u.name))+'</div><div class="main"><div class="title">'+esc(u.name)+(u.id===best?' ★':'')+(u.active===false?' ('+tr('deactivated')+')':'')+'</div>' +
+    return '<div class="row" data-trku="'+u.id+'"><div class="avatar">'+userAvatarInner(u)+'</div><div class="main"><div class="title">'+esc(u.name)+(u.id===best?' ★':'')+(u.active===false?' ('+tr('deactivated')+')':'')+'</div>' +
       '<div class="sub">'+esc(u.jobTitle||tr(ROLE_LABELS[u.role]||u.role))+' · '+esc(lastSeenText(u))+'</div>' +
       '<div class="sub">'+esc(main)+(u.role!=='stockclerk'?' · '+esc(tillTxt):'')+(varTxt?' · '+esc(varTxt):'')+'</div></div>' +
       '<div class="trail"><div class="amt num">'+(u.role==='stockclerk'?'':fmtMoney(s.total))+'</div></div></div>';
@@ -7394,6 +7453,7 @@ function onMessagesChanged(){
 var _stockNotified = {};
 function empStockAlertTick(){
   if(!isRestricted()) return;
+  try{ var _me = State.users.find(function(x){ return x.id === (State.session||{}).userId; }); if(_me && _me.stockAlerts === false) return; }catch(e){}
   var low = State.products.filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); });
   var fresh = low.filter(function(p){ return !_stockNotified[p.id]; });
   low.forEach(function(p){ _stockNotified[p.id] = 1; });
@@ -7579,7 +7639,7 @@ function renderLoginHtml(){
     .sort(function(a,b){ var order={owner:0,manager:1,cashier:2,stockclerk:3}; return (order[a.role]-order[b.role]) || a.name.localeCompare(b.name); });
   var tiles = staff.map(function(u){
     return '<button type="button" class="stafftile" data-staff="'+u.id+'">' +
-      '<div class="avatar">'+esc(initials(u.name))+'</div>' +
+      '<div class="avatar">'+userAvatarInner(u)+'</div>' +
       '<div class="main"><div class="n">'+esc(u.name)+'</div><div class="r">'+esc(tr(ROLE_LABELS[u.role]||u.role))+'</div></div>' +
       '<span class="rolebadge '+u.role+'">'+esc(u.role)+'</span>' +
     '</button>';
@@ -18568,7 +18628,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.73';
+var APP_VERSION = '2026.10.74';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18760,6 +18820,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.74', items:[
+    'Employees can add a profile photo, and set their preferred shift, an emergency contact and personal work options (stock alerts, best day goal, tips) in My profile'
+  ]},
   { v:'2026.10.73', items:[
     'The employee home screen has a fresh look: richer welcome banner, icon tiles, brighter sales cards and a polished till and weekly chart, in Pesa green and gold'
   ]},
