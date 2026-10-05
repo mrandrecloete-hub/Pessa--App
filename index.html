@@ -877,6 +877,152 @@
   .authbox{ background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:var(--shadow); }
   .authbox .section-title{ margin-top:20px; }
   .authbox .section-title:first-child{ margin-top:0; }
+
+  /* ---------- registration page: bright glass look (scoped to .regpage so sign-in etc. are untouched) ---------- */
+  .regpage{
+    --bg:#F4FFFA; --surface:#FFFFFF; --surface-2:#EAFBF3; --surface-3:#D3F5E6;
+    --text:#06281E; --text-muted:#35675A; --primary:#00A870; --primary-dim:#00C389; --primary-contrast:#FFFFFF;
+    --accent:#FFB300; --border:#9BE6C9; --danger:#E0341A; --danger-bg:#FFE9E3;
+    color-scheme:light; color:var(--text);
+    position:relative; width:100%; max-width:440px; margin:0;
+  }
+  .regpage .reg-bg{
+    position:fixed; top:0; right:0; bottom:0; left:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(60% 40% at 100% 28%, rgba(255,214,90,.34), rgba(255,214,90,0) 70%),
+      radial-gradient(70% 45% at 0% 72%, rgba(0,224,160,.30), rgba(0,224,160,0) 70%),
+      linear-gradient(180deg,#F4FFFA 0%,#FFFFFF 42%,#FFF8E2 100%);
+  }
+  .regpage .reg-wm{
+    position:fixed; z-index:0; pointer-events:none; left:50%; top:54%;
+    width:min(94vw,440px); aspect-ratio:380/369; transform:translate(-50%,-50%) rotate(-6deg);
+    background:var(--logo-img) center/contain no-repeat; opacity:.17; filter:saturate(1.3) blur(.5px);
+  }
+  .regpage .reg-wm::after{
+    content:""; position:absolute; top:-10%; right:-10%; bottom:-10%; left:-10%;
+    background:radial-gradient(circle at 50% 35%, rgba(255,255,255,.7), rgba(255,255,255,0) 60%);
+  }
+  .regpage .reg-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .regpage .reg-hero{
+    position:relative; z-index:1; overflow:hidden; color:#fff;
+    margin:calc(-1 * max(24px, env(safe-area-inset-top,0px))) -18px 0;
+    padding:calc(max(24px, env(safe-area-inset-top,0px)) + 16px) 22px 50px;
+    background:
+      radial-gradient(110% 90% at 88% 0%, rgba(255,230,120,.62) 0%, rgba(255,230,120,0) 58%),
+      radial-gradient(90% 120% at 0% 100%, rgba(120,255,214,.6) 0%, rgba(120,255,214,0) 62%),
+      linear-gradient(135deg,#00E38F 0%,#00BFA2 46%,#0097BA 100%);
+  }
+  .regpage .reg-swoosh{ position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+  .regpage .reg-spark{ animation:regTwinkle 3.2s ease-in-out infinite; }
+  .regpage .reg-brand{ position:relative; z-index:2; display:flex; align-items:center; gap:12px; }
+  .regpage .reg-logo{
+    width:78px; height:78px;
+    filter:drop-shadow(0 8px 14px rgba(0,60,40,.45)) drop-shadow(0 0 18px rgba(255,214,102,.65));
+    animation:regFloat 4.5s ease-in-out infinite;
+  }
+  .regpage .reg-pesa{ font-family:var(--font-sans); font-weight:800; font-size:46px; line-height:1; letter-spacing:-.025em; color:#fff; text-shadow:0 3px 14px rgba(0,70,50,.5); }
+  .regpage .reg-nam{ margin-top:4px; font-size:15px; font-weight:400; letter-spacing:.4em; text-transform:uppercase; color:rgba(255,255,255,.95); text-shadow:0 2px 8px rgba(0,70,50,.4); }
+  .regpage .reg-slogan{ position:relative; z-index:2; margin-top:12px; font-size:11px; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:#FFF0A0; text-shadow:0 1px 6px rgba(0,70,50,.55); }
+  .regpage .reg-map{
+    position:absolute; z-index:2; right:16px; top:calc(max(24px, env(safe-area-inset-top,0px)) + 4px); width:92px;
+    filter:drop-shadow(0 10px 12px rgba(0,50,40,.5)) drop-shadow(0 0 14px rgba(255,255,255,.55));
+    animation:regFloat 5.5s ease-in-out infinite reverse;
+  }
+  .regpage .reg-wave{ position:absolute; left:0; bottom:-1px; width:100%; height:38px; display:block; }
+  .regpage .reg-steps{
+    position:relative; z-index:2; margin:-24px 0 16px; padding:8px 10px; display:flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.94); border:1.5px solid #fff; border-radius:999px;
+    box-shadow:0 14px 30px -14px rgba(0,160,110,.7), 0 0 0 1px rgba(0,200,140,.2);
+  }
+  .regpage .reg-step{ display:flex; align-items:center; gap:6px; flex:none; min-width:0; }
+  .regpage .reg-step .n{ width:28px; height:28px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:800; color:#2D8A6C; background:#D9F7E9; transition:all .25s; }
+  .regpage .reg-step .l{ font-size:12px; font-weight:700; color:#6FA592; white-space:nowrap; transition:color .25s; }
+  .regpage .reg-step.on .n, .regpage .reg-step.done .n{ color:#fff; background:linear-gradient(135deg,#00E08F,#008F80); box-shadow:0 6px 14px -4px rgba(0,190,130,.9); }
+  .regpage .reg-step.on .l, .regpage .reg-step.done .l{ color:#06281E; }
+  .regpage .reg-step.done .n{ font-size:0; }
+  .regpage .reg-step.done .n::after{ content:"\2713"; font-size:16px; }
+  .regpage .reg-steps .line{ flex:1; min-width:6px; height:2px; border-radius:2px; background:linear-gradient(90deg,#B7EFD8,#E3F8EF); }
+  .regpage .reg-body{ position:relative; z-index:1; }
+  .regpage .reg-already{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px; margin-bottom:6px; border-radius:20px;
+    background:linear-gradient(135deg,rgba(0,224,160,.3),rgba(255,255,255,.8));
+    border:1.5px solid rgba(0,200,140,.5); box-shadow:0 14px 28px -16px rgba(0,170,120,.7), inset 0 1px 0 #fff;
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+  }
+  .regpage .reg-already-l{ display:flex; align-items:center; gap:10px; flex:1 1 150px; min-width:0; }
+  .regpage .reg-already-ic{ width:46px; height:46px; flex:none; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#007A58; background:radial-gradient(circle at 30% 25%,#fff,#C6F6E3); border:1.5px solid #7FE3BE; box-shadow:0 8px 14px -8px rgba(0,150,100,.7); }
+  .regpage .reg-already-ic svg{ width:24px; height:24px; }
+  .regpage .reg-already-t b{ display:block; font-size:12.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:#05392B; line-height:1.25; }
+  .regpage .reg-already-t span{ display:block; margin-top:3px; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#1B6B55; }
+  .regpage .reg-biz-list{ display:flex; flex-direction:column; gap:8px; flex:1 1 170px; min-width:0; }
+  .regpage .reg-biz{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px; cursor:pointer; color:#06281E; font:inherit; background:#fff; border:1.5px solid #B4EFD8; border-radius:16px; box-shadow:0 10px 18px -12px rgba(0,150,100,.8); }
+  .regpage .reg-av{ width:38px; height:38px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; background:linear-gradient(135deg,#00D68F,#009DB5); }
+  .regpage .reg-bt{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .regpage .reg-bt b{ font-size:14.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .regpage .reg-bt i{ font-style:normal; font-size:12px; color:#3E7A68; }
+  .regpage .reg-biz svg{ width:18px; height:18px; flex:none; color:#0A7A5C; }
+  .regpage .reg-sec{ display:flex; align-items:center; gap:10px; margin:22px 0 10px; color:#06281E; }
+  .regpage .reg-sec .si{ width:34px; height:34px; flex:none; color:#009466; filter:drop-shadow(0 4px 8px rgba(0,180,120,.4)); }
+  .regpage .reg-sec h2{ margin:0; font-family:var(--font-sans); font-size:19px; font-weight:800; letter-spacing:.01em; text-transform:uppercase; white-space:nowrap; }
+  .regpage .reg-sec::after{ content:""; flex:1; height:2px; border-radius:2px; background:linear-gradient(90deg,#4FE0B0,rgba(79,224,176,0)); }
+  .regpage .banner{
+    align-items:center; gap:12px; padding:12px 14px; border-radius:16px; font-size:12.5px; line-height:1.5; color:#1E5C4A;
+    background:linear-gradient(135deg,#DDFBEE,#F3FFF9); border:1.5px solid #A8EDD2; box-shadow:0 10px 18px -14px rgba(0,160,110,.8);
+  }
+  .regpage .banner .bi{ flex:none; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#00946A; background:#fff; border:1.5px solid #9BE6C9; }
+  .regpage .banner .bi svg{ width:20px; height:20px; }
+  .regpage #rcError .banner{ background:#FFE9E3; border-color:#FFB4A3; color:#9A1F0B; }
+  .regpage .field{ margin-bottom:13px; }
+  .regpage .field-row{ align-items:flex-end; }
+  .regpage .field label{ margin-bottom:6px; font-size:13.5px; font-weight:800; letter-spacing:0; color:#06281E; }
+  .regpage .field label .opt{ font-size:12px; font-weight:500; color:#4F8E7A; }
+  .regpage .field label .req{ font-weight:800; color:#FF5A1F; }
+  .regpage .fwrap{ position:relative; }
+  .regpage .ficon{ position:absolute; z-index:2; left:13px; top:50%; transform:translateY(-50%); width:22px; height:22px; color:#00805F; pointer-events:none; }
+  .regpage .fchev{ position:absolute; z-index:2; right:13px; top:50%; transform:translateY(-50%) rotate(90deg); width:18px; height:18px; color:#00805F; pointer-events:none; }
+  .regpage .field input, .regpage .field select{
+    height:50px; padding:0 14px 0 46px; font-size:15px; font-weight:500; color:#06281E;
+    border:1.5px solid #8FE4C4; border-radius:15px; -webkit-appearance:none; appearance:none;
+    background:linear-gradient(180deg,#FFFFFF 0%,#F0FFF8 100%);
+    box-shadow:0 8px 16px -12px rgba(0,150,100,.8), inset 0 1px 0 #fff; transition:border-color .15s, box-shadow .15s;
+  }
+  .regpage .field input[list]{ padding-right:40px; }
+  .regpage .field input[list]::-webkit-calendar-picker-indicator{ display:none !important; }
+  .regpage .field select{ padding-right:40px; }
+  .regpage .field input::placeholder{ color:#6FA392; opacity:1; }
+  .regpage .field input:focus, .regpage .field select:focus{ border-color:#00C98B; box-shadow:0 0 0 4px rgba(0,214,143,.3), 0 12px 22px -12px rgba(0,170,120,.9); }
+  .regpage .pwwrap > input{ padding-right:46px !important; }
+  .regpage .pwwrap .pweye{ color:#00805F; }
+  .regpage .compliance-note{ margin-top:6px; color:#6B5310; background:linear-gradient(135deg,#FFF6D8,#FFFDF2); border:1.5px solid #FFE08C; border-radius:16px; }
+  .regpage .actions{ margin-top:18px; }
+  .regpage .btn-primary.reg-go{
+    position:relative; overflow:hidden; height:58px; display:flex; align-items:center; justify-content:center; gap:12px;
+    border:0; border-radius:999px; font-size:17px; font-weight:800; color:#fff; text-shadow:0 2px 6px rgba(0,80,60,.45);
+    background:linear-gradient(100deg,#00E390 0%,#00BA88 46%,#00A0AA 100%);
+    box-shadow:0 18px 30px -12px rgba(0,190,130,.95), 0 0 0 3px rgba(255,255,255,.75), 0 0 0 5px rgba(0,214,143,.38), inset 0 2px 0 rgba(255,255,255,.55), inset 0 -4px 10px rgba(0,90,70,.28);
+  }
+  .regpage .reg-go::before{ content:""; position:absolute; top:0; left:-60%; width:40%; height:100%; transform:skewX(-20deg); background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent); animation:regShine 3.6s ease-in-out infinite; }
+  .regpage .reg-go svg{ width:22px; height:22px; flex:none; }
+  .regpage .reg-go span{ text-transform:capitalize; }
+  .regpage .reg-go:disabled{ opacity:.65; }
+  .regpage .btn-ghost{ color:#007A58; font-weight:700; background:rgba(255,255,255,.85); border:1.5px solid #9BE6C9; border-radius:14px; }
+  .regpage .btn-ghost[data-forgot]{ background:transparent; border-color:transparent; text-decoration:underline; }
+  .regpage .section-title{ color:#0A6B52; font-weight:800; }
+  @keyframes regFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-6px); } }
+  @keyframes regShine{ 0%,55%{ left:-60%; } 100%{ left:130%; } }
+  @keyframes regTwinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  @media (max-width:440px){
+    .regpage .reg-already-l, .regpage .reg-biz-list{ flex-basis:100%; }
+  }
+  @media (max-width:395px){
+    .regpage .reg-step:not(.on) .l{ display:none; }
+    .regpage .reg-pesa{ font-size:40px; }
+    .regpage .reg-logo{ width:68px; height:68px; }
+    .regpage .reg-map{ width:80px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .regpage .reg-logo, .regpage .reg-map, .regpage .reg-spark, .regpage .reg-go::before{ animation:none; }
+  }
   .stafftile{
     display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:var(--surface-2);
     border:2px solid transparent; border-radius:14px; padding:11px 13px; cursor:pointer; margin-bottom:8px;
@@ -5980,41 +6126,115 @@ function bipaFields(reg, legal, prev){
   return { regNumber:n, legalName:legal, bipaStatus: n ? 'ENTERED' : 'UNKNOWN', bipaVerifiedAt:null, verificationTier:'UNVERIFIED' };
 }
 
+var REG_IC = {
+  building:'<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M2 21h20M8 8h3M8 12h3M8 16h3"/>',
+  store:'<path d="M3 9l1.5-5h15L21 9M3 9v1a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0V9M5 13v8h14v-8M10 21v-5h4v5"/>',
+  shield:'<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>',
+  doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  map:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
+  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  userplus:'<circle cx="9" cy="8" r="4"/><path d="M1.5 21a7.5 7.5 0 0 1 15 0M19 8v6M16 11h6"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/>',
+  device:'<rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/>'
+};
+var REG_TOWNS = ['Windhoek','Swakopmund','Walvis Bay','Oshakati','Ongwediva','Ondangwa','Rundu','Katima Mulilo','Keetmanshoop','Mariental','Otjiwarongo','Tsumeb','Grootfontein','Lüderitz','Gobabis','Okahandja','Rehoboth','Henties Bay','Outjo','Opuwo','Eenhana','Nkurenkuru','Omaruru','Karibib','Usakos','Oranjemund','Khorixas','Karasburg'];
+var REG_MAP_SVG = '<svg class="reg-map" viewBox="-6 -6 152 134" aria-hidden="true"><defs><clipPath id="regNamClip"><path d="M2.5,4.5 L20.0,2.0 L28.0,6.0 L45.0,6.0 L65.0,6.0 L68.0,10.0 L85.0,11.0 L100.0,11.5 L119.0,7.0 L130.0,7.0 L137.5,10.0 L125.0,12.0 L120.0,15.0 L100.0,14.0 L95.0,15.0 L95.0,52.0 L85.0,52.0 L85.0,79.5 L85.0,112.0 L75.0,116.0 L65.0,121.0 L55.0,119.0 L49.5,118.0 L42.0,108.0 L36.5,98.5 L33.0,82.0 L30.0,62.0 L25.0,50.0 L15.0,32.0 L18.0,26.0 L10.0,21.0Z"/></clipPath></defs><path d="M2.5,4.5 L20.0,2.0 L28.0,6.0 L45.0,6.0 L65.0,6.0 L68.0,10.0 L85.0,11.0 L100.0,11.5 L119.0,7.0 L130.0,7.0 L137.5,10.0 L125.0,12.0 L120.0,15.0 L100.0,14.0 L95.0,15.0 L95.0,52.0 L85.0,52.0 L85.0,79.5 L85.0,112.0 L75.0,116.0 L65.0,121.0 L55.0,119.0 L49.5,118.0 L42.0,108.0 L36.5,98.5 L33.0,82.0 L30.0,62.0 L25.0,50.0 L15.0,32.0 L18.0,26.0 L10.0,21.0Z" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round"/><g clip-path="url(#regNamClip)"><rect x="-10" y="-10" width="160" height="140" fill="#0A3FC0"/><polygon points="150,-10 150,130 -10,130" fill="#00B04F"/><line x1="-15" y1="135" x2="155" y2="-13" stroke="#fff" stroke-width="40"/><line x1="-15" y1="135" x2="155" y2="-13" stroke="#EE2A1F" stroke-width="29"/><g stroke="#FFD21A" stroke-width="2.2" stroke-linecap="round"><line x1="39.6" y1="22.0" x2="44.0" y2="22.0"/><line x1="38.4" y1="26.3" x2="42.3" y2="28.5"/><line x1="35.3" y1="29.4" x2="37.5" y2="33.3"/><line x1="31.0" y1="30.6" x2="31.0" y2="35.0"/><line x1="26.7" y1="29.4" x2="24.5" y2="33.3"/><line x1="23.6" y1="26.3" x2="19.7" y2="28.5"/><line x1="22.4" y1="22.0" x2="18.0" y2="22.0"/><line x1="23.6" y1="17.7" x2="19.7" y2="15.5"/><line x1="26.7" y1="14.6" x2="24.5" y2="10.7"/><line x1="31.0" y1="13.4" x2="31.0" y2="9.0"/><line x1="35.3" y1="14.6" x2="37.5" y2="10.7"/><line x1="38.4" y1="17.7" x2="42.3" y2="15.5"/></g><circle cx="31" cy="22" r="6.6" fill="#FFD21A" stroke="#1B4FD8" stroke-width="1.6"/><circle cx="31" cy="22" r="3.6" fill="#FFC400"/></g><path d="M2.5,4.5 L20.0,2.0 L28.0,6.0 L45.0,6.0 L65.0,6.0 L68.0,10.0 L85.0,11.0 L100.0,11.5 L119.0,7.0 L130.0,7.0 L137.5,10.0 L125.0,12.0 L120.0,15.0 L100.0,14.0 L95.0,15.0 L95.0,52.0 L85.0,52.0 L85.0,79.5 L85.0,112.0 L75.0,116.0 L65.0,121.0 L55.0,119.0 L49.5,118.0 L42.0,108.0 L36.5,98.5 L33.0,82.0 L30.0,62.0 L25.0,50.0 L15.0,32.0 L18.0,26.0 L10.0,21.0Z" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+function regIc(n, cls){
+  return '<svg class="'+(cls||'ico')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(REG_IC[n]||'')+'</svg>';
+}
+/* one labelled field with a leading icon; opt = add the grey "— optional", req = add the orange star */
+function regF(label, icon, inner, opt, req){
+  return '<div class="field"><label>'+label+(req?' <span class="req">*</span>':'')+(opt?' <span class="opt">— '+tr('optional')+'</span>':'')+'</label>' +
+    '<div class="fwrap">'+regIc(icon,'ficon')+inner+'</div></div>';
+}
+function regSecHtml(icon, title){
+  return '<div class="reg-sec">'+regIc(icon,'si')+'<h2>'+title+'</h2></div>';
+}
+/* "Already registered on this device?" card: the other businesses stored on this phone, one tap to open */
+function regOtherBusinessesHtml(){
+  var others = WS.others();
+  if(!others.length) return '';
+  var t = tr('Already registered on this device? Open it instead'), i = t.indexOf('?');
+  var head = i > 0 ? t.slice(0, i+1) : t, tail = i > 0 ? t.slice(i+1).trim() : '';
+  return '<div class="reg-already"><div class="reg-already-l"><span class="reg-already-ic">'+regIc('device')+'</span>' +
+    '<div class="reg-already-t"><b>'+esc(head)+'</b>'+(tail ? '<span>'+esc(tail)+'</span>' : '')+'</div></div>' +
+    '<div class="reg-biz-list">' + others.map(function(w){
+      return '<button type="button" class="reg-biz" data-ws="'+esc(w.id)+'"><span class="reg-av">'+esc(initials(w.name))+'</span>' +
+        '<span class="reg-bt"><b>'+esc(w.name)+'</b><i>'+tr('Open this business')+'</i></span>'+regIc('chev')+'</button>';
+    }).join('') + '</div></div>';
+}
+function regHeroHtml(){
+  return '<div class="reg-hero">' +
+    '<svg class="reg-swoosh" viewBox="0 0 440 220" preserveAspectRatio="none" aria-hidden="true"><defs>' +
+      '<linearGradient id="regGold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFE98A" stop-opacity="0"/><stop offset=".5" stop-color="#FFE98A" stop-opacity=".95"/><stop offset="1" stop-color="#FFC93C" stop-opacity=".2"/></linearGradient></defs>' +
+      '<path d="M-10 190C90 120 230 70 450 40" fill="none" stroke="url(#regGold)" stroke-width="2.2"/>' +
+      '<path d="M-10 205C110 140 250 100 450 70" fill="none" stroke="url(#regGold)" stroke-width="1.2" opacity=".7"/>' +
+      '<path d="M-10 60C80 20 160 10 260 30" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4"/>' +
+      '<g fill="#FFF6B0"><circle class="reg-spark" cx="300" cy="34" r="2.4"/><circle class="reg-spark" cx="196" cy="22" r="1.8" style="animation-delay:.8s"/><circle class="reg-spark" cx="372" cy="120" r="2" style="animation-delay:1.5s"/><circle class="reg-spark" cx="150" cy="150" r="1.6" style="animation-delay:2.1s"/></g></svg>' +
+    '<h1 class="reg-sr">'+tr('Register your business')+'</h1>' +
+    '<div class="reg-brand"><span class="brandmark reg-logo" role="img" aria-label="Pesa"></span>' +
+      '<div><div class="reg-pesa">Pesa</div><div class="reg-nam">Namibia</div></div></div>' +
+    '<div class="reg-slogan">Your Mula, Your Pride</div>' +
+    REG_MAP_SVG +
+    '<svg class="reg-wave" viewBox="0 0 440 38" preserveAspectRatio="none" aria-hidden="true">' +
+      '<path d="M0 38V20C90 -6 200 4 290 20S410 34 440 12V38Z" fill="#F4FFFA"/>' +
+      '<path d="M0 20C90 -6 200 4 290 20S410 34 440 12" fill="none" stroke="#FFD96B" stroke-width="2" opacity=".9"/></svg>' +
+  '</div>';
+}
+function regStepsHtml(){
+  return '<div class="reg-steps" aria-hidden="true">' +
+    '<div class="reg-step on"><span class="n">1</span><span class="l">'+tr('Business details')+'</span></div><i class="line"></i>' +
+    '<div class="reg-step"><span class="n">2</span><span class="l">'+tr('Owner account')+'</span></div><i class="line"></i>' +
+    '<div class="reg-step"><span class="n">3</span><span class="l">'+tr('Done')+'</span></div></div>';
+}
+
 function renderRegisterCompanyHtml(){
   var regionOpts = NAMIBIA_REGIONS.map(function(r){ return '<option>'+esc(r)+'</option>'; }).join('');
-  return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Register your business')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Set up Pesa for your business — this only takes a minute.')+'</p></div>' +
-    '<div class="authbox">' +
-      otherBusinessesHtml(tr('Already registered on this device? Open it instead')) +
-      '<div class="section-title">'+tr('Business details')+'</div>' +
-      '<div class="banner">'+tr('Only your business name is required to get started. Add the rest — registration number, VAT, address — whenever you have it; you can always fill it in later from Settings.')+'</div>' +
-      '<div class="field"><label>'+tr('Business name')+' *</label><input id="rcCompanyName" placeholder="e.g. Nangolo General Dealer"></div>' +
-      '<div class="field"><label>'+tr('Trading name (if different)')+' — '+tr('optional')+'</label><input id="rcTradingName" placeholder="e.g. Nangolo Shop"></div>' +
+  var townOpts = REG_TOWNS.map(function(t){ return '<option value="'+esc(t)+'"></option>'; }).join('');
+  return '<div class="authcard regpage">' +
+    '<div class="reg-bg"></div><div class="reg-wm" aria-hidden="true"></div>' +
+    regHeroHtml() + regStepsHtml() +
+    '<div class="reg-body">' +
+      regOtherBusinessesHtml() +
+      '<div id="regBizSec">' +
+      regSecHtml('building', tr('Business details')) +
+      '<div class="banner"><span class="bi">'+regIc('bulb')+'</span><span>'+tr('Only your business name is required to get started. Add the rest — registration number, VAT, address — whenever you have it; you can always fill it in later from Settings.')+'</span></div>' +
+      regF(tr('Business name'), 'building', '<input id="rcCompanyName" placeholder="e.g. Nangolo General Dealer">', false, true) +
+      regF(tr('Trading name (if different)'), 'store', '<input id="rcTradingName" placeholder="e.g. Nangolo Shop">', true) +
       '<div class="field-row">' +
-        '<div class="field"><label>'+tr('BIPA registration number')+' — '+tr('optional')+'</label><input id="rcRegNumber" placeholder="e.g. CC/2024/00123"></div>' +
-        '<div class="field"><label>'+tr('NamRA VAT number')+' — '+tr('optional')+'</label><input id="rcVatNumber" placeholder="e.g. 123456789"></div>' +
+        regF(tr('BIPA registration number'), 'shield', '<input id="rcRegNumber" placeholder="CC/2024/001">', true) +
+        regF(tr('NamRA VAT number'), 'doc', '<input id="rcVatNumber" placeholder="e.g. 123456789">', true) +
       '</div>' +
-      bipaExtraHtml('rc', {}) +
-      '<div class="field"><label>'+tr('Physical address')+' — '+tr('optional')+'</label><input id="rcAddress" placeholder="Street, suburb"></div>' +
+      regF(tr('Legal name on your BIPA certificate'), 'doc', '<input id="rcLegal" placeholder="e.g. Nangolo General Dealer CC">', true) +
+      '<div id="rcBipaHint" aria-live="polite" style="font-size:12.5px;line-height:1.55;color:var(--text-muted);margin:-4px 0 12px;"></div>' +
+      regF(tr('Physical address'), 'pin', '<input id="rcAddress" placeholder="Street, suburb">', true) +
       '<div class="field-row">' +
-        '<div class="field"><label>'+tr('Town')+' — '+tr('optional')+'</label><input id="rcTown" placeholder="e.g. Windhoek"></div>' +
-        '<div class="field"><label>'+tr('Region')+' — '+tr('optional')+'</label><select id="rcRegion"><option value="">'+tr('Choose…')+'</option>'+regionOpts+'</select></div>' +
+        regF(tr('Town'), 'pin', '<input id="rcTown" list="rcTownList" autocomplete="off" placeholder="e.g. Windhoek">'+regIc('chev','fchev')+'<datalist id="rcTownList">'+townOpts+'</datalist>', true) +
+        regF(tr('Region'), 'map', '<select id="rcRegion"><option value="">'+tr('Choose…')+'</option>'+regionOpts+'</select>'+regIc('chev','fchev'), true) +
       '</div>' +
       '<div class="field-row">' +
-        '<div class="field"><label>'+tr('Business phone')+' — '+tr('optional')+'</label><input id="rcPhone" placeholder="081 234 5678"></div>' +
-        '<div class="field"><label>'+tr('Business email')+' — '+tr('optional')+'</label><input id="rcEmail" type="email" placeholder="shop@example.com"></div>' +
+        regF(tr('Business phone'), 'phone', '<input id="rcPhone" placeholder="081 234 5678">', true) +
+        regF(tr('Business email'), 'mail', '<input id="rcEmail" type="email" placeholder="shop@example.com">', true) +
       '</div>' +
       complianceNoteHtml() +
-      '<div class="section-title">'+tr('Owner account')+'</div>' +
-      '<div class="banner">'+tr('This creates your Owner login — you can add Managers and Cashiers afterwards from Settings → Team.')+'</div>' +
-      '<div class="field"><label>'+tr('Owner full name')+' *</label><input id="rcOwnerName" placeholder="Full name"></div>' +
-      '<div class="field"><label>'+tr('Owner email (needed to reset a forgotten password)')+' — '+tr('optional')+'</label><input id="rcOwnerEmail" placeholder="081 234 5678 or you@example.com"></div>' +
+      '</div>' +
+      '<div id="regOwnerSec">' +
+      regSecHtml('user', tr('Owner account')) +
+      '<div class="banner"><span class="bi">'+regIc('user')+'</span><span>'+tr('This creates your Owner login — you can add Managers and Cashiers afterwards from Settings → Team.')+'</span></div>' +
+      regF(tr('Owner full name'), 'user', '<input id="rcOwnerName" placeholder="Full name">', false, true) +
+      regF(tr('Owner email (needed to reset a forgotten password)'), 'mail', '<input id="rcOwnerEmail" placeholder="081 234 5678 or you@example.com">', true) +
       '<div class="field-row">' +
-        '<div class="field"><label>'+tr('Password')+' *</label><input id="rcOwnerPassword" type="password" placeholder="At least 4 characters"></div>' +
-        '<div class="field"><label>'+tr('Confirm password')+' *</label><input id="rcOwnerPassword2" type="password" placeholder="Repeat password"></div>' +
+        regF(tr('Password'), 'lock', '<input id="rcOwnerPassword" type="password" placeholder="Min. 4 chars">', false, true) +
+        regF(tr('Confirm password'), 'lock', '<input id="rcOwnerPassword2" type="password" placeholder="Repeat it">', false, true) +
+      '</div>' +
       '</div>' +
       '<div id="rcError"></div>' +
-      '<div class="actions"><button class="btn btn-primary btn-block" id="rcSubmit">'+tr('Register &amp; continue')+'</button></div>' +
+      '<div class="actions"><button class="btn btn-primary btn-block reg-go" id="rcSubmit">'+regIc('userplus')+'<span>'+tr('Register &amp; continue')+'</span>'+regIc('chev')+'</button></div>' +
       '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       accountPickerHtml() +
       joinSyncHtml() +
@@ -6077,6 +6297,15 @@ function wireRegisterCompany(root){
   var js = root.querySelector('[data-joinsync]'); if(js) js.addEventListener('click', openJoinSyncSheet);
   var jn = root.querySelector('[data-joinnearby]'); if(jn) jn.addEventListener('click', openNearbySheet);
   bipaWire(root, '#rcRegNumber', '#rcBipaHint', null);
+  (function(){
+    var page = root.querySelector('.regpage'); if(!page) return;
+    var steps = page.querySelectorAll('.reg-step');
+    function setStep(n){ steps.forEach(function(el, i){ el.classList.toggle('on', i === n-1); el.classList.toggle('done', i < n-1); }); }
+    page.addEventListener('focusin', function(e){
+      var t = e.target; if(!t || !t.closest) return;
+      if(t.closest('#regOwnerSec')) setStep(2); else if(t.closest('#regBizSec')) setStep(1);
+    });
+  })();
   root.querySelector('#rcSubmit').addEventListener('click', function(){
     var v = function(id){ return root.querySelector(id).value.trim(); };
     var companyName = v('#rcCompanyName'), regNumber = v('#rcRegNumber'), address = v('#rcAddress'),
