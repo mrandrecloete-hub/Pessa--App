@@ -2705,6 +2705,7 @@ var State = {
   invFilter: { q:'', period:'all', client:'' },
   reports: [],         // immutable monthly report snapshots: {id, type:'monthly', interim, periodKey, branchId, generatedAt, figures, ...}
   repFilter: { year:'all', scope:'any' },
+  payRuns: [],         // monthly pay runs: {id:'YYYY-MM', month, lines, totalNet, status:'saved'|'paid'}
   accountingPeriods: [], // frozen monthly accounting packs: {id:'YYYY-MM', periodKey, revision, tb, pl, vat, bs, hash, prevHash, ...}
   wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
   stockTakes: [],      // {id, name, status:'open'|'posted', counts:{productId:counted}, summary, lines, before, after, createdAt, postedAt}
@@ -2834,6 +2835,7 @@ function initRefs(){
   refs.recurring = Store.collection('recurring');
   refs.loyaltyLog = Store.collection('loyaltyLog');
   refs.accountingPeriods = Store.collection('accountingPeriods');
+  refs.payRuns = Store.collection('payRuns');
 }
 
 function subscribeAll(){
@@ -2952,7 +2954,7 @@ function subscribeAll(){
       if(State.tab === 'reconcile' && document.getElementById('app').style.display !== 'none') render();
     });
   });
-  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog']].forEach(function(c){
+  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog'],['payRuns','payRuns']].forEach(function(c){
     refs[c[0]].onSnapshot(function(docs){
       State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
     });
@@ -3976,8 +3978,10 @@ function openBizHub(){
     ['accountant','Accountant','Monthly accounting packs, VAT working figures, trial balance'],
     ['landed','Import cost calculator','True cost of imported stock after freight, clearing and duty'],
     ['momo','Mobile money check','Match wallet sales with payment messages you paste in'],
+    ['payroll','Payroll and payslips','Pay details, monthly pay run and payslips'],
     ['setup','Setup guide', sp.done+' of '+sp.total+' steps done']
   ];
+  if(!isOwner()) tiles = tiles.filter(function(t){ return t[0] !== 'payroll'; });
   var html = '<div class="sheet-head"><h2>'+tr('Business tools')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+tr('Tools to help you run and grow the business. They work from your own shop records on this device.')+'</div>' +
     '<div class="rowlist">' + tiles.map(function(t){
@@ -4005,6 +4009,292 @@ function openBizSection(k){
   else if(k==='momo') openMomoSheet();
   else if(k==='setup') openSetupSheet();
   else if(k==='accountant') openAccountantSheet();
+  else if(k==='payroll') openPayrollSheet();
+}
+
+/* ============================== CUSTOMER STATEMENT OF ACCOUNT ==============================
+   A dated statement per customer: opening balance, every credit sale and payment with a running balance, closing balance,
+   and how old the amount owed is. Download, print or send the summary by WhatsApp. */
+function customerLedgerOnce(cid){
+  return new Promise(function(resolve){
+    var done = false, un = null, t = setTimeout(function(){ if(!done){ done = true; try{ un && un(); }catch(e){} resolve([]); } }, 3000);
+    try{
+      un = refs.customers.doc(cid).collection('ledger').onSnapshot(function(docs){
+        if(done) return; done = true; clearTimeout(t);
+        try{ un && un(); }catch(e){}
+        resolve(docs.map(function(d){ return Object.assign({ id:d.id }, d.data); }));
+      });
+      if(done){ try{ un && un(); }catch(e){} }
+    }catch(e){ clearTimeout(t); resolve([]); }
+  });
+}
+function statementBuild(c, led, fromKey, toKey){
+  var rows = led.map(function(t){ return { at:new Date(t.createdAt).getTime(), t:t }; }).filter(function(r){ return isFinite(r.at); }).sort(function(a, b){ return a.at - b.at; });
+  var sum = rows.reduce(function(a, r){ return a + (r.t.type === 'charge' ? 1 : -1) * (Number(r.t.amount) || 0); }, 0);
+  var run = r2((Number(c.balance) || 0) - sum);            // anything owed before the ledger began
+  var from = fromKey ? new Date(fromKey + 'T00:00:00').getTime() : 0, to = new Date(toKey + 'T00:00:00').getTime() + 86400000;
+  var opening = run, lines = [], charges = 0, payments = 0;
+  rows.forEach(function(r){
+    var isCharge = r.t.type === 'charge', amt = Number(r.t.amount) || 0, signed = (isCharge ? 1 : -1) * amt;
+    if(r.at < from){ run = r2(run + signed); opening = run; return; }
+    if(r.at >= to) return;
+    run = r2(run + signed);
+    var desc = isCharge
+      ? ((r.t.items && r.t.items.length) ? r.t.items.map(function(it){ return (it.qty || 1) + ' x ' + it.name; }).join(', ') : (r.t.note && !/^Sale on credit$/.test(r.t.note) ? r.t.note : 'Sale on credit'))
+      : ('Payment received' + (r.t.note && r.t.note !== 'Paid at time of sale' ? ' (' + r.t.note + ')' : ''));
+    if(isCharge) charges += amt; else payments += amt;
+    lines.push({ at:r.at, desc:desc, debit:isCharge ? amt : 0, credit:isCharge ? 0 : amt, balance:run });
+  });
+  var rem = Math.max(0, Number(c.balance) || 0), age = { cur:0, b31:0, b61:0, b90:0 }, now = Date.now();
+  rows.slice().reverse().forEach(function(r){
+    if(rem <= 0.004 || r.t.type !== 'charge') return;
+    var take = Math.min(rem, Number(r.t.amount) || 0); rem = r2(rem - take);
+    var d = Math.floor((now - r.at) / 86400000); age[d <= 30 ? 'cur' : (d <= 60 ? 'b31' : (d <= 90 ? 'b61' : 'b90'))] += take;
+  });
+  if(rem > 0.004) age.b90 += rem;
+  return { opening:opening, lines:lines, charges:r2(charges), payments:r2(payments), closing:run, age:age, fromKey:fromKey, toKey:toKey };
+}
+async function statementPdf(c, S){
+  var ok = await ensureJsPDF(); if(!ok){ toast('Couldn’t load the PDF engine, check your connection and try again'); return null; }
+  var C = getJsPDF(); if(!C) return null;
+  var doc = newPdfDoc(C, { unit:'mm', format:'a4' });
+  var head = drawDocHeader(doc), pal = head.pal, m = head.margin, w = head.contentW, y = head.y;
+  y = pdTitle(doc, pal, m, y, 'Statement of account');
+  y += pdStrip(doc, pal, m, y, w, 'Account', [['Customer', c.name], ['Phone', c.phone || ''], ['Period', (S.fromKey ? fmtDayKey(S.fromKey) : 'Start') + ' to ' + fmtDayKey(S.toKey)], ['Printed', fmtDayKey(todayKey())]]) + 7;
+  var rows = [[ '', 'Opening balance', '', '', fmtMoney(S.opening) ]].concat(S.lines.map(function(l){
+    return [ fmtDateNice(l.at), String(l.desc).slice(0, 70), l.debit ? fmtMoney(l.debit) : '', l.credit ? fmtMoney(l.credit) : '', fmtMoney(l.balance) ];
+  }));
+  rows.push([ '', 'Closing balance', fmtMoney(S.charges), fmtMoney(S.payments), fmtMoney(S.closing) ]);
+  y = pdfTable(doc, { x:m, y:y, width:w, columns:[{label:'Date',width:26},{label:'Description',width:w-26-26-26-30},{label:'Charges',width:26,align:'right'},{label:'Payments',width:26,align:'right'},{label:'Balance',width:30,align:'right'}], rows:rows, boldRows:[0, rows.length - 1] }) + 8;
+  if(S.toKey >= todayKey() && S.closing > 0.004){
+    if(y + 40 > head.limit){ doc.addPage(); y = pdTop(doc, 16); }
+    pdSection(doc, pal, m, y + 3, w, 'How long it has been owing'); y += 10;
+    y = pdfTable(doc, { x:m, y:y, width:w, columns:[{label:'Up to 30 days',width:w/4,align:'right'},{label:'31 to 60 days',width:w/4,align:'right'},{label:'61 to 90 days',width:w/4,align:'right'},{label:'Over 90 days',width:w/4,align:'right'}],
+      rows:[[fmtMoney(S.age.cur), fmtMoney(S.age.b31), fmtMoney(S.age.b61), fmtMoney(S.age.b90)]] }) + 7;
+    doc.setFont('helvetica','bold'); doc.setFontSize(10.5); pdSet(doc, 't', pal.mid);
+    doc.text('Amount due now: ' + fmtMoney(S.closing), m, y);
+  }
+  return doc;
+}
+function fmtDayKey(k){ return fmtDateNice(new Date(k + 'T00:00:00')); }
+function openStatementSheet(customer){
+  var c = State.customers.find(function(x){ return x.id === customer.id; }) || customer, rng = '90', S = null;
+  var html = '<div class="sheet-head"><h2>' + tr('Statement of account') + '</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">' + esc(c.name) + '</div>' +
+    '<div class="field"><label>' + tr('Period') + '</label><select id="stRange"><option value="30">' + tr('Last 30 days') + '</option><option value="90" selected>' + tr('Last 90 days') + '</option><option value="365">' + tr('Last 12 months') + '</option><option value="all">' + tr('Everything') + '</option></select></div>' +
+    '<div id="stPrev"><div class="empty" style="padding:14px 0;">' + tr('Loading') + '</div></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="stDl" type="button">' + tr('Download') + '</button><button class="btn btn-ghost btn-block" id="stPrint" type="button">' + tr('Print') + '</button></div>' +
+    (c.phone ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="stWa" type="button">' + tr('Send summary on WhatsApp') + '</button></div>' : '');
+  var ov = openSheet(html), led = null;
+  function paint(){
+    if(!led) return;
+    var r = ov.querySelector('#stRange').value, from = '';
+    if(r !== 'all'){ var d = new Date(); d.setDate(d.getDate() - parseInt(r, 10)); from = todayKey(d); }
+    S = statementBuild(c, led, from, todayKey());
+    ov.querySelector('#stPrev').innerHTML = '<div class="rowlist">' +
+      '<div class="row"><div class="main"><div class="title">' + tr('Opening balance') + '</div></div><div class="trail num">' + fmtMoney(S.opening) + '</div></div>' +
+      '<div class="row"><div class="main"><div class="title">' + tr('Charges') + '</div><div class="sub">' + S.lines.filter(function(l){ return l.debit; }).length + ' ' + tr('credit sales') + '</div></div><div class="trail num">' + fmtMoney(S.charges) + '</div></div>' +
+      '<div class="row"><div class="main"><div class="title">' + tr('Payments') + '</div><div class="sub">' + S.lines.filter(function(l){ return l.credit; }).length + ' ' + tr('payments') + '</div></div><div class="trail num">' + fmtMoney(S.payments) + '</div></div>' +
+      '<div class="row"><div class="main"><div class="title"><b>' + tr('Closing balance') + '</b></div></div><div class="trail num" style="color:' + (S.closing > 0 ? 'var(--danger)' : 'var(--success)') + '"><b>' + fmtMoney(S.closing) + '</b></div></div></div>';
+  }
+  customerLedgerOnce(c.id).then(function(l){ led = l; paint(); });
+  ov.querySelector('#stRange').addEventListener('change', paint);
+  async function make(print){
+    if(!S){ toast(tr('Loading')); return; }
+    var doc = await statementPdf(c, S); if(!doc) return;
+    logAudit('other', 'statement', c.id, 'Statement of account made for ' + c.name);
+    if(print) printPdfDoc(doc); else saveGeneratedPdf(doc, 'statement-' + c.name.replace(/\s+/g, '-') + '-' + todayKey() + '.pdf').then(function(ok){ if(ok) toast(tr('Statement downloaded')); });
+  }
+  ov.querySelector('#stDl').addEventListener('click', function(){ make(false); });
+  ov.querySelector('#stPrint').addEventListener('click', function(){ make(true); });
+  var wa = ov.querySelector('#stWa');
+  if(wa) wa.addEventListener('click', function(){
+    if(!S){ return; }
+    var txt = 'Hello ' + c.name + ', here is your account summary from ' + btShop() + '. Opening balance ' + fmtMoney(S.opening) + ', charges ' + fmtMoney(S.charges) + ', payments ' + fmtMoney(S.payments) + '. Amount owing now: ' + fmtMoney(S.closing) + '. Thank you.';
+    window.open(buildWhatsAppUrl(c.phone, txt), '_blank');
+  });
+}
+
+/* ============================== PAYROLL ==============================
+   Pay details sit on each employee. A pay run for a month works out basic pay (monthly, per hour or per day), commission on
+   the person's own sales, allowance and bonus, then takes off the deductions. Payslips and a summary are made as PDFs, and
+   marking a run paid records the wages as an expense. These are working figures from the details typed in: statutory rates
+   (PAYE, social security) are entered by the owner and are not looked up. */
+var PAY_TYPES = { monthly:'Monthly salary', hourly:'Per hour', daily:'Per day' };
+function payProfile(u){
+  var p = (u && u.pay) || {};
+  return { type:PAY_TYPES[p.type] ? p.type : 'monthly', rate:Number(p.rate) || 0, commission:Number(p.commission) || 0, allowance:Number(p.allowance) || 0,
+    ded:(Array.isArray(p.ded) ? p.ded : []).filter(function(d){ return d && d.name && Number(d.value) > 0; }).map(function(d){ return { name:String(d.name), mode:d.mode === 'amount' ? 'amount' : 'percent', value:Number(d.value) }; }) };
+}
+function payCalc(u, month, inp){
+  var p = payProfile(u), y = +month.slice(0, 4), mo = +month.slice(5, 7) - 1, from = new Date(y, mo, 1), to = new Date(y, mo + 1, 1);
+  inp = inp || {};
+  var units = Number(inp.units) || 0, basic = p.type === 'monthly' ? p.rate : r2(p.rate * units);
+  var sales = 0; try{ sales = staffStats(u, from, to).total || 0; }catch(e){}
+  var commission = r2(sales * p.commission / 100), bonus = r2(Number(inp.bonus) || 0), allowance = r2(p.allowance);
+  var gross = r2(basic + commission + allowance + bonus);
+  var deds = p.ded.map(function(d){ return { name:d.name, amount:d.mode === 'percent' ? r2(gross * d.value / 100) : r2(d.value) }; });
+  var adv = r2(Number(inp.advance) || 0); if(adv > 0) deds.push({ name:'Advance or loan repaid', amount:adv });
+  var totalDed = r2(deds.reduce(function(a, d){ return a + d.amount; }, 0));
+  return { userId:u.id, name:u.name, jobTitle:u.jobTitle || '', employeeNo:u.employeeNo || '', type:p.type, rate:p.rate, units:units, basic:r2(basic), sales:r2(sales), commissionPct:p.commission, commission:commission,
+    allowance:allowance, bonus:bonus, gross:gross, deductions:deds, totalDeductions:totalDed, net:r2(Math.max(0, gross - totalDed)), advance:adv };
+}
+function payMonthLabel(k){ return new Date(k + '-01T00:00:00').toLocaleDateString(uiLocale(), { month:'long', year:'numeric' }); }
+function payStaff(){ return State.users.filter(function(u){ return u.role !== 'pending' && !u.disabled; }); }
+function openPayrollSheet(){
+  if(!isOwner()){ toast(tr('Payroll is for the owner')); return; }
+  var month = todayKey().slice(0, 7);
+  var staff = payStaff();
+  var html = '<div class="sheet-head"><h2>' + tr('Payroll') + '</h2></div>' +
+    '<div class="banner" style="display:block;">' + tr('Set each person’s pay once, then prepare a pay run each month. You enter the tax and social security rates yourself, so check them with your accountant.') + '</div>' +
+    '<div class="section-title">' + tr('Staff pay details') + '</div><div class="rowlist">' +
+    (staff.length ? staff.map(function(u){
+      var p = payProfile(u), set = p.rate > 0;
+      return '<button class="row" type="button" data-paysetup="' + u.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(u.name) + '</div><div class="sub">' + esc(tr(ROLE_LABELS[u.role] || u.role)) + '</div></div>' +
+        '<div class="trail num">' + (set ? fmtMoney(p.rate) + ' ' + esc(tr(PAY_TYPES[p.type]).toLowerCase()) : tr('Not set up')) + '</div></button>';
+    }).join('') : '<div class="empty" style="padding:14px 0;">' + tr('Add staff first from the team page.') + '</div>') + '</div>' +
+    '<div class="section-title">' + tr('Pay run') + '</div>' +
+    '<div class="field"><label>' + tr('Month') + '</label><input id="payMonth" type="month" value="' + month + '"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="payRunBtn" type="button">' + tr('Prepare pay run') + '</button></div>' +
+    (State.payRuns.length ? '<div class="section-title">' + tr('Earlier pay runs') + '</div><div class="rowlist">' + State.payRuns.slice().sort(function(a, b){ return a.month < b.month ? 1 : -1; }).slice(0, 12).map(function(r){
+      return '<button class="row" type="button" data-payopen="' + r.month + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(payMonthLabel(r.month)) + '</div><div class="sub">' + r.lines.length + ' ' + tr('people') + ' · ' + (r.status === 'paid' ? tr('Paid') : tr('Saved, not paid')) + '</div></div><div class="trail num">' + fmtMoney(r.totalNet) + '</div></button>';
+    }).join('') + '</div>' : '');
+  var ov = openSheet(html);
+  ov.querySelectorAll('[data-paysetup]').forEach(function(b){ b.addEventListener('click', function(){ var u = State.users.find(function(x){ return x.id === b.getAttribute('data-paysetup'); }); if(u){ closeModal(); openPaySetupSheet(u); } }); });
+  ov.querySelector('#payRunBtn').addEventListener('click', function(){ var mv = ov.querySelector('#payMonth').value; if(!mv){ toast(tr('Pick a month')); return; } closeModal(); openPayRunSheet(mv); });
+  ov.querySelectorAll('[data-payopen]').forEach(function(b){ b.addEventListener('click', function(){ var mv = b.getAttribute('data-payopen'); closeModal(); openPayRunSheet(mv); }); });
+}
+function openPaySetupSheet(u){
+  var p = payProfile(u), d = p.ded.concat([{ name:'', mode:'percent', value:'' }, { name:'', mode:'percent', value:'' }, { name:'', mode:'percent', value:'' }]).slice(0, 3);
+  var html = '<div class="sheet-head"><h2>' + esc(u.name) + '</h2></div>' +
+    '<div class="field"><label>' + tr('How this person is paid') + '</label><select id="psType">' + Object.keys(PAY_TYPES).map(function(k){ return '<option value="' + k + '"' + (p.type === k ? ' selected' : '') + '>' + tr(PAY_TYPES[k]) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field-row"><div class="field"><label id="psRateL">' + tr('Rate (N$)') + '</label><input id="psRate" type="number" inputmode="decimal" step="0.01" value="' + (p.rate || '') + '"></div>' +
+    '<div class="field"><label>' + tr('Commission on own sales (%)') + '</label><input id="psComm" type="number" inputmode="decimal" step="0.01" value="' + (p.commission || '') + '"></div></div>' +
+    '<div class="field"><label>' + tr('Monthly allowance (N$)') + '</label><input id="psAllow" type="number" inputmode="decimal" step="0.01" value="' + (p.allowance || '') + '"></div>' +
+    '<div class="section-title">' + tr('Deductions taken off every month') + '</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">' + tr('For example PAYE, social security, pension or medical aid. A percentage is taken from gross pay.') + '</div>' +
+    d.map(function(x, i){ return '<div class="field-row"><div class="field" style="flex:2;"><input id="psDn' + i + '" placeholder="' + tr('Name') + '" value="' + esc(x.name) + '"></div>' +
+      '<div class="field"><select id="psDm' + i + '"><option value="percent"' + (x.mode === 'percent' ? ' selected' : '') + '>%</option><option value="amount"' + (x.mode === 'amount' ? ' selected' : '') + '>N$</option></select></div>' +
+      '<div class="field"><input id="psDv' + i + '" type="number" inputmode="decimal" step="0.01" placeholder="0" value="' + (x.value || '') + '"></div></div>'; }).join('') +
+    '<div class="actions"><button class="btn btn-ghost" id="psCancel" type="button">' + tr('Cancel') + '</button><button class="btn btn-primary btn-block" id="psSave" type="button">' + tr('Save') + '</button></div>';
+  var ov = openSheet(html);
+  function lab(){ var t = ov.querySelector('#psType').value; ov.querySelector('#psRateL').textContent = tr(t === 'monthly' ? 'Monthly salary (N$)' : (t === 'hourly' ? 'Rate per hour (N$)' : 'Rate per day (N$)')); }
+  ov.querySelector('#psType').addEventListener('change', lab); lab();
+  ov.querySelector('#psCancel').addEventListener('click', function(){ closeModal(); openPayrollSheet(); });
+  ov.querySelector('#psSave').addEventListener('click', function(){
+    var ded = [0, 1, 2].map(function(i){ return { name:ov.querySelector('#psDn' + i).value.trim(), mode:ov.querySelector('#psDm' + i).value, value:parseFloat(ov.querySelector('#psDv' + i).value) || 0 }; }).filter(function(x){ return x.name && x.value > 0; });
+    var pay = { type:ov.querySelector('#psType').value, rate:parseFloat(ov.querySelector('#psRate').value) || 0, commission:parseFloat(ov.querySelector('#psComm').value) || 0, allowance:parseFloat(ov.querySelector('#psAllow').value) || 0, ded:ded };
+    refs.users.doc(u.id).update({ pay:pay });
+    logAudit('update', 'pay', u.id, 'Pay details changed for ' + u.name);
+    toast(tr('Pay details saved')); closeModal(); openPayrollSheet();
+  });
+}
+async function payslipsPdf(run, only){
+  var ok = await ensureJsPDF(); if(!ok){ toast('Couldn’t load the PDF engine, check your connection and try again'); return null; }
+  var C = getJsPDF(); if(!C) return null;
+  var doc = newPdfDoc(C, { unit:'mm', format:'a4' }), first = true, head = null;
+  var lines = run.lines.filter(function(l){ return !only || l.userId === only; });
+  lines.forEach(function(l){
+    if(first){ head = drawDocHeader(doc); first = false; } else { doc.addPage(); }
+    var pal = head.pal, m = head.margin, w = head.contentW, y = doc.__pd ? (doc.getNumberOfPages() > 1 ? pdTop(doc, 16) : head.y) : head.y;
+    y = pdTitle(doc, pal, m, y, 'Payslip');
+    y += pdStrip(doc, pal, m, y, w, 'Employee', [['Name', l.name], ['Employee no.', l.employeeNo], ['Job title', l.jobTitle], ['Pay month', payMonthLabel(run.month)]]) + 7;
+    var earn = [[tr('Basic pay') + (l.type === 'hourly' ? ' (' + l.units + ' ' + tr('hours') + ')' : (l.type === 'daily' ? ' (' + l.units + ' ' + tr('days') + ')' : '')), fmtMoney(l.basic)]];
+    if(l.commission) earn.push([tr('Commission') + ' (' + l.commissionPct + '% of ' + fmtMoney(l.sales) + ')', fmtMoney(l.commission)]);
+    if(l.allowance) earn.push([tr('Allowance'), fmtMoney(l.allowance)]);
+    if(l.bonus) earn.push([tr('Bonus or overtime'), fmtMoney(l.bonus)]);
+    earn.push([tr('Gross pay'), fmtMoney(l.gross)]);
+    pdSection(doc, pal, m, y + 3, w, 'Earnings'); y += 10;
+    y = pdfTable(doc, { x:m, y:y, width:w, columns:[{label:'Description',width:w-50},{label:'Amount',width:50,align:'right'}], rows:earn, boldRows:[earn.length - 1] }) + 7;
+    var ded = l.deductions.map(function(d){ return [d.name, fmtMoney(d.amount)]; }); if(!ded.length) ded.push([tr('No deductions'), fmtMoney(0)]);
+    ded.push([tr('Total deductions'), fmtMoney(l.totalDeductions)]);
+    pdSection(doc, pal, m, y + 3, w, 'Deductions'); y += 10;
+    y = pdfTable(doc, { x:m, y:y, width:w, columns:[{label:'Description',width:w-50},{label:'Amount',width:50,align:'right'}], rows:ded, boldRows:[ded.length - 1] }) + 9;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); pdSet(doc, 't', pal.mid); doc.text('NET PAY  ' + fmtMoney(l.net), m, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); pdSet(doc, 't', pal.muted);
+    doc.text('Working figures from the pay details entered in Pesa. Please check statutory amounts with your accountant.', m, y + 9);
+  });
+  return doc;
+}
+async function payrollSummaryPdf(run){
+  var ok = await ensureJsPDF(); if(!ok){ toast('Couldn’t load the PDF engine, check your connection and try again'); return null; }
+  var C = getJsPDF(); if(!C) return null;
+  var doc = newPdfDoc(C, { unit:'mm', format:'a4' });
+  var head = drawDocHeader(doc), pal = head.pal, m = head.margin, w = head.contentW, y = head.y;
+  y = pdTitle(doc, pal, m, y, 'Payroll summary');
+  y += pdStrip(doc, pal, m, y, w, 'Pay run', [['Month', payMonthLabel(run.month)], ['People', String(run.lines.length)], ['Status', run.status === 'paid' ? 'Paid' : 'Not paid yet'], ['Total net pay', fmtMoney(run.totalNet)]]) + 7;
+  var rows = run.lines.map(function(l){ return [l.name, fmtMoney(l.gross), fmtMoney(l.totalDeductions), fmtMoney(l.net)]; });
+  rows.push(['Total', fmtMoney(run.totalGross), fmtMoney(run.totalDed), fmtMoney(run.totalNet)]);
+  pdfTable(doc, { x:m, y:y, width:w, columns:[{label:'Employee',width:w-114},{label:'Gross pay',width:38,align:'right'},{label:'Deductions',width:38,align:'right'},{label:'Net pay',width:38,align:'right'}], rows:rows, boldRows:[rows.length - 1] });
+  return doc;
+}
+function openPayRunSheet(month){
+  if(!isOwner()){ toast(tr('Payroll is for the owner')); return; }
+  var saved = State.payRuns.find(function(r){ return r.month === month; }), locked = !!(saved && saved.status === 'paid');
+  var staff = payStaff().filter(function(u){ return payProfile(u).rate > 0 || (saved && saved.lines.some(function(l){ return l.userId === u.id; })); });
+  var inp = {}; if(saved) saved.lines.forEach(function(l){ inp[l.userId] = { units:l.units, bonus:l.bonus, advance:l.advance }; });
+  var html = '<div class="sheet-head"><h2>' + esc(payMonthLabel(month)) + '</h2></div>' +
+    (locked ? '<div class="banner" style="display:block;color:var(--success);">' + tr('This pay run was marked as paid on') + ' ' + fmtDateTime(saved.paidAt) + '</div>' : '') +
+    (staff.length ? '' : '<div class="empty" style="padding:16px 0;">' + tr('Set up pay details for your staff first.') + '</div>') +
+    staff.map(function(u){
+      var p = payProfile(u), i = inp[u.id] || {};
+      return '<div class="tillcard" data-payu="' + u.id + '" style="margin-bottom:10px;"><div class="section-title" style="margin-top:0;">' + esc(u.name) + '</div>' +
+        '<div class="field-row">' +
+        (p.type !== 'monthly' ? '<div class="field"><label>' + tr(p.type === 'hourly' ? 'Hours worked' : 'Days worked') + '</label><input data-pf="units" type="number" inputmode="decimal" step="0.5" value="' + (i.units || '') + '"' + (locked ? ' disabled' : '') + '></div>' : '') +
+        '<div class="field"><label>' + tr('Bonus or overtime') + '</label><input data-pf="bonus" type="number" inputmode="decimal" step="0.01" value="' + (i.bonus || '') + '"' + (locked ? ' disabled' : '') + '></div>' +
+        '<div class="field"><label>' + tr('Advance repaid') + '</label><input data-pf="advance" type="number" inputmode="decimal" step="0.01" value="' + (i.advance || '') + '"' + (locked ? ' disabled' : '') + '></div></div>' +
+        '<div class="num" data-pcalc style="font-size:13px;line-height:1.7;"></div></div>';
+    }).join('') +
+    '<div class="tillrow"><span class="l"><b>' + tr('Total net pay') + '</b></span><span class="v num" id="payTotal"></span></div>' +
+    '<div class="actions" style="margin-top:12px;">' + (locked ? '' : '<button class="btn btn-primary btn-block" id="paySave" type="button">' + tr('Save pay run') + '</button>') + '</div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="paySlips" type="button">' + tr('Payslips') + '</button><button class="btn btn-ghost btn-block" id="paySum" type="button">' + tr('Summary') + '</button></div>' +
+    ((saved && !locked) ? '<div class="actions" style="margin-top:8px;"><button class="btn btn-accent btn-block" id="payPaid" type="button">' + tr('Mark as paid and record the wages') + '</button></div>' : '') +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="payBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html);
+  function collect(){
+    var lines = [];
+    ov.querySelectorAll('[data-payu]').forEach(function(card){
+      var u = State.users.find(function(x){ return x.id === card.getAttribute('data-payu'); }); if(!u) return;
+      var g = function(k){ var e = card.querySelector('[data-pf="' + k + '"]'); return e ? parseFloat(e.value) || 0 : 0; };
+      var l = payCalc(u, month, { units:g('units'), bonus:g('bonus'), advance:g('advance') });
+      card.querySelector('[data-pcalc]').innerHTML = tr('Gross') + ' ' + fmtMoney(l.gross) + (l.commission ? ' (' + tr('commission') + ' ' + fmtMoney(l.commission) + ')' : '') + '<br>' + tr('Deductions') + ' ' + fmtMoney(l.totalDeductions) + '<br><b>' + tr('Net pay') + ' ' + fmtMoney(l.net) + '</b>';
+      lines.push(l);
+    });
+    var tot = r2(lines.reduce(function(a, l){ return a + l.net; }, 0)); ov.querySelector('#payTotal').textContent = fmtMoney(tot);
+    return lines;
+  }
+  function makeRun(lines){
+    return { month:month, lines:lines, totalGross:r2(lines.reduce(function(a, l){ return a + l.gross; }, 0)), totalDed:r2(lines.reduce(function(a, l){ return a + l.totalDeductions; }, 0)), totalNet:r2(lines.reduce(function(a, l){ return a + l.net; }, 0)),
+      status:saved ? saved.status : 'saved', createdAt:saved ? saved.createdAt : new Date().toISOString(), updatedAt:new Date().toISOString(), createdBy:State.session ? State.session.name : '', paidAt:saved ? saved.paidAt || null : null };
+  }
+  ov.querySelectorAll('input').forEach(function(e){ e.addEventListener('input', collect); });
+  collect();
+  ov.querySelector('#payBack').addEventListener('click', function(){ closeModal(); openPayrollSheet(); });
+  var sv = ov.querySelector('#paySave');
+  if(sv) sv.addEventListener('click', function(){
+    var lines = collect(); if(!lines.length){ toast(tr('Nothing to save')); return; }
+    var run = makeRun(lines); refs.payRuns.doc(month).set(run);
+    logAudit('other', 'payroll', month, 'Pay run saved for ' + payMonthLabel(month) + ', total net ' + fmtMoney(run.totalNet));
+    toast(tr('Pay run saved')); closeModal(); openPayRunSheet(month);
+  });
+  ov.querySelector('#paySlips').addEventListener('click', async function(){
+    var lines = collect(); if(!lines.length) return; var doc = await payslipsPdf(makeRun(lines)); if(!doc) return;
+    saveGeneratedPdf(doc, 'payslips-' + month + '.pdf').then(function(ok){ if(ok) toast(tr('Payslips downloaded')); });
+  });
+  ov.querySelector('#paySum').addEventListener('click', async function(){
+    var lines = collect(); if(!lines.length) return; var doc = await payrollSummaryPdf(makeRun(lines)); if(!doc) return;
+    saveGeneratedPdf(doc, 'payroll-' + month + '.pdf').then(function(ok){ if(ok) toast(tr('Summary downloaded')); });
+  });
+  var pd = ov.querySelector('#payPaid');
+  if(pd) pd.addEventListener('click', function(){
+    confirmSheet(tr('Mark this pay run as paid?'), tr('The total net pay is added to your expenses as wages, and the run can no longer be changed.'), tr('Mark as paid'), function(){
+      var lines = collect(), run = makeRun(lines); run.status = 'paid'; run.paidAt = new Date().toISOString();
+      refs.payRuns.doc(month).set(run);
+      refs.expenses.doc().set({ category:'Wages', amount:run.totalNet, note:'Payroll for ' + payMonthLabel(month), paidFrom:'Bank', ref:'', createdAt:new Date().toISOString() });
+      logAudit('other', 'payroll', month, 'Pay run paid for ' + payMonthLabel(month) + ', ' + fmtMoney(run.totalNet));
+      toast(tr('Marked as paid')); closeModal(); openPayRunSheet(month);
+    }, false);
+  });
 }
 
 /* ---- stock and expiry ---- */
@@ -13398,10 +13688,12 @@ function openLedgerSheet(customer){
     '<div class="section-title" style="margin-top:0;">'+tr('Recent activity')+'</div>' +
     '<div id="ledgerList"><div class="empty" style="padding:20px 0;">Loading…</div></div>' +
     '<div class="actions"><button class="btn btn-ghost" id="invoiceCustomerBtn">'+tr('Invoice')+'</button><button class="btn btn-accent" style="flex:2;" id="recordPaymentBtn">'+tr('Record payment')+'</button></div>' +
+    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="statementBtn" type="button">'+tr('Statement of account')+'</button></div>' +
     ((customer.balance||0) > 0 ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="sendReminderBtn" type="button">'+tr('Send reminder')+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>' : '');
   var ov = openSheet(html);
   ov.querySelector('#ledgerEditBtn').addEventListener('click', function(){ closeModal(); openCustomerSheet(customer); });
   ov.querySelector('#recordPaymentBtn').addEventListener('click', function(){ openPaymentSheet(customer); });
+  ov.querySelector('#statementBtn').addEventListener('click', function(){ openStatementSheet(customer); });
   ov.querySelector('#ledgerCreditSaleBtn').addEventListener('click', function(){ var fresh = State.customers.find(function(c){ return c.id===customer.id; }) || customer; closeModal(); openCreditSaleSheet(fresh); });
   var reminderBtn = ov.querySelector('#sendReminderBtn');
   if(reminderBtn) reminderBtn.addEventListener('click', function(){
@@ -18838,7 +19130,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.81';
+var APP_VERSION = '2026.10.82';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -18884,7 +19176,7 @@ function backupPayload(){
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
     posDevices: State.posDevices, posBatches: State.posBatches, messages: State.messages, workReports: State.workReports,
     stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements,
-    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods
+    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -18916,7 +19208,7 @@ async function restoreBackupData(data){
   await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches); await put(refs.messages, data.messages); await put(refs.workReports, data.workReports);
   await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
   await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
-  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods);
+  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
@@ -19065,6 +19357,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.82', items:[
+    'New: Statement of account for each customer (opening balance, every sale and payment with a running balance, how long it has been owing) to download, print or send by WhatsApp',
+    'New: Payroll under Business tools. Set each person’s pay (monthly, per hour or per day, commission, allowance, deductions), prepare a monthly pay run, make payslips and a summary, and record the wages as an expense'
+  ]},
   { v:'2026.10.81', items:[
     'The opening animation is a little slower (about 5 seconds) so the three bounces and the spin are easier to enjoy'
   ]},
