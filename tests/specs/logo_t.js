@@ -19,6 +19,8 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   // 4 transparent
   let c4=mk(x=>{x.fillStyle='#d4380d';x.beginPath();x.arc(150,150,60,0,7);x.fill();});
   let r4=t.logoCleanCanvas(c4); out.transp={changed:r4.changed,w:r4.canvas?r4.canvas.width:300};
+  let c5=mk(x=>{x.fillStyle='#fff';x.fillRect(0,0,300,300);x.fillStyle='#fff';x.beginPath();x.arc(150,150,140,0,7);x.fill();x.fillStyle='#000';x.fillRect(100,110,100,30);x.fillRect(140,140,20,80);});
+  let b5=t.logoBuild(c5,true); out.dark={cleaned:b5.cleaned,tone:b5.tone,light:!!b5.light,w:b5.w};
   return out;});
  console.log(JSON.stringify(r));
  ck('white square: removed', r.white.changed&&r.white.corner===0&&r.white.w<260, r.white);
@@ -26,6 +28,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('badge handled (no crash)', r.badge.kept, r.badge);
  ck('transparent stays', r.transp.w<=300, r.transp);
  function r2ok(f){return f.changed&&f.w<235;}
+ ck('dark logo on white disc: disc gone, white twin made', r.dark.cleaned&&r.dark.light&&r.dark.w<260, r.dark);
  ck('no page errors', errs.length===0, errs);
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();

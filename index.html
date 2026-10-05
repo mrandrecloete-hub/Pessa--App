@@ -10236,9 +10236,10 @@ function pdBandRaw(doc, st, H, compact){
     if(lg.w && lg.h){ LW = LH*lg.w/lg.h; if(LW > MAXW){ LW = MAXW; LH = MAXW*lg.h/lg.w; } }
     var px = pageW - 14 - LW - 3, py = 8.5 - 1.5 + (15 - LH)/2;
     // a cleaned (transparent) logo sits straight on the header like the Pesa mark; only a dark one gets a soft round plate so it stays readable
-    var plate = !(lg.clean && lg.tone >= 0.45), rr = (lg.clean && !plate) ? 0 : (lg.clean ? (Math.min(LW, LH) + 3)/2 : 2.2);
-    if(plate){ doc.setFillColor(255,255,255); doc.roundedRect(px, py, LW + 3, LH + 3, rr, rr, 'F'); }
-    try{ doc.addImage(S.logoDataUrl, logoImgType(S.logoDataUrl), px + 1.5, py + 1.5, LW, LH); }catch(e){}
+    // no plate, circle or frame of any kind: a dark logo is drawn as its white twin
+    var plate = !lg.clean, imgUrl = (lg.clean && lg.tone < 0.45 && S.logoLightDataUrl) ? S.logoLightDataUrl : S.logoDataUrl;
+    if(plate){ doc.setFillColor(255,255,255); doc.roundedRect(px, py, LW + 3, LH + 3, 2.2, 2.2, 'F'); }
+    try{ doc.addImage(imgUrl, logoImgType(imgUrl), px + 1.5, py + 1.5, LW, LH); }catch(e){}
   } else if(name){
     doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
     var nl = doc.splitTextToSize(name, 92).slice(0, 2);
@@ -14430,10 +14431,16 @@ function logoBuild(cv, clean){
   var use = r.changed ? r.canvas : cv, tone = r.changed ? r.tone : logoToneOf(cv);
   var side = Math.max(use.width, use.height);
   if(side > 480){ var sc = 480/side, c2 = document.createElement('canvas'); c2.width = Math.round(use.width*sc); c2.height = Math.round(use.height*sc); c2.getContext('2d').drawImage(use, 0, 0, c2.width, c2.height); use = c2; }
-  return { dataUrl: use.toDataURL('image/png'), w:use.width, h:use.height, tone:tone, cleaned:!!r.changed };
+  var light = null;
+  if(r.changed && tone < 0.45){   // a dark logo gets a white twin so it can stand on a dark header with no plate or frame behind it
+    var lc = document.createElement('canvas'); lc.width = use.width; lc.height = use.height;
+    var lx = lc.getContext('2d'); lx.drawImage(use, 0, 0); lx.globalCompositeOperation = 'source-in'; lx.fillStyle = '#ffffff'; lx.fillRect(0, 0, lc.width, lc.height);
+    light = lc.toDataURL('image/png');
+  }
+  return { dataUrl: use.toDataURL('image/png'), w:use.width, h:use.height, tone:tone, cleaned:!!r.changed, light:light };
 }
 function logoSaveBuilt(res, srcUrl){
-  var patch = { logoDataUrl:res.dataUrl, logoImgMeta:{ w:res.w, h:res.h, tone:res.tone, clean:res.cleaned } };
+  var patch = { logoLightDataUrl:res.light || null, logoDataUrl:res.dataUrl, logoImgMeta:{ w:res.w, h:res.h, tone:res.tone, clean:res.cleaned } };
   if(srcUrl) patch.logoSrcDataUrl = srcUrl;
   State.settings = Object.assign({}, State.settings, patch);
   refs.settings.set(State.settings);
@@ -14467,7 +14474,7 @@ function logoImgType(url){ return /^data:image\/png/i.test(url || '') ? 'PNG' : 
 
 function removeBrandImage(kind){
   var patch = {};
-  patch.logoDataUrl = null; patch.logoImgMeta = null; patch.logoSrcDataUrl = null;
+  patch.logoDataUrl = null; patch.logoLightDataUrl = null; patch.logoImgMeta = null; patch.logoSrcDataUrl = null;
   State.settings = Object.assign({}, State.settings, patch);
   refs.settings.set(State.settings);
   closeModal();
@@ -14488,7 +14495,16 @@ function applyStaticTranslations(){
  * Invoice branding, falling back to the default Pesa mark, same source
  * and precedence as the logo already drawn on invoices/receipts/reports.
  * Cheap and idempotent, so it's fine to call on every render(). */
+var __logoMigrated = false;
+// logos saved before the clean up existed are cleaned once, automatically
+function logoMigrateOnce(){
+  if(__logoMigrated) return; var s = State.settings || {};
+  if(!s.logoDataUrl || s.logoAutoClean === false || (s.logoImgMeta && 'clean' in s.logoImgMeta)) return;
+  __logoMigrated = true;
+  try{ logoApplyAuto(true); }catch(e){}
+}
 function applyBrandLogo(){
+  try{ setTimeout(logoMigrateOnce, 0); }catch(e){}
   try{
     var url = (State.settings && State.settings.logoDataUrl) ? State.settings.logoDataUrl : PESA_LOGO_DATA_URL;
     document.documentElement.style.setProperty('--brand-logo-img', 'url("'+url+'")');
@@ -18818,7 +18834,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.77';
+var APP_VERSION = '2026.10.78';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19045,6 +19061,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.78', items:[
+    'Logos on documents now stand alone with no round plate or frame behind them; dark logos turn white on the coloured header, and older saved logos are cleaned automatically'
+  ]},
   { v:'2026.10.77', items:[
     'Company logos now have their square frame and plain background removed automatically, so they blend into invoices, receipts and reports like the Pesa mark (can be switched off in Settings)'
   ]},
