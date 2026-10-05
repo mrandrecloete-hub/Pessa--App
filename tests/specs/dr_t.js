@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 (async()=>{
-  const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'});
+  const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'}); await ctx.addInitScript(()=>{ try{ new MutationObserver(()=>{ document.querySelectorAll('.st-grp').forEach(d=>{ if(!d.open) d.open=true; }); }).observe(document,{childList:true,subtree:true}); }catch(e){} });
   await ctx.addInitScript(()=>{ window.__w=[]; const ch={properties:{write:true,writeWithoutResponse:false},writeValue:async v=>{window.__w.push(Array.from(v));}};
     navigator.bluetooth={requestDevice:async()=>({gatt:{connect:async()=>({getPrimaryService:async()=>({getCharacteristics:async()=>[ch]})})}})}; });
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));

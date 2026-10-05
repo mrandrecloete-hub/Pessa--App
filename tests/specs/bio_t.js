@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 (async()=>{
-  const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:1100,height:900}, serviceWorkers:'block'});
+  const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:1100,height:900}, serviceWorkers:'block'}); await ctx.addInitScript(()=>{ try{ new MutationObserver(()=>{ document.querySelectorAll('.st-grp').forEach(d=>{ if(!d.open) d.open=true; }); }).observe(document,{childList:true,subtree:true}); }catch(e){} });
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   const cdp = await ctx.newCDPSession(p); await cdp.send('WebAuthn.enable');
   const {authenticatorId} = await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:false,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
