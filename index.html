@@ -7299,6 +7299,11 @@ function openTeamSheet(){
   ov.querySelector('#teamAddBtn').addEventListener('click', function(){ openStaffSheet(null); });
 }
 
+/** A person who has sold something or run a till is kept (deactivate them instead) so reports and the books stay correct. */
+function staffHasRecords(u){
+  return State.sales.some(function(x){ return x.cashierName === u.name; }) || State.tillSessions.some(function(t){ return t.cashierId === u.id; }) ||
+    State.wastage.some(function(w){ return w.recordedBy === u.name; });
+}
 function openStaffSheet(user){
   var isEdit = !!user;
   var isMe = isEdit && State.session && State.session.userId === user.id;
@@ -7321,6 +7326,7 @@ function openStaffSheet(user){
     '<div id="sfError"></div>' +
     '<div class="actions">' +
       (isEdit && !isMe ? '<button class="btn '+(user.active===false?'btn-primary':'btn-danger')+'" id="sfToggleActive">'+(user.active===false?tr('Reactivate'):tr('Deactivate'))+'</button>' : '') +
+      (isEdit && !isMe && user.active === false && isOwner() && !staffHasRecords(user) ? '<button class="btn btn-danger" id="sfDelete" type="button">'+tr('Delete')+'</button>' : '') +
       '<button class="btn btn-primary btn-block" id="sfSave">'+(isEdit?tr('Save changes'):tr('Add staff member'))+'</button>' +
     '</div>';
   var ov = openSheet(html, {center:true});
@@ -7343,6 +7349,12 @@ function openStaffSheet(user){
   renderCredFields();
   ov.querySelector('#sfRole').addEventListener('change', renderCredFields);
   ov.querySelectorAll('[data-sfmode]').forEach(function(b){ b.addEventListener('click', function(){ sfMode = b.getAttribute('data-sfmode'); ov.querySelectorAll('[data-sfmode]').forEach(function(x){ x.classList.toggle('active', x===b); }); renderCredFields(); }); });
+  var sfDel = ov.querySelector('#sfDelete');
+  if(sfDel) sfDel.addEventListener('click', function(){
+    confirmSheet(tr('Delete')+' '+user.name+'?', tr('Their login is removed for good. They have no sales or till sessions on record, so no history is lost.'), tr('Delete'), function(){
+      refs.users.doc(user.id).delete(); logAudit('delete','staff',user.id,'Deleted staff member '+user.name); toast(tr('Staff member deleted')); openTeamSheet();
+    }, true, true);
+  });
   if(isEdit && !isMe){
     ov.querySelector('#sfToggleActive').addEventListener('click', function(){
       var nowActive = user.active === false;
@@ -12874,8 +12886,19 @@ function openLedgerSheet(customer){
       var itemsHtml = (t.items && t.items.length) ? '<span class="lt-items">'+t.items.map(function(it){ return esc(it.qty)+' × '+esc(it.name)+' @ '+fmtMoney(it.unitPrice)+' = '+fmtMoney(it.lineTotal); }).join('<br>')+'</span>' : '';
       var label = isCharge ? (t.note && t.note !== 'Sale on credit' && /^Previous balance$/.test(t.note) ? 'Previous balance' : 'Sale on credit') : 'Payment received';
       return '<div class="ledgeritem"><div class="lt-l">'+label+'<span class="d">'+fmtDateTime(t.createdAt)+(t.note && !/^(Sale on credit|Previous balance)$/.test(t.note) ? ' · '+esc(t.note) : '')+'</span>'+itemsHtml+'</div>' +
-        '<div class="lt-v num" style="color:'+(isCharge?'var(--danger)':'var(--success)')+'">'+(isCharge?'+':'−')+fmtMoney(t.amount)+'</div></div>';
+        '<div class="lt-v num" style="color:'+(isCharge?'var(--danger)':'var(--success)')+'">'+(isCharge?'+':'−')+fmtMoney(t.amount)+
+        (!isCharge && t.note !== 'Paid at time of sale' && isManagerOrOwner() ? '<br><button class="btn btn-ghost" data-ldel="'+t.id+'" type="button" style="padding:3px 9px;font-size:11.5px;margin-top:3px;">'+tr('Remove')+'</button>' : '')+'</div></div>';
     }).join('');
+    body.querySelectorAll('[data-ldel]').forEach(function(b){ b.addEventListener('click', function(){
+      var t = list.find(function(x){ return x.id === b.getAttribute('data-ldel'); }); if(!t) return;
+      confirmSheet(tr('Remove this payment?'), customer.name+' will owe '+fmtMoney(t.amount)+' more again, because this payment is taken off their account. Use this only if it was entered by mistake.', tr('Remove payment'), function(){
+        var c = State.customers.find(function(x){ return x.id === customer.id; }) || customer;
+        refs.customers.doc(customer.id).update({ balance:r2((c.balance||0) + (Number(t.amount)||0)) });
+        ledgerRef.doc(t.id).delete();
+        logAudit('delete','customerPayment',customer.id,'Removed a payment of '+fmtMoney(t.amount)+' from '+customer.name);
+        toast(tr('Payment removed'));
+      }, true, true);
+    }); });
   });
 }
 
@@ -14592,6 +14615,7 @@ function openPODetailSheet(po, onDone){
     '<div class="actions"><button class="btn btn-ghost btn-block" id="poSendBtn" type="button">'+tr('Send to supplier')+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>' +
     '<div class="actions">' +
       (po.status==='draft' ? '<button class="btn btn-ghost btn-block" id="poMarkOrderedBtn">Mark as ordered</button>' : '') +
+      (po.status!=='received' && isManagerOrOwner() ? '<button class="btn btn-danger btn-block" id="poDeleteBtn" type="button">'+tr('Delete order')+'</button>' : '') +
       (po.status!=='received' ? '<button class="btn btn-primary btn-block" id="poMarkReceivedBtn">Mark as received (adds to stock)</button>' : '<div class="banner" style="color:var(--success);">'+ICONS.check.replace(/width="24" height="24"/,'width="15" height="15"')+'<span>Received '+fmtDateTime(po.receivedAt)+'</span></div>') +
     '</div>';
   var ov = openSheet(html, {center:true});
@@ -14603,6 +14627,13 @@ function openPODetailSheet(po, onDone){
     toast('Marked as ordered');
     closeModal();
     if(onDone) setTimeout(onDone, 50);
+  });
+  var poDel = ov.querySelector('#poDeleteBtn');
+  if(poDel) poDel.addEventListener('click', function(){
+    confirmSheet(tr('Delete this purchase order?'), tr('The order is removed. Your stock is not changed, because nothing was received.'), tr('Delete order'), function(){
+      refs.purchaseOrders.doc(po.id).delete(); logAudit('delete','purchaseOrder',po.id,'Deleted purchase order'); toast(tr('Purchase order deleted'));
+      if(onDone) setTimeout(onDone, 50);
+    }, true, true);
   });
   var markReceived = ov.querySelector('#poMarkReceivedBtn');
   if(markReceived) markReceived.addEventListener('click', function(){
@@ -14698,11 +14729,32 @@ function openWastageSheet(){
       return s + (w.qty||0) * (p?p.costPrice||0:0);
     },0);
     list.innerHTML = '<div class="banner">Total recorded loss (at cost): <strong class="num">'+fmtMoney(totalValue)+'</strong></div><div class="rowlist">' + State.wastage.map(function(w){
-      return '<div class="row" style="cursor:default;"><div class="avatar">'+ICONS.warn+'</div><div class="main"><div class="title">'+esc(w.productName)+'</div><div class="sub">'+esc(w.reason)+' · '+fmtDateTime(w.createdAt)+(w.recordedBy?' · '+esc(w.recordedBy):'')+'</div></div><div class="trail"><div class="amt num">-'+w.qty+'</div></div></div>';
+      return '<div class="row" style="cursor:default;"><div class="avatar">'+ICONS.warn+'</div><div class="main"><div class="title">'+esc(w.productName)+'</div><div class="sub">'+esc(w.reason)+' · '+fmtDateTime(w.createdAt)+(w.recordedBy?' · '+esc(w.recordedBy):'')+'</div></div><div class="trail"><div class="amt num">-'+w.qty+'</div>'+(isManagerOrOwner() ? '<button class="btn btn-ghost" data-wdel="'+w.id+'" type="button" style="padding:4px 10px;font-size:12px;margin-top:4px;">'+tr('Delete')+'</button>' : '')+'</div></div>';
     }).join('') + '</div>';
+    list.querySelectorAll('[data-wdel]').forEach(function(b){ b.addEventListener('click', function(){ openWastageDeleteSheet(State.wastage.find(function(x){ return x.id === b.getAttribute('data-wdel'); })); }); });
   }
   renderList();
   ov.querySelector('#wasteAddBtn').addEventListener('click', function(){ openRecordWastageSheet(openWastageSheet); });
+}
+function openWastageDeleteSheet(w){
+  if(!w) return;
+  var p = State.products.find(function(x){ return x.id === w.productId; });
+  var html = '<div class="sheet-head"><h2>'+tr('Delete this wastage record?')+'</h2></div>' +
+    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;line-height:1.5;">'+esc(w.qty+' x '+w.productName+' ('+w.reason+')')+'. '+tr('Choose what happens to the stock. The loss is taken out of your accounting figures either way.')+'</div>' +
+    '<div class="actions" style="flex-direction:column;gap:8px;">' +
+      (p ? '<button class="btn btn-primary btn-block" id="wdBack" type="button">'+tr('Delete and put the stock back')+' (+'+w.qty+')</button>' : '') +
+      '<button class="btn btn-danger btn-block" id="wdOnly" type="button">'+tr('Delete only')+'</button>' +
+      '<button class="btn btn-ghost btn-block" id="wdCancel" type="button">'+tr('Cancel')+'</button></div>';
+  var ov = openSheet(html, {center:true});
+  function done(putBack){
+    if(putBack && p) refs.products.doc(p.id).update({ stockQty:(p.stockQty||0) + (w.qty||0) });
+    refs.wastage.doc(w.id).delete();
+    logAudit('delete','wastage',w.id,'Deleted wastage '+w.qty+' x '+w.productName+(putBack ? ' (stock put back)' : ''));
+    toast(tr('Wastage record deleted')); closeModal(); setTimeout(openWastageSheet, 80);
+  }
+  var a = ov.querySelector('#wdBack'); if(a) a.addEventListener('click', function(){ done(true); });
+  ov.querySelector('#wdOnly').addEventListener('click', function(){ done(false); });
+  ov.querySelector('#wdCancel').addEventListener('click', function(){ closeModal(); setTimeout(openWastageSheet, 80); });
 }
 function openRecordWastageSheet(onDone){
   var prodOpts = productOptionsHtml('', true, '');
@@ -17869,8 +17921,16 @@ function openSupplierStatementSheet(supId){
     '<div class="field-row"><div class="field"><label>Statement date</label><input id="stDate" type="date" value="'+todayKey()+'"></div>' +
     '<div class="field"><label>Closing balance on their statement</label><input id="stBal" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>' +
     '<div id="stRes"></div><div class="field"><label>Note (optional)</label><input id="stNote"></div>' +
-    '<div class="actions"><button class="btn btn-primary btn-block" id="stSave" type="button">Save statement check</button></div>';
+    '<div class="actions"><button class="btn btn-primary btn-block" id="stSave" type="button">Save statement check</button></div>' +
+    (d.statements.length && isManagerOrOwner() ? '<div class="section-title">'+tr('Earlier checks')+'</div><div class="rowlist">' + d.statements.slice(0,5).map(function(x){
+      return '<div class="row" style="cursor:default;"><div class="main"><div class="title">'+esc(x.asAt||'')+' · '+fmtMoney(x.balance)+'</div><div class="sub">'+(Math.abs(Number(x.difference)||0) < 0.01 ? tr('Matched our records') : tr('Difference')+' '+fmtMoney(x.difference))+(x.note ? ' · '+esc(x.note) : '')+'</div></div><div class="trail"><button class="btn btn-ghost" data-stdel="'+x.id+'" type="button" style="padding:4px 10px;font-size:12px;">'+tr('Delete')+'</button></div></div>';
+    }).join('') + '</div>' : '');
   var ov = openSheet(html, {center:true});
+  ov.querySelectorAll('[data-stdel]').forEach(function(b){ b.addEventListener('click', function(){
+    confirmSheet(tr('Delete this statement check?'), tr('Only this saved check is removed. Your invoices and payments are not changed.'), tr('Delete'), function(){
+      refs.supplierStatements.doc(b.getAttribute('data-stdel')).delete(); logAudit('delete','reconciliation',supId,'Deleted a supplier statement check for '+sup.name); toast(tr('Statement check deleted')); render();
+    }, true);
+  }); });
   function calc(){
     var v = parseFloat(ov.querySelector('#stBal').value), box = ov.querySelector('#stRes');
     if(isNaN(v)){ box.innerHTML = ''; return null; }
@@ -18078,7 +18138,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.60';
+var APP_VERSION = '2026.10.61';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18270,6 +18330,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.61', items:[
+    'More Delete buttons where they were missing: purchase orders not yet received, wastage records (with the choice to put the stock back), supplier statement checks, customer payments entered by mistake, and deactivated staff with no records. Sales and filed accounting packs are deliberately never deleted, to keep your books honest'
+  ]},
   { v:'2026.10.60', items:[
     'Smart Accountant: live figures for the month (sales, profit, cash, what customers owe you, what you owe, stock), a Pesa suggests list that spots problems on its own, VAT return tracking with a due date, an estimate and a Mark submitted button, and an alert before the return is due'
   ]},
