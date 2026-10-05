@@ -34,15 +34,28 @@ var PesaIntro = (function(){
       x.fillStyle = 'rgba(255,255,240,.95)'; x.beginPath(); x.moveTo(c, 0); x.quadraticCurveTo(c + 1.2, c - 1.2, w, c); x.quadraticCurveTo(c + 1.2, c + 1.2, c, w); x.quadraticCurveTo(c - 1.2, c + 1.2, 0, c); x.quadraticCurveTo(c - 1.2, c - 1.2, c, 0); x.fill();
     });
   }
+  var smokeCache = null;
+  /** Billowing smoke from layered noise, shaded as if lit from the burst in the middle. Built once. */
+  function smokeSprite(seed){
+    var N = 160, c = mkCanvas(N, N), x = c.getContext('2d'), id = x.createImageData(N, N), d = id.data, rn = mulberry(seed), grid = new Float32Array(4096), yy, xx, i;
+    for(i = 0; i < 4096; i++) grid[i] = rn();
+    function g(a, b){ return grid[((b & 63) << 6) + (a & 63)]; }
+    function vn(px, py){ var xi = Math.floor(px), yi = Math.floor(py), fx = px - xi, fy = py - yi; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy); return lerp(lerp(g(xi, yi), g(xi + 1, yi), fx), lerp(g(xi, yi + 1), g(xi + 1, yi + 1), fx), fy); }
+    function fbm(px, py){ var sum = 0, a = .5, f = 1; for(var o = 0; o < 5; o++){ sum += a * vn(px * f, py * f); f *= 2; a *= .5; } return sum; }
+    for(yy = 0; yy < N; yy++) for(xx = 0; xx < N; xx++){
+      var u = (xx / N - .5) * 2, v = (yy / N - .5) * 2, r = Math.sqrt(u * u + v * v), fall = clamp(1 - r, 0, 1); fall = fall * fall * (3 - 2 * fall);
+      var n = fbm(xx / N * 4.2 + seed * .13, yy / N * 4.2), n2 = fbm(xx / N * 4.2 + seed * .13 + .22, yy / N * 4.2 + .22);
+      var dens = clamp(n * 1.55 - .46, 0, 1) * fall, lit = clamp(.46 + (n - n2) * 11 - v * .22 - u * .12, 0, 1), o = (yy * N + xx) * 4, base = 34 + lit * 118;
+      d[o] = base * 1.04; d[o + 1] = base * 1.0; d[o + 2] = base * .93; d[o + 3] = dens * 255;
+    }
+    x.putImageData(id, 0, 0); c._w = N; c._h = N; return c;
+  }
   function buildSprites(){
     spr.foam = glowSprite(40, [[0, 'rgba(255,255,255,.95)'], [.45, 'rgba(235,255,255,.55)'], [1, 'rgba(220,255,255,0)']]);
     spr.gold = glowSprite(96, [[0, 'rgba(255,236,170,.95)'], [.3, 'rgba(255,200,90,.45)'], [1, 'rgba(255,170,40,0)']]);
     spr.star = starSprite(40);
-    spr.smoke = [0, 1, 2].map(function(k){ var rn = mulberry(31 + k * 17); return sprite(128, 128, function(x, w){
-      for(var i = 0; i < 11; i++){ var bx = 64 + (rn() - .5) * 58, by = 64 + (rn() - .5) * 58, br = 22 + rn() * 26, g = x.createRadialGradient(bx, by, 0, bx, by, br); g.addColorStop(0, 'rgba(150,152,150,.62)'); g.addColorStop(.6, 'rgba(110,114,112,.34)'); g.addColorStop(1, 'rgba(90,94,92,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w); }
-      var hl = x.createRadialGradient(48, 46, 0, 48, 46, 46); hl.addColorStop(0, 'rgba(235,232,225,.38)'); hl.addColorStop(1, 'rgba(235,232,225,0)'); x.fillStyle = hl; x.fillRect(0, 0, w, w);
-      x.globalCompositeOperation = 'destination-in'; var mk = x.createRadialGradient(64, 64, 8, 64, 64, 64); mk.addColorStop(0, 'rgba(0,0,0,1)'); mk.addColorStop(.7, 'rgba(0,0,0,.8)'); mk.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = mk; x.fillRect(0, 0, w, w);
-    }); });
+    if(!smokeCache) smokeCache = [];   // filled one sprite per frame while the logo is still whole, so the start stays smooth
+    spr.smoke = smokeCache;
     spr.beam = sprite(64, 512, function(x, w, h){ var g = x.createLinearGradient(0, 0, w, 0); g.addColorStop(0, 'rgba(255,225,150,0)'); g.addColorStop(.5, 'rgba(255,238,185,1)'); g.addColorStop(1, 'rgba(255,225,150,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.globalCompositeOperation = 'destination-in'; var v = x.createLinearGradient(0, 0, 0, h); v.addColorStop(0, 'rgba(0,0,0,1)'); v.addColorStop(.7, 'rgba(0,0,0,.25)'); v.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = v; x.fillRect(0, 0, w, h); });
     spr.dot = glowSprite(16, [[0, 'rgba(255,240,190,1)'], [.4, 'rgba(255,200,90,.6)'], [1, 'rgba(255,160,30,0)']]);
     grain = mkCanvas(128, 128); var gx = grain.getContext('2d'), id = gx.createImageData(128, 128), rn = mulberry(7);
@@ -65,6 +78,13 @@ var PesaIntro = (function(){
     for(k = 0; k < K; k++) for(j = 0; j < S_; j++){
       edges.push({ pts:rads[k][j], r0:rad[k], r1:rad[k + 1], jit:(r() - .5) * .05 * base, kind:'r' });
       if(k >= 2 && k < K - 1 && r() < .55) edges.push({ pts:arcs[k][j], r0:rad[k], r1:rad[k + 1], jit:(r() - .5) * .05 * base, kind:'a' });
+    }
+    var nb = edges.length;                                                // thin forks that split off the main cracks, like real glass
+    for(var bi = 0; bi < nb; bi++){
+      var pe = edges[bi]; if(pe.kind !== 'r' || r() > .62) continue;
+      var mid = pe.pts[(pe.pts.length / 2) | 0], ang = Math.atan2(mid[1] - cyl, mid[0] - cxl) + (r() < .5 ? -1 : 1) * (.4 + r() * .75), len = (16 + r() * 38) * (Lw / 240), px = mid[0], py = mid[1], bp = [mid];
+      for(var si = 0; si < 3; si++){ ang += (r() - .5) * .8; px += Math.cos(ang) * len / 3; py += Math.sin(ang) * len / 3; bp.push([px, py]); }
+      edges.push({ pts:bp, r0:pe.r0 + (pe.r1 - pe.r0) * .5, r1:pe.r1 + 4, jit:pe.jit, kind:'b' });
     }
     var cells = [];
     for(k = 0; k < K; k++) for(j = 0; j < S_; j++){
@@ -104,6 +124,7 @@ var PesaIntro = (function(){
   /* ------------------------------------------------------------------ update */
   function update(dt){
     var t = S.t += dt, i, p, it;
+    if(smokeCache.length < 4 && t > .5) smokeCache.push(smokeSprite(41 + smokeCache.length * 13));
     if(t >= TL.wave + S.held && !S.ready) S.held += dt;                // hold the wave until the first screen exists
     // dust
     S.dust.forEach(function(d){ d.x += d.vx * dt; d.y += d.vy * dt; if(d.y < -10){ d.y = H + 10; d.x = R() * W; } });
@@ -119,7 +140,7 @@ var PesaIntro = (function(){
     // smoke: a heavy burst, then a plume that keeps rising and thinning
     if(S.broke){
       var tb2 = t - TL.brk;
-      if(tb2 < 1.5){ S.smokeAcc += dt * (opts.lite ? 26 : 55) * (1 - tb2 / 1.7); while(S.smokeAcc >= 1){ S.smokeAcc--; smokePuff(false); } }
+      if(tb2 < 1.5){ S.smokeAcc += dt * (opts.lite ? 16 : 30) * (1 - tb2 / 1.7); while(S.smokeAcc >= 1){ S.smokeAcc--; smokePuff(false); } }
     }
     for(i = S.smoke.length - 1; i >= 0; i--){
       var m = S.smoke[i]; m.age += dt; if(m.age > m.max){ S.smoke.splice(i, 1); continue; }
@@ -142,17 +163,19 @@ var PesaIntro = (function(){
     x.scale(DPR, DPR); x.translate(-x0, -y0);
     x.save(); x.beginPath(); c.poly.forEach(function(p, i){ i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.closePath(); x.clip(); x.drawImage(img, 0, 0, Lw, Lh); x.restore();
     x.globalCompositeOperation = 'source-atop'; x.beginPath(); c.poly.forEach(function(p, i){ i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.closePath();
-    x.lineJoin = 'round'; x.lineWidth = 2.6; x.strokeStyle = 'rgba(255,240,190,.9)'; x.stroke(); x.lineWidth = 1; x.strokeStyle = 'rgba(255,255,255,.95)'; x.stroke();
+    var sg = x.createLinearGradient(x0, y0, x1, y1); sg.addColorStop(0, 'rgba(255,255,255,.30)'); sg.addColorStop(.45, 'rgba(255,255,255,0)'); sg.addColorStop(1, 'rgba(0,10,8,.30)'); x.fillStyle = sg; x.fillRect(x0, y0, bw, bh);   // glass sheen
+    x.beginPath(); c.poly.forEach(function(p, i){ i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1]); }); x.closePath();
+    x.lineJoin = 'round'; x.lineWidth = 3; x.strokeStyle = 'rgba(2,6,6,.9)'; x.stroke(); x.lineWidth = 1; x.strokeStyle = 'rgba(235,255,240,.85)'; x.stroke();
     return { cv:cv, x:x0, y:y0, w:bw, h:bh };
   }
   function smokePuff(initial){
     var a = R() * 6.2832, sp = (initial ? 90 + R() * 640 : 30 + R() * 160) * sc, r0 = (initial ? 24 + R() * 44 : 20 + R() * 34) * sc;
-    S.smoke.push({ x:cx + Math.cos(a) * R() * L * .12, y:cy + Math.sin(a) * R() * L * .1, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp - (initial ? 40 : 70) * sc, age:0, max:(initial ? 2.6 : 2.2) + R() * 2.2, r0:r0, r1:r0 * (2.2 + R() * 1.8), rot:R() * 6.28, vr:(R() - .5) * .8, ph:R() * 6.28, fire:false, v:(R() * 3) | 0 });
+    S.smoke.push({ x:cx + Math.cos(a) * R() * L * .12, y:cy + Math.sin(a) * R() * L * .1, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp - (initial ? 40 : 70) * sc, age:0, max:(initial ? 2.2 : 1.8) + R() * 1.6, r0:r0, r1:r0 * (1.7 + R() * 1.3), rot:R() * 6.28, vr:(R() - .5) * .8, ph:R() * 6.28, fire:false, v:(R() * 3) | 0 });
   }
   function boom(){
-    var nS = opts.lite ? 34 : 64, nF = opts.lite ? 12 : 22, i;
+    var nS = opts.lite ? 22 : 40, nF = opts.lite ? 8 : 14, i;
     for(i = 0; i < nS; i++) smokePuff(true);
-    for(i = 0; i < nF; i++){ var a = R() * 6.2832, sp = (160 + R() * 900) * sc, r0 = (40 + R() * 70) * sc; S.smoke.push({ x:cx + (R() - .5) * L * .12, y:cy + (R() - .5) * L * .1, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, age:0, max:.35 + R() * .55, r0:r0, r1:r0 * 2.1, rot:0, vr:0, ph:R() * 6.28, fire:true, v:0 }); }
+    for(i = 0; i < nF; i++){ var a = R() * 6.2832, sp = (160 + R() * 900) * sc, r0 = (28 + R() * 52) * sc; S.smoke.push({ x:cx + (R() - .5) * L * .12, y:cy + (R() - .5) * L * .1, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp, age:0, max:.35 + R() * .55, r0:r0, r1:r0 * 2.1, rot:0, vr:0, ph:R() * 6.28, fire:true, v:0 }); }
   }
   function doBreak(){
     boom();
@@ -168,7 +191,7 @@ var PesaIntro = (function(){
   function drawBackground(t){
     var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * .85);
     var lift = S.broke ? .07 * Math.exp(-(t - TL.brk) * .8) : 0;
-    g.addColorStop(0, 'rgb(' + Math.round(16 + lift * 255) + ',' + Math.round(80 + lift * 160) + ',' + Math.round(64 + lift * 90) + ')'); g.addColorStop(.38, '#0a3329'); g.addColorStop(.75, '#05211a'); g.addColorStop(1, '#020f0b');
+    g.addColorStop(0, 'rgb(' + Math.round(17 + lift * 255) + ',' + Math.round(98 + lift * 130) + ',' + Math.round(78 + lift * 90) + ')'); g.addColorStop(.28, '#0a4034'); g.addColorStop(.6, '#05261e'); g.addColorStop(1, '#010806');
     ctx.fillStyle = g; ctx.fillRect(-4, -4, W + 8, H + 8);
     // soft beams of light after the break
     if(S.broke && !opts.lite){
@@ -179,6 +202,9 @@ var PesaIntro = (function(){
         ctx.restore();
       }
     }
+    // a low golden glow under the logo, like light on a polished floor
+    var fg = ctx.createRadialGradient(cx, cy + L * .62, 0, cx, cy + L * .62, L * 1.25), fa2 = Math.min(1, t * .7) * (S.broke ? Math.max(0, 1 - (t - TL.brk) * 1.2) : 1);
+    fg.addColorStop(0, 'rgba(255,190,80,' + (.14 * fa2).toFixed(3) + ')'); fg.addColorStop(1, 'rgba(255,170,40,0)'); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H); ctx.restore();
     // dust motes
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
     S.dust.forEach(function(d){ var a = (.25 + .35 * Math.sin(t * 1.3 + d.ph)) * d.z * Math.min(1, t * .8); if(a <= .01) return; ctx.globalAlpha = a; var s2 = 5 * d.z * sc + 2; ctx.drawImage(spr.dot, d.x - s2 / 2, d.y - s2 / 2, s2, s2); });
@@ -187,21 +213,31 @@ var PesaIntro = (function(){
   function maskedLayer(fn){ lctx.setTransform(DPR, 0, 0, DPR, 0, 0); lctx.globalCompositeOperation = 'source-over'; lctx.clearRect(0, 0, layer.width / DPR + 2, layer.height / DPR + 2); fn(lctx); lctx.globalCompositeOperation = 'destination-in'; lctx.drawImage(img, 0, 0, Lw, Lh); lctx.globalCompositeOperation = 'source-over'; }
   function putLayer(mode, alpha){ ctx.save(); ctx.globalCompositeOperation = mode || 'source-over'; ctx.globalAlpha = alpha == null ? 1 : alpha; ctx.drawImage(layer, 0, 0, layer.width / DPR, layer.height / DPR); ctx.restore(); }
 
-  function drawCracks(front){
-    var edges = geo.edges, path = [];
+  function drawCracks(front, q){
+    var edges = geo.edges, tiers = [[], [], []];
     edges.forEach(function(e){
       var prog = e.kind === 'r' ? (front - (e.r0 + e.jit)) / ((e.r1 - e.r0) * .95) : (front - (e.r0 + e.jit)) / ((e.r1 - e.r0) * .7);
       prog = clamp(prog, 0, 1); if(prog <= 0) return;
       var n = e.pts.length - 1, upto = prog * n, whole = Math.floor(upto), part = upto - whole, pts = [];
       for(var i = 0; i <= whole && i <= n; i++) pts.push(e.pts[i]);
       if(whole < n){ var a = e.pts[whole], b = e.pts[whole + 1]; pts.push([a[0] + (b[0] - a[0]) * part, a[1] + (b[1] - a[1]) * part]); }
-      path.push(pts);
+      tiers[e.kind === 'b' ? 2 : (e.r0 < geo.rmax * .42 ? 0 : 1)].push(pts);
     });
-    function stroke(c, w, col, blur, bc){
-      c.beginPath(); path.forEach(function(pts){ c.moveTo(pts[0][0], pts[0][1]); for(var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); });
+    var W3 = [2.9 * sc, 1.9 * sc, 1.05 * sc];
+    function stroke(c, list, w, col, blur, bc){
+      if(!list.length) return;
+      c.beginPath(); list.forEach(function(pts){ c.moveTo(pts[0][0], pts[0][1]); for(var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); });
       c.lineWidth = w; c.strokeStyle = col; c.lineJoin = 'round'; c.lineCap = 'round'; if(blur){ c.shadowColor = bc; c.shadowBlur = blur; } else { c.shadowBlur = 0; c.shadowColor = 'transparent'; } c.stroke(); c.shadowBlur = 0;
     }
-    maskedLayer(function(c){ stroke(c, 3 * sc, 'rgba(2,18,14,.8)'); stroke(c, 1.6 * sc, 'rgba(255,214,110,.95)', 12 * sc, 'rgba(255,190,60,1)'); stroke(c, .7 * sc, 'rgba(255,255,235,1)'); });
+    maskedLayer(function(c){
+      // a little warm light leaking out of the deepest cracks as the glass is about to give way
+      if(q > .45){ c.globalCompositeOperation = 'lighter'; [0, 1].forEach(function(k){ stroke(c, tiers[k], W3[k] * 2.4, 'rgba(255,190,70,' + (.26 * sm((q - .45) / .5)).toFixed(3) + ')', 9 * sc, 'rgba(255,170,40,.9)'); }); c.globalCompositeOperation = 'source-over'; }
+      for(var k = 2; k >= 0; k--){
+        stroke(c, tiers[k], W3[k] * 2.3, 'rgba(0,0,0,.34)', 4 * sc, 'rgba(0,0,0,.85)');          // soft depth around the crack
+        stroke(c, tiers[k], W3[k], 'rgba(2,4,4,.98)');                                            // the crack itself: black
+        c.save(); c.translate(.75 * sc, .95 * sc); stroke(c, tiers[k], Math.max(.45, W3[k] * .32), 'rgba(235,255,245,.34)'); c.restore();   // thin bright lip on one side, so it reads as a break in glass
+      }
+    });
     putLayer('source-over', 1);
   }
 
@@ -216,6 +252,11 @@ var PesaIntro = (function(){
     var halo = (.5 + .12 * Math.sin(t * 1.9)) * a * (1 + q * .25), hs = L * (2.0 + q * .5);
     ctx.globalAlpha = Math.min(1, halo); ctx.drawImage(spr.gold, cx - hs / 2, cy - hs / 2, hs, hs);
     ctx.restore();
+    if(q < .6){      // soft mirror image on the floor, fading downwards
+      lctx.setTransform(DPR, 0, 0, DPR, 0, 0); lctx.globalCompositeOperation = 'source-over'; lctx.clearRect(0, 0, layer.width / DPR + 2, layer.height / DPR + 2); lctx.drawImage(img, 0, 0, Lw, Lh);
+      lctx.globalCompositeOperation = 'destination-in'; var rg = lctx.createLinearGradient(0, Lh * .45, 0, Lh); rg.addColorStop(0, 'rgba(0,0,0,0)'); rg.addColorStop(1, 'rgba(0,0,0,.9)'); lctx.fillStyle = rg; lctx.fillRect(0, 0, Lw, Lh); lctx.globalCompositeOperation = 'source-over';
+      ctx.save(); ctx.globalAlpha = .17 * a * (1 - q / .6); ctx.translate(cx + ox, cy + oy + Lh * scale + 5 * sc); ctx.scale(scale, -scale); ctx.translate(-Lw / 2, -Lh / 2); ctx.drawImage(layer, 0, 0, layer.width / DPR, layer.height / DPR); ctx.restore();
+    }
     ctx.save(); ctx.translate(cx + ox, cy + oy); ctx.rotate(rot); ctx.scale(scale, scale); ctx.translate(-Lw / 2, -Lh / 2);
     ctx.globalAlpha = a;
     ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 26 * sc; ctx.shadowOffsetY = 12 * sc; ctx.drawImage(img, 0, 0, Lw, Lh); ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
@@ -230,7 +271,7 @@ var PesaIntro = (function(){
       var front = easeIO(q * 1.02) * geo.rmax * 1.12;
       maskedLayer(function(c){ var r = Math.max(8, front * 1.25 + 30 * sc), g = c.createRadialGradient(geo.cxl, geo.cyl, 0, geo.cxl, geo.cyl, r); g.addColorStop(0, 'rgba(255,248,210,' + (.95 * q) + ')'); g.addColorStop(.4, 'rgba(255,205,100,' + (.6 * q) + ')'); g.addColorStop(1, 'rgba(255,160,40,0)'); c.fillStyle = g; c.fillRect(0, 0, Lw, Lh); });
       putLayer('lighter', .9);
-      drawCracks(front);
+      drawCracks(front, q);
     }
     ctx.restore();
   }
@@ -250,8 +291,8 @@ var PesaIntro = (function(){
   function drawBurstFX(t){
     if(!S.broke) return; var rt = t - TL.brk;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    var fa = .55 * Math.pow(clamp(1 - rt / .7, 0, 1), 1.8);
-    if(fa > .01){ var fr = Math.max(W, H) * (.35 + rt * 1.1), g = ctx.createRadialGradient(cx, cy, 0, cx, cy, fr); g.addColorStop(0, 'rgba(255,252,230,' + fa + ')'); g.addColorStop(.35, 'rgba(255,214,120,' + (fa * .7) + ')'); g.addColorStop(1, 'rgba(255,170,50,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
+    var fa = .36 * Math.pow(clamp(1 - rt / .55, 0, 1), 1.8);
+    if(fa > .01){ var fr = Math.max(W, H) * (.22 + rt * .9), g = ctx.createRadialGradient(cx, cy, 0, cx, cy, fr); g.addColorStop(0, 'rgba(255,244,205,' + fa + ')'); g.addColorStop(.3, 'rgba(255,176,70,' + (fa * .75) + ')'); g.addColorStop(1, 'rgba(230,90,20,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); }
     var ringR = easeOut(rt / 1.7) * Math.max(W, H) * .95, ra = Math.pow(clamp(1 - rt / 1.7, 0, 1), 1.6);
     if(ra > .01){ ctx.lineWidth = (2 + 12 * ra) * sc; var rg = ctx.createRadialGradient(cx, cy, Math.max(0, ringR - 30 * sc), cx, cy, ringR + 30 * sc); rg.addColorStop(0, 'rgba(255,220,130,0)'); rg.addColorStop(.5, 'rgba(255,240,190,' + (.45 * ra) + ')'); rg.addColorStop(1, 'rgba(255,200,90,0)'); ctx.strokeStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, ringR, 0, 6.2832); ctx.stroke(); }
     var sa = Math.pow(clamp(1 - rt / 1.1, 0, 1), 1.2);
@@ -263,10 +304,10 @@ var PesaIntro = (function(){
     if(!S.smoke.length) return;
     S.smoke.forEach(function(m){
       var u = m.age / m.max, r = lerp(m.r0, m.r1, easeOut(u));
-      if(m.fire){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.pow(1 - u, 1.6) * .5; ctx.drawImage(spr.gold, m.x - r * 1.1, m.y - r * 1.1, r * 2.2, r * 2.2); ctx.restore(); return; }
-      var a = Math.min(1, m.age / .12) * Math.pow(1 - sm(u), 1.1) * .8;
+      if(m.fire){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.pow(1 - u, 1.8) * .2; ctx.drawImage(spr.gold, m.x - r * 1.1, m.y - r * 1.1, r * 2.2, r * 2.2); ctx.restore(); return; }
+      var a = Math.min(1, m.age / .15) * Math.pow(1 - sm(u), 1.3) * .62;
       ctx.save(); ctx.globalAlpha = a; ctx.translate(m.x, m.y); ctx.rotate(m.rot); ctx.drawImage(spr.smoke[m.v], -r, -r, r * 2, r * 2); ctx.restore();
-      if(m.age < .9){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - m.age / .9) * .5; ctx.drawImage(spr.gold, m.x - r * 1.1, m.y - r * 1.1, r * 2.2, r * 2.2); ctx.restore(); }
+      if(m.age < .9){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (1 - m.age / .9) * .3; ctx.drawImage(spr.gold, m.x - r * 1.1, m.y - r * 1.1, r * 2.2, r * 2.2); ctx.restore(); }
     });
   }
   function drawSparks(){
