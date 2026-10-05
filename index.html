@@ -7793,6 +7793,28 @@ function sparklineSvg(days, opts){
   '</svg>';
 }
 
+/* Fast product search: each product's searchable text is built once and cached, every typed word must match
+   (any order, accents ignored), names that start with the typed word come first, exact barcode always matches. */
+var _srchCache = new WeakMap();
+function _srchNorm(t){ t = String(t==null?'':t).toLowerCase(); try{ t = t.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(e){} return t; }
+function _srchHay(p){
+  var sig = (p.name||'')+'|'+(p.category||'')+'|'+(p.barcode==null?'':p.barcode)+'|'+(p.sku||'');
+  var c = _srchCache.get(p);
+  if(!c || c.sig !== sig){ c = { sig:sig, hay:_srchNorm(sig), name:_srchNorm(p.name||''), bc:String(p.barcode==null?'':p.barcode).trim() }; _srchCache.set(p, c); }
+  return c;
+}
+function searchProducts(list, query){
+  var q = _srchNorm(query).trim();
+  if(!q) return list;
+  var words = q.split(/\s+/), first = words[0], hits = [], rest = [];
+  for(var i = 0; i < list.length; i++){
+    var c = _srchHay(list[i]), ok = c.bc === q;
+    if(!ok){ ok = true; for(var w = 0; w < words.length; w++){ if(c.hay.indexOf(words[w]) < 0){ ok = false; break; } } }
+    if(!ok) continue;
+    if(c.bc === q || c.name.indexOf(first) === 0) hits.push(list[i]); else rest.push(list[i]);
+  }
+  return hits.concat(rest);
+}
 /* ============================== TAB: SELL ============================== */
 function categoriesFor(products){
   var set = {};
@@ -7802,9 +7824,7 @@ function categoriesFor(products){
 
 function renderSell(){
   var q = State.sellSearch.trim().toLowerCase();
-  var list = State.products.filter(function(p){
-    return !q || (p.name||'').toLowerCase().indexOf(q) > -1 || (p.category||'').toLowerCase().indexOf(q) > -1;
-  });
+  var list = searchProducts(State.products, State.sellSearch);
 
   if(!State.ready.products){
     return '<div class="empty">Loading products…</div>';
@@ -8697,7 +8717,7 @@ function posMainHtml(d){
 }
 function posGridHtml(){
   var q = POS.search.trim().toLowerCase();
-  var list = State.products.filter(function(p){ return !q || (p.name||'').toLowerCase().indexOf(q) > -1 || (p.category||'').toLowerCase().indexOf(q) > -1 || (p.barcode && String(p.barcode) === q); });
+  var list = searchProducts(State.products, POS.search);
   if(!State.products.length) return '<div class="empty"><div class="t">'+tr('No products yet')+'</div><div class="s">'+tr('Add stock first, then come back to sell.')+'</div></div>';
   if(!list.length) return '<div class="empty"><div class="t">'+tr('No matches')+'</div></div>';
   var cap = Math.max(LIST_PAGE, POS.limit || 0), shown = list.slice(0, cap);
@@ -8926,7 +8946,7 @@ function renderStock(){
   (isManagerOrOwner() ? '<div style="margin-bottom:12px;"><button class="btn btn-ghost btn-block" id="stockVarBtn" type="button">Stock take &amp; variances</button></div>' : '');
   var selS = selState('stock');
   var sq = (State.stockSearch||'').trim().toLowerCase();
-  var stockList = !sq ? State.products : State.products.filter(function(p){ return (p.name||'').toLowerCase().indexOf(sq) > -1 || (p.category||'').toLowerCase().indexOf(sq) > -1 || String(p.barcode||'').indexOf(sq) > -1; });
+  var stockList = !sq ? State.products : searchProducts(State.products, State.stockSearch);
   var stockLimit = State.stockLimit || LIST_PAGE;
   var stTot = stockTotals();
   html += '<div class="searchbar" style="margin-bottom:10px;">'+ICONS.search+'<input id="stockSearchInput" placeholder="'+esc(tr('Search products…'))+'" value="'+esc(State.stockSearch||'')+'"></div>';
@@ -17591,7 +17611,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.52';
+var APP_VERSION = '2026.10.53';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17783,6 +17803,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.53', items:[
+    'Faster, more accurate product search in Sell, the till and Stock. Type words in any order, accents are ignored, and names that start with your word come first'
+  ]},
   { v:'2026.10.52', items:[
     'If Pesa shows a snag message, Terms, privacy and support now has a button to send the last error to support. It sends only the error text, never your records'
   ]},

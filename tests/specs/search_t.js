@@ -1,0 +1,20 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,200):'')); if(!c) fail++; };
+(async()=>{
+ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await require('./biz_boot.js')(p);
+ const r=await p.evaluate(()=>{ const sp=window.__t.searchProducts;
+  const L=[{name:'Brown Bread 700g',category:'Bakery',barcode:'6001'},{name:'White Bread',category:'Bakery',barcode:'6002'},{name:'Crème Brûlée Cup',category:'Dessert',barcode:'7003'},{name:'Whole Brown Rice',category:'Grain'}];
+  const big=[]; for(let i=0;i<20000;i++) big.push({name:'Item '+i+' tin',category:'C'+(i%50),barcode:String(900000+i)});
+  sp(big,'warm'); const t0=performance.now(); const n=sp(big,'tin 1999').length; const ms=performance.now()-t0;
+  return { empty:sp(L,'').length, any:sp(L,'bread brown').map(x=>x.name), accent:sp(L,'creme brulee').map(x=>x.name), bc:sp(L,'6002').map(x=>x.name), first:sp(L,'brown').map(x=>x.name), none:sp(L,'zzz').length, n, ms };});
+ ck('empty search returns all', r.empty===4, r);
+ ck('words in any order', r.any.length===1&&r.any[0]==='Brown Bread 700g', r.any);
+ ck('accents ignored', r.accent[0]==='Crème Brûlée Cup', r.accent);
+ ck('barcode finds product', r.bc[0]==='White Bread', r.bc);
+ ck('names starting with word come first', r.first[0]==='Brown Bread 700g'&&r.first.length===2, r.first);
+ ck('no match gives none', r.none===0);
+ ck('20000 products search under 60ms', r.ms<60 && r.n>0, r);
+ ck('no page errors', errs.length===0, errs);
+ await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
+})();
