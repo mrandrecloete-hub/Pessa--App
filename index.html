@@ -48,14 +48,14 @@
   w.addEventListener('load', function(){ setTimeout(function(){ if(!w.__pesaBoot) show(); }, 800); });
 })();
 </script>
-<title>Pesa</title>
+<title>Pesa Namibia</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B7A5C">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pesa">
-<meta name="application-name" content="Pesa">
+<meta name="application-name" content="Pesa Namibia">
 <meta name="description" content="Pesa — shop management, invoicing and reporting for small Namibian businesses.">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -17358,7 +17358,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.42';
+var APP_VERSION = '2026.10.43';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17550,6 +17550,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.43', items:[
+    'The app window title now says Pesa Namibia'
+  ]},
   { v:'2026.10.42', items:[
     'The gold Settings gear is back, now on the Settings row at the end of the menu'
   ]},
