@@ -2705,6 +2705,9 @@ var State = {
   invFilter: { q:'', period:'all', client:'' },
   reports: [],         // immutable monthly report snapshots: {id, type:'monthly', interim, periodKey, branchId, generatedAt, figures, ...}
   repFilter: { year:'all', scope:'any' },
+  clockLogs: [],       // {id, userId, userName, inAt, outAt|null, auto, edited}
+  tips: [],            // {id, userId, userName, amount, method, note, createdAt, pool}
+  calEvents: [],       // {id, title, date:'YYYY-MM-DD', time, note}
   payRuns: [],         // monthly pay runs: {id:'YYYY-MM', month, lines, totalNet, status:'saved'|'paid'}
   accountingPeriods: [], // frozen monthly accounting packs: {id:'YYYY-MM', periodKey, revision, tb, pl, vat, bs, hash, prevHash, ...}
   wastage: [],         // {id, productId, productName, qty, reason, notes, recordedBy, createdAt}
@@ -2836,6 +2839,9 @@ function initRefs(){
   refs.loyaltyLog = Store.collection('loyaltyLog');
   refs.accountingPeriods = Store.collection('accountingPeriods');
   refs.payRuns = Store.collection('payRuns');
+  refs.clockLogs = Store.collection('clockLogs');
+  refs.tips = Store.collection('tips');
+  refs.calEvents = Store.collection('calEvents');
 }
 
 function subscribeAll(){
@@ -2958,6 +2964,12 @@ function subscribeAll(){
     refs[c[0]].onSnapshot(function(docs){
       State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
     });
+  [['clockLogs','clockLogs'],['tips','tips'],['calEvents','calEvents']].forEach(function(c){
+    refs[c[0]].onSnapshot(function(docs){
+      State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
+      try{ if(State.session && document.getElementById('app').style.display !== 'none' && (State.tab === 'me' || State.tab === 'dashboard')) render(); }catch(e){}
+    });
+  });
   });
   refs.auditLog.onSnapshot(function(docs){
     State.auditLog = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return new Date(b.createdAt)-new Date(a.createdAt); });
@@ -3978,6 +3990,9 @@ function openBizHub(){
     ['accountant','Accountant','Monthly accounting packs, VAT working figures, trial balance'],
     ['landed','Import cost calculator','True cost of imported stock after freight, clearing and duty'],
     ['momo','Mobile money check','Match wallet sales with payment messages you paste in'],
+    ['attend','Attendance and clock in','Who is on shift, hours worked, missed shifts'],
+    ['tips','Staff tips','Record and share tips, monthly totals per person'],
+    ['calendar','Calendar','Public holidays, due dates, expiry dates and your own reminders'],
     ['payroll','Payroll and payslips','Pay details, monthly pay run and payslips'],
     ['setup','Setup guide', sp.done+' of '+sp.total+' steps done']
   ];
@@ -4010,7 +4025,301 @@ function openBizSection(k){
   else if(k==='setup') openSetupSheet();
   else if(k==='accountant') openAccountantSheet();
   else if(k==='payroll') openPayrollSheet();
+  else if(k==='attend') openAttendanceSheet();
+  else if(k==='tips') openTipsSheet();
+  else if(k==='calendar') openCalendarSheet();
 }
+
+/* ============================== TEAM TIME: CLOCK IN AND OUT, TIPS, RATING CHART, CALENDAR ==============================
+   Clock logs, tips and calendar events are normal synced collections. Hours feed the pay run, tips are paid on top of net pay,
+   and the rating chart blends sales, till accuracy, attendance and a manager's star rating. */
+function tmMe(){ return State.users.find(function(u){ return u.id === (State.session || {}).userId; }) || null; }
+function tmManager(){ return isManagerOrOwner(); }
+function tmLocalIn(iso){ var d = new Date(iso); if(!isFinite(d)) return ''; return todayKey(d) + 'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function tmFromLocal(v){ var d = new Date(v); return isFinite(d) ? d.toISOString() : ''; }
+function fmtHM(ms){ var m = Math.max(0, Math.round(ms / 60000)); return Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; }
+function fmtClock(iso){ return new Date(iso).toLocaleTimeString(uiLocale(), { hour:'2-digit', minute:'2-digit' }); }
+function clockOpenLog(uid){ return State.clockLogs.find(function(l){ return l.userId === uid && !l.outAt; }) || null; }
+function clockMs(l){ return Math.max(0, (l.outAt ? new Date(l.outAt).getTime() : Date.now()) - new Date(l.inAt).getTime()); }
+function clockMonthLogs(uid, month){ return State.clockLogs.filter(function(l){ return l.userId === uid && todayKey(new Date(l.inAt)).slice(0, 7) === month; }).sort(function(a, b){ return new Date(a.inAt) - new Date(b.inAt); }); }
+function clockMonthTotals(uid, month){
+  var logs = clockMonthLogs(uid, month), days = {}, ms = 0;
+  logs.forEach(function(l){ days[todayKey(new Date(l.inAt))] = true; ms += clockMs(l); });
+  return { ms:ms, hours:Math.round(ms / 360000) / 10, days:Object.keys(days).length, logs:logs };
+}
+function payClockUnits(u, month, type){ var t = clockMonthTotals(u.id, month); return type === 'hourly' ? t.hours : t.days; }
+function clockIn(u){
+  if(!u) return;
+  var open = clockOpenLog(u.id), now = new Date();
+  if(open){
+    if(now - new Date(open.inAt) < 16 * 3600000){ toast(tr('You are already clocked in')); return; }
+    refs.clockLogs.doc(open.id).update({ outAt:new Date(new Date(open.inAt).getTime() + 8 * 3600000).toISOString(), auto:true });   // forgotten clock out: closed after 8 hours and marked
+  }
+  refs.clockLogs.doc().set({ userId:u.id, userName:u.name, inAt:now.toISOString(), outAt:null, createdAt:now.toISOString() });
+  logAudit('create', 'clock', u.id, u.name + ' clocked in');
+  toast(tr('Clocked in') + ' ' + fmtClock(now.toISOString()));
+}
+function clockOut(u, byManager){
+  var open = u && clockOpenLog(u.id); if(!open){ toast(tr('Not clocked in')); return; }
+  var now = new Date().toISOString();
+  refs.clockLogs.doc(open.id).update({ outAt:now });
+  logAudit('update', 'clock', u.id, u.name + ' clocked out' + (byManager ? ' (by ' + (State.session ? State.session.name : 'manager') + ')' : '') + ', ' + fmtHM(new Date(now) - new Date(open.inAt)));
+  toast(tr('Clocked out') + ', ' + fmtHM(new Date(now) - new Date(open.inAt)));
+}
+function tipsOf(uid, month){ return r2(State.tips.filter(function(t){ return t.userId === uid && todayKey(new Date(t.createdAt)).slice(0, 7) === month; }).reduce(function(a, t){ return a + (Number(t.amount) || 0); }, 0)); }
+function tmCardHtml(){
+  var me = tmMe(); if(!me) return '';
+  var open = clockOpenLog(me.id), month = todayKey().slice(0, 7), tot = clockMonthTotals(me.id, month), tp = tipsOf(me.id, month);
+  return '<div class="tillcard tm-card"><div class="section-title" style="margin-top:0;">' + tr('My shift') + '</div>' +
+    '<div class="tillrow"><span class="l">' + (open ? tr('On shift since') : tr('Not clocked in')) + '</span><span class="v num"' + (open ? ' data-clocktimer="' + open.inAt + '"' : '') + '>' + (open ? fmtClock(open.inAt) + ' (' + fmtHM(clockMs(open)) + ')' : '') + '</span></div>' +
+    '<div class="tillrow"><span class="l">' + tr('This month') + '</span><span class="v num">' + tot.days + ' ' + tr('days') + ', ' + fmtHM(tot.ms) + '</span></div>' +
+    '<div class="tillrow"><span class="l">' + tr('Tips this month') + '</span><span class="v num">' + fmtMoney(tp) + '</span></div>' +
+    '<div class="actions" style="margin-top:10px;"><button class="btn ' + (open ? 'btn-danger' : 'btn-primary') + ' btn-block" type="button" data-tm="clock">' + (open ? tr('Clock out') : tr('Clock in')) + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" type="button" data-tm="tip">' + tr('Record a tip') + '</button><button class="btn btn-ghost btn-block" type="button" data-tm="mytimes">' + tr('My hours') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" type="button" data-tm="calendar">' + tr('Calendar') + '</button></div></div>';
+}
+function tmDashHtml(){
+  if(!tmManager()) return '';
+  var on = State.clockLogs.filter(function(l){ return !l.outAt && Date.now() - new Date(l.inAt) < 16 * 3600000; }).length;
+  var month = todayKey().slice(0, 7), tips = r2(State.tips.filter(function(t){ return todayKey(new Date(t.createdAt)).slice(0, 7) === month; }).reduce(function(a, t){ return a + (Number(t.amount) || 0); }, 0));
+  var today = calItemsFor(todayKey()).length, tmr = new Date(); tmr.setDate(tmr.getDate() + 1); var next = calItemsFor(todayKey(tmr)).length;
+  return '<div class="section-title">' + tr('Team and calendar') + '</div><div class="stats">' +
+    '<div class="stat" data-tm="attend" style="cursor:pointer;"><div class="lbl">' + tr('On shift now') + '</div><div class="v num">' + on + '</div></div>' +
+    '<div class="stat" data-tm="calendar" style="cursor:pointer;"><div class="lbl">' + tr('Calendar today') + '</div><div class="v num">' + today + (next ? ' <span style="font-size:12px;color:var(--text-muted);font-weight:500;">+' + next + ' ' + tr('tomorrow') + '</span>' : '') + '</div></div>' +
+    '<div class="stat" data-tm="tips" style="cursor:pointer;"><div class="lbl">' + tr('Tips this month') + '</div><div class="v num">' + fmtMoney(tips) + '</div></div></div>';
+}
+/* ---- attendance ---- */
+function openAttendanceSheet(month){
+  month = month || todayKey().slice(0, 7);
+  if(!tmManager()){ var me = tmMe(); if(me) openClockLogsSheet(me.id, month); return; }
+  var staff = State.users.filter(function(u){ return u.role !== 'pending' && !u.disabled; });
+  var on = State.clockLogs.filter(function(l){ return !l.outAt; });
+  var html = '<div class="sheet-head"><h2>' + tr('Attendance and clock in') + '</h2></div>' +
+    '<div class="section-title" style="margin-top:0;">' + tr('On shift now') + ' (' + on.length + ')</div>' +
+    (on.length ? '<div class="rowlist">' + on.map(function(l){ return '<div class="row"><div class="main"><div class="title">' + esc(l.userName) + '</div><div class="sub">' + tr('Since') + ' ' + fmtClock(l.inAt) + ' (' + fmtHM(clockMs(l)) + ')</div></div><div class="trail"><button class="btn btn-ghost" type="button" data-clkout="' + l.userId + '" style="padding:5px 11px;">' + tr('Clock out') + '</button></div></div>'; }).join('') + '</div>' : '<div class="empty" style="padding:10px 0;"><div class="s">' + tr('Nobody is clocked in right now.') + '</div></div>') +
+    '<div class="field" style="margin-top:12px;"><label>' + tr('Month') + '</label><input id="atMonth" type="month" value="' + month + '"></div>' +
+    '<div class="rowlist">' + staff.map(function(u){ var t = clockMonthTotals(u.id, month); return '<button class="row" type="button" data-atu="' + u.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(u.name) + '</div><div class="sub">' + t.days + ' ' + tr('days worked') + '</div></div><div class="trail num">' + fmtHM(t.ms) + '</div></button>'; }).join('') + '</div>' +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-ghost btn-block" id="atCsv" type="button">' + tr('Download timesheet as spreadsheet') + '</button></div>' + btBack();
+  var ov = openSheet(html); btWireBack(ov);
+  ov.querySelector('#atMonth').addEventListener('change', function(e){ if(e.target.value){ closeModal(); openAttendanceSheet(e.target.value); } });
+  ov.querySelectorAll('[data-atu]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openClockLogsSheet(b.getAttribute('data-atu'), ov.querySelector('#atMonth').value || month); }); });
+  ov.querySelectorAll('[data-clkout]').forEach(function(b){ b.addEventListener('click', function(){ var u = State.users.find(function(x){ return x.id === b.getAttribute('data-clkout'); }); clockOut(u, true); setTimeout(function(){ closeModal(); openAttendanceSheet(month); }, 250); }); });
+  ov.querySelector('#atCsv').addEventListener('click', function(){
+    var m = ov.querySelector('#atMonth').value || month, rows = [['Employee', 'Date', 'Clock in', 'Clock out', 'Hours']];
+    staff.forEach(function(u){ clockMonthLogs(u.id, m).forEach(function(l){ rows.push([u.name, todayKey(new Date(l.inAt)), fmtClock(l.inAt), l.outAt ? fmtClock(l.outAt) : '', (clockMs(l) / 3600000).toFixed(2)]); }); });
+    btSaveCsv('timesheet-' + m + '.csv', rows);
+  });
+}
+function openClockLogsSheet(uid, month){
+  var u = State.users.find(function(x){ return x.id === uid; }); if(!u) return;
+  var mgr = tmManager(), t = clockMonthTotals(uid, month);
+  var html = '<div class="sheet-head"><h2>' + esc(u.name) + '</h2></div>' +
+    '<div class="field"><label>' + tr('Month') + '</label><input id="clMonth" type="month" value="' + month + '"></div>' +
+    '<div class="stats"><div class="stat"><div class="lbl">' + tr('Days worked') + '</div><div class="v num">' + t.days + '</div></div><div class="stat"><div class="lbl">' + tr('Hours') + '</div><div class="v num">' + fmtHM(t.ms) + '</div></div></div>' +
+    (t.logs.length ? '<div class="rowlist">' + t.logs.slice().reverse().map(function(l){
+      return '<div class="row"><div class="main"><div class="title">' + esc(fmtDay(l.inAt)) + '</div><div class="sub">' + fmtClock(l.inAt) + ' to ' + (l.outAt ? fmtClock(l.outAt) : tr('still on shift')) + (l.auto ? ' · ' + tr('closed automatically') : '') + '</div></div><div class="trail num">' + fmtHM(clockMs(l)) +
+        (mgr ? '<br><button class="btn btn-ghost" type="button" data-cledit="' + l.id + '" style="padding:3px 9px;font-size:11.5px;margin-top:3px;">' + tr('Edit') + '</button>' : '') + '</div></div>';
+    }).join('') + '</div>' : '<div class="empty"><div class="t">' + tr('No shifts this month') + '</div></div>') +
+    (mgr ? '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="clAdd" type="button">' + tr('Add a missed shift') + '</button></div>' : '') +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="clBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#clMonth').addEventListener('change', function(e){ if(e.target.value){ closeModal(); openClockLogsSheet(uid, e.target.value); } });
+  ov.querySelector('#clBack').addEventListener('click', function(){ closeModal(); if(mgr) openAttendanceSheet(month); });
+  if(mgr){
+    ov.querySelector('#clAdd').addEventListener('click', function(){ closeModal(); openClockEditSheet(u, null, month); });
+    ov.querySelectorAll('[data-cledit]').forEach(function(b){ b.addEventListener('click', function(){ var l = State.clockLogs.find(function(x){ return x.id === b.getAttribute('data-cledit'); }); if(l){ closeModal(); openClockEditSheet(u, l, month); } }); });
+  }
+}
+function openClockEditSheet(u, log, month){
+  var base = new Date(); if(!log){ base.setHours(8, 0, 0, 0); }
+  var html = '<div class="sheet-head"><h2>' + (log ? tr('Edit shift') : tr('Add a missed shift')) + '</h2></div><div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + esc(u.name) + '</div>' +
+    '<div class="field"><label>' + tr('Clock in') + '</label><input id="ceIn" type="datetime-local" value="' + tmLocalIn(log ? log.inAt : base.toISOString()) + '"></div>' +
+    '<div class="field"><label>' + tr('Clock out') + '</label><input id="ceOut" type="datetime-local" value="' + (log && log.outAt ? tmLocalIn(log.outAt) : (log ? '' : tmLocalIn(new Date(base.getTime() + 8 * 3600000).toISOString()))) + '"></div>' +
+    '<div class="actions">' + (log ? '<button class="btn btn-danger" id="ceDel" type="button">' + tr('Delete') + '</button>' : '') + '<button class="btn btn-primary btn-block" id="ceSave" type="button">' + tr('Save') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="ceBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html, { center:true });
+  ov.querySelector('#ceBack').addEventListener('click', function(){ closeModal(); openClockLogsSheet(u.id, month); });
+  ov.querySelector('#ceSave').addEventListener('click', function(){
+    var inI = tmFromLocal(ov.querySelector('#ceIn').value), outI = ov.querySelector('#ceOut').value ? tmFromLocal(ov.querySelector('#ceOut').value) : null;
+    if(!inI){ toast(tr('Enter the clock in time')); return; }
+    if(outI && new Date(outI) <= new Date(inI)){ toast(tr('Clock out must be after clock in')); return; }
+    if(log){ refs.clockLogs.doc(log.id).update({ inAt:inI, outAt:outI, edited:true, auto:false }); logAudit('update', 'clock', u.id, 'Shift edited for ' + u.name + ' by ' + State.session.name); }
+    else { refs.clockLogs.doc().set({ userId:u.id, userName:u.name, inAt:inI, outAt:outI, createdAt:new Date().toISOString(), added:true }); logAudit('create', 'clock', u.id, 'Missed shift added for ' + u.name + ' by ' + State.session.name); }
+    toast(tr('Saved')); closeModal(); openClockLogsSheet(u.id, todayKey(new Date(inI)).slice(0, 7));
+  });
+  var del = ov.querySelector('#ceDel');
+  if(del) del.addEventListener('click', function(){ confirmSheet(tr('Delete this shift?'), tr('The hours are taken off this person’s record.'), tr('Delete'), function(){ refs.clockLogs.doc(log.id).delete(); logAudit('delete', 'clock', u.id, 'Shift deleted for ' + u.name); toast(tr('Shift deleted')); openClockLogsSheet(u.id, month); }, true); });
+}
+/* ---- tips ---- */
+function openTipSheet(){
+  var me = tmMe(), mgr = tmManager(), staff = State.users.filter(function(u){ return u.role !== 'pending' && !u.disabled; });
+  var onNow = State.clockLogs.filter(function(l){ return !l.outAt; }).length;
+  var html = '<div class="sheet-head"><h2>' + tr('Record a tip') + '</h2></div>' +
+    '<div class="field"><label>' + tr('Tip amount') + ' (N$)</label><input id="tpAmt" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>' +
+    '<div class="field"><label>' + tr('Who gets it') + '</label><select id="tpWho">' + (me && !mgr ? '<option value="' + me.id + '">' + tr('Me') + '</option>' : staff.map(function(u){ return '<option value="' + u.id + '">' + esc(u.name) + '</option>'; }).join('')) +
+      '<option value="__team">' + tr('Share equally between everyone on shift now') + ' (' + onNow + ')</option></select></div>' +
+    '<div class="field"><label>' + tr('How it was paid') + '</label><select id="tpMeth"><option value="cash">' + tr('Cash') + '</option><option value="card">' + tr('Card') + '</option><option value="wallet">' + tr('Mobile wallet') + '</option></select></div>' +
+    '<div class="field"><label>' + tr('Note (optional)') + '</label><input id="tpNote" placeholder="' + tr('Table or customer') + '"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="tpSave" type="button">' + tr('Save tip') + '</button></div>';
+  var ov = openSheet(html, { center:true });
+  if(me && !mgr) ov.querySelector('#tpWho').value = me.id;
+  ov.querySelector('#tpSave').addEventListener('click', function(){
+    var amt = r2(parseFloat(ov.querySelector('#tpAmt').value)); if(!(amt > 0)){ toast(tr('Enter the tip amount')); return; }
+    var who = ov.querySelector('#tpWho').value, meth = ov.querySelector('#tpMeth').value, note = ov.querySelector('#tpNote').value.trim(), now = new Date().toISOString(), rec = [];
+    if(who === '__team'){
+      var ids = {}; State.clockLogs.filter(function(l){ return !l.outAt; }).forEach(function(l){ ids[l.userId] = l.userName; });
+      var keys = Object.keys(ids); if(!keys.length){ toast(tr('Nobody is clocked in right now.')); return; }
+      var share = Math.floor(amt * 100 / keys.length) / 100, left = r2(amt - share * keys.length), pool = 'p' + Date.now();
+      keys.forEach(function(k, i){ rec.push({ userId:k, userName:ids[k], amount:r2(share + (i === 0 ? left : 0)), pool:pool }); });
+    } else { var u = State.users.find(function(x){ return x.id === who; }); if(!u) return; rec.push({ userId:u.id, userName:u.name, amount:amt }); }
+    rec.forEach(function(r){ refs.tips.doc().set(Object.assign({ method:meth, note:note, createdAt:now, by:State.session ? State.session.name : '' }, r)); });
+    logAudit('create', 'tip', null, 'Tip of ' + fmtMoney(amt) + ' recorded for ' + rec.map(function(r){ return r.userName; }).join(', '));
+    toast(tr('Tip saved')); closeModal();
+  });
+}
+function openTipsSheet(month){
+  month = month || todayKey().slice(0, 7);
+  var mgr = tmManager(), me = tmMe();
+  var list = State.tips.filter(function(t){ return todayKey(new Date(t.createdAt)).slice(0, 7) === month && (mgr || (me && t.userId === me.id)); }).sort(function(a, b){ return new Date(b.createdAt) - new Date(a.createdAt); });
+  var by = {}; list.forEach(function(t){ by[t.userName] = r2((by[t.userName] || 0) + (Number(t.amount) || 0)); });
+  var total = r2(list.reduce(function(a, t){ return a + (Number(t.amount) || 0); }, 0));
+  var html = '<div class="sheet-head"><h2>' + tr('Staff tips') + '</h2></div>' +
+    '<div class="field"><label>' + tr('Month') + '</label><input id="tsMonth" type="month" value="' + month + '"></div>' +
+    '<div class="stats" style="margin-bottom:10px;"><div class="stat wide"><div class="lbl">' + tr('Total tips') + '</div><div class="v num">' + fmtMoney(total) + '</div></div></div>' +
+    (Object.keys(by).length > 1 || (mgr && Object.keys(by).length) ? '<div class="section-title">' + tr('Per person') + '</div><div class="rowlist">' + Object.keys(by).sort(function(a, b){ return by[b] - by[a]; }).map(function(n){ return '<div class="row"><div class="main"><div class="title">' + esc(n) + '</div></div><div class="trail num">' + fmtMoney(by[n]) + '</div></div>'; }).join('') + '</div>' : '') +
+    '<div class="section-title">' + tr('All tips') + '</div>' +
+    (list.length ? '<div class="rowlist">' + list.slice(0, 80).map(function(t){ return '<div class="row"><div class="main"><div class="title">' + esc(t.userName) + (t.pool ? ' <span style="font-size:11px;color:var(--text-muted);">(' + tr('shared') + ')</span>' : '') + '</div><div class="sub">' + fmtDateTime(t.createdAt) + ' · ' + esc(tr(t.method === 'wallet' ? 'Mobile wallet' : (t.method === 'card' ? 'Card' : 'Cash'))) + (t.note ? ' · ' + esc(t.note) : '') + '</div></div><div class="trail num">' + fmtMoney(t.amount) + (mgr ? '<br><button class="btn btn-ghost" type="button" data-tpdel="' + t.id + '" style="padding:3px 9px;font-size:11.5px;margin-top:3px;">' + tr('Remove') + '</button>' : '') + '</div></div>'; }).join('') + '</div>' : '<div class="empty"><div class="t">' + tr('No tips recorded this month') + '</div></div>') +
+    '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="tsAdd" type="button">' + tr('Record a tip') + '</button></div>' + (mgr ? btBack() : '');
+  var ov = openSheet(html); if(mgr) btWireBack(ov);
+  ov.querySelector('#tsMonth').addEventListener('change', function(e){ if(e.target.value){ closeModal(); openTipsSheet(e.target.value); } });
+  ov.querySelector('#tsAdd').addEventListener('click', function(){ closeModal(); openTipSheet(); });
+  ov.querySelectorAll('[data-tpdel]').forEach(function(b){ b.addEventListener('click', function(){ var t = State.tips.find(function(x){ return x.id === b.getAttribute('data-tpdel'); }); if(!t) return;
+    confirmSheet(tr('Remove this tip?'), fmtMoney(t.amount) + ' ' + tr('for') + ' ' + t.userName + ' ' + tr('is taken off the record.'), tr('Remove'), function(){ refs.tips.doc(t.id).delete(); logAudit('delete', 'tip', t.id, 'Tip of ' + fmtMoney(t.amount) + ' removed for ' + t.userName); toast(tr('Tip removed')); setTimeout(function(){ openTipsSheet(month); }, 200); }, true); }); });
+}
+/* ---- staff rating chart ---- */
+var RATE_PARTS = [['sales', 'Sales', 40, '#0B7A5C'], ['acc', 'Till accuracy', 20, '#3B82F6'], ['att', 'Attendance', 20, '#E8A21E'], ['mgr', 'Manager rating', 20, '#9B5DE5']];
+function tmWorkDays(from, to){
+  var n = 0, d = new Date(from + 'T00:00:00'), end = new Date(Math.min(new Date(to + 'T00:00:00').getTime(), new Date(todayKey() + 'T00:00:00').getTime())), hol = {};
+  for(var y = d.getFullYear(); y <= end.getFullYear(); y++) Object.assign(hol, calHolidays(y));
+  for(; d <= end; d.setDate(d.getDate() + 1)){ if(d.getDay() !== 0 && !hol[todayKey(d)]) n++; }
+  return n;
+}
+function staffRatingRows(from, to){
+  var mk = from.slice(0, 7), stats = btStaffStats(from, to), ratings = State.settings.staffRatings || {}, expected = Math.max(1, tmWorkDays(from, to));
+  var names = {}; State.users.forEach(function(u){ if(u.role !== 'pending' && !u.disabled) names[u.name] = u; });
+  var maxRev = stats.reduce(function(a, s){ return Math.max(a, s.revenue); }, 0);
+  var anyClock = State.clockLogs.some(function(l){ var d = todayKey(new Date(l.inAt)); return d >= from && d <= to; });
+  return Object.keys(names).map(function(n){
+    var u = names[n], s = stats.find(function(x){ return x.name === n; }) || { revenue:0, tills:0 }, sc = {};
+    if(u.role !== 'stockclerk' && maxRev > 0) sc.sales = s.revenue / maxRev * 100;
+    if(s.tills){ var closed = State.tillSessions.filter(function(t){ var d = t.closedAt ? todayKey(new Date(t.closedAt)) : ''; return t.cashierName === n && d >= from && d <= to; }); if(closed.length) sc.acc = closed.filter(function(t){ return Math.abs(t.variance || 0) < 0.01; }).length / closed.length * 100; }
+    if(anyClock){ var days = {}; State.clockLogs.forEach(function(l){ var d = todayKey(new Date(l.inAt)); if(l.userId === u.id && d >= from && d <= to) days[d] = true; }); sc.att = Math.min(100, Object.keys(days).length / expected * 100); }
+    var star = ratings[n] && ratings[n][mk]; if(star > 0) sc.mgr = star * 20;
+    var wsum = 0, tot = 0; RATE_PARTS.forEach(function(p){ if(sc[p[0]] != null){ wsum += p[2]; tot += sc[p[0]] * p[2]; } });
+    var parts = RATE_PARTS.map(function(p){ return { k:p[0], label:p[1], color:p[3], w:p[2], score:sc[p[0]], pts:(sc[p[0]] != null && wsum) ? sc[p[0]] * p[2] / wsum : 0 }; });
+    return { name:n, user:u, score:wsum ? Math.round(tot / wsum) : null, parts:parts, star:star || 0, month:mk };
+  }).filter(function(r){ return r.score != null || r.user.role !== 'owner'; }).sort(function(a, b){ return (b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score); });
+}
+function ratingChartHtml(from, to){
+  var rows = staffRatingRows(from, to);
+  if(!rows.length) return '';
+  return '<div class="section-title">' + tr('Performance rating') + '</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--text-muted);margin-bottom:8px;">' + RATE_PARTS.map(function(p){ return '<span><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + p[3] + ';margin-right:4px;"></i>' + tr(p[1]) + '</span>'; }).join('') + '</div>' +
+    rows.map(function(r){
+      var bar = r.parts.filter(function(p){ return p.pts > 0; }).map(function(p){ return '<i title="' + esc(tr(p.label)) + ' ' + Math.round(p.score) + '" style="display:block;height:100%;width:' + p.pts.toFixed(1) + '%;background:' + p.color + ';"></i>'; }).join('');
+      var stars = ''; for(var i = 1; i <= 5; i++) stars += '<span style="color:' + (i <= r.star ? '#E8A21E' : 'var(--border)') + ';">★</span>';
+      return '<div style="margin:11px 0;"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><b>' + esc(r.name) + '</b><b class="num" style="font-size:18px;">' + (r.score != null ? r.score : '·') + '<span style="font-size:11px;color:var(--text-muted);font-weight:500;"> /100</span></b></div>' +
+        '<div style="display:flex;height:11px;border-radius:6px;overflow:hidden;background:var(--surface-2);margin-top:5px;">' + bar + '</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;font-size:12px;color:var(--text-muted);"><span>' + r.parts.filter(function(p){ return p.score != null; }).map(function(p){ return tr(p.label) + ' ' + Math.round(p.score); }).join(' · ') + '</span>' +
+        (tmManager() ? '<button class="btn btn-ghost" type="button" data-rate="' + esc(r.name) + '" data-rm="' + r.month + '" style="padding:3px 9px;font-size:12px;">' + stars + '</button>' : '') + '</div></div>';
+    }).join('') +
+    '<div style="font-size:11.5px;color:var(--text-muted);margin:4px 0 10px;">' + tr('Score blends sales, balanced tills, days at work and the manager’s star rating. Anything without data is left out, not counted as zero.') + '</div>';
+}
+function openRateSheet(name, month){
+  var cur = ((State.settings.staffRatings || {})[name] || {})[month] || 0;
+  var html = '<div class="sheet-head"><h2>' + esc(name) + '</h2></div><div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">' + tr('Your rating for') + ' ' + esc(payMonthLabel(month)) + '</div>' +
+    '<div style="display:flex;justify-content:center;gap:6px;margin:10px 0 16px;">' + [1, 2, 3, 4, 5].map(function(i){ return '<button type="button" data-star="' + i + '" style="font-size:38px;background:none;border:none;color:' + (i <= cur ? '#E8A21E' : 'var(--border)') + ';cursor:pointer;">★</button>'; }).join('') + '</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="rtClear" type="button">' + tr('Clear rating') + '</button><button class="btn btn-ghost btn-block" id="rtBack" type="button">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html, { center:true });
+  function save(v){ var all = Object.assign({}, State.settings.staffRatings || {}); all[name] = Object.assign({}, all[name] || {}); if(v) all[name][month] = v; else delete all[name][month]; btSave({ staffRatings:all }); toast(tr('Saved')); closeModal(); openStaffPerfSheet(); }
+  ov.querySelectorAll('[data-star]').forEach(function(b){ b.addEventListener('click', function(){ save(parseInt(b.getAttribute('data-star'), 10)); }); });
+  ov.querySelector('#rtClear').addEventListener('click', function(){ save(0); });
+  ov.querySelector('#rtBack').addEventListener('click', function(){ closeModal(); openStaffPerfSheet(); });
+}
+/* ---- calendar ---- */
+function calEaster(y){ var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451), mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1; return new Date(y, mo - 1, da); }
+var _calHolCache = {};
+function calHolidays(y){
+  if(_calHolCache[y]) return _calHolCache[y];
+  var out = {}, add = function(d, n){ out[todayKey(d)] = n; };
+  var easter = calEaster(y), off = function(n){ var d = new Date(easter); d.setDate(d.getDate() + n); return d; };
+  [[0, 1, 'New Year’s Day'], [2, 21, 'Independence Day'], [4, 1, 'Workers’ Day'], [4, 4, 'Cassinga Day'], [4, 25, 'Africa Day'], [7, 26, 'Heroes’ Day'], [11, 10, 'Human Rights Day'], [11, 25, 'Christmas Day'], [11, 26, 'Family Day']].forEach(function(h){
+    var d = new Date(y, h[0], h[1]); add(d, h[2]);
+    if(d.getDay() === 0){ var n = new Date(y, h[0], h[1] + 1); if(!out[todayKey(n)]) add(n, h[2] + ' (observed)'); }   // a holiday on a Sunday moves to the Monday
+  });
+  add(off(-2), 'Good Friday'); add(off(1), 'Easter Monday'); add(off(39), 'Ascension Day');
+  return (_calHolCache[y] = out);
+}
+function calItemsFor(key){
+  var items = [], hol = calHolidays(+key.slice(0, 4))[key];
+  if(hol) items.push({ kind:'holiday', title:hol, sub:'Public holiday', color:'#D64545' });
+  State.calEvents.filter(function(e){ return e.date === key; }).sort(function(a, b){ return String(a.time || '').localeCompare(String(b.time || '')); }).forEach(function(e){ items.push({ kind:'event', id:e.id, title:e.title, sub:(e.time ? e.time + (e.note ? ' · ' : '') : '') + (e.note || ''), color:'#0B7A5C', mine:true }); });
+  if(tmManager()){
+    State.invoices.forEach(function(i){ if(i.type === 'invoice' && i.dueDateStr === key && !i.paid && i.status !== 'paid') items.push({ kind:'due', title:'Invoice ' + (i.number || '') + ' is due', sub:i.billToName || '', color:'#E8A21E' }); });
+    State.quotes.forEach(function(q){ if(q.validUntil === key && q.status === 'open') items.push({ kind:'due', title:'Quote ' + (q.number || '') + ' runs out', sub:q.billToName || '', color:'#E8A21E' }); });
+    State.recurring.forEach(function(r){ if(r.active !== false && r.nextDue === key) items.push({ kind:'due', title:'Recurring invoice is due', sub:r.billToName || r.name || '', color:'#E8A21E' }); });
+    State.products.forEach(function(p){ if(p.expiryDate === key && (Number(p.stockQty) || 0) > 0) items.push({ kind:'expiry', title:p.name + ' expires', sub:p.stockQty + ' in stock', color:'#F2783C' }); });
+    var last = new Date(+key.slice(0, 4), +key.slice(5, 7), 0);
+    if(todayKey(last) === key && State.users.some(function(u){ return payProfile(u).rate > 0; })) items.push({ kind:'pay', title:'Month end: pay run', sub:'Prepare payroll for ' + payMonthLabel(key.slice(0, 7)), color:'#3B82F6' });
+  }
+  return items;
+}
+var _calView = null;
+function openCalendarSheet(y, m, pick){
+  var now = new Date(); if(y == null){ y = now.getFullYear(); m = now.getMonth(); }
+  var first = new Date(y, m, 1), lead = (first.getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate(), tk = todayKey();
+  var cells = ''; for(var i = 0; i < lead; i++) cells += '<div></div>';
+  for(var d = 1; d <= days; d++){
+    var key = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), its = calItemsFor(key);
+    cells += '<button type="button" data-cd="' + key + '" style="aspect-ratio:1/1;border-radius:12px;border:1px solid ' + (key === tk ? 'var(--accent,#0B7A5C)' : 'var(--border)') + ';background:' + (key === pick ? 'var(--surface-2)' : 'var(--surface)') + ';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-weight:' + (key === tk ? '800' : '600') + ';font-size:13px;color:var(--text);padding:0;">' + d +
+      '<span style="display:flex;gap:2px;height:6px;">' + its.slice(0, 3).map(function(x){ return '<i style="width:5px;height:5px;border-radius:50%;background:' + x.color + ';"></i>'; }).join('') + '</span></button>';
+  }
+  var title = new Date(y, m, 1).toLocaleDateString(uiLocale(), { month:'long', year:'numeric' });
+  var upcoming = []; for(var u = 0; u < 21 && upcoming.length < 8; u++){ var dd = new Date(); dd.setDate(dd.getDate() + u); var kk = todayKey(dd); calItemsFor(kk).forEach(function(x){ upcoming.push({ key:kk, it:x }); }); }
+  var dayKey = pick || null, dayItems = dayKey ? calItemsFor(dayKey) : [];
+  var html = '<div class="sheet-head"><h2>' + tr('Calendar') + '</h2></div>' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><button class="icon-btn" type="button" id="calPrev" style="background:var(--surface-2);border-color:var(--border);color:var(--text);">' + ICONS.back + '</button><b style="font-size:16px;">' + esc(title) + '</b><button class="icon-btn" type="button" id="calNext" style="background:var(--surface-2);border-color:var(--border);color:var(--text);transform:scaleX(-1);">' + ICONS.back + '</button></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:5px;">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function(x){ return '<div>' + tr(x) + '</div>'; }).join('') + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;">' + cells + '</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--text-muted);margin:10px 0;"><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#D64545;margin-right:4px;"></i>' + tr('Public holiday') + '</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#0B7A5C;margin-right:4px;"></i>' + tr('My event') + '</span>' + (tmManager() ? '<span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E8A21E;margin-right:4px;"></i>' + tr('Due') + '</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#F2783C;margin-right:4px;"></i>' + tr('Expiry') + '</span>' : '') + '</div>' +
+    (dayKey ? '<div class="section-title" style="margin-top:6px;">' + esc(fmtDayKey(dayKey)) + '</div>' + (dayItems.length ? '<div class="rowlist">' + dayItems.map(function(x){ return '<div class="row"><div class="main"><div class="title"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + x.color + ';margin-right:6px;"></i>' + esc(x.title) + '</div>' + (x.sub ? '<div class="sub">' + esc(x.sub) + '</div>' : '') + '</div>' + (x.mine ? '<div class="trail"><button class="btn btn-ghost" type="button" data-evdel="' + x.id + '" style="padding:3px 9px;font-size:11.5px;">' + tr('Remove') + '</button></div>' : '') + '</div>'; }).join('') + '</div>' : '<div class="empty" style="padding:8px 0;"><div class="s">' + tr('Nothing on this day.') + '</div></div>') +
+      '<div class="field-row" style="margin-top:10px;"><div class="field" style="flex:2;"><input id="evTitle" placeholder="' + tr('Add an event or reminder') + '"></div><div class="field"><input id="evTime" type="time"></div></div><div class="actions"><button class="btn btn-primary btn-block" id="evAdd" type="button">' + tr('Add to this day') + '</button></div>'
+      : '<div class="section-title" style="margin-top:6px;">' + tr('Coming up') + '</div>' + (upcoming.length ? '<div class="rowlist">' + upcoming.map(function(x){ return '<div class="row"><div class="main"><div class="title"><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + x.it.color + ';margin-right:6px;"></i>' + esc(x.it.title) + '</div><div class="sub">' + esc(fmtDayKey(x.key)) + (x.it.sub ? ' · ' + esc(x.it.sub) : '') + '</div></div></div>'; }).join('') + '</div>' : '<div class="empty" style="padding:8px 0;"><div class="s">' + tr('Nothing coming up in the next three weeks. Tap a day to add a reminder.') + '</div></div>')) +
+    '<div style="font-size:11px;color:var(--text-muted);margin-top:10px;">' + tr('Public holidays are shown as a guide. Check the official list for any change.') + '</div>' + (tmManager() ? btBack() : '');
+  var ov = openSheet(html); if(tmManager()) btWireBack(ov);
+  ov.querySelector('#calPrev').addEventListener('click', function(){ var p = new Date(y, m - 1, 1); closeModal(); openCalendarSheet(p.getFullYear(), p.getMonth()); });
+  ov.querySelector('#calNext').addEventListener('click', function(){ var p = new Date(y, m + 1, 1); closeModal(); openCalendarSheet(p.getFullYear(), p.getMonth()); });
+  ov.querySelectorAll('[data-cd]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openCalendarSheet(y, m, b.getAttribute('data-cd')); }); });
+  var add = ov.querySelector('#evAdd');
+  if(add) add.addEventListener('click', function(){
+    var t = ov.querySelector('#evTitle').value.trim(); if(!t){ toast(tr('Type what the event is')); return; }
+    refs.calEvents.doc().set({ title:t, date:dayKey, time:ov.querySelector('#evTime').value || '', createdAt:new Date().toISOString(), by:State.session ? State.session.name : '' });
+    toast(tr('Added')); setTimeout(function(){ closeModal(); openCalendarSheet(y, m, dayKey); }, 250);
+  });
+  ov.querySelectorAll('[data-evdel]').forEach(function(b){ b.addEventListener('click', function(){ refs.calEvents.doc(b.getAttribute('data-evdel')).delete(); toast(tr('Removed')); setTimeout(function(){ closeModal(); openCalendarSheet(y, m, dayKey); }, 250); }); });
+}
+// one listener for every Team and calendar button (home card, dashboard tiles)
+document.addEventListener('click', function(e){
+  var b = e.target && e.target.closest ? e.target.closest('[data-tm]') : null; if(!b || !State.session) return;
+  var k = b.getAttribute('data-tm'), me = tmMe();
+  if(k === 'clock'){ if(clockOpenLog(me && me.id)) clockOut(me); else clockIn(me); setTimeout(function(){ try{ render(); }catch(x){} }, 250); }
+  else if(k === 'tip') openTipSheet();
+  else if(k === 'mytimes'){ if(me) openClockLogsSheet(me.id, todayKey().slice(0, 7)); }
+  else if(k === 'calendar') openCalendarSheet();
+  else if(k === 'attend') openAttendanceSheet();
+  else if(k === 'tips') openTipsSheet();
+});
+setInterval(function(){ try{ document.querySelectorAll('[data-clocktimer]').forEach(function(el){ var iso = el.getAttribute('data-clocktimer'); el.textContent = fmtClock(iso) + ' (' + fmtHM(Date.now() - new Date(iso)) + ')'; }); }catch(e){} }, 30000);
 
 /* ============================== CUSTOMER STATEMENT OF ACCOUNT ==============================
    A dated statement per customer: opening balance, every credit sale and payment with a running balance, closing balance,
@@ -4135,9 +4444,9 @@ function payCalc(u, month, inp){
   var gross = r2(basic + commission + allowance + bonus);
   var deds = p.ded.map(function(d){ return { name:d.name, amount:d.mode === 'percent' ? r2(gross * d.value / 100) : r2(d.value) }; });
   var adv = r2(Number(inp.advance) || 0); if(adv > 0) deds.push({ name:'Advance or loan repaid', amount:adv });
-  var totalDed = r2(deds.reduce(function(a, d){ return a + d.amount; }, 0));
+  var totalDed = r2(deds.reduce(function(a, d){ return a + d.amount; }, 0)), tips = tipsOf(u.id, month);
   return { userId:u.id, name:u.name, jobTitle:u.jobTitle || '', employeeNo:u.employeeNo || '', type:p.type, rate:p.rate, units:units, basic:r2(basic), sales:r2(sales), commissionPct:p.commission, commission:commission,
-    allowance:allowance, bonus:bonus, gross:gross, deductions:deds, totalDeductions:totalDed, net:r2(Math.max(0, gross - totalDed)), advance:adv };
+    allowance:allowance, bonus:bonus, gross:gross, deductions:deds, totalDeductions:totalDed, tips:tips, net:r2(Math.max(0, gross - totalDed) + tips), advance:adv };
 }
 function payMonthLabel(k){ return new Date(k + '-01T00:00:00').toLocaleDateString(uiLocale(), { month:'long', year:'numeric' }); }
 function payStaff(){ return State.users.filter(function(u){ return u.role !== 'pending' && !u.disabled; }); }
@@ -4212,6 +4521,7 @@ async function payslipsPdf(run, only){
     y = pdfTable(doc, { x:m, y:y, width:w, columns:[{label:'Description',width:w-50},{label:'Amount',width:50,align:'right'}], rows:ded, boldRows:[ded.length - 1] }) + 9;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(14); pdSet(doc, 't', pal.mid); doc.text('NET PAY  ' + fmtMoney(l.net), m, y);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); pdSet(doc, 't', pal.muted);
+    if(l.tips){ doc.text('Net pay includes tips of ' + fmtMoney(l.tips) + ' paid out to you.', m, y + 5); y += 4; }
     doc.text('Working figures from the pay details entered in Pesa. Please check statutory amounts with your accountant.', m, y + 9);
   });
   return doc;
@@ -4237,7 +4547,7 @@ function openPayRunSheet(month){
     (locked ? '<div class="banner" style="display:block;color:var(--success);">' + tr('This pay run was marked as paid on') + ' ' + fmtDateTime(saved.paidAt) + '</div>' : '') +
     (staff.length ? '' : '<div class="empty" style="padding:16px 0;">' + tr('Set up pay details for your staff first.') + '</div>') +
     staff.map(function(u){
-      var p = payProfile(u), i = inp[u.id] || {};
+      var p = payProfile(u), i = inp[u.id] || { units:(p.type !== 'monthly' ? (payClockUnits(u, month, p.type) || '') : '') };
       return '<div class="tillcard" data-payu="' + u.id + '" style="margin-bottom:10px;"><div class="section-title" style="margin-top:0;">' + esc(u.name) + '</div>' +
         '<div class="field-row">' +
         (p.type !== 'monthly' ? '<div class="field"><label>' + tr(p.type === 'hourly' ? 'Hours worked' : 'Days worked') + '</label><input data-pf="units" type="number" inputmode="decimal" step="0.5" value="' + (i.units || '') + '"' + (locked ? ' disabled' : '') + '></div>' : '') +
@@ -4264,7 +4574,7 @@ function openPayRunSheet(month){
     return lines;
   }
   function makeRun(lines){
-    return { month:month, lines:lines, totalGross:r2(lines.reduce(function(a, l){ return a + l.gross; }, 0)), totalDed:r2(lines.reduce(function(a, l){ return a + l.totalDeductions; }, 0)), totalNet:r2(lines.reduce(function(a, l){ return a + l.net; }, 0)),
+    return { month:month, lines:lines, totalGross:r2(lines.reduce(function(a, l){ return a + l.gross; }, 0)), totalDed:r2(lines.reduce(function(a, l){ return a + l.totalDeductions; }, 0)), totalNet:r2(lines.reduce(function(a, l){ return a + l.net; }, 0)), totalTips:r2(lines.reduce(function(a, l){ return a + (l.tips || 0); }, 0)),
       status:saved ? saved.status : 'saved', createdAt:saved ? saved.createdAt : new Date().toISOString(), updatedAt:new Date().toISOString(), createdBy:State.session ? State.session.name : '', paidAt:saved ? saved.paidAt || null : null };
   }
   ov.querySelectorAll('input').forEach(function(e){ e.addEventListener('input', collect); });
@@ -4290,7 +4600,7 @@ function openPayRunSheet(month){
     confirmSheet(tr('Mark this pay run as paid?'), tr('The total net pay is added to your expenses as wages, and the run can no longer be changed.'), tr('Mark as paid'), function(){
       var lines = collect(), run = makeRun(lines); run.status = 'paid'; run.paidAt = new Date().toISOString();
       refs.payRuns.doc(month).set(run);
-      refs.expenses.doc().set({ category:'Wages', amount:run.totalNet, note:'Payroll for ' + payMonthLabel(month), paidFrom:'Bank', ref:'', createdAt:new Date().toISOString() });
+      if(r2(run.totalNet - (run.totalTips || 0)) > 0) refs.expenses.doc().set({ category:'Wages', amount:r2(run.totalNet - (run.totalTips || 0)), note:'Payroll for ' + payMonthLabel(month), paidFrom:'Bank', ref:'', createdAt:new Date().toISOString() });
       logAudit('other', 'payroll', month, 'Pay run paid for ' + payMonthLabel(month) + ', ' + fmtMoney(run.totalNet));
       toast(tr('Marked as paid')); closeModal(); openPayRunSheet(month);
     }, false);
@@ -5409,6 +5719,7 @@ function openStaffPerfSheet(range){
   var mr = reportPresetRange('month'), mstats = btStaffStats(mr.from, mr.to), goals = btStaffGoals();
   var html = '<div class="sheet-head"><h2>'+tr('Staff performance')+'</h2></div>' +
     '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'+BT_RANGES.map(function(x){ return '<button class="segbtn'+(_staffRange===x[0]?' active':'')+'" type="button" data-sr="'+x[0]+'" style="flex:0 0 auto;">'+tr(x[1])+'</button>'; }).join('')+'</div>' +
+    ratingChartHtml(r.from, r.to) + '<div class="section-title">'+tr('Sales ranking')+'</div>' +
     (stats.length ? stats.map(function(m, i){
       var short = m.short ? '<span style="color:var(--danger);">'+m.short+' '+tr(m.short===1?'short till':'short tills')+'</span>' : (m.tills ? '<span style="color:var(--success);">'+tr('Tills balanced')+'</span>' : '');
       return '<div style="margin:12px 0;"><div style="display:flex;justify-content:space-between;gap:8px;"><b>'+(i+1)+'. '+esc(m.name)+'</b><b class="num">'+fmtMoney(m.revenue)+'</b></div>'+btBar(m.revenue/max*100, i===0?'var(--success)':'var(--primary)') +
@@ -5428,6 +5739,7 @@ function openStaffPerfSheet(range){
   var ov = openSheet(html); btWireBack(ov);
   ov.querySelectorAll('[data-sr]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openStaffPerfSheet(b.getAttribute('data-sr')); }); });
   ov.querySelectorAll('[data-sg]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openStaffGoalSheet(b.getAttribute('data-sg')); }); });
+  ov.querySelectorAll('[data-rate]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openRateSheet(b.getAttribute('data-rate'), b.getAttribute('data-rm')); }); });
 }
 function openStaffGoalSheet(name){
   var g = btStaffGoals()[name] || {};
@@ -7048,6 +7360,7 @@ function meTopHtml(){
   if(low.length) out += '<div class="me-msg stock" data-me="'+(State.session.role==='stockclerk'?'stock':'lowlist')+'"><div class="t">'+ICONS.warn+'<span>'+tr('Stock alert')+': '+low.length+' '+tr('products need stock')+(outN?' ('+outN+' '+tr('out of stock')+')':'')+'</span></div><div class="s">'+esc(low.slice(0,3).map(function(p){ return p.name; }).join(', '))+(low.length>3?'…':'')+'</div></div>';
   if(!isInstalledApp() && !(function(){ var m = State.users.find(function(x){ return x.id === (State.session||{}).userId; }); return m && m.showHints === false; })()) out += '<div class="me-msg" data-me="install"><div class="t">'+ICONS.info+'<span>'+tr('Install Pesa on this device')+'</span></div><div class="s">'+tr('Opens in its own window and works offline.')+'</div></div>';
   out += '<div class="me-actions" style="grid-template-columns:repeat(3,1fr);"><button class="me-act" data-me="inbox">'+ICONS.bolt+tr('Messages')+(um.length?' ('+um.length+')':'')+'</button><button class="me-act" data-me="report">'+ICONS.chartbar+tr('Work report')+'</button><button class="me-act" data-me="records">'+ICONS.clipboard+tr('My records')+'</button></div>';
+  out += tmCardHtml();
   out += pilotCardHtml();
   return out;
 }
@@ -13907,6 +14220,7 @@ function renderDashboard(){
   '</div>';
 
   /* ---- stat grid ---- */
+  html += tmDashHtml();
   html += '<div class="section-title">'+tr('Overview')+'</div><div class="stats">' +
     '<div class="stat"><div class="lbl">This week</div><div class="v num">'+fmtMoney(sumOf(weekSales))+'</div></div>' +
     '<div class="stat"><div class="lbl">This month</div><div class="v num">'+fmtMoney(monthRevenue)+'</div></div>' +
@@ -19130,7 +19444,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.82';
+var APP_VERSION = '2026.10.83';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19176,7 +19490,7 @@ function backupPayload(){
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
     posDevices: State.posDevices, posBatches: State.posBatches, messages: State.messages, workReports: State.workReports,
     stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements,
-    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns
+    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns, clockLogs: State.clockLogs, tips: State.tips, calEvents: State.calEvents
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -19208,7 +19522,7 @@ async function restoreBackupData(data){
   await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches); await put(refs.messages, data.messages); await put(refs.workReports, data.workReports);
   await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
   await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
-  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns);
+  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns); await put(refs.clockLogs, data.clockLogs); await put(refs.tips, data.tips); await put(refs.calEvents, data.calEvents);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
@@ -19357,6 +19671,12 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.83', items:[
+    'New: Clock in and clock out for every employee (on the home page), with an Attendance page for owners and managers: who is on shift, hours per person, missed shifts, and a spreadsheet timesheet',
+    'New: Staff tips. Record a tip for one person or share it equally between everyone on shift. Tips are paid on top of net pay in payroll, and payroll now fills hours and days from the clock records',
+    'New: Performance rating chart in Staff performance, blending sales, balanced tills, attendance and a manager star rating',
+    'New: Calendar with Namibian public holidays, invoice, quote and expiry due dates, month end pay run and your own reminders, plus Team and calendar tiles on the dashboard'
+  ]},
   { v:'2026.10.82', items:[
     'New: Statement of account for each customer (opening balance, every sale and payment with a running balance, how long it has been owing) to download, print or send by WhatsApp',
     'New: Payroll under Business tools. Set each person’s pay (monthly, per hour or per day, commission, allowance, deductions), prepare a monthly pay run, make payslips and a summary, and record the wages as an expense'
