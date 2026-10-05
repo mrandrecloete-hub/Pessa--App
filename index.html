@@ -18838,7 +18838,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.80';
+var APP_VERSION = '2026.10.81';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19065,6 +19065,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.81', items:[
+    'The opening animation is a little slower (about 5 seconds) so the three bounces and the spin are easier to enjoy'
+  ]},
   { v:'2026.10.80', items:[
     'Company logos are now a little bigger than the Pesa mark on invoices, quotes and receipts, with brighter, clearer colours'
   ]},
@@ -20274,7 +20277,7 @@ document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=2.5 shows one still frame at 2.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var DUR = 3.8;                                   // seconds the animation runs
+  var DUR = 5.2;                                   // seconds the animation runs
   var VEIL = null, done = false, timer = 0, ready = false;
 
   function firstScreenReady(){

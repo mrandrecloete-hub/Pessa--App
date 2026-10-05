@@ -5,7 +5,7 @@
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=2.5 shows one still frame at 2.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var DUR = 3.8;                                   // seconds the animation runs
+  var DUR = 5.2;                                   // seconds the animation runs
   var VEIL = null, done = false, timer = 0, ready = false;
 
   function firstScreenReady(){
