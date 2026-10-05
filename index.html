@@ -1014,6 +1014,25 @@
   @media (max-width:440px){
     .regpage .reg-already-l, .regpage .reg-biz-list{ flex-basis:100%; }
   }
+  /* wide screens: the registration page fills the whole window, business and owner side by side */
+  @media (min-width:860px){
+    .authscreen:has(.regpage){ padding-left:0; padding-right:0; }
+    .regpage{ max-width:none; }
+    .regpage .reg-hero{ margin-left:0; margin-right:0; padding-left:max(32px, calc((100% - 1160px) / 2)); padding-right:max(32px, calc((100% - 1160px) / 2)); padding-bottom:60px; }
+    .regpage .reg-map{ right:max(32px, calc((100% - 1160px) / 2)); width:130px; }
+    .regpage .reg-pesa{ font-size:58px; }
+    .regpage .reg-logo{ width:96px; height:96px; }
+    .regpage .reg-steps, .regpage .reg-body{ width:calc(100% - 64px); max-width:1160px; margin-left:auto; margin-right:auto; }
+    .regpage .reg-steps{ justify-content:center; padding:10px 24px; }
+    .regpage .reg-steps .line{ max-width:220px; }
+    .regpage .reg-body{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:clamp(32px,5vw,72px); align-items:start; padding-bottom:24px; }
+    .regpage .reg-body > *{ grid-column:1 / -1; }
+    .regpage .reg-body > #regBizSec{ grid-column:1; }
+    .regpage .reg-body > #regOwnerSec{ grid-column:2; }
+    .regpage .reg-body > #regBizSec .reg-sec, .regpage .reg-body > #regOwnerSec .reg-sec{ margin-top:6px; }
+    .regpage .reg-body > .actions, .regpage .reg-body > div[style], .regpage .reg-body > #rcError{ max-width:560px; width:100%; margin-left:auto; margin-right:auto; }
+    .regpage .reg-wm{ width:min(60vw,720px); }
+  }
   @media (max-width:395px){
     .regpage .reg-step:not(.on) .l{ display:none; }
     .regpage .reg-pesa{ font-size:40px; }
@@ -18369,7 +18388,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.65';
+var APP_VERSION = '2026.10.66';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18561,6 +18580,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.66', items:[
+    'The registration page now fills the whole screen on computers and tablets, with business details and owner account side by side (phones are unchanged)'
+  ]},
   { v:'2026.10.65', items:[
     'The Welcome to Pesa Namibia picture at the end of the opening animation is updated, now with the Africa map'
   ]},
