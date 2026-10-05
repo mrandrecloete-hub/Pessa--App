@@ -11,7 +11,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await p.waitForTimeout(3000);
  ck('no second splash follows it', !(await p.evaluate(()=>window.__splashSeen)));
  ck('the welcome page is showing', /Register your business|Sign in|Welcome/i.test(await p.innerText('#authScreen')));
- for(const t of [2.5,3.8,4.3]){ await p.goto('http://localhost:8933/index.html?intro=force&introT='+t); await p.waitForFunction(()=>window.__introReady===true,null,{timeout:8000}); }
+ for(const t of [0.5,1.5,2.5]){ await p.goto('http://localhost:8933/index.html?intro=force&introT='+t); await p.waitForFunction(()=>window.__introReady===true,null,{timeout:8000}); }
  ck('still frames render', true);
  ck('no page errors', errs.length===0, errs);
  await b.close(); console.log(fail?'FAILED':'ALL OK'); process.exit(fail?1:0);
