@@ -15271,7 +15271,7 @@ async function acctDownloadTb(rec){
   var T = rec.tb, pdf = T.rows.map(function(r){ return [r.code, r.name, r.type, acctNum(r.open), acctNum(r.dr), acctNum(r.cr), acctNum(r.close)]; }), tot = [tr('Totals'), '', '', acctNum(T.openNet), acctNum(T.totalDr), acctNum(T.totalCr), acctNum(T.closeNet)];
   pdf.push(tot);
   var details = [['Business', rec.shopName], ['Period', acctDateText(rec.from) + ' to ' + acctDateText(rec.to)], ['Revision', String(rec.revision)], ['Filed', fmtDateNice(new Date(rec.generatedAt))]];
-  var doc = acctTableDoc(getJsPDF(), { title:'Trial balance', pill:'Filed', details:details,
+  var doc = acctTableDoc(getJsPDF(), { title:'Trial balance', pill:rec.revision === 'interim' ? 'Interim' : 'Filed', details:details,
     notes:[tr('Record hash') + ': ' + rec.hash, tr('Opening and closing are debit minus credit: a positive figure is a debit balance, a negative figure is a credit balance. Amounts are in NAD.')],
     cols:[{ label:'Code', width:16 }, { label:'Account', width:52, wrap:true }, { label:'Type', width:22 }, { label:'Opening', width:23, align:'right' }, { label:'Debits', width:23, align:'right' }, { label:'Credits', width:23, align:'right' }, { label:'Closing', width:23, align:'right' }],
     rows:pdf, bold:[pdf.length - 1] });
@@ -15401,27 +15401,58 @@ async function acctComputeStatus(){
   }
   return { status:status, G:G, B:B };
 }
+var ACCT_DOCS = [
+  { k:'pack', t:'Monthly accounting pack', d:'Income statement, balance sheet, VAT figures and checks in one document.', ic:'<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/>' },
+  { k:'vat', t:'VAT return figures', d:'Working figures to help you fill in your VAT return on ITAS.', ic:'<path d="M5 19L19 5"/><circle cx="7.5" cy="7.5" r="2.4"/><circle cx="16.5" cy="16.5" r="2.4"/>' },
+  { k:'journal', t:'Journal', d:'Every accounting entry, line by line, for the dates you choose.', ic:'<path d="M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2z"/><path d="M9 9h6M9 13h6"/>' },
+  { k:'tb', t:'Trial balance', d:'Every account with its opening, debits, credits and closing figure.', ic:'<path d="M12 4v16M6 20h12M5 8h14"/><path d="M5 8l-2.5 6h5zM19 8l-2.5 6h5z"/>' }
+];
+var ACCT_CSS = '<style>' +
+  '.ac-status{display:flex;gap:14px;align-items:center;padding:16px;border-radius:18px;border:1px solid var(--border);background:var(--surface);margin-bottom:6px;}' +
+  '.ac-dot{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:23px;font-weight:800;color:#fff;background:var(--text-muted);flex:none;}' +
+  '.ac-dot.ok{background:var(--success);}.ac-dot.warn{background:#c47f00;}.ac-dot.bad{background:var(--danger);}' +
+  '.ac-st-t{font-size:16.5px;font-weight:700;line-height:1.25;}.ac-st-s{font-size:12.5px;color:var(--text-muted);margin-top:3px;line-height:1.4;}' +
+  '.ac-doc{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:13px 14px;border:1px solid var(--border);border-radius:16px;background:var(--surface);color:inherit;cursor:pointer;font:inherit;margin-bottom:8px;}' +
+  '.ac-doc:hover,.ac-doc:focus-visible{border-color:var(--primary);}' +
+  '.ac-doc .ic{width:44px;height:44px;border-radius:13px;background:var(--primary);color:var(--primary-contrast,#fff);display:grid;place-items:center;flex:none;}' +
+  '.ac-doc .tx{flex:1;min-width:0;}.ac-doc .nm{font-size:15px;font-weight:700;}.ac-doc .ds{font-size:12.5px;color:var(--text-muted);line-height:1.4;margin-top:2px;}' +
+  '.ac-doc .go{flex:none;font-size:13px;font-weight:700;color:var(--primary);padding:7px 12px;border-radius:999px;border:1.5px solid var(--primary);}' +
+  '.ac-help{font-size:12.5px;color:var(--text-muted);line-height:1.45;margin:-2px 2px 10px;}' +
+  '.ac-link{background:none;border:0;color:var(--primary);font:inherit;font-size:12.5px;font-weight:700;text-transform:none;letter-spacing:0;cursor:pointer;padding:4px 2px;}' +
+  '.ac-set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}.ac-set:last-child{border-bottom:0;}' +
+  '.ac-set .l{font-weight:600;font-size:14px;}.ac-set .s{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.35;}.ac-set select{max-width:46%;}' +
+  '.ac-choose{display:flex;flex-direction:column;gap:8px;margin:6px 0 4px;}.ac-or{font-size:12px;color:var(--text-muted);text-align:center;margin:12px 0 2px;}' +
+  '</style>';
+function acctDocIcon(d){ return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d.ic+'</svg>'; }
+/** The trial balance for any dates, from the records in Pesa now (the filed one is used when a whole month is filed). */
+async function acctDownloadTbLive(from, to){
+  toast(tr('Preparing documents…'));
+  var G = await acctGather(), B = acctBuild(G), v = acctView(G, B, from, to);
+  return acctDownloadTb({ tb:v.tb, shopName:G.shopName, from:from, to:to, revision:'interim', hash:tr('Interim, not filed'), periodKey:from + '-to-' + to, generatedAt:new Date().toISOString() });
+}
 function openAccountantSheet(){
   if(!isManagerOrOwner()){ toast(tr('Accountant is for owners and managers')); return; }
-  var cur = periodKeyOf(new Date());
   var op = State.settings.acctOpening;
-  var last = acctPeriods().slice(-1)[0];
-  var html = '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><img src="'+ICON3D.accountant+'" alt="" width="44" height="44" draggable="false" style="display:block;flex:none;"><h2 style="margin:0;">'+tr('Accountant')+'</h2></div>' +
-    '<div class="banner" style="display:block;">'+tr('Pesa keeps double entry books from your sales, expenses, supplier invoices and payments, wastage and customer payments. Each finished month is filed here automatically the first time the owner or a manager opens Pesa after month end (Pesa cannot run while it is closed). A filed month is never silently replaced.')+'</div>' +
-    '<div class="tillcard">' +
-      '<div class="tillrow"><span class="l">'+tr('Books start')+'</span><span class="v">'+esc(op && op.date ? acctDateText(op.date) : tr('First record in Pesa'))+'</span></div>' +
-      '<div class="tillrow"><span class="l">'+tr('Latest month filed')+'</span><span class="v">'+esc(last ? acctLabelOf(last.periodKey) : tr('None yet'))+'</span></div>' +
-      '<div class="tillrow"><span class="l">'+tr('Checks')+'</span><span class="v" id="acStatus">'+tr('Checking…')+'</span></div>' +
-    '</div>' +
-    '<div class="rep-tools" style="margin:12px 0;"><button class="btn btn-primary" id="acRun" type="button">'+tr('Run report now')+'</button>' +
-      '<button class="btn btn-ghost" id="acFile" type="button">'+tr('File missing months')+'</button>' +
-      (isOwner() ? '<button class="btn btn-ghost" id="acOpen" type="button">'+tr('Opening balances')+'</button>' : '') + '</div>' +
+  var last = acctPeriods().slice(-1)[0], cat = acctVatCategory();
+  var html = ACCT_CSS + '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><img src="'+ICON3D.accountant+'" alt="" width="44" height="44" draggable="false" style="display:block;flex:none;"><h2 style="margin:0;">'+tr('Accountant')+'</h2></div>' +
+    '<div class="ac-status"><div class="ac-dot" id="acDot">…</div><div><div class="ac-st-t" id="acStatus">'+tr('Checking…')+'</div>' +
+      '<div class="ac-st-s">'+tr('Books start')+': '+esc(op && op.date ? acctDateText(op.date) : tr('First record in Pesa'))+'<br>'+tr('Latest month filed')+': '+esc(last ? acctLabelOf(last.periodKey) : tr('None yet'))+'</div></div></div>' +
     '<div id="acIssues"></div>' +
-    '<div class="section-title" style="margin-top:6px;">'+tr('Monthly accounting packs')+'</div><div id="acList">'+acctListHtml(null)+'</div>' +
-    '<div class="section-title">'+tr('VAT return working figures')+'</div><div id="acVat"></div>' +
+    '<div class="section-title">'+tr('Get a document')+'</div>' +
+    ACCT_DOCS.map(function(d){ return '<button type="button" class="ac-doc" data-acdoc="'+d.k+'"><span class="ic">'+acctDocIcon(d)+'</span><span class="tx"><span class="nm" style="display:block;">'+tr(d.t)+'</span><span class="ds" style="display:block;">'+tr(d.d)+'</span></span><span class="go">'+tr('Get')+'</span></button>'; }).join('') +
+    '<div class="section-title"><span>'+tr('Filed months')+'</span><button class="ac-link" id="acFile" type="button">'+tr('File missing months')+'</button></div>' +
+    '<div class="ac-help">'+tr('Each finished month is filed here automatically the first time the owner or a manager opens Pesa after month end. A filed month is never silently replaced.')+'</div>' +
+    '<div id="acList">'+acctListHtml(null)+'</div>' +
+    '<div class="section-title">'+tr('Settings')+'</div>' +
+    '<div class="tillcard" style="padding:4px 16px;">' +
+      '<div class="ac-set"><div><div class="l">'+tr('Opening balances')+'</div><div class="s">'+tr('What the business had on the day you started recording in Pesa.')+'</div></div>' +
+        (isOwner() ? '<button class="btn btn-ghost" id="acOpen" type="button">'+tr('Change')+'</button>' : '<span class="s">'+tr('Owner only')+'</span>') + '</div>' +
+      '<div class="ac-set"><div><div class="l">'+tr('Your VAT category')+'</div><div class="s">'+tr('Check your VAT registration certificate or ITAS.')+'</div></div>' +
+        '<select id="acSetVat"><option value="">'+tr('Choose')+'</option><option value="A"'+(cat === 'A' ? ' selected' : '')+'>A</option><option value="B"'+(cat === 'B' ? ' selected' : '')+'>B</option></select></div>' +
+    '</div>' +
     '<div class="rep-note" style="margin-top:12px;">'+tr('Pesa does not see your bank, fixed assets, loans, payroll taxes or income tax. These documents support your records and your accountant. They are not audited, and they are not approved or certified by NamRA. Namibian tax law requires business records to be kept for at least five years.')+'</div>';
   var ov = openSheet(html);
-  var state = { status:null, plist:[] };
+  var state = { status:null };
   function wireList(){
     ov.querySelectorAll('[data-acct-act]').forEach(function(el){
       function go(){
@@ -15437,33 +15468,25 @@ function openAccountantSheet(){
       if(el.getAttribute('role') === 'button') el.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } });
     });
   }
-  function wireVat(){
-    var sel = ov.querySelector('#acVatCat');
-    if(sel) sel.addEventListener('change', function(){ btSave({ vatCategory:sel.value || null }); paintVat(); });
-    ov.querySelectorAll('[data-acct-vat]').forEach(function(b){ b.addEventListener('click', function(){ acctDownloadVat(state.plist[+b.getAttribute('data-acct-vat')]); }); });
-  }
-  function paintVat(){
-    var cat = acctVatCategory();
-    var keys = {}; acctPeriods().forEach(function(r){ keys[r.periodKey] = true; });
-    if(state.B) acctMonthsWithActivity(state.B).forEach(function(k){ keys[k] = true; });
-    state.plist = cat ? acctVatPeriodsFor(cat, cur, Object.keys(keys).sort()) : [];
-    ov.querySelector('#acVat').innerHTML = acctVatListHtml(state.plist); wireVat();
-  }
   function paintList(){ ov.querySelector('#acList').innerHTML = acctListHtml(state.status); wireList(); }
-  wireList(); paintVat();
+  wireList();
+  ov.querySelectorAll('[data-acdoc]').forEach(function(b){ b.addEventListener('click', function(){ openAcctDocSheet(b.getAttribute('data-acdoc')); }); });
+  var sv = ov.querySelector('#acSetVat'); if(sv) sv.addEventListener('change', function(){ btSave({ vatCategory:sv.value || null }); toast(tr('Saved')); });
   acctComputeStatus().then(function(r){
     if(!document.body.contains(ov)) return;
-    state.status = r.status; state.B = r.B; state.G = r.G;
+    state.status = r.status;
     var bad = Object.keys(r.status).filter(function(k){ return r.status[k].verified === false; }).length;
     var chg = Object.keys(r.status).filter(function(k){ return r.status[k].changed; }).length;
+    var cur = periodKeyOf(new Date());
     var v = acctView(r.G, r.B, r.B.first || cur + '-01', r.B.last || todayKey());
     var fails = v.checks.filter(function(c){ return c.level === 'fail'; }).length, warns = v.checks.filter(function(c){ return c.level === 'warn'; });
-    ov.querySelector('#acStatus').textContent = bad ? bad + ' ' + tr('hash mismatch') : chg ? chg + ' ' + tr('month(s) changed since filing') : fails ? tr('Failed') : warns.length ? warns.length + ' ' + tr('to review') : tr('All passed');
-    ov.querySelector('#acIssues').innerHTML = (fails || warns.length) ? '<div class="tillcard" style="margin-bottom:10px;"><div style="font-weight:700;font-size:13px;margin-bottom:4px;">'+tr('To review in the books to date')+'</div>' +
+    var lvl = (bad || fails) ? 'bad' : (chg || warns.length) ? 'warn' : 'ok';
+    ov.querySelector('#acDot').className = 'ac-dot ' + lvl; ov.querySelector('#acDot').textContent = lvl === 'ok' ? '✓' : lvl === 'warn' ? '!' : '✗';
+    ov.querySelector('#acStatus').textContent = bad ? bad + ' ' + tr('hash mismatch') : fails ? tr('Failed') : chg ? chg + ' ' + tr('month(s) changed since filing') : warns.length ? warns.length + ' ' + tr('to review') : tr('All passed');
+    ov.querySelector('#acIssues').innerHTML = (fails || warns.length) ? '<div class="tillcard" style="margin:8px 0;"><div style="font-weight:700;font-size:13px;margin-bottom:4px;">'+tr('To review in the books to date')+'</div>' +
       v.checks.filter(function(c){ return c.level === 'fail' || c.level === 'warn'; }).map(acctCheckHtml).join('') + '</div>' : '';
-    paintList(); paintVat();
+    paintList();
   }, function(){ var s = ov.querySelector('#acStatus'); if(s) s.textContent = tr('Could not check'); });
-  ov.querySelector('#acRun').addEventListener('click', function(){ openAcctRunSheet(); });
   ov.querySelector('#acFile').addEventListener('click', async function(){
     var b = ov.querySelector('#acFile'); b.disabled = true;
     try{ var n = await acctFileMissing('manual'); toast(n ? n + ' ' + tr('month(s) filed') : tr('Every finished month already has a pack')); }catch(e){ toast(tr('Could not file the months')); }
@@ -15471,24 +15494,57 @@ function openAccountantSheet(){
   });
   var ob = ov.querySelector('#acOpen'); if(ob) ob.addEventListener('click', function(){ closeModal(); openAcctOpeningSheet(); });
 }
-function openAcctRunSheet(){
+/** One simple "which period?" step for the pack, journal and trial balance. */
+function openAcctDocSheet(kind){
+  if(kind === 'vat'){ openAcctVatSheet(); return; }
+  var d = ACCT_DOCS.filter(function(x){ return x.k === kind; })[0]; if(!d) return;
   var now = new Date(), cur = periodKeyOf(now);
   var py = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear(), pm = now.getMonth() === 0 ? 12 : now.getMonth();
   var prevKey = py + '-' + String(pm).padStart(2, '0');
-  var html = '<div class="sheet-head"><h2>'+tr('Run report now')+'</h2></div>' +
-    '<div class="banner" style="display:block;">'+tr('Builds the accounting pack from the records in Pesa right now. It is not filed and not frozen. Finished months are filed for you automatically.')+'</div>' +
-    '<div class="actions" style="flex-direction:column;gap:8px;">' +
-      '<button class="btn btn-primary btn-block" id="arMonth" type="button">'+tr('This month so far')+' ('+esc(acctLabelOf(cur))+')</button>' +
-      '<button class="btn btn-ghost btn-block" id="arPrev" type="button">'+tr('Last month')+' ('+esc(acctLabelOf(prevKey))+')</button></div>' +
-    '<div class="field-row" style="margin-top:12px;"><div class="field"><label>'+tr('From')+'</label><input id="arFrom" type="date" value="'+cur+'-01"></div><div class="field"><label>'+tr('To')+'</label><input id="arTo" type="date" value="'+todayKey(now)+'"></div></div>' +
-    '<div class="actions"><button class="btn btn-accent btn-block" id="arCustom" type="button">'+tr('Run for these dates')+'</button></div>' +
-    '<div class="actions"><button class="btn btn-ghost btn-block" id="arCsv" type="button">'+tr('Journal for these dates')+'</button></div>';
+  var html = ACCT_CSS + '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><span class="ac-doc" style="width:auto;padding:0;border:0;margin:0;background:none;cursor:default;"><span class="ic">'+acctDocIcon(d)+'</span></span><h2 style="margin:0;">'+tr(d.t)+'</h2></div>' +
+    '<div class="ac-help" style="margin-top:8px;">'+tr(d.d)+' '+tr('A finished month that is already filed downloads as its filed copy. Other periods are built from the records in Pesa right now.')+'</div>' +
+    '<div class="section-title" style="margin-top:8px;">'+tr('Choose the period')+'</div>' +
+    '<div class="ac-choose"><button class="btn btn-primary btn-block" id="adMonth" type="button">'+tr('This month so far')+' ('+esc(acctLabelOf(cur))+')</button>' +
+      '<button class="btn btn-ghost btn-block" id="adPrev" type="button">'+tr('Last month')+' ('+esc(acctLabelOf(prevKey))+')</button></div>' +
+    '<div class="ac-or">'+tr('or pick a month')+'</div>' +
+    '<div class="field-row"><div class="field"><input id="adPick" type="month" max="'+cur+'" value="'+prevKey+'" aria-label="'+tr('Month')+'"></div><button class="btn btn-accent" id="adPickGo" type="button" style="align-self:flex-start;">'+tr('Get')+'</button></div>' +
+    '<div class="ac-or">'+tr('or choose your own dates')+'</div>' +
+    '<div class="field-row"><div class="field"><label>'+tr('From')+'</label><input id="adFrom" type="date" value="'+cur+'-01"></div><div class="field"><label>'+tr('To')+'</label><input id="adTo" type="date" value="'+todayKey(now)+'"></div></div>' +
+    '<div class="actions"><button class="btn btn-accent btn-block" id="adCustom" type="button">'+tr('Get for these dates')+'</button></div>';
   var ov = openSheet(html, { center:true });
-  ov.querySelector('#arMonth').addEventListener('click', function(){ closeModal(); acctRunLive(cur + '-01', todayKey(now), false); });
-  ov.querySelector('#arPrev').addEventListener('click', function(){ closeModal(); acctRunLive(prevKey + '-01', acctMonthEnd(prevKey), false); });
-  function dates(){ var f = ov.querySelector('#arFrom').value, t = ov.querySelector('#arTo').value; if(!f || !t || f > t){ toast(tr('Choose a start date on or before the end date')); return null; } return [f, t]; }
-  ov.querySelector('#arCustom').addEventListener('click', function(){ var d = dates(); if(d){ closeModal(); acctRunLive(d[0], d[1], true); } });
-  ov.querySelector('#arCsv').addEventListener('click', function(){ var d = dates(); if(d){ closeModal(); acctDownloadJournal(d[0], d[1], null); } });
+  function filed(key){ return State.accountingPeriods.find(function(r){ return r.periodKey === key; }); }
+  function go(from, to, key){
+    var rec = key ? filed(key) : null; closeModal();
+    if(kind === 'pack') return rec ? acctDownloadPack(rec) : acctRunLive(from, to, !key);
+    if(kind === 'journal') return acctDownloadJournal(from, to, rec || null);
+    return rec ? acctDownloadTb(rec) : acctDownloadTbLive(from, to);
+  }
+  function month(key){ go(key + '-01', key === cur ? todayKey(now) : acctMonthEnd(key), key); }
+  ov.querySelector('#adMonth').addEventListener('click', function(){ month(cur); });
+  ov.querySelector('#adPrev').addEventListener('click', function(){ month(prevKey); });
+  ov.querySelector('#adPickGo').addEventListener('click', function(){ var k = ov.querySelector('#adPick').value; if(!/^\d{4}-\d{2}$/.test(k)){ toast(tr('Choose a month')); return; } month(k); });
+  ov.querySelector('#adCustom').addEventListener('click', function(){
+    var f = ov.querySelector('#adFrom').value, t = ov.querySelector('#adTo').value;
+    if(!f || !t || f > t){ toast(tr('Choose a start date on or before the end date')); return; }
+    go(f, t, null);
+  });
+}
+function openAcctVatSheet(){
+  var d = ACCT_DOCS[1], cur = periodKeyOf(new Date());
+  var ov = openSheet(ACCT_CSS + '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><span class="ac-doc" style="width:auto;padding:0;border:0;margin:0;background:none;cursor:default;"><span class="ic">'+acctDocIcon(d)+'</span></span><h2 style="margin:0;">'+tr(d.t)+'</h2></div>' +
+    '<div class="ac-help" style="margin-top:8px;">'+tr(d.d)+'</div><div id="acVat"></div>');
+  var plist = [], B = null;
+  function paint(){
+    var cat = acctVatCategory(), keys = {};
+    acctPeriods().forEach(function(r){ keys[r.periodKey] = true; });
+    if(B) acctMonthsWithActivity(B).forEach(function(k){ keys[k] = true; });
+    plist = cat ? acctVatPeriodsFor(cat, cur, Object.keys(keys).sort()) : [];
+    ov.querySelector('#acVat').innerHTML = acctVatListHtml(plist);
+    var sel = ov.querySelector('#acVatCat'); if(sel) sel.addEventListener('change', function(){ btSave({ vatCategory:sel.value || null }); paint(); });
+    ov.querySelectorAll('[data-acct-vat]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); acctDownloadVat(plist[+b.getAttribute('data-acct-vat')]); }); });
+  }
+  paint();
+  acctGather().then(function(G){ if(!document.body.contains(ov)) return; B = acctBuild(G); paint(); });
 }
 function openAcctDetailSheet(rec, st){
   function row(l, v, cls){ return '<div class="tillrow'+(cls?' '+cls:'')+'"><span class="l">'+esc(l)+'</span><span class="v num">'+esc(v)+'</span></div>'; }
@@ -17931,7 +17987,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.58';
+var APP_VERSION = '2026.10.59';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18123,6 +18179,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.59', items:[
+    'Accountant page redesigned: a clear status card, a Get a document list (monthly pack, VAT figures, journal, trial balance) with an easy period picker, filed months, and settings in one labelled place'
+  ]},
   { v:'2026.10.58', items:[
     'Pesa Ad page: the words to post now use a cleaner, larger font on a dark green card'
   ]},

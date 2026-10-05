@@ -118,9 +118,11 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   // ---- UI ----
   await p.evaluate(()=>window.__t.openAccountantSheet()); await p.waitForSelector('[data-acct]'); await p.waitForFunction(()=>!/Checking/.test(document.querySelector('#acStatus').textContent),null,{timeout:8000});
   const ui=await p.innerText('.sheet'); ck('page lists both months', /September 2026/.test(ui)&&/August 2026/.test(ui));
-  ck('page offers Run report now and opening balances', !!(await p.$('#acRun'))&&!!(await p.$('#acOpen')));
+  ck('page lists the four documents and opening balances', (await p.$$('[data-acdoc]')).length===4&&!!(await p.$('#acOpen')));
   await p.screenshot({path:D+'acct_page.png',fullPage:false});
-  await p.selectOption('#acVatCat','B'); await p.waitForSelector('[data-acct-vat]'); ck('VAT periods appear after choosing a category', true);
+  await p.click('[data-acdoc="vat"]'); await p.waitForSelector('#acVatCat'); await p.selectOption('#acVatCat','B'); await p.waitForSelector('[data-acct-vat]'); ck('VAT periods appear after choosing a category', true);
+  await p.evaluate(()=>window.__t.closeModal()); await p.evaluate(()=>window.__t.openAccountantSheet()); await p.waitForSelector('[data-acct]');
+  await p.click('[data-acdoc="journal"]'); await p.waitForSelector('#adPrev'); ck('document opens a simple period picker', !!(await p.$('#adCustom'))&&!!(await p.$('#adPick'))); await p.screenshot({path:D+'acct_picker.png'}); await p.evaluate(()=>window.__t.closeModal()); await p.evaluate(()=>window.__t.openAccountantSheet()); await p.waitForSelector('[data-acct]');
   await p.evaluate(()=>{ document.querySelectorAll('.xp-back').forEach(e=>e.remove()); });
   await p.click('[data-acct="2026-09"] [data-acct-act="view"]'); await p.waitForSelector('#acVer'); await p.waitForFunction(()=>/match their hash/.test(document.querySelector('#acVer').textContent)); ck('detail shows hash verified', true); await p.screenshot({path:D+'acct_detail.png'});
   await p.evaluate(()=>window.__t.closeModal());

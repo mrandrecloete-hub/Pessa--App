@@ -9,5 +9,5 @@ const { chromium } = require('playwright');
  console.log('menu row uses 3D icon:',has);
  await p.evaluate(()=>{ const r=[...document.querySelectorAll('.drawer-row[data-drawer-row="accountant"]')].find(e=>e.offsetParent); r.scrollIntoView({block:'center'}); });
  await p.waitForTimeout(300); await p.screenshot({path:'acct_ico_menu.png'});
- await p.evaluate(()=>{ [...document.querySelectorAll('.drawer-row[data-drawer-row="accountant"]')].find(e=>e.offsetParent).click(); }); await p.waitForSelector('#acRun'); await p.waitForTimeout(400); await p.screenshot({path:'acct_ico_page.png'});
+ await p.evaluate(()=>{ [...document.querySelectorAll('.drawer-row[data-drawer-row="accountant"]')].find(e=>e.offsetParent).click(); }); await p.waitForSelector('[data-acdoc]'); await p.waitForTimeout(400); await p.screenshot({path:'acct_ico_page.png'});
  console.log('errors',errs); await b.close(); })();
