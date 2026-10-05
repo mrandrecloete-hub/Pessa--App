@@ -5,7 +5,7 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v117';
+var CACHE = 'pesa-shell-v118';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
@@ -57,26 +57,18 @@ self.addEventListener('fetch', function(evt){
   if(/version\.json(\?|$)/i.test(url)) return;
 
   if(isNetworkFirst(url)){
-    // Network-first so the newest page wins, but never make the user wait on a weak
-    // mobile connection: after a few seconds the saved copy opens instead (Pesa works
-    // fully offline), while the download carries on and refreshes the saved copy.
-    evt.respondWith((function(){
-      var fresh = fetch(evt.request, { cache: 'no-store' }).then(function(res){
-        if(res && res.ok){
-          var copy = res.clone();
-          caches.open(CACHE).then(function(cache){ cache.put(evt.request, copy); });
-        }
+    // Instant open: when a saved copy exists it is shown immediately (no waiting on a weak
+    // mobile connection) while the newest copy downloads quietly for the next open. The app
+    // itself checks version.json and offers the update while it is running. The very first
+    // visit has nothing saved, so it waits for the network.
+    evt.respondWith(caches.match(evt.request, { ignoreSearch:true }).then(function(cached){
+      var fresh = fetch(evt.request, { cache:'no-store' }).then(function(res){
+        if(res && res.ok){ var copy = res.clone(); caches.open(CACHE).then(function(cache){ cache.put(evt.request, copy); }); }
         return res;
       });
-      var timeout = new Promise(function(resolve){
-        setTimeout(function(){ caches.match(evt.request).then(function(c){ resolve(c || null); }); }, 3500);
-      });
-      return Promise.race([fresh.catch(function(){ return null; }), timeout]).then(function(first){
-        if(first) return first;
-        // nothing saved yet: wait for the network; if that fails too, fall back to whatever is saved
-        return fresh.catch(function(){ return caches.match(evt.request); });
-      });
-    })());
+      if(cached){ fresh.catch(function(){}); return cached; }
+      return fresh.catch(function(){ return caches.match(evt.request); });
+    }));
     return;
   }
 
