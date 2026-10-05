@@ -7065,7 +7065,7 @@ function openWorkReportSheet(uid){
 /* ---- My records: reports, receipts, invoices and cash ups in one read only place ---- */
 var REC = { sec:'reports' };
 function saleReceiptDraft(s){
-  return { number:'R-'+String(s.id||'').slice(-6).toUpperCase(), billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:'',
+  return { servedBy: s.cashierName || '', number:'R-'+String(s.id||'').slice(-6).toUpperCase(), billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:'',
     at:s.createdAt, payMethod:s.paymentMethod, fiscalKey:s.fiscalId||null, walletProvider:s.walletProvider||'', cashBack:s.cashBack||0,
     received: s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : s.total),
     items:(s.items||[]).map(function(it){ return { desc:it.name, qty:it.qty, unitPrice:it.unitPrice }; }) };
@@ -7123,7 +7123,7 @@ function wireMyRecords(root){
   }); });
   root.querySelectorAll('[data-recinv]').forEach(function(b){ b.addEventListener('click', function(){
     var r = State.invoices.find(function(x){ return x.id === b.getAttribute('data-recinv'); }); if(!r) return;
-    var d = { number:r.number, billToName:r.billToName, billToContact:r.billToContact||'', dateStr:r.dateStr, dueDateStr:r.dueDateStr||'', notes:r.notes||'', at:r.at||'', payMethod:r.payMethod||'', walletProvider:r.walletProvider||'', received:r.received, items:r.items||[] };
+    var d = { servedBy:r.servedBy||r.cashierName||'', number:r.number, billToName:r.billToName, billToContact:r.billToContact||'', dateStr:r.dateStr, dueDateStr:r.dueDateStr||'', notes:r.notes||'', at:r.at||'', payMethod:r.payMethod||'', walletProvider:r.walletProvider||'', received:r.received, items:r.items||[] };
     openRecordDocSheet((r.type==='receipt'?tr('Receipt'):tr('Invoice'))+' '+(r.number||''), (r.billToName||'')+' · '+fmtMoney(r.total||0), function(){ return r.type==='receipt' ? buildReceiptPdf(d) : buildInvoicePdf(d); }, (r.type||'invoice')+'-'+(r.number||'')+'.pdf');
   }); });
   root.querySelectorAll('[data-rectill]').forEach(function(b){ b.addEventListener('click', function(){
@@ -8182,6 +8182,7 @@ function offerSaleReceipt(sale, customer){
   var number = 'INV-' + String(State.settings.invoiceNextNumber||1).padStart(4,'0');
   var draft = {
     number: number,
+    servedBy: servedByName({}),
     billToName: customer ? customer.name : 'Customer',
     billToContact: customer ? [customer.phone, customer.email].filter(Boolean).join('\n') : '',
     dateStr: todayKey(),
@@ -10858,6 +10859,7 @@ function saveInvoiceRecord(draft, kind, customerId){
     var data = {
       type: kind,
       number: draft.number,
+      servedBy: servedByName(draft),
       billToName: draft.billToName || 'Customer',
       billToContact: draft.billToContact || '',
       billToEmail: contact.email,
@@ -11354,6 +11356,13 @@ function invoiceTaxBreakdown(items){
   var vat = rate > 0 ? r2(std * rate / (100 + rate)) : 0;
   return { rate:rate, net:r2(std - vat), vat:vat, zero:r2(zero), exempt:r2(ex), gross:r2(std + zero + ex) };
 }
+/** The employee who handled the sale or wrote the document, shown on receipts and invoices. */
+function servedByName(d){
+  var n = (d && (d.servedBy || d.cashierName)) || '';
+  if(!n && State.session) n = State.session.name || '';
+  return String(n||'').trim();
+}
+
 function buildInvoicePdf(draft){
   var jsPDFCtor = getJsPDF();
   if(!jsPDFCtor) return null;
@@ -11382,7 +11391,7 @@ function buildInvoicePdf(draft){
   y += pdTwoCards(doc, pal, m, y, W,
     { heading:'Business details', name:S.shopName || 'My Shop', lines:bizLines },
     { heading:'Bill to', name:draft.billToName || 'Customer', lines:billLines }) + 5;
-  y += pdStrip(doc, pal, m, y, W, 'Invoice details', [['Invoice no.', draft.number], ['Issue date', docStamp(draft)], ['Due date', draft.dueDateStr ? fmtDateNice(draft.dueDateStr) : '']]) + 6;
+  y += pdStrip(doc, pal, m, y, W, 'Invoice details', [['Invoice no.', draft.number], ['Issue date', docStamp(draft)], ['Due date', draft.dueDateStr ? fmtDateNice(draft.dueDateStr) : ''], ['Handled by', servedByName(draft)]]) + 6;
 
   // line items
   var rows = items.map(function(it){ var q = Number(it.qty)||0, p = Number(it.unitPrice)||0; return [it.desc || '', String(q), fmtMoney(p), fmtMoney(q*p)]; });
@@ -11482,6 +11491,7 @@ function buildReceiptPdf(draft){
       var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*3;
     }
     detail('Date', docStamp(draft));
+    var _sb = servedByName(draft); if(_sb) detail('Served by', _sb);
     if(draft.billToName && draft.billToName !== 'Customer') detail('Customer', draft.billToName);
     y += 1;
 
@@ -11541,6 +11551,10 @@ function buildReceiptPdf(draft){
     doc.setFont('helvetica','italic'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
     var sub = doc.splitTextToSize('We appreciate your support. Please keep this receipt for your records.', contentW - 6);
     doc.text(sub, pageW/2, y, { align:'center' }); y += sub.length*2.7 + 1.2;
+    doc.setFont('helvetica','bold'); doc.setFontSize(5.8); doc.setTextColor(dark[0],dark[1],dark[2]);
+    var rf = doc.splitTextToSize('This receipt is proof of purchase. Keep it: it is required for any return or refund.', contentW - 6);
+    doc.text(rf, pageW/2, y, { align:'center' }); y += rf.length*2.7 + 1.2;
+    doc.setFont('helvetica','italic'); doc.setTextColor(muted[0],muted[1],muted[2]);
     var custom = (draft.notes || '').trim();
     if(custom && custom !== (t.defaultNote||'').trim()){
       var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*2.7 + 1.2;
@@ -11670,6 +11684,7 @@ function openInvoiceSheet(prefill){
     if(items.length===0){ toast('Add at least one line item'); return null; }
     return {
       number: number,
+      servedBy: servedByName({}),
       billToName: ov.querySelector('#invBillName').value.trim() || 'Customer',
       billToContact: ov.querySelector('#invBillContact').value.trim(),
       billToTin: (ov.querySelector('#invBillTin').value || '').trim(),
@@ -17322,7 +17337,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.39';
+var APP_VERSION = '2026.10.40';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17514,6 +17529,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.40', items:[
+    'Receipts and invoices now show the employee who handled the sale, and receipts say they are needed for returns and refunds'
+  ]},
   { v:'2026.10.39', items:[
     'Prices written inside a product name are moved into the selling price, with a one-tap Fix prices button on Sell and Stock, and the importer does it automatically'
   ]},
