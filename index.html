@@ -17931,7 +17931,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.56';
+var APP_VERSION = '2026.10.57';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18123,6 +18123,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.57', items:[
+    'Promo video end card now shows App Store and Google Play badges marked Coming soon under the free trial button'
+  ]},
   { v:'2026.10.56', items:[
     'Pesa Ad is now a clear row at the top of Settings and in the menu. The promo video no longer opens with the flag'
   ]},
