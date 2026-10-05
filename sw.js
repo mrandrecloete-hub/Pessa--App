@@ -5,7 +5,7 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v86';
+var CACHE = 'pesa-shell-v87';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
@@ -50,6 +50,8 @@ function isNetworkFirst(url){
 self.addEventListener('fetch', function(evt){
   if(evt.request.method !== 'GET') return;
   var url = evt.request.url;
+  // Video files are streamed by the browser itself (range requests), never kept by the shell cache.
+  if(/\.(mp4|webm)(\?|$)/i.test(url)) return;
 
   if(isNetworkFirst(url)){
     // Network-first: always try to get the latest page/manifest; only use
