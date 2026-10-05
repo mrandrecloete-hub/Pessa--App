@@ -18473,7 +18473,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.70';
+var APP_VERSION = '2026.10.71';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18665,6 +18665,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.71', items:[
+    'Updates now arrive over mobile data too: Pesa checks for a newer version when it comes to the front or the connection returns, and opens instantly from its saved copy on a weak connection'
+  ]},
   { v:'2026.10.70', items:[
     'Refreshed so every device loads the newest version'
   ]},
@@ -20901,6 +20904,12 @@ setInterval(updateHeader, 60000);
     if('serviceWorker' in navigator && window.self === window.top){
       navigator.serviceWorker.register('sw.js').then(function(reg){
           try{ reg.update(); }catch(e){}
+          // phones on mobile data lose and regain the connection often: look for a newer version whenever the
+          // app comes back to the front or the network returns. Offline, nothing happens and Pesa keeps working.
+          function checkUpdate(){ try{ if(navigator.onLine !== false) reg.update(); }catch(e){} }
+          window.addEventListener('online', checkUpdate);
+          document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkUpdate(); });
+          setInterval(checkUpdate, 10*60000);
           var hadController = !!navigator.serviceWorker.controller, reloaded = false;
           navigator.serviceWorker.addEventListener('controllerchange', function(){
             if(!hadController || reloaded) return; reloaded = true;
