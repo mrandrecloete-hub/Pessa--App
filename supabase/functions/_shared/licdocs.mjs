@@ -66,7 +66,7 @@ function make(J, ASSETS, SELLER){
   }
   function proofNumber(d){ return 'PP-' + d.paid.replace(/-/g, '') + '-' + d.ref.slice(-4) + '-' + String(d.seq || 1).padStart(3, '0'); }
   function buildProof(d){
-    var doc = new J({ unit:'mm', format:'a4' }), M = 14, W = 210 - 2 * M;
+    var doc = new J({ unit:'mm', format:'a4', compress:true }), M = 14, W = 210 - 2 * M;
     var y = docHeader(doc, 'PROOF OF PAYMENT', 'PAID');
     y += strip(doc, M, y, W, [['Proof no.', proofNumber(d)], ['Payment date', nice(d.paid)], ['Paid by', d.method], ['Licence reference', d.ref]]) + 6;
     var cw = (W - 6) / 2, ch = 34;
@@ -96,7 +96,7 @@ function make(J, ASSETS, SELLER){
     return doc;
   }
   function buildCert(d){
-    var doc = new J({ unit:'mm', format:'a4' }), M = 14, W = 210 - 2 * M;
+    var doc = new J({ unit:'mm', format:'a4', compress:true }), M = 14, W = 210 - 2 * M;
     var y = docHeader(doc, 'LICENCE CERTIFICATE', 'ACTIVE');
     y += strip(doc, M, y, W, [['Licence reference', d.ref], ['Plan', cap(d.plan)], ['Valid from', nice(d.from)], ['Valid until', nice(d.exp)]]) + 6;
     var cw = (W - 6) / 2, ch = 30;

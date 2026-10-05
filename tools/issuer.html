@@ -339,7 +339,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace}
   function jsPDFCtor(){ return window.jspdf && window.jspdf.jsPDF; }
   function proofNumber(){ var d = lastIssue; return 'PP-' + d.paid.replace(/-/g, '') + '-' + d.ref.slice(-4) + '-' + String(register().length).padStart(3, '0'); }
   function buildProof(){
-    var J = jsPDFCtor(); if(!J) return null; var d = lastIssue, doc = new J({ unit:'mm', format:'a4' }), M = 14, W = 210 - 2 * M;
+    var J = jsPDFCtor(); if(!J) return null; var d = lastIssue, doc = new J({ unit:'mm', format:'a4', compress:true }), M = 14, W = 210 - 2 * M;
     var y = docHeader(doc, 'PROOF OF PAYMENT', 'PAID');
     y += strip(doc, M, y, W, [['Proof no.', proofNumber()], ['Payment date', nice(d.paid)], ['Paid by', d.method], ['Licence reference', d.ref]]) + 6;
     var cw = (W - 6) / 2, ch = 34;
@@ -369,7 +369,7 @@ code{font-family:ui-monospace,Menlo,Consolas,monospace}
     return doc;
   }
   function buildCert(){
-    var J = jsPDFCtor(); if(!J) return null; var d = lastIssue, doc = new J({ unit:'mm', format:'a4' }), M = 14, W = 210 - 2 * M;
+    var J = jsPDFCtor(); if(!J) return null; var d = lastIssue, doc = new J({ unit:'mm', format:'a4', compress:true }), M = 14, W = 210 - 2 * M;
     var y = docHeader(doc, 'LICENCE CERTIFICATE', 'ACTIVE');
     y += strip(doc, M, y, W, [['Licence reference', d.ref], ['Plan', cap(d.plan)], ['Valid from', nice(d.from)], ['Valid until', nice(d.exp)]]) + 6;
     var cw = (W - 6) / 2, ch = 30;
