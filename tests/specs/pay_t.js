@@ -1,0 +1,34 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
+(async()=>{
+ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
+ await p.fill('#rcCompanyName','Pay Shop'); await p.fill('#rcOwnerName','A'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+ await p.evaluate(()=>window.__t.openSettingsSheet()); await p.waitForTimeout(300);
+ ck('Settings has Pay for Pesa row', await p.evaluate(()=>!!document.querySelector('[data-more="pay"]')));
+ await p.evaluate(()=>{ document.querySelectorAll('.st-grp').forEach(d=>d.open=true); document.querySelector('[data-more="pay"]').click(); }); await p.waitForSelector('#payAmt');
+ const txt=()=>p.innerText('#payRoot');
+ let t=await txt();
+ ck('shows all three plans', /Starter/.test(t)&&/Business/.test(t)&&/Premium/.test(t), t);
+ ck('starts monthly with Business N$900', /N\$900\.00/.test(await p.innerText('#payAmt')), await p.innerText('#payAmt'));
+ ck('details say coming soon when empty', !!(await p.$('#payNoDetails')));
+ ck('no account number shown', !/\d{8,}/.test(t.replace(/PESA-[A-Z0-9-]+/,'')), t);
+ await p.click('[data-payplan="starter"]'); ck('Starter monthly is N$500', /N\$500\.00/.test(await p.innerText('#payAmt')));
+ await p.click('[data-payper="yearly"]'); ck('Starter yearly is N$5,000 (2 months free)', /N\$5,000\.00/.test(await p.innerText('#payAmt')), await p.innerText('#payAmt'));
+ await p.click('[data-payplan="premium"]'); ck('Premium yearly is N$15,000', /N\$15,000\.00/.test(await p.innerText('#payAmt')));
+ const ref=await p.evaluate(()=>window.__t.licRef()); ck('shows this business reference', ref && (await txt()).includes(ref), ref);
+ const href=await p.getAttribute('#payWa','href'); const dec=decodeURIComponent(href.split('text=')[1]||'');
+ ck('WhatsApp message has plan, amount, reference', /Premium \(yearly\)/.test(dec)&&/N\$15,000\.00/.test(dec)&&dec.includes(ref)&&/Pay Shop/.test(dec), dec);
+ ck('WhatsApp goes to the Pesa number', /wa\.me\/264/.test(href), href);
+ // details filled in
+ await p.evaluate(()=>{ Object.assign(window.__t.PAY_DETAILS,{accountName:'Pesa Namibia',bankName:'Test Bank',accountNumber:'1234567890',branchCode:'123456'}); });
+ await p.click('[data-payper="monthly"]'); t=await txt();
+ ck('details appear once filled in', /Test Bank/.test(t)&&/1234567890/.test(t)&&!(await p.$('#payNoDetails')), t);
+ ck('copy buttons present', (await p.$$('[data-paycopy]')).length>=4);
+ ck('licence key button explains when licensing is off', true);
+ await p.click('#payKey'); await p.waitForTimeout(200);
+ ck('no page errors', errs.length===0, errs);
+ await p.screenshot({path:'/tmp/pay.png'});
+ await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
+})();

@@ -13218,6 +13218,7 @@ function comingSoonHtml(){
 // Shared destination for a menu row click, whichever surface it came from.
 function handleDrawerAction(key){
   if(key==='settings') openSettingsSheet();
+  else if(key==='pay') openPaySheet();
   else if(key==='tab-me') setTab('me');
   else if(key==='tab-dashboard') setTab('dashboard');
   else if(key==='tab-sell') setTab('sell');
@@ -13383,6 +13384,7 @@ function settingsMoreHtml(){
   if(isManagerOrOwner()) rows.push(['audit','Activity log','Who did what, and when']);
   if(isOwner()) rows.push(['security','Security check','Passwords, sign in and data safety']);
   if(isOwner() && licOn()) rows.push(['licence','Licence and subscription','Your plan and renewal']);
+  if(isOwner()) rows.unshift(['pay','Pay for Pesa','Plans, prices and how to pay']);
   if(isOwner()) rows.push(['setup','Setup guide','Steps to get your shop ready']);
   if(!isInstalledApp()) rows.push(['install','Install Pesa on this device','Open it like a normal app']);
   rows.push(['training','Training','Short lessons and the manual']);
@@ -13788,6 +13790,7 @@ function wireContent(){
     var si = c3.querySelector('#stockSearchInput'); if(si){ si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
   }, 250));
   var fixNP = content.querySelector('#fixNamePrices'); if(fixNP) fixNP.addEventListener('click', fixNamePrices);
+  var licPN = content.querySelector('#licPayNow'); if(licPN) licPN.addEventListener('click', openPaySheet);
   var goStock = content.querySelector('#goStock');
   if(goStock) goStock.addEventListener('click', function(){ setTab('stock'); });
 
@@ -15627,7 +15630,7 @@ function licRenderGate(s){
   g.innerHTML = '<div class="licgate-card">' +
     '<img src="'+PESA_LOGO_DATA_URL+'" alt="" style="height:54px;margin-bottom:10px;">' +
     '<h2 style="margin:0 0 8px;">' + (s.reason === 'trial' ? tr('Your free trial has ended') : tr('Your subscription has ended')) + '</h2>' +
-    '<p style="color:var(--text-muted);font-size:14px;line-height:1.5;margin:0 0 14px;">' + tr('Your records are safe and nothing has been deleted. Subscribe to carry on selling with Pesa.') + '</p>' +
+    '<p style="color:var(--text-muted);font-size:14px;line-height:1.5;margin:0 0 14px;">' + tr('Your records are safe and nothing has been deleted. Subscribe to carry on selling with Pesa.') + ' ' + tr('Plans start at {0} a month.').replace('{0}', fmtMoney(PAY_PLANS.starter.monthly)) + '</p>' +
     '<div class="banner" style="display:block;text-align:left;margin-bottom:12px;"><div style="font-size:12px;color:var(--text-muted);">' + tr('Licence reference') + '</div><div style="font-family:monospace;font-size:18px;font-weight:700;letter-spacing:.04em;">' + esc(licRef()) + '</div></div>' +
     (owner
       ? '<div class="actions" style="flex-direction:column;"><a class="btn btn-primary btn-block" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="' + esc(licWhatsAppUrl(s)) + '">' + tr('Subscribe on WhatsApp') + '</a>' +
@@ -15666,7 +15669,79 @@ function licBannerHtml(){
   if(!(s.state === 'trial' || s.state === 'grace' || (s.state === 'active' && s.daysLeft <= 14))) return '';
   var warn = s.state === 'grace' || (s.state !== 'active' && s.daysLeft <= 5) || (s.state === 'active' && s.daysLeft <= 7);
   return '<div class="banner" style="display:block;' + (warn ? 'border-color:#D98E2B;' : '') + '"><b>' + esc(licBannerText(s)) + '</b> ' +
-    (isOwner() ? esc(tr('Open the menu and tap Licence and subscription.')) : esc(tr('Ask the owner to renew.'))) + '</div>';
+    (isOwner() ? '<button class="btn btn-primary" type="button" id="licPayNow" style="margin-top:8px;">' + esc(tr(s.state === 'active' ? 'Renew now' : 'Pay for Pesa')) + '</button>' : esc(tr('Ask the owner to renew.'))) + '</div>';
+}
+
+/* ============================== PAY FOR PESA ==============================
+   Prices and the payment details live here, in one place. Leave a payment detail empty and the
+   screen says "coming soon" instead of showing it. Pesa never takes a payment itself: the shop pays you,
+   sends proof, and you send back a licence key. */
+var PAY_PLANS = {
+  starter:  { monthly:500,  yearly:5000 },
+  business: { monthly:900,  yearly:9000 },
+  premium:  { monthly:1500, yearly:15000 }
+};
+var PAY_DETAILS = {
+  accountName:'', bankName:'', accountNumber:'', branchCode:'', accountType:'',
+  walletName:'', walletNumber:''
+};
+function payHasDetails(){ return !!(PAY_DETAILS.accountNumber || PAY_DETAILS.walletNumber); }
+function payAmount(plan, period){ var p = PAY_PLANS[plan]; return p ? (period === 'yearly' ? p.yearly : p.monthly) : 0; }
+function payWhatsAppText(plan, period){
+  var shop = (State.settings && State.settings.shopName) || (State.company && (State.company.tradingName || State.company.companyName)) || '';
+  return 'Hello, I have paid for Pesa.\nBusiness: ' + shop + '\nPlan: ' + (LIC_PLANS[plan] ? LIC_PLANS[plan].name : plan) + ' (' + (period === 'yearly' ? 'yearly' : 'monthly') + ')\nAmount: ' + fmtMoney(payAmount(plan, period)) +
+    '\nReference: ' + (licRef() || '') + '\nMy proof of payment is attached.';
+}
+function openPaySheet(){
+  var sel = { plan:'business', period:'monthly' };
+  try{ var cur = licStatus(); if(cur && cur.plan && PAY_PLANS[cur.plan]) sel.plan = cur.plan; }catch(e){}
+  var ov = openSheet('<div id="payRoot"></div>');
+  function copyRow(label, value){
+    return '<div class="row"><div class="main"><div class="title">'+esc(tr(label))+'</div></div><div class="trail"><b style="font-family:monospace;">'+esc(value)+'</b> <button class="btn btn-ghost" type="button" data-paycopy="'+esc(value)+'" style="padding:4px 10px;">'+tr('Copy')+'</button></div></div>';
+  }
+  function draw(){
+    var amt = payAmount(sel.plan, sel.period), ref = licRef();
+    var plans = Object.keys(PAY_PLANS).map(function(k){
+      var pl = LIC_PLANS[k], pr = PAY_PLANS[k], on = sel.plan === k;
+      return '<button type="button" class="row" data-payplan="'+k+'" style="width:100%;text-align:left;'+(on ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary) inset;' : '')+'">' +
+        '<div class="main"><div class="title">'+esc(tr(pl.name))+(on ? ' ✓' : '')+'</div><div class="sub">'+(pl.users ? tr('Up to {0} staff accounts').replace('{0}', pl.users) : tr('Unlimited staff accounts'))+' · '+(pl.branches ? tr('up to {0} branches').replace('{0}', pl.branches) : tr('unlimited branches'))+'</div></div>' +
+        '<div class="trail"><b>'+fmtMoney(sel.period === 'yearly' ? pr.yearly : pr.monthly)+'</b><div class="sub">'+(sel.period === 'yearly' ? tr('per year') : tr('per month'))+'</div></div></button>';
+    }).join('');
+    var det = '';
+    if(payHasDetails()){
+      det = '<div class="rowlist">' +
+        (PAY_DETAILS.accountName ? copyRow('Account name', PAY_DETAILS.accountName) : '') +
+        (PAY_DETAILS.bankName ? copyRow('Bank', PAY_DETAILS.bankName) : '') +
+        (PAY_DETAILS.accountNumber ? copyRow('Account number', PAY_DETAILS.accountNumber) : '') +
+        (PAY_DETAILS.branchCode ? copyRow('Branch code', PAY_DETAILS.branchCode) : '') +
+        (PAY_DETAILS.accountType ? copyRow('Account type', PAY_DETAILS.accountType) : '') +
+        (PAY_DETAILS.walletNumber ? copyRow(PAY_DETAILS.walletName || 'Mobile wallet', PAY_DETAILS.walletNumber) : '') +
+      '</div>';
+    } else {
+      det = '<div class="banner" id="payNoDetails">'+ICONS.info+'<span>'+tr('Payment details are coming soon. Message us on WhatsApp and we will send them to you.')+'</span></div>';
+    }
+    var st = ''; try{ if(licOn()){ var s0 = licStatus(); st = s0.state === 'active' ? tr('Active until {0}').replace('{0}', fmtDateNice(s0.exp)) : s0.state === 'trial' ? tr('Free trial: {0} days left.').replace('{0}', Math.max(0, s0.daysLeft)) : s0.state === 'grace' ? licBannerText(s0) : ''; } }catch(e){}
+    ov.querySelector('#payRoot').innerHTML =
+      '<div class="sheet-head"><h2>'+tr('Pay for Pesa')+'</h2></div>' +
+      (st ? '<div class="banner">'+ICONS.info+'<span>'+esc(st)+'</span></div>' : '') +
+      '<div style="display:flex;gap:8px;margin:6px 0 10px;"><button type="button" class="btn '+(sel.period === 'monthly' ? 'btn-primary' : 'btn-ghost')+'" data-payper="monthly" style="flex:1;">'+tr('Monthly')+'</button><button type="button" class="btn '+(sel.period === 'yearly' ? 'btn-primary' : 'btn-ghost')+'" data-payper="yearly" style="flex:1;">'+tr('Yearly: 2 months free')+'</button></div>' +
+      '<div class="rowlist">'+plans+'</div>' +
+      '<div class="section-title">'+tr('How to pay')+'</div>' +
+      '<div class="banner" style="display:block;"><div style="font-size:12px;color:var(--text-muted);">'+tr('Amount to pay')+'</div><div class="num" id="payAmt" style="font-size:22px;font-weight:800;">'+fmtMoney(amt)+'</div></div>' +
+      det +
+      '<div class="rowlist" style="margin-top:8px;">'+(ref ? copyRow('Payment reference', ref) : '')+'</div>' +
+      '<div class="banner" style="margin-top:8px;">'+ICONS.info+'<span>'+tr('Use the payment reference exactly as shown, so we can match your payment to your business.')+'</span></div>' +
+      '<div class="actions" style="flex-direction:column;"><a class="btn btn-primary btn-block" id="payWa" style="text-decoration:none;justify-content:center;" target="_blank" rel="noopener" href="'+esc(buildWhatsAppUrl(DEV_WHATSAPP, payWhatsAppText(sel.plan, sel.period)))+'">'+tr('Send proof of payment on WhatsApp')+'</a>' +
+      '<button class="btn btn-ghost btn-block" id="payKey" type="button">'+tr('I have a licence key')+'</button>' +
+      '<button class="btn btn-ghost btn-block" id="payClose" type="button">'+tr('Close')+'</button></div>' +
+      '<div class="small" style="margin-top:10px;font-size:12px;color:var(--text-muted);">'+tr('Pesa does not take payments itself. After we confirm your payment we send you a licence key to paste into Pesa.')+'</div>';
+    ov.querySelectorAll('[data-payplan]').forEach(function(b){ b.addEventListener('click', function(){ sel.plan = b.getAttribute('data-payplan'); draw(); }); });
+    ov.querySelectorAll('[data-payper]').forEach(function(b){ b.addEventListener('click', function(){ sel.period = b.getAttribute('data-payper'); draw(); }); });
+    ov.querySelectorAll('[data-paycopy]').forEach(function(b){ b.addEventListener('click', function(){ copyText(b.getAttribute('data-paycopy'), tr('Copied')); }); });
+    ov.querySelector('#payClose').addEventListener('click', closeModal);
+    ov.querySelector('#payKey').addEventListener('click', function(){ if(licOn()){ closeModal(); setTimeout(openLicenceSheet, 60); } else toast(tr('Licence keys will be switched on soon.')); });
+  }
+  draw();
 }
 
 function openLicenceSheet(){
@@ -17358,7 +17433,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.43';
+var APP_VERSION = '2026.10.44';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17550,6 +17625,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.44', items:[
+    'New Pay for Pesa screen with monthly and yearly plans, how to pay, your payment reference and a WhatsApp button for proof of payment'
+  ]},
   { v:'2026.10.43', items:[
     'The app window title now says Pesa Namibia'
   ]},
