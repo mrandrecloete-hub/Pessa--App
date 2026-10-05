@@ -15421,6 +15421,8 @@ var ACCT_CSS = '<style>' +
   '.ac-link{background:none;border:0;color:var(--primary);font:inherit;font-size:12.5px;font-weight:700;text-transform:none;letter-spacing:0;cursor:pointer;padding:4px 2px;}' +
   '.ac-set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}.ac-set:last-child{border-bottom:0;}' +
   '.ac-set .l{font-weight:600;font-size:14px;}.ac-set .s{font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.35;}.ac-set select{max-width:46%;}' +
+  '.ac-tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}.ac-tile{border:1px solid var(--border);background:var(--surface);border-radius:14px;padding:12px;min-width:0;}.ac-tile .l{font-size:12px;color:var(--text-muted);font-weight:600;}.ac-tile .v{font-size:19px;font-weight:800;margin-top:3px;overflow-wrap:anywhere;}.ac-tile .s{font-size:11px;color:var(--text-muted);margin-top:2px;}' +
+  '.ac-todo{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.45;}.ac-todo:last-child{border-bottom:0;}.ac-todo b{width:22px;height:22px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:12px;flex:none;margin-top:1px;}.ac-todo .tx{flex:1;min-width:0;}.ac-todo .btn{padding:6px 10px;font-size:12px;flex:none;}' +
   '.ac-choose{display:flex;flex-direction:column;gap:8px;margin:6px 0 4px;}.ac-or{font-size:12px;color:var(--text-muted);text-align:center;margin:12px 0 2px;}' +
   '</style>';
 function acctDocIcon(d){ return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d.ic+'</svg>'; }
@@ -15430,6 +15432,86 @@ async function acctDownloadTbLive(from, to){
   var G = await acctGather(), B = acctBuild(G), v = acctView(G, B, from, to);
   return acctDownloadTb({ tb:v.tb, shopName:G.shopName, from:from, to:to, revision:'interim', hash:tr('Interim, not filed'), periodKey:from + '-to-' + to, generatedAt:new Date().toISOString() });
 }
+/* ---- the smart layer: reads the books and tells the owner what matters, without being asked ---- */
+function acctVatLatest(cat, now){
+  var parity = cat === 'A' ? 1 : 0, ey = now.getFullYear(), em = now.getMonth();
+  if(em < 1){ em = 12; ey--; }
+  while(em % 2 !== parity){ em--; if(em < 1){ em = 12; ey--; } }
+  var sm = em === 1 ? 12 : em - 1, sy = em === 1 ? ey - 1 : ey;
+  var due = todayKey(new Date(em === 12 ? ey + 1 : ey, em === 12 ? 0 : em, 25));
+  return { end:ey + '-' + String(em).padStart(2, '0'), start:sy + '-' + String(sm).padStart(2, '0'), due:due, days:btDiffDays(todayKey(now), due) };
+}
+function acctVatDone(end){ var m = State.settings.vatDone; return !!(m && m[end]); }
+/** Used by the Alerts and the home screen: a VAT return that is close, overdue, or a category that is not set. */
+function acctAlerts(){
+  var out = [];
+  try{
+    if(!isManagerOrOwner() || !isVatVendor()) return out;
+    var cat = acctVatCategory();
+    if(!cat){ out.push({ id:'vatcat', level:'info', title:'Tell Pesa your VAT category', body:'Then Pesa can track your VAT return dates and warn you before they are due.', go:'accountant', label:'Open Accountant' }); return out; }
+    var p = acctVatLatest(cat, new Date());
+    if(acctVatDone(p.end) || p.days > 10) return out;
+    out.push({ id:'vatdue-' + p.end, level:p.days < 0 ? 'high' : 'med', notify:true,
+      title:p.days < 0 ? 'Your VAT return is ' + Math.abs(p.days) + ' day' + (Math.abs(p.days) === 1 ? '' : 's') + ' overdue' : p.days === 0 ? 'Your VAT return is due today' : 'Your VAT return is due in ' + p.days + ' day' + (p.days === 1 ? '' : 's'),
+      body:acctLabelOf(p.start) + ' to ' + acctLabelOf(p.end) + '. Get the working figures in the Accountant, then mark it as submitted.', go:'accountant', label:'Open Accountant' });
+  }catch(e){}
+  return out;
+}
+/** Everything the Accountant page shows beyond the documents: live figures and the things to do next. */
+function acctSmart(G, B, vAll){
+  var now = new Date(), cur = periodKeyOf(now), today = todayKey(now), first = cur + '-01';
+  var vm = acctView(G, B, first, today);
+  function close(code){ var r = vAll.tb.rows.filter(function(x){ return x.code === code; })[0]; return r ? r.close : 0; }
+  var cash = ['1000', '1010', '1020', '1030', '1040'].reduce(function(s, c){ return s + close(c); }, 0);
+  var tiles = [
+    { l:'Sales this month', v:acctM(vm.pl.revenue), s:'Without VAT' },
+    { l:vm.pl.net < 0 ? 'Loss this month' : 'Profit this month', v:acctM(Math.abs(vm.pl.net)), c:vm.pl.net < 0 ? 'danger' : 'success', s:'After costs and expenses' },
+    { l:'Cash, bank and wallets', v:acctM(cash), s:'As recorded in Pesa' },
+    { l:'Customers owe you', v:acctM(close('1300')), s:'Unpaid credit' },
+    { l:'You owe suppliers', v:acctM(-close('2000')), s:'Unpaid invoices' },
+    { l:'Stock on hand', v:acctM(close('1200')), s:'At cost price' }
+  ];
+  var todo = [];
+  function add(level, text, act, label, ref){ todo.push({ level:level, text:text, act:act || '', label:label || '', ref:ref || '' }); }
+  var cat = acctVatCategory(), vendor = !!G.vatVendor;
+  var have = {}; State.accountingPeriods.forEach(function(r){ have[r.periodKey] = true; });
+  var missing = acctMonthsWithActivity(B).filter(function(k){ return k < cur && !have[k]; });
+  if(missing.length) add('warn', missing.length + ' finished month' + (missing.length === 1 ? ' is' : 's are') + ' not filed yet.', 'file', 'File now');
+  if(vendor && !cat) add('info', 'Tell Pesa your VAT category so it can track your return dates and warn you before they are due.', 'vatcat', 'Choose category');
+  if(vendor && cat){
+    var p = acctVatLatest(cat, now), done = acctVatDone(p.end);
+    var net = 0; p.months = [p.start, p.end];
+    p.months.forEach(function(k){ var h = State.accountingPeriods.find(function(r){ return r.periodKey === k; }); net += h ? h.vat.netPayable : acctView(G, B, k + '-01', acctMonthEnd(k)).vat.netPayable; });
+    var what = acctLabelOf(p.start) + ' to ' + acctLabelOf(p.end), est = (net >= 0 ? 'about ' + acctM(net) + ' to pay NamRA' : 'about ' + acctM(-net) + ' to claim back');
+    if(done) add('ok', 'VAT return for ' + what + ' is marked as submitted.');
+    else if(p.days < 0) add('bad', 'VAT return for ' + what + ' was due on ' + acctDateText(p.due) + ' (' + Math.abs(p.days) + ' days ago): ' + est + '.', 'vatdone', 'Mark submitted', p.end);
+    else add(p.days <= 10 ? 'warn' : 'info', 'VAT return for ' + what + ' is due on ' + acctDateText(p.due) + ' (in ' + p.days + ' days): ' + est + '.', 'vatdone', 'Mark submitted', p.end);
+  }
+  vAll.checks.forEach(function(c){
+    if(c.level !== 'fail' && c.level !== 'warn') return;
+    var act = /opening balance|opening stock/i.test(c.text) ? 'opening' : /cost price/i.test(c.text) ? 'products' : '';
+    add(c.level === 'fail' ? 'bad' : 'warn', c.text, act, act === 'opening' ? 'Opening balances' : act === 'products' ? 'Open stock' : '');
+  });
+  if(vm.pl.revenue > 0){
+    var gm = Math.round(vm.pl.grossProfit / vm.pl.revenue * 100);
+    if(gm < 10) add('warn', 'Your gross margin this month is only ' + gm + '%. After the cost of what you sold, very little is left to pay expenses. Check your selling prices and cost prices.');
+    var prev = acctPeriods().slice(-1)[0];
+    if(prev && prev.periodKey < cur && prev.pl.opex > 0 && vm.pl.opex > prev.pl.opex * 1.3) add('info', 'Operating expenses this month (' + acctM(vm.pl.opex) + ') are already more than 30% above all of ' + acctLabelOf(prev.periodKey) + ' (' + acctM(prev.pl.opex) + ').');
+    if(vm.pl.net < 0 && now.getDate() >= 10) add('warn', 'Costs are higher than sales this month so far. Open the monthly pack to see where the money is going.');
+  }
+  var rc = close('1300');
+  if(vm.pl.revenue > 0 && rc > vm.pl.revenue * 1.5) add('info', 'Customers owe you ' + acctM(rc) + ', more than one and a half months of sales. Collecting this would improve your cash.');
+  return { tiles:tiles, todo:todo };
+}
+function acctSmartHtml(S){
+  var col = { ok:'var(--success)', info:'var(--text-muted)', warn:'#c47f00', bad:'var(--danger)' }, mark = { ok:'✓', info:'i', warn:'!', bad:'✗' };
+  var tiles = '<div class="ac-tiles">' + S.tiles.map(function(t){ return '<div class="ac-tile"><div class="l">'+esc(tr(t.l))+'</div><div class="v num"'+(t.c ? ' style="color:var(--'+t.c+');"' : '')+'>'+esc(t.v)+'</div><div class="s">'+esc(tr(t.s))+'</div></div>'; }).join('') + '</div>';
+  var list = S.todo.length ? S.todo.map(function(x, i){
+    return '<div class="ac-todo"><b style="background:'+col[x.level]+';">'+mark[x.level]+'</b><div class="tx">'+esc(tr(x.text))+'</div>' + (x.act && x.label ? '<button class="btn btn-ghost" data-acsa="'+i+'" type="button">'+esc(tr(x.label))+'</button>' : '') + '</div>';
+  }).join('') : '<div class="ac-todo"><b style="background:var(--success);">✓</b><div class="tx">'+tr('Nothing needs your attention. Pesa is keeping your books up to date for you.')+'</div></div>';
+  return '<div class="section-title">'+tr('Your books right now')+'</div>' + tiles +
+    '<div class="section-title">'+tr('Pesa suggests')+'</div><div class="tillcard" style="padding:6px 14px;">'+list+'</div>';
+}
 function openAccountantSheet(){
   if(!isManagerOrOwner()){ toast(tr('Accountant is for owners and managers')); return; }
   var op = State.settings.acctOpening;
@@ -15437,7 +15519,7 @@ function openAccountantSheet(){
   var html = ACCT_CSS + '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><img src="'+ICON3D.accountant+'" alt="" width="44" height="44" draggable="false" style="display:block;flex:none;"><h2 style="margin:0;">'+tr('Accountant')+'</h2></div>' +
     '<div class="ac-status"><div class="ac-dot" id="acDot">…</div><div><div class="ac-st-t" id="acStatus">'+tr('Checking…')+'</div>' +
       '<div class="ac-st-s">'+tr('Books start')+': '+esc(op && op.date ? acctDateText(op.date) : tr('First record in Pesa'))+'<br>'+tr('Latest month filed')+': '+esc(last ? acctLabelOf(last.periodKey) : tr('None yet'))+'</div></div></div>' +
-    '<div id="acIssues"></div>' +
+    '<div id="acSmart"></div>' +
     '<div class="section-title">'+tr('Get a document')+'</div>' +
     ACCT_DOCS.map(function(d){ return '<button type="button" class="ac-doc" data-acdoc="'+d.k+'"><span class="ic">'+acctDocIcon(d)+'</span><span class="tx"><span class="nm" style="display:block;">'+tr(d.t)+'</span><span class="ds" style="display:block;">'+tr(d.d)+'</span></span><span class="go">'+tr('Get')+'</span></button>'; }).join('') +
     '<div class="section-title"><span>'+tr('Filed months')+'</span><button class="ac-link" id="acFile" type="button">'+tr('File missing months')+'</button></div>' +
@@ -15483,8 +15565,15 @@ function openAccountantSheet(){
     var lvl = (bad || fails) ? 'bad' : (chg || warns.length) ? 'warn' : 'ok';
     ov.querySelector('#acDot').className = 'ac-dot ' + lvl; ov.querySelector('#acDot').textContent = lvl === 'ok' ? '✓' : lvl === 'warn' ? '!' : '✗';
     ov.querySelector('#acStatus').textContent = bad ? bad + ' ' + tr('hash mismatch') : fails ? tr('Failed') : chg ? chg + ' ' + tr('month(s) changed since filing') : warns.length ? warns.length + ' ' + tr('to review') : tr('All passed');
-    ov.querySelector('#acIssues').innerHTML = (fails || warns.length) ? '<div class="tillcard" style="margin:8px 0;"><div style="font-weight:700;font-size:13px;margin-bottom:4px;">'+tr('To review in the books to date')+'</div>' +
-      v.checks.filter(function(c){ return c.level === 'fail' || c.level === 'warn'; }).map(acctCheckHtml).join('') + '</div>' : '';
+    var S = acctSmart(r.G, r.B, v); ov.querySelector('#acSmart').innerHTML = acctSmartHtml(S);
+    ov.querySelectorAll('[data-acsa]').forEach(function(b){ b.addEventListener('click', function(){
+      var x = S.todo[+b.getAttribute('data-acsa')];
+      if(x.act === 'file') ov.querySelector('#acFile').click();
+      else if(x.act === 'vatcat'){ var sel = ov.querySelector('#acSetVat'); if(sel){ sel.scrollIntoView({ block:'center' }); sel.focus(); } }
+      else if(x.act === 'opening'){ closeModal(); openAcctOpeningSheet(); }
+      else if(x.act === 'products'){ closeModal(); setTab('stock'); }
+      else if(x.act === 'vatdone'){ var m = Object.assign({}, State.settings.vatDone || {}); m[x.ref] = todayKey(); btSave({ vatDone:m }); toast(tr('Marked as submitted')); closeModal(); openAccountantSheet(); }
+    }); });
     paintList();
   }, function(){ var s = ov.querySelector('#acStatus'); if(s) s.textContent = tr('Could not check'); });
   ov.querySelector('#acFile').addEventListener('click', async function(){
@@ -16767,6 +16856,7 @@ function smartAlerts(){
   }catch(e){}
   try{ al = al.concat(btExtraAlerts()); }catch(e){}
   try{ al = al.concat(brainAlerts()); }catch(e){}
+  try{ al = al.concat(acctAlerts()); }catch(e){}
   return al;
 }
 function smartAlertCount(){ try{ return smartAlerts().length; }catch(e){ return 0; } }
@@ -17081,6 +17171,7 @@ function openSmartSection(k){
   else if(k==='customers') openCustomerProfilesSheet();
   else if(k==='reconcile') openReconcileSheet();
   else if(k==='backups') openBackupsSheet();
+  else if(k==='accountant') openAccountantSheet();
   else if(k==='health') openHealthSheet();
   else if(k==='nearby') openNearbySheet();
   else if(k==='whatsnew') openWhatsNewSheet();
@@ -17987,7 +18078,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.59';
+var APP_VERSION = '2026.10.60';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -18179,6 +18270,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.60', items:[
+    'Smart Accountant: live figures for the month (sales, profit, cash, what customers owe you, what you owe, stock), a Pesa suggests list that spots problems on its own, VAT return tracking with a due date, an estimate and a Mark submitted button, and an alert before the return is due'
+  ]},
   { v:'2026.10.59', items:[
     'Accountant page redesigned: a clear status card, a Get a document list (monthly pack, VAT figures, journal, trial balance) with an easy period picker, filed months, and settings in one labelled place'
   ]},
