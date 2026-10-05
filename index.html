@@ -1404,7 +1404,56 @@
 </script>
 <div class="authscreen" id="authScreen"></div>
 
-<div id="pesaBootMsg" style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#0B7A5C;color:#fff;font:600 16px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;"><div style="font-size:30px;font-weight:800;letter-spacing:-.02em;">Pesa</div><div style="opacity:.85;font-weight:500;font-size:13px;">Loading, please wait</div></div>
+<style>
+  #pesaBootMsg{ position:fixed; top:0; right:0; bottom:0; left:0; z-index:99999; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;
+    background:radial-gradient(90% 55% at 50% 22%, rgba(255,214,102,.30) 0%, rgba(255,214,102,0) 60%), radial-gradient(120% 80% at 50% 0%, #14A37A 0%, #0B7A5C 38%, #043d2f 100%); font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+  #pesaBootMsg .bm-water{ position:absolute; left:0; right:0; bottom:0; height:46%; background:linear-gradient(180deg, rgba(120,255,214,.20) 0%, rgba(43,212,160,.10) 30%, rgba(2,40,30,.55) 100%); }
+  #pesaBootMsg .bm-water::before{ content:''; position:absolute; left:0; right:0; top:0; height:2px; background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,236,170,.9), rgba(255,255,255,0)); box-shadow:0 0 18px 2px rgba(255,214,102,.5); }
+  #pesaBootMsg .bm-water::after{ content:''; position:absolute; inset:0; background:repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 1px, rgba(255,255,255,0) 1px 11px); animation:bmShimmer 5s linear infinite; opacity:.6; -webkit-mask-image:linear-gradient(180deg,#000,transparent 85%); mask-image:linear-gradient(180deg,#000,transparent 85%); }
+  #pesaBootMsg .bm-stage{ position:relative; width:min(78vw,290px); height:min(52vh,370px); perspective:700px; margin-top:-6vh; }
+  #pesaBootMsg .bm-glow{ position:absolute; left:50%; top:14%; width:230px; height:230px; margin-left:-115px; border-radius:50%; background:radial-gradient(circle, rgba(255,214,102,.55), rgba(255,214,102,0) 68%); filter:blur(8px); animation:bmGlow 1.9s ease-in-out infinite; }
+  #pesaBootMsg .bm-logo{ position:absolute; left:50%; width:170px; height:170px; margin-left:-85px; bottom:calc(100% - 258px); animation:bmBounce 1.9s infinite; transform-origin:50% 100%; }
+  #pesaBootMsg .bm-refl{ position:absolute; left:50%; width:170px; height:170px; margin-left:-85px; top:266px; animation:bmRefl 1.9s infinite; -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,.62), rgba(0,0,0,0) 78%); mask-image:linear-gradient(to bottom, rgba(0,0,0,.62), rgba(0,0,0,0) 78%); }
+  #pesaBootMsg .bm-img{ width:100%; height:100%; background:var(--logo-img) center/contain no-repeat; animation:bmSway 3.6s ease-in-out infinite alternate; }
+  #pesaBootMsg .bm-logo .bm-img{ filter:drop-shadow(0 14px 18px rgba(0,30,20,.55)) drop-shadow(0 0 22px rgba(255,214,102,.55)); }
+  #pesaBootMsg .bm-refl .bm-img{ transform:scaleY(-1); filter:url(#bmWave) saturate(1.2) blur(.4px); animation-name:bmSwayR; }
+  #pesaBootMsg .bm-shadow{ position:absolute; left:50%; top:256px; width:150px; height:22px; margin-left:-75px; border-radius:50%; background:radial-gradient(ellipse, rgba(0,20,12,.55), rgba(0,20,12,0) 70%); animation:bmShadow 1.9s infinite; }
+  #pesaBootMsg .bm-ring{ position:absolute; left:50%; top:254px; width:230px; height:46px; margin-left:-115px; border-radius:50%; border:2px solid rgba(255,244,200,.85); box-shadow:0 0 14px rgba(255,214,102,.6), inset 0 0 12px rgba(255,255,255,.25); opacity:0; animation:bmRipple 1.9s ease-out infinite; }
+  #pesaBootMsg .bm-ring.r2{ animation-delay:.22s; } #pesaBootMsg .bm-ring.r3{ animation-delay:.44s; }
+  #pesaBootMsg .bm-title{ position:relative; display:flex; margin-top:2px; font-family:'Pesa Playfair',Georgia,'Times New Roman',serif; font-weight:700; font-size:clamp(34px,10.5vw,50px); letter-spacing:.07em; line-height:1.1; filter:drop-shadow(0 6px 14px rgba(0,40,28,.55)); }
+  #pesaBootMsg .bm-title span{ display:inline-block; background:linear-gradient(180deg,#FFFFFF 0%,#FFF1BE 45%,#F2B53A 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; animation:bmLetter 1.9s ease-in-out infinite; animation-delay:calc(var(--i) * .08s); }
+  #pesaBootMsg .bm-sub{ margin-top:12px; font-size:12px; font-weight:600; letter-spacing:.34em; text-transform:uppercase; color:rgba(255,255,255,.85); text-shadow:0 1px 8px rgba(0,40,28,.6); }
+  #pesaBootMsg .bm-sub b{ display:inline-block; font-weight:800; animation:bmDot 1.2s infinite; } #pesaBootMsg .bm-sub b:nth-of-type(2){ animation-delay:.2s; } #pesaBootMsg .bm-sub b:nth-of-type(3){ animation-delay:.4s; }
+  #pesaBootMsg .bm-bar{ margin-top:16px; width:min(52vw,190px); height:4px; border-radius:4px; background:rgba(255,255,255,.18); overflow:hidden; box-shadow:inset 0 1px 2px rgba(0,0,0,.25); }
+  #pesaBootMsg .bm-bar i{ display:block; width:42%; height:100%; border-radius:4px; background:linear-gradient(90deg,#F2B53A,#FFE9A8,#2BD4A0); box-shadow:0 0 10px rgba(255,214,102,.8); animation:bmBar 1.5s ease-in-out infinite; }
+  @keyframes bmBounce{ 0%{ transform:translateY(0) scale(1.07,.9); animation-timing-function:cubic-bezier(.2,.75,.4,1); } 13%{ transform:translateY(-14px) scale(.98,1.04); animation-timing-function:cubic-bezier(.2,.75,.4,1); } 50%{ transform:translateY(-92px) scale(.98,1.03); animation-timing-function:cubic-bezier(.6,0,.85,.35); } 92%{ transform:translateY(0) scale(1,1); } 100%{ transform:translateY(0) scale(1.07,.9); } }
+  @keyframes bmRefl{ 0%{ transform:translateY(0) scale(1.07,.9); opacity:.9; animation-timing-function:cubic-bezier(.2,.75,.4,1); } 50%{ transform:translateY(92px) scale(.95,1); opacity:.38; animation-timing-function:cubic-bezier(.6,0,.85,.35); } 92%{ transform:translateY(0) scale(1,1); opacity:.9; } 100%{ transform:translateY(0) scale(1.07,.9); opacity:.9; } }
+  @keyframes bmShadow{ 0%,100%{ transform:scale(1.1); opacity:.85; } 50%{ transform:scale(.55); opacity:.35; } }
+  @keyframes bmRipple{ 0%{ transform:scale(.18); opacity:.95; } 55%{ opacity:.4; } 100%{ transform:scale(1.55); opacity:0; } }
+  @keyframes bmSway{ from{ transform:rotateY(-20deg) rotateZ(-1.5deg); } to{ transform:rotateY(20deg) rotateZ(1.5deg); } }
+  @keyframes bmSwayR{ from{ transform:scaleY(-1) rotateY(-20deg) rotateZ(1.5deg); } to{ transform:scaleY(-1) rotateY(20deg) rotateZ(-1.5deg); } }
+  @keyframes bmGlow{ 0%,100%{ opacity:.55; transform:scale(.95); } 50%{ opacity:.9; transform:scale(1.08); } }
+  @keyframes bmLetter{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-7px); } }
+  @keyframes bmDot{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  @keyframes bmBar{ 0%{ transform:translateX(-110%); } 100%{ transform:translateX(260%); } }
+  @keyframes bmShimmer{ from{ background-position:0 0; } to{ background-position:0 44px; } }
+  /* simpler devices keep the bounce, reflection and ripples (cheap) but skip the water warp and letter wave */
+  html.lite #pesaBootMsg .bm-logo, html.lite #pesaBootMsg .bm-refl, html.lite #pesaBootMsg .bm-shadow, html.lite #pesaBootMsg .bm-ring, html.lite #pesaBootMsg .bm-bar i{ animation-duration:1.9s !important; animation-iteration-count:infinite !important; }
+  html.lite #pesaBootMsg .bm-bar i{ animation-duration:1.5s !important; }
+  html.lite #pesaBootMsg .bm-ring.r2{ animation-delay:.22s !important; } html.lite #pesaBootMsg .bm-ring.r3{ animation-delay:.44s !important; }
+  html.lite #pesaBootMsg .bm-refl .bm-img{ filter:none; }
+  html.lite #pesaBootMsg .bm-glow{ filter:none; }
+  @media (max-height:560px){ #pesaBootMsg .bm-stage{ transform:scale(.8); margin-top:-8vh; } }
+  @media (prefers-reduced-motion:reduce){ #pesaBootMsg *{ animation:none !important; } }
+</style>
+<div id="pesaBootMsg" role="status" aria-live="polite" aria-label="Please wait">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="bmWave" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.07" numOctaves="1" seed="4" result="n"><animate attributeName="baseFrequency" dur="5s" values="0.012 0.07;0.02 0.1;0.012 0.07" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="11" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
+<div class="bm-water"></div>
+<div class="bm-stage"><div class="bm-glow"></div><div class="bm-shadow"></div><div class="bm-ring"></div><div class="bm-ring r2"></div><div class="bm-ring r3"></div><div class="bm-refl"><div class="bm-img"></div></div><div class="bm-logo"><div class="bm-img"></div></div></div>
+<div class="bm-title" aria-hidden="true"><span style="--i:0">P</span><span style="--i:1">l</span><span style="--i:2">e</span><span style="--i:3">a</span><span style="--i:4">s</span><span style="--i:5">e</span><span style="--i:6">&nbsp;</span><span style="--i:7">w</span><span style="--i:8">a</span><span style="--i:9">i</span><span style="--i:10">t</span></div>
+<div class="bm-sub">Preparing your shop<b>.</b><b>.</b><b>.</b></div>
+<div class="bm-bar"><i></i></div>
+</div>
 <div class="app" id="app">
   <!-- One shared watermark element for the whole app shell (behind the
        sidebar, topbar, content, and behind every sheet/modal too since they
@@ -18628,7 +18677,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.75';
+var APP_VERSION = '2026.10.76';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -18855,6 +18904,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.76', items:[
+    'A new loading screen with the Pesa logo bouncing over water, with its reflection and ripples'
+  ]},
   { v:'2026.10.75', items:[
     'Pesa now tells you when a newer version is ready and updates with one tap (About Pesa also has Check for updates)'
   ]},
