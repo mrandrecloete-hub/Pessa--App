@@ -1106,7 +1106,7 @@
 (function(){ try{
   var force = /[?&]intro=force/.test(location.search), off = false, seen = false;
   try{ off = localStorage.getItem('pesa_intro') === 'off'; }catch(e){}
-  try{ seen = sessionStorage.getItem('pesa_intro_seen') === '1'; }catch(e){}
+  try{ seen = sessionStorage.getItem('pesa_intro_seen') === '1' || localStorage.getItem('pesa_intro_day') === new Date().toDateString(); }catch(e){}
   if(!force && (off || seen || navigator.webdriver === true)){ window.__introSkip = 1; return; }
   var v = document.createElement('div'); v.id = 'introVeil'; v.setAttribute('aria-hidden', 'true');
   v.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;overflow:hidden;background:radial-gradient(circle at 50% 45%,#0e4a3c 0%,#0a3329 38%,#05211a 75%,#020f0b 100%)';
@@ -17269,7 +17269,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.37';
+var APP_VERSION = '2026.10.38';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17461,6 +17461,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.38', items:[
+    'Opening animation now plays once a day, so opening Pesa the rest of the day is instant',
+    'The error notice now shows a short note of what failed so problems can be traced'
+  ]},
   { v:'2026.10.36', items:[
     'Training: Meet the developer now explains what the word Pesa means and why it fits the app'
   ]},
