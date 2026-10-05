@@ -17593,7 +17593,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.49';
+var APP_VERSION = '2026.10.50';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17785,6 +17785,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.50', items:[
+    'The privacy, terms and refunds pages now have a Download button that saves a PDF with the Pesa logo and the date stamp'
+  ]},
   { v:'2026.10.49', items:[
     'New practice payment on the Pay for Pesa screen, so you can try every step with made up bank details and no real money'
   ]},
@@ -18295,11 +18298,68 @@ function legalDocHtml(key){
         sec.items.map(function(f){ return '<li>'+esc(tr(f))+'</li>'; }).join('') + '</ul>';
     }).join('');
 }
+/** A PDF of one of the legal pages (terms, privacy, refunds, support) with the logo header, wet date stamp and verification line. */
+function generateLegalPdf(title, intro, sections){
+  var JsPDFCtor = getJsPDF(), doc = newPdfDoc(JsPDFCtor, { unit:'mm', format:'a4' }), now = new Date();
+  var head = drawDocHeader(doc, {plain:true}), margin = head.margin, contentW = head.contentW, pageW = head.pageW, y = head.y;
+  var pal = head.pal, primary = pal.mid, muted = pal.muted, dark = pal.text, pageH = doc.internal.pageSize.getHeight(), bottomLimit = 265;
+  function pad2(n){ return n<10 ? '0'+n : ''+n; }
+  var stampTime = pad2(now.getHours())+':'+pad2(now.getMinutes());
+  function need(h){ if(y + h <= bottomLimit) return; doc.addPage(); y = drawDocHeader(doc, {plain:true}).y; }
+  y = pdTitle(doc, pal, margin, y, title);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.text('Generated '+fmtDateNice(now)+' at '+stampTime+'.  Documents version '+LEGAL_VERSION, margin, y); y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(dark[0],dark[1],dark[2]);
+  var il = doc.splitTextToSize(intro, contentW); need(il.length*4.6+3); doc.text(il, margin, y); y += il.length*4.6 + 3;
+  sections.forEach(function(sec){
+    need(24); y += 4; pdSection(doc, pal, margin, y, contentW, sec.h); y += 7;
+    sec.items.forEach(function(f){
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      var lines = doc.splitTextToSize(f, contentW-5); need(lines.length*4.3+2);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(primary[0],primary[1],primary[2]); doc.text('•', margin, y);
+      doc.setTextColor(dark[0],dark[1],dark[2]); doc.text(lines, margin+5, y); y += lines.length*4.3 + 1.8;
+    });
+  });
+  need(67); doc.setDrawColor(220,224,218); doc.line(margin,y,pageW-margin,y); y += 7;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(dark[0],dark[1],dark[2]);
+  try{ doc.addImage(DEV_LOGO_DATA_URL, 'PNG', margin, y-4, 16, 16); }catch(e){}
+  doc.text(DEV_CREDIT_LINE, margin+19, y+1); y += 6.5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+  var crLines = doc.splitTextToSize(copyrightLine(), contentW-19); doc.text(crLines, margin+19, y);
+  drawWetStamp(doc, pageW, pageH, now);
+  var verification = { id: genVerificationId(), status: 'VERIFIED', isoTimestamp: now.toISOString() };
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(muted[0],muted[1],muted[2]);
+  doc.text('Status: '+verification.status+'    Date: '+fmtStampDate(now)+'    Time: '+stampTime+'    Verification ID: '+verification.id, margin, 271.6);
+  return { doc: doc, verification: verification };
+}
+function legalDownloadHtml(){
+  return '<div class="actions"><button class="btn btn-primary btn-block" id="legalPdfBtn" type="button">'+ICONS.fileup+'<span style="margin-left:6px;">'+tr('Download')+'</span></button></div>';
+}
+function wireLegalDownload(ov, title, getParts, filename){
+  var btn = ov.querySelector('#legalPdfBtn'); if(!btn) return;
+  btn.addEventListener('click', async function(){
+    btn.disabled = true; var old = btn.innerHTML; btn.textContent = tr('Preparing…');
+    var ready = await ensureJsPDF();
+    if(!ready){ btn.disabled = false; btn.innerHTML = old; toast(tr('Couldn’t load the PDF engine, check your connection and try again')); return; }
+    var built; try{ var pt = getParts(); built = generateLegalPdf(title, pt.intro, pt.sections); }
+    catch(e){ btn.disabled = false; btn.innerHTML = old; toast(tr('Verification completed, but the verification stamp could not be applied. Please try again.')); return; }
+    saveGeneratedPdf(built.doc, filename).then(function(ok){
+      btn.disabled = false; btn.innerHTML = old;
+      if(ok){ try{ logAudit('create','verification_stamp', built.verification.id, 'Verification stamp generated: '+built.verification.id+', status '+built.verification.status+', at '+built.verification.isoTimestamp, new Date(built.verification.isoTimestamp)); }catch(e){} toast(tr('Downloaded')); }
+    });
+  });
+}
+function legalParts(key){
+  if(key === 'privacy') return { intro:PRIVACY_INTRO, sections:PRIVACY_SECTIONS.map(function(x){ return { h:x.h, items:x.items }; }) };
+  var d = LEGAL_DOCS[key]; return { intro:d.intro, sections:d.sections };
+}
 function openLegalDoc(key){
   var titles = { terms:'Terms of Service', privacy:'Confidentiality and privacy', refunds:'Refunds and cancellation', support:'Support' };
-  openSheet('<div class="sheet-head"><h2>'+esc(tr(titles[key]||''))+'</h2></div>' + legalDocHtml(key) +
-    '<div class="actions" style="margin-top:14px;"><button class="btn btn-ghost btn-block" id="lgBack" type="button">'+tr('Back')+'</button></div>')
-    .querySelector('#lgBack').addEventListener('click', function(){ closeModal(); openLegalSheet(); });
+  var ov = openSheet('<div class="sheet-head"><h2>'+esc(tr(titles[key]||''))+'</h2></div>' + legalDocHtml(key) + legalDownloadHtml() +
+    '<div class="actions" style="margin-top:14px;"><button class="btn btn-ghost btn-block" id="lgBack" type="button">'+tr('Back')+'</button></div>');
+  ov.querySelector('#lgBack').addEventListener('click', function(){ closeModal(); openLegalSheet(); });
+  if(key !== 'support') wireLegalDownload(ov, titles[key] || 'Legal', function(){ return legalParts(key); }, 'pesa-' + key + '.pdf');
+  else ov.querySelector('#legalPdfBtn').parentNode.remove();
 }
 /** Terms, privacy, refunds and a way to reach support, for everyone who uses the app. */
 function openLegalSheet(){
@@ -18361,8 +18421,9 @@ function openPrivacySheet(){
   var c = State.session ? getConsent(State.session.userId) : null;
   var html = '<div class="sheet-head"><h2>'+tr('Confidentiality and privacy')+'</h2></div>' +
     (c ? '<div class="banner" style="display:block;">'+tr('You accepted this agreement on')+' '+esc(fmtDateNice(c.at))+' · '+tr('version')+' '+esc(c.v)+'</div>' : '') +
-    privacyAgreementHtml();
-  openSheet(html);
+    privacyAgreementHtml() + legalDownloadHtml();
+  var ov = openSheet(html);
+  wireLegalDownload(ov, 'Confidentiality and privacy', function(){ return legalParts('privacy'); }, 'pesa-privacy.pdf');
 }
 
 /* ============================== ABOUT PESA ============================== */
