@@ -2,10 +2,12 @@ const { chromium } = require('playwright');
 let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
 (async()=>{
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
- await ctx.addInitScript(()=>{ document.addEventListener('DOMContentLoaded',()=>{ new MutationObserver(()=>document.querySelectorAll('.st-grp:not([open])').forEach(g=>g.setAttribute('open',''))).observe(document.body,{subtree:true,childList:true}); }); });
+
  await require('./biz_boot.js')(p);
  await p.evaluate(()=>window.__t.openSettingsSheet()); await p.waitForTimeout(300);
  const row=await p.$('[data-more="pesaad"]'); ck('Pesa Ad row is in Settings', !!row);
+ const vis=await p.evaluate(()=>{ const r=[...document.querySelectorAll('[data-more="pesaad"]')]; return r.some(e=>e.offsetParent!==null&&e.getBoundingClientRect().height>0&&!e.closest('details:not([open])')); }); ck('a Pesa Ad row is visible without opening any group', vis);
+ const dr=await p.evaluate(()=>/Pesa Ad/.test(window.__t.menuRowsHtml?window.__t.menuRowsHtml():'')); console.log('  info menu has Pesa Ad:',dr);
  await p.evaluate(()=>{ const r=document.querySelector('[data-more="pesaad"]'); if(r) r.click(); }); await p.waitForSelector('#adVideo',{timeout:4000}).catch(()=>{});
  const v=await p.$('#adVideo'); ck('video player is on the page', !!v);
  const srcs=await p.evaluate(()=>[...document.querySelectorAll('#adVideo source')].map(x=>x.getAttribute('src'))); ck('video sources are the mp4 and webm files', srcs.length===2&&/pesa-promo\.mp4$/.test(srcs[0])&&/pesa-promo\.webm$/.test(srcs[1]), srcs);
