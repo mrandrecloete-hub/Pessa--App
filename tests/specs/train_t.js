@@ -10,7 +10,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await p.click('[data-lesson="developer"]'); await p.waitForTimeout(400);
  ck('lesson shows photo and text', !!(await p.$('.dev-photo img')) && /Hello and welcome/.test(await p.innerText('#lsBody')));
  ck('no play or voice controls in lesson', !(await p.$('#lsPlay')) && !(await p.$('#lsMute')) && !(await p.$('#lsVoice')));
- for(let i=0;i<7;i++){ await p.click('#lsNext'); } await p.waitForTimeout(300);
+ for(let i=0;i<12 && !/Lesson complete/.test(await p.innerText('#lsBody'));i++){ await p.click('#lsNext'); } await p.waitForTimeout(300);
  ck('reaches lesson complete', /Lesson complete/.test(await p.innerText('#lsBody')) );
  await p.click('#lsNextLesson'); await p.waitForTimeout(300); ck('next lesson opens', !!(await p.$('#lsNext')));
  await p.click('#lsBack'); await p.waitForSelector('#trPdf');
