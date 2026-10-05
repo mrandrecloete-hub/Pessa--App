@@ -9,10 +9,9 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
   await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
   // owner: menu row + sheet + card toggle
-  await p.click('#menuBtn'); await p.waitForTimeout(300);
-  const rows=await p.$$eval('[data-drawer-row]',e=>e.map(x=>x.textContent.trim().replace(/\s+/g,' ')));
-  ck('owner menu has Pilot feedback form', rows.some(r=>/Pilot feedback form/.test(r)));
-  await p.evaluate(()=>{ const b=[...document.querySelectorAll('[data-drawer-row="pilotform"]')].find(x=>x.offsetParent!==null)||document.querySelector('[data-drawer-row="pilotform"]'); b.click(); }); await p.waitForSelector('#pvGo');
+  const rows=await p.evaluate(()=>{ window.__t.openSettingsSheet(); const r=[...document.querySelectorAll('[data-more]')].map(x=>x.textContent.trim().replace(/\s+/g,' ')); window.__t.closeModal(); return r; });
+  ck('owner Settings has Pilot feedback form', rows.some(r=>/Pilot feedback form/.test(r)));
+  await p.evaluate(()=>window.__t.handleDrawerAction('pilotform')); await p.waitForSelector('#pvGo');
   ck('owner sees card toggle', !!(await p.$('#pvCard')));
   ck('owner prefill not ticked by default', !(await p.isChecked('#pvPrefill')));
   await p.screenshot({path:D+'pf_sheet_owner.png'});
@@ -44,9 +43,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
     const txt=await p.innerText('body'); ck(who+': download choices appear after Build', /PDF|Word|Excel/i.test(txt));
     await p.screenshot({path:D+'pf_dl_'+who+'.png'});
     await p.evaluate(()=>{ document.querySelectorAll('.xp-back').forEach(x=>x.remove()); window.__t.closeModal(); });
-    await p.click('#menuBtn'); await p.waitForTimeout(250);
-    ck(who+': menu row present', (await p.$$('[data-drawer-row="pilotform"]')).length>=1);
-    await p.evaluate(()=>document.querySelector('#drawerCloseBtn').click());
+    ck(who+': settings row present', await p.evaluate(()=>{ window.__t.openSettingsSheet(); const r=!!document.querySelector('[data-more="pilotform"]'); window.__t.closeModal(); return r; }));
   }
   // owner back in: PDF content
   await p.evaluate(()=>{ localStorage.removeItem('pesa_session_v2'); window.__t.State.session=null; location.reload(); }); 

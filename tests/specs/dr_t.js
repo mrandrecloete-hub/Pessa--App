@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
   await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
   await p.evaluate(async()=>{ const r=window.__t.refs; await r.products.doc().set({name:'Milk',sellPrice:30,costPrice:20,stockQty:50,createdAt:new Date().toISOString()}); });
   await p.waitForTimeout(300);
-  await p.click('#settingsBtn'); await p.waitForSelector('#stDrawerTest'); await p.click('#stDrawerTest'); await p.waitForTimeout(300);
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#stDrawerTest'); await p.click('#stDrawerTest'); await p.waitForTimeout(300);
   console.log('test kick', JSON.stringify(await p.evaluate(()=>window.__w))); await p.evaluate(()=>{window.__w=[]; window.__t.closeModal();});
   // till
   await p.evaluate(async()=>{ const S=window.__t.State; const ref=window.__t.refs.tills.doc(); await ref.set({cashierId:S.session.userId,cashierName:'Alice',openingFloat:100,openedAt:new Date().toISOString(),status:'open'}); S.till.current={id:ref.id,cashierId:S.session.userId,cashierName:'Alice',openingFloat:100,openedAt:new Date().toISOString(),status:'open'}; });

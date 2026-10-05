@@ -11,13 +11,13 @@ const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
   const txt = async()=> (await p.evaluate(()=>document.body.innerText)).slice(0,400).replace(/\n+/g,' | ');
   console.log('EN:', await txt());
   // via the settings UI
-  await p.click('#settingsBtn'); await p.waitForSelector('#stLang'); 
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#stLang'); 
   await p.selectOption('#stLang','de'); await p.click('#stSave'); await p.waitForTimeout(800);
   console.log('DE:', await txt()); await p.screenshot({path:D+'lang_de.png'});
-  await p.click('#settingsBtn'); await p.waitForSelector('#stLang'); await p.waitForTimeout(300); await p.screenshot({path:D+'lang_de_settings.png'});
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#stLang'); await p.waitForTimeout(300); await p.screenshot({path:D+'lang_de_settings.png'});
   await p.selectOption('#stLang','af'); await p.click('#stSave'); await p.waitForTimeout(800);
   console.log('AF:', await txt()); await p.screenshot({path:D+'lang_af.png'});
-  await p.click('#settingsBtn'); await p.waitForSelector('#stLang'); await p.selectOption('#stLang','en'); await p.click('#stSave'); await p.waitForTimeout(800);
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#stLang'); await p.selectOption('#stLang','en'); await p.click('#stSave'); await p.waitForTimeout(800);
   console.log('EN again:', await txt());
   // PDFs in German
   await p.evaluate(()=>{ const S=window.__t.State; S.settings=Object.assign({},S.settings,{language:'de'}); });

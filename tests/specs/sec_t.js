@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
   await p.evaluate(async()=>{ const r=window.__t.refs; await r.products.doc().set({name:'Milk',sellPrice:30,costPrice:20,stockQty:50,createdAt:new Date().toISOString()}); });
   for(const tab of ['sell','stock','credit','invoices','reports','expenses','till','dashboard']){ await p.evaluate(t=>window.__t.setTab(t),tab); await p.waitForTimeout(150); }
   await p.evaluate(async()=>{ await window.__t.ensureJsPDF(); const d={number:'INV-1',dateStr:'2026-10-03',billToName:'Bob',items:[{desc:'Milk',name:'Milk',qty:1,unitPrice:30}],notes:''}; window.__t.buildInvoicePdf(d).output('datauristring'); window.__t.buildReceiptPdf(d).output('bloburl'); });
-  await p.click('#settingsBtn'); await p.waitForTimeout(500); await p.evaluate(()=>window.__t.closeModal());
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForTimeout(500); await p.evaluate(()=>window.__t.closeModal());
   await p.evaluate(()=>window.__t.openSmartToolsSheet()); await p.waitForTimeout(300); await p.evaluate(()=>window.__t.closeModal());
   await p.evaluate(()=>window.__t.posOpen()); await p.waitForTimeout(400); await p.evaluate(()=>{window.__t.closeModal(); window.__t.POS.open=false; document.getElementById('posRoot').style.display='none';});
   console.log('CSP violations after features:', JSON.stringify(await p.evaluate(()=>window.__csp)), cons);

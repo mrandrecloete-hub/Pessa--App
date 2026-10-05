@@ -259,6 +259,7 @@
   .todaypill .val{ background:linear-gradient(180deg,#ffe7a8,#e9a842); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; text-shadow:none; }
   @media (max-width:459px){ .gc-yr{ display:none; } }
   @media (max-width:430px){ .glassclock{ min-width:70px; padding:5px 8px 6px; border-radius:15px; } .gc-time{ font-size:18px; } .gc-date{ font-size:8.6px; } .todaypill{ padding:5px 8px 6px; } .todaypill .val{ font-size:12.5px; } .topbar{ gap:7px; padding-left:12px; padding-right:12px; } }
+  #settingsBtn{ display:none !important; }
   .icon-btn.gear-btn{
     position:relative; overflow:hidden; isolation:isolate; width:40px; height:40px; border-radius:13px; border:1.5px solid #d9a548;
     background:radial-gradient(130% 130% at 22% 15%, rgba(90,190,165,.55) 0%, rgba(14,58,52,.0) 60%), linear-gradient(150deg, #0f3d38, #081a19);
@@ -13155,6 +13156,7 @@ function accountSectionHtml(){
 // for the persistent pinned sidebar (renderSidebar(), at/above it) — so the
 // two surfaces can never drift out of sync. Tab rows are filtered by the
 // signed-in role the same way the old bottom nav used to (roleTabs()).
+var GEAR_ICON_SMALL = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>';
 function menuRowsHtml(){
   var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','invoices','reports','expenses','till'];
   var rows = '';
@@ -13176,7 +13178,6 @@ function menuRowsHtml(){
     rows += '<div class="drawer-sub">Insights</div>';
     rows += drawerRowHtml('insights', ICONS.chartbar, 'Sales insights');
     rows += drawerRowHtml('bizhub', ICONS.stack, 'Business tools', btStockAttention() || null);
-    if(isOwner()) rows += drawerRowHtml('setup', ICONS.check, 'Setup guide');
   }
   if(isManagerOrOwner()){
     var smc = smartAlertCount();
@@ -13193,19 +13194,9 @@ function menuRowsHtml(){
     if(isOwner()) rows += drawerRowHtml('branches', ICONS.branch, 'Branches', State.branches.length+1);
     rows += drawerRowHtml('vat', ICONS.percent, 'NamRA VAT summary');
     rows += drawerRowHtml('accountant', ICONS.chartbar, 'Accountant');
-    rows += drawerRowHtml('audit', ICONS.clock, 'Activity log');
-    if(isOwner()) rows += drawerRowHtml('security', ICONS.info, 'Security check');
-    if(isOwner() && licOn()) rows += drawerRowHtml('licence', ICONS.check, 'Licence and subscription');
   }
-  rows += '<div class="drawer-sub">Help</div>';
-  if(!isInstalledApp()) rows += drawerRowHtml('install', ICONS.info, 'Install Pesa on this device');
-  rows += drawerRowHtml('compat', ICONS.info, 'Check this computer');
-  rows += drawerRowHtml('helpsearch', ICONS.search, 'Search help');
-  rows += drawerRowHtml('display', ICONS.info, 'Text size and contrast');
-  rows += drawerRowHtml('pilotform', ICONS.clipboard, 'Pilot feedback form', pfDue() ? '!' : null);
-  rows += drawerRowHtml('training', ICONS.book, 'Training');
-  rows += drawerRowHtml('legal', ICONS.book, 'Terms, privacy and support');
-  rows += drawerRowHtml('about', ICONS.info, 'About Pesa');
+  rows += '<div class="drawer-sub">More</div>';
+  rows += drawerRowHtml('settings', GEAR_ICON_SMALL, 'Settings', pfDue() ? '!' : null);
   rows += comingSoonHtml();
   return rows;
 }
@@ -13223,7 +13214,8 @@ function comingSoonHtml(){
 }
 // Shared destination for a menu row click, whichever surface it came from.
 function handleDrawerAction(key){
-  if(key==='tab-me') setTab('me');
+  if(key==='settings') openSettingsSheet();
+  else if(key==='tab-me') setTab('me');
   else if(key==='tab-dashboard') setTab('dashboard');
   else if(key==='tab-sell') setTab('sell');
   else if(key==='tab-stock') setTab('stock');
@@ -13335,8 +13327,9 @@ function openCashierSettingsSheet(){
     '</select></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="stSaveLangOnly">'+tr('Save settings')+'</button></div>' +
     notificationSettingsHtml() +
+    '<div class="section-title">'+tr('Help and about')+'</div>' + settingsMoreHtml() +
     settingsAboutFooterHtml();
-  var ov = openSheet(html);
+  var ov = openSheet(html); wireSettingsMore(ov);
   wireNotificationSettings(ov);
   wireAccountSection(ov);
   ov.querySelector('#stSaveLangOnly').addEventListener('click', function(){
@@ -13380,6 +13373,30 @@ function wireShareApp(root){
 }
 function stGrp(title, hint, body, open){
   return '<details class="st-grp"'+(open?' open':'')+'><summary><span class="st-t">'+tr(title)+'</span><span class="st-h">'+tr(hint)+'</span></summary><div class="st-b">'+body+'</div></details>';
+}
+/** Everything that used to crowd the menu: security, licence, help, training and legal pages live inside Settings. */
+function settingsMoreHtml(){
+  var rows = [];
+  if(isManagerOrOwner()) rows.push(['audit','Activity log','Who did what, and when']);
+  if(isOwner()) rows.push(['security','Security check','Passwords, sign in and data safety']);
+  if(isOwner() && licOn()) rows.push(['licence','Licence and subscription','Your plan and renewal']);
+  if(isOwner()) rows.push(['setup','Setup guide','Steps to get your shop ready']);
+  if(!isInstalledApp()) rows.push(['install','Install Pesa on this device','Open it like a normal app']);
+  rows.push(['training','Training','Short lessons and the manual']);
+  rows.push(['helpsearch','Search help','Find an answer fast']);
+  rows.push(['display','Text size and contrast','Make Pesa easier to read']);
+  rows.push(['compat','Check this computer','See if everything works here']);
+  rows.push(['pilotform','Pilot feedback form','Tell us how Pesa is working']);
+  rows.push(['legal','Terms, privacy and support','Rules, privacy and how to reach us']);
+  rows.push(['about','About Pesa','What Pesa is and does']);
+  return '<div class="rowlist">' + rows.map(function(r){
+    return '<button class="row" type="button" data-more="'+r[0]+'" style="width:100%;text-align:left;"><div class="main"><div class="title">'+tr(r[1])+'</div><div class="sub">'+tr(r[2])+'</div></div></button>';
+  }).join('') + '</div>';
+}
+function wireSettingsMore(ov){
+  ov.querySelectorAll('[data-more]').forEach(function(b){
+    b.addEventListener('click', function(){ var k = b.getAttribute('data-more'); closeModal(); setTimeout(function(){ handleDrawerAction(k); }, 60); });
+  });
 }
 function openSettingsSheet(){
   if(isRestricted()) return openCashierSettingsSheet();
@@ -13494,9 +13511,10 @@ function openSettingsSheet(){
 ''+
     shareAppHtml() +
 '', false) +
+    stGrp('Security, help and about','Activity log, training, support and legal',settingsMoreHtml(), false) +
     '<div class="actions"><button class="btn btn-primary btn-block" id="stSave">'+tr('Save settings')+'</button></div>' +
     settingsAboutFooterHtml();
-  var ov = openSheet(html);
+  var ov = openSheet(html); wireSettingsMore(ov);
 
   function readCustomTemplate(){
     return {
@@ -17337,7 +17355,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.40';
+var APP_VERSION = '2026.10.41';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17529,6 +17547,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.41', items:[
+    'Settings is now the last item in the menu, and the activity log, security check, licence, setup guide, training, help and legal pages moved inside Settings so the menu is shorter'
+  ]},
   { v:'2026.10.40', items:[
     'Receipts and invoices now show the employee who handled the sale, and receipts say they are needed for returns and refunds'
   ]},

@@ -12,6 +12,6 @@ const { chromium } = require('playwright');
   await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
   await p.evaluate(()=>window.__t.openLegalSheet()); await p.waitForSelector('[data-legal]'); await p.screenshot({path:'legal_sheet.png'});
   for(const k of ['terms','privacy','refunds','support']){ await p.click('[data-legal="'+k+'"]'); await p.waitForSelector('#lgBack'); const t=await p.innerText('.sheet'); console.log(k, t.length, t.slice(0,40).replace(/\n/g,' ')); if(k==='terms') await p.screenshot({path:'legal_terms.png'}); await p.click('#lgBack'); await p.waitForSelector('[data-legal]'); }
-  console.log('menu has legal row', await p.evaluate(()=>{ document.getElementById('menuBtn').click(); return !!document.querySelector('[data-drawer-row="legal"]'); }));
+  console.log('settings has legal row', await p.evaluate(()=>{ window.__t.openSettingsSheet(); const r=!!document.querySelector('[data-more="legal"]'); window.__t.closeModal(); return r; }));
   console.log('errs',errs); await b.close();
 })();

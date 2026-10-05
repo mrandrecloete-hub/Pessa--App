@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
     await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); };
   await reg();
   console.log('supported', await p.evaluate(()=>PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()));
-  await p.click('#settingsBtn'); await p.waitForSelector('#bioSetup',{timeout:5000});
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#bioSetup',{timeout:5000});
   await p.click('#bioSetup'); await p.waitForSelector('#bioTest',{timeout:5000});
   console.log('enrolled', await p.evaluate(()=>Object.keys(window.__t.bioData().creds).length), 'hasPk', await p.evaluate(()=>!!Object.values(window.__t.bioData().creds)[0].pk));
   await p.click('#bioTest'); await p.waitForTimeout(500); console.log('test msg:', (await p.innerText('#bioMsg')).trim());
@@ -48,6 +48,6 @@ const { chromium } = require('playwright');
   await p.waitForTimeout(2500); await p.click('[data-staff]'); await p.waitForSelector('#loginBioBtn'); await p.waitForTimeout(800); await p.screenshot({path:'bio_login.png'});
   await p.click('#loginBioBtn'); await p.waitForSelector('.hero-card',{timeout:5000}); console.log('signed in with bio');
   // remove
-  await p.click('#settingsBtn'); await p.waitForSelector('#bioDel'); await p.screenshot({path:'bio_settings.png'}); await p.click('#bioDel'); await p.waitForSelector('#bioSetup'); console.log('removed ->', await p.evaluate(()=>Object.keys(window.__t.bioData().creds).length));
+  await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#bioDel'); await p.screenshot({path:'bio_settings.png'}); await p.click('#bioDel'); await p.waitForSelector('#bioSetup'); console.log('removed ->', await p.evaluate(()=>Object.keys(window.__t.bioData().creds).length));
   console.log('errs',errs); await b.close();
 })();
