@@ -22,7 +22,6 @@ function make(J, ASSETS, SELLER){
     doc.text(SELLER.email, W - 14, 22, { align:'right' });
     doc.setDrawColor.apply(doc, RGB.gold); doc.setLineWidth(0.9); doc.line(0, 30, W, 30); doc.setLineWidth(0.2);
     doc.setTextColor.apply(doc, RGB.green); doc.setFont('helvetica', 'bold'); doc.setFontSize(21); doc.text(title, 14, 50, { charSpace:1.2 });
-    doc.setDrawColor.apply(doc, RGB.gold); doc.setLineWidth(0.8); doc.line(14, 53.5, 44, 53.5); doc.setLineWidth(0.2);
     if(status){
       doc.setDrawColor.apply(doc, RGB.gold); doc.setLineWidth(0.6); doc.roundedRect(W - 14 - 30, 42.5, 30, 9, 4.5, 4.5, 'S');
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor.apply(doc, RGB.gold); doc.text(status, W - 14 - 15, 48.5, { align:'center', charSpace:1 }); doc.setLineWidth(0.2);

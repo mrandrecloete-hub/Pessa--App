@@ -9712,8 +9712,7 @@ function pdFooterRaw(doc, pal, pg, total){
 function pdTitle(doc, pal, x, y, title){
   doc.setFont('helvetica','bold'); doc.setFontSize(20); pdSet(doc, 't', pal.mid);
   pdCS(doc, 0.9); doc.text(String(title).toUpperCase(), x, y + 6); pdCS(doc, 0);
-  pdGrad(doc, x, y + 9.4, 17, 0.9, pal.gold, pal.gold2);
-  return y + 17;
+  return y + 15;
 }
 function pdCard(doc, pal, x, y, w, h, heading){
   pdSet(doc, 'f', pal.mint); pdSet(doc, 'd', pal.border); doc.setLineWidth(0.25);
@@ -9774,7 +9773,6 @@ function pdSection(doc, pal, x, y, w, text){
   doc.setFont('helvetica','bold'); doc.setFontSize(10); pdSet(doc, 't', pal.mid);
   pdCS(doc, 0.5); var s = String(tr(text)).toUpperCase(); doc.text(s, x, y); pdCS(doc, 0);
   var tw = doc.getTextWidth(s) + s.length*0.5 + 3, rest = w - tw;
-  if(rest > 6){ var n = 16, seg = rest/n; for(var i = 0; i < n; i++){ pdSet(doc, 'f', pdMix(pal.gold, [255,255,255], i/(n-1))); doc.rect(x + tw + i*seg, y - 1.5, seg + 0.2, 0.32, 'F'); } }
 }
 function pdTotalRows(doc, pal, x, y, w, rows){
   var rh = 7;
@@ -17593,7 +17591,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.50';
+var APP_VERSION = '2026.10.51';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17785,6 +17783,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.51', items:[
+    'Cleaner documents: the yellow lines beside and under headings are gone from every PDF'
+  ]},
   { v:'2026.10.50', items:[
     'The privacy, terms and refunds pages now have a Download button that saves a PDF with the Pesa logo and the date stamp'
   ]},
