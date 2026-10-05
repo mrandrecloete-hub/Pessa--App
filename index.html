@@ -7777,7 +7777,7 @@ function renderSell(){
       '<div style="margin-top:14px;"><button class="btn btn-primary" id="goStock">'+tr('Go to Stock')+'</button></div></div>';
   }
 
-  var html = '<div style="display:flex;gap:8px;align-items:center;">' +
+  var html = namePriceBannerHtml() + '<div style="display:flex;gap:8px;align-items:center;">' +
     '<div class="searchbar" style="flex:1;">' + ICONS.search + '<input id="sellSearchInput" placeholder="Search products…" value="'+esc(State.sellSearch)+'"></div>' +
     (voiceSupported() ? '<button class="icon-btn" id="sellVoiceBtn" type="button" title="Voice search" style="flex:0 0 auto;">'+MIC_ICON+'</button>' : '') +
     '<button class="icon-btn" id="sellScanBtn" type="button" title="Scan barcode" style="flex:0 0 auto;">'+ICONS.search+'</button>' +
@@ -8871,7 +8871,7 @@ function stockSnapshot(){ var t = stockTotals(); return { at:new Date().toISOStr
 function renderStock(){
   if(!State.ready.products) return '<div class="empty">Loading…</div>';
   var lowCount = State.products.filter(function(p){ return p.stockQty!=null && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault); }).length;
-  var html = '';
+  var html = namePriceBannerHtml();
   if(lowCount > 0){
     html += '<div class="banner">'+ICONS.warn+'<span><strong>'+lowCount+'</strong> item'+(lowCount>1?'s':'')+' running low on stock.</span></div>';
   }
@@ -9016,6 +9016,54 @@ function openProductSheet(product, prefillBarcode){
 var Bulk = { rows: [], dup: 'skip' };
 var BULK_PREVIEW = 50;
 
+/* A price typed into the product name (for example "Polana Maize Meal (3kg): N$ 79.99") belongs in the price,
+   not the name. This splits the two, and also drops a list number such as "12. " at the start. */
+function splitPriceFromName(raw){
+  var name = String(raw||'').trim(), price = null;
+  var m = /^(.*?)\s*[:\-–—=@]?\s*(?:N\$|NAD|N\s?\$)\s*(\d[\d ]*(?:[.,]\d{1,2})?)\s*$/i.exec(name);
+  if(m && m[1]){ name = m[1].trim(); price = parseFloat(m[2].replace(/\s/g,'').replace(',', '.')); if(isNaN(price)) price = null; }
+  var n = name.replace(/^\d{1,3}[.)]\s+/, '').trim();
+  if(n) name = n;
+  return { name:name, price:price, changed: price!=null || name !== String(raw||'').trim() };
+}
+var _npCache = { ref:null, list:[] };
+/** Products whose price is sitting inside the name (and whose own price is empty). */
+function productsWithPriceInName(){
+  if(_npCache.ref === State.products) return _npCache.list;
+  var out = [];
+  (State.products||[]).forEach(function(p){
+    if(p._mock || (MockStock && MockStock.items && MockStock.items.indexOf(p) > -1)) return;
+    var r = splitPriceFromName(p.name);
+    if(r.price != null && !(Number(p.sellPrice) > 0)) out.push({ p:p, name:r.name, price:r.price });
+  });
+  _npCache = { ref:State.products, list:out };
+  return out;
+}
+function namePriceBannerHtml(){
+  if(!isManagerOrOwner || !isManagerOrOwner()) return '';
+  var n = productsWithPriceInName().length;
+  if(!n) return '';
+  return '<div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">'+ICONS.warn+'<span style="flex:1;min-width:180px;"><strong>'+n.toLocaleString()+'</strong> '+tr('products have their price written in the name.')+'</span><button class="btn btn-primary" type="button" id="fixNamePrices">'+tr('Fix prices')+'</button></div>';
+}
+function fixNamePrices(){
+  var list = productsWithPriceInName();
+  if(!list.length){ toast(tr('Nothing to fix')); return; }
+  confirmSheet(tr('Fix prices'), tr('Pesa will move the price out of each product name into its selling price, and tidy the name. Your stock counts stay the same.'), tr('Fix')+' '+list.length.toLocaleString(), function(){
+    var rows = list.map(function(e){ var d = Object.assign({}, e.p); delete d.id; d.name = e.name; d.sellPrice = e.price; d.updatedAt = new Date().toISOString(); return { id:e.p.id, data:d }; });
+    var wasBulk = BULK_HOLD; BULK_HOLD = true;
+    (async function(){
+      try{
+        for(var i=0;i<rows.length;i+=1500){ await refs.products.setMany(rows.slice(i,i+1500)); await new Promise(function(r){ setTimeout(r,0); }); }
+        BULK_HOLD = wasBulk;
+        try{ logAudit('update','product','bulk','Moved prices out of '+rows.length+' product names'); }catch(e){}
+        try{ await Persist.saved(); }catch(e){}
+        _npCache = { ref:null, list:[] }; render();
+        toast(rows.length.toLocaleString()+' '+tr('products fixed'));
+      }catch(err){ BULK_HOLD = wasBulk; console.warn(err); toast(tr('Stopped part way. Try again to finish.')); render(); }
+    })();
+  });
+}
+
 function parseNum(s){
   if(s==null || s==='') return 0;
   var n = parseFloat(String(s).replace(/[^\d.\-]/g,''));
@@ -9030,10 +9078,12 @@ function parsePastedText(text){
     var parts = line.split(',').map(function(p){ return p.trim(); });
     var name = parts[0];
     if(!name){ skipped++; return; }
+    var sp = splitPriceFromName(name), sellP = parseNum(parts[2]);
+    if(sp.price != null && !(sellP > 0)){ sellP = sp.price; } if(sp.price != null) name = sp.name;
     rows.push({
       id: uid(), name: name,
       costPrice: parseNum(parts[1]),
-      sellPrice: parseNum(parts[2]),
+      sellPrice: sellP,
       stockQty: parts[3]!=null ? (parseInt(parts[3],10)||0) : 0,
       category: parts[4] || '',
       unit: parts[5] || '',
@@ -9080,12 +9130,14 @@ function parseCsvText(text){
     var parts = parseCsvLine(line);
     var name = idx.name>-1 ? parts[idx.name] : '';
     if(!name){ skipped++; return; }
+    var sp2 = splitPriceFromName(name), sell2 = idx.sell>-1 ? parseNum(parts[idx.sell]) : 0;
+    if(sp2.price != null){ if(!(sell2 > 0)) sell2 = sp2.price; name = sp2.name; }
     rows.push({
       id: uid(), name: name,
       category: idx.category>-1 ? (parts[idx.category]||'') : '',
       unit: idx.unit>-1 ? (parts[idx.unit]||'') : '',
       costPrice: idx.cost>-1 ? parseNum(parts[idx.cost]) : 0,
-      sellPrice: idx.sell>-1 ? parseNum(parts[idx.sell]) : 0,
+      sellPrice: sell2,
       stockQty: idx.qty>-1 ? (Math.round(parseNum(parts[idx.qty])*1000)/1000) : 0,
       barcode: idx.barcode>-1 ? (parts[idx.barcode]||'') : '',
       lowStock: idx.low>-1 && parts[idx.low] ? (parseInt(parts[idx.low],10)||null) : null
@@ -13699,6 +13751,7 @@ function wireContent(){
     var c3 = document.getElementById('content'); c3.innerHTML = renderStock(); wireContent();
     var si = c3.querySelector('#stockSearchInput'); if(si){ si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
   }, 250));
+  var fixNP = content.querySelector('#fixNamePrices'); if(fixNP) fixNP.addEventListener('click', fixNamePrices);
   var goStock = content.querySelector('#goStock');
   if(goStock) goStock.addEventListener('click', function(){ setTab('stock'); });
 
@@ -17269,7 +17322,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.38';
+var APP_VERSION = '2026.10.39';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17461,6 +17514,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.39', items:[
+    'Prices written inside a product name are moved into the selling price, with a one-tap Fix prices button on Sell and Stock, and the importer does it automatically'
+  ]},
   { v:'2026.10.38', items:[
     'Opening animation now plays once a day, so opening Pesa the rest of the day is instant',
     'The error notice now shows a short note of what failed so problems can be traced'
