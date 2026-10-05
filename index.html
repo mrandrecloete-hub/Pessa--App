@@ -260,6 +260,9 @@
   @media (max-width:459px){ .gc-yr{ display:none; } }
   @media (max-width:430px){ .glassclock{ min-width:70px; padding:5px 8px 6px; border-radius:15px; } .gc-time{ font-size:18px; } .gc-date{ font-size:8.6px; } .todaypill{ padding:5px 8px 6px; } .todaypill .val{ font-size:12.5px; } .topbar{ gap:7px; padding-left:12px; padding-right:12px; } }
   #settingsBtn{ display:none !important; }
+  .drawer-row .ico:has(.gear-tile){ width:40px; height:40px; background:none; }
+  .gear-tile{ width:40px; height:40px; border-radius:13px; border:1.5px solid #d9a548; display:flex; align-items:center; justify-content:center; background:radial-gradient(130% 130% at 22% 15%, rgba(90,190,165,.55) 0%, rgba(14,58,52,0) 60%), linear-gradient(150deg,#0f3d38,#081a19); box-shadow:inset 0 1px 0 rgba(255,236,190,.6), inset 0 0 12px rgba(233,168,69,.28), 0 4px 10px -4px rgba(0,0,0,.6); }
+  .gear-tile svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
   .icon-btn.gear-btn{
     position:relative; overflow:hidden; isolation:isolate; width:40px; height:40px; border-radius:13px; border:1.5px solid #d9a548;
     background:radial-gradient(130% 130% at 22% 15%, rgba(90,190,165,.55) 0%, rgba(14,58,52,.0) 60%), linear-gradient(150deg, #0f3d38, #081a19);
@@ -13156,7 +13159,7 @@ function accountSectionHtml(){
 // for the persistent pinned sidebar (renderSidebar(), at/above it) — so the
 // two surfaces can never drift out of sync. Tab rows are filtered by the
 // signed-in role the same way the old bottom nav used to (roleTabs()).
-var GEAR_ICON_SMALL = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>';
+var GEAR_ICON_SMALL = '<span class="gear-tile"><svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="gearG2" x1="0.1" y1="0" x2="0.9" y2="1"><stop offset="0" stop-color="#fbe3a2"/><stop offset=".45" stop-color="#d1a352"/><stop offset="1" stop-color="#8c632b"/></linearGradient></defs><path d="M38.78 20.45 L44.81 21.20 L44.81 26.80 L38.78 27.55 L36.96 31.94 L40.69 36.74 L36.74 40.69 L31.94 36.96 L27.55 38.78 L26.80 44.81 L21.20 44.81 L20.45 38.78 L16.06 36.96 L11.26 40.69 L7.31 36.74 L11.04 31.94 L9.22 27.55 L3.19 26.80 L3.19 21.20 L9.22 20.45 L11.04 16.06 L7.31 11.26 L11.26 7.31 L16.06 11.04 L20.45 9.22 L21.20 3.19 L26.80 3.19 L27.55 9.22 L31.94 11.04 L36.74 7.31 L40.69 11.26 L36.96 16.06Z M18.80 24.00 a5.20 5.20 0 1 0 10.40 0 a5.20 5.20 0 1 0 -10.40 0Z" fill="url(#gearG2)" fill-rule="evenodd" stroke="#ffeebd" stroke-opacity=".75" stroke-width=".7" stroke-linejoin="round"/><circle cx="24" cy="24" r="9" fill="none" stroke="#7a5522" stroke-opacity=".55" stroke-width="1.6"/><circle cx="24" cy="24" r="8.2" fill="none" stroke="#ffe9b0" stroke-opacity=".55" stroke-width=".7"/></svg></span>';
 function menuRowsHtml(){
   var allowedTabs = State.session ? roleTabs(State.session.role) : ['dashboard','sell','stock','credit','invoices','reports','expenses','till'];
   var rows = '';
@@ -17355,7 +17358,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.41';
+var APP_VERSION = '2026.10.42';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
@@ -17547,6 +17550,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.42', items:[
+    'The gold Settings gear is back, now on the Settings row at the end of the menu'
+  ]},
   { v:'2026.10.41', items:[
     'Settings is now the last item in the menu, and the activity log, security check, licence, setup guide, training, help and legal pages moved inside Settings so the menu is shorter'
   ]},
