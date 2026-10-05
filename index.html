@@ -13448,11 +13448,11 @@ function openPesaAdSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('Pesa Ad')+'</h2></div>' +
     '<div style="display:flex;justify-content:center;margin-bottom:12px;"><video id="adVideo" controls playsinline preload="metadata" poster="media/pesa-promo-poster.jpg" style="width:100%;max-width:360px;max-height:64vh;border-radius:16px;background:#06231c;display:block;"><source src="media/pesa-promo.mp4" type="video/mp4"><source src="media/pesa-promo.webm" type="video/webm"></video></div>' +
     '<div id="adVidNote" class="banner" style="display:none;">'+tr('The video needs an internet connection the first time it plays. Connect and try again.')+'</div>' +
-    '<div style="font-family:'Pesa Inter',Inter,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-.3px;margin:6px 0 6px;">'+tr('Pesa. Your Mula, Your Pride.')+'</div>' +
+    '<div style="font-family:Inter,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-.3px;margin:6px 0 6px;">'+tr('Pesa. Your Mula, Your Pride.')+'</div>' +
     '<p style="margin:0 0 10px;line-height:1.5;">'+tr('A shop app built in Namibia, for Namibia. Sell, track stock, manage credit, make invoices and see your day at a glance, on your phone, tablet or computer, even with no internet.')+'</p>' +
     '<div class="rowlist" style="margin-bottom:10px;">' + PESA_AD_POINTS.map(function(p){ return '<div class="row"><div class="main"><div class="title" style="font-weight:600;">'+esc(tr(p))+'</div></div></div>'; }).join('') + '</div>' +
     '<p style="margin:0 0 10px;font-weight:600;">'+tr('Free 14 day trial. WhatsApp 081 821 1692')+'</p>' +
-    '<div class="field"><label>'+tr('Words to post with the video')+'</label><textarea id="adCaption" rows="10" readonly style="width:100%;font-family:'Pesa Inter',Inter,system-ui,sans-serif;font-size:16px;font-weight:500;line-height:1.65;letter-spacing:.1px;padding:16px 18px;border:0;border-left:5px solid #f0c04a;border-radius:14px;background:linear-gradient(160deg,#0f3a2c,#10241c);color:#f4fff9;resize:none;">'+esc(cap)+'</textarea></div>' +
+    '<div class="field"><label>'+tr('Words to post with the video')+'</label><textarea id="adCaption" rows="10" readonly style="width:100%;font-family:Inter,system-ui,sans-serif;font-size:16px;font-weight:500;line-height:1.65;letter-spacing:.1px;padding:16px 18px;border:0;border-left:5px solid #f0c04a;border-radius:14px;background:linear-gradient(160deg,#0f3a2c,#10241c);color:#f4fff9;resize:none;">'+esc(cap)+'</textarea></div>' +
     '<div class="actions" style="flex-wrap:wrap;">' +
       '<button class="btn btn-primary" id="adShare" type="button">'+tr('Share video')+'</button>' +
       '<button class="btn btn-ghost" id="adWa" type="button">'+tr('Share on WhatsApp')+'</button>' +
