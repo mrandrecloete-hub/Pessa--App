@@ -17263,12 +17263,13 @@ function safetyNote(msg){
   var now = Date.now();
   if(_errN >= 3 || now - _errAt < 15000) return;
   _errN++; _errAt = now;
-  try{ toast(tr('Pesa hit a snag. Your saved records are not affected. If something looks stuck, reload the page.')); }catch(e){}
+  var det=''; try{ var st=(msg&&msg.stack)||''; det=m.slice(0,90)+(st?' @ '+String(st).split('\n').slice(1,2).join('').replace(/https?:\/\/[^ )]*\//,'').trim().slice(0,70):''); localStorage.setItem('pesa_lasterr', new Date().toISOString()+' '+det); }catch(e){}
+  try{ toast(tr('Pesa hit a snag. Your saved records are not affected. If something looks stuck, reload the page.')+(det?' ['+det+']':'')); }catch(e){}
 }
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.36';
+var APP_VERSION = '2026.10.37';
 function backupPayload(){
   return {
     exportedAt: new Date().toISOString(),
