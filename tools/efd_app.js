@@ -173,8 +173,8 @@ function openFiscalSheet(){
     '<div class="section-title">'+tr('This device')+'</div>' +
     '<div class="field"><label>'+tr('Terminal ID')+'</label><input id="fxTerm" autocomplete="off" value="'+esc(c.terminalId)+'" placeholder="e.g. T01"'+(locked?' readonly':'')+'></div>' +
     '<div style="font-size:12px;color:var(--text-muted);margin:-4px 2px 10px;">'+(locked ? tr('Locked: this device already has tax records. Use a different Terminal ID on every other device.') : tr('Use a different Terminal ID on every computer or device. It cannot be changed after the first sale.'))+'</div>' +
-    '<div class="field"><label>'+tr('NamRA address (https)')+' — '+tr('optional')+'</label><input id="fxUrl" autocomplete="off" value="'+esc(c.endpoint)+'" placeholder="https://"></div>' +
-    '<div class="field"><label>'+tr('Access key')+' — '+tr('optional')+'</label><input id="fxKey" type="password" autocomplete="off" value="'+esc(c.token)+'"></div>' +
+    '<div class="field"><label>'+tr('NamRA address (https)')+', '+tr('optional')+'</label><input id="fxUrl" autocomplete="off" value="'+esc(c.endpoint)+'" placeholder="https://"></div>' +
+    '<div class="field"><label>'+tr('Access key')+', '+tr('optional')+'</label><input id="fxKey" type="password" autocomplete="off" value="'+esc(c.token)+'"></div>' +
     '<div style="font-size:12px;color:var(--text-muted);margin:-4px 2px 10px;">'+tr('The address and key stay on this device only.')+'</div>' +
     '<div class="section-title">'+tr('Status')+'</div><div id="fxStatus" class="banner" style="display:block;">'+fiscalStatusHtml()+'</div>' +
     '<div class="actions"><button class="btn btn-ghost" id="fxSend" type="button">'+tr('Send now')+'</button><button class="btn btn-ghost" id="fxRetry" type="button">'+tr('Retry failed')+'</button><button class="btn btn-ghost" id="fxResume" type="button">'+tr('Resume')+'</button></div>' +
