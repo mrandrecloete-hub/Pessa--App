@@ -11831,18 +11831,13 @@ function pdCardHead(doc, pal, x, y, w, text){
   pdSet(doc, 'f', pal.teal); doc.roundedRect(x, y - 3.1, 1.3, 3.7, 0.4, 0.4, 'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); pdSet(doc, 't', pal.mid);
   pdCS(doc, 0.5); var s = String(tr(text)).toUpperCase(); doc.text(s, x + 3.2, y); pdCS(doc, 0);
-  var tw = doc.getTextWidth(s) + s.length*0.5 + 6.5, rest = w - tw;
-  if(rest > 6){
-    var n = 14, seg = rest / n;
-    for(var i = 0; i < n; i++){ pdSet(doc, 'f', pdMix(pal.gold, pal.mint, i/(n-1))); doc.rect(x + tw + i*seg, y - 1.3, seg + 0.2, 0.28, 'F'); }
-  }
 }
 function pdInfoH(a){ return 12 + (a.name ? 6 : 0) + Math.min(6, a.lines.length)*4.3 + 4; }
 function pdInfoCard(doc, pal, x, y, w, h, a){
   pdCard(doc, pal, x, y, w, h, a.heading);
   var ty = y + 13.4;
-  if(a.name){ doc.setFont('helvetica','bold'); doc.setFontSize(10); pdSet(doc, 't', pal.text); doc.text(doc.splitTextToSize(String(a.name), w - 8)[0], x + 4, ty); ty += 5.6; }
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); pdSet(doc, 't', pal.text);
+  if(a.name){ doc.text(doc.splitTextToSize(String(a.name), w - 8)[0], x + 4, ty); ty += 5.2; }
   a.lines.slice(0, 6).forEach(function(l){ doc.text(doc.splitTextToSize(l, w - 8)[0], x + 4, ty); ty += 4.3; });
   return h;
 }
@@ -11856,7 +11851,7 @@ function pdStrip(doc, pal, x, y, W, heading, fields){
   var h = 16, avail = W - 52 - 4, vs = 9.2;
   function measure(sz){
     return fields.map(function(f){
-      doc.setFont('helvetica','bold'); doc.setFontSize(sz); var v = doc.getTextWidth(f[1]);
+      doc.setFont('helvetica','normal'); doc.setFontSize(sz); var v = doc.getTextWidth(f[1]);
       doc.setFontSize(6.4); var l = doc.getTextWidth(f[0].toUpperCase()) + f[0].length*0.3;
       return Math.max(v, l) + 5;
     });
@@ -11871,8 +11866,7 @@ function pdStrip(doc, pal, x, y, W, heading, fields){
   fields.forEach(function(f, i){
     var fw = ws[i]*scale + extra;
     doc.setFont('helvetica','bold'); doc.setFontSize(6.4); pdSet(doc, 't', pal.muted); pdCS(doc, 0.3); doc.text(f[0].toUpperCase(), fx, y + 6.2); pdCS(doc, 0);
-    doc.setFont('helvetica','bold'); doc.setFontSize(vs); pdSet(doc, 't', pal.text); doc.text(f[1], fx, y + 11.6);
-    pdSet(doc, 'd', pal.line); doc.setLineWidth(0.2); doc.line(fx, y + 13, fx + fw - 3.5, y + 13);
+    doc.setFont('helvetica','normal'); doc.setFontSize(vs); pdSet(doc, 't', pal.text); doc.text(f[1], fx, y + 11.6);
     fx += fw;
   });
   return h;
@@ -20978,7 +20972,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.103';
+var APP_VERSION = '2026.10.104';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21222,6 +21216,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.104', items:[
+    'Cleaner documents: the gold lines beside the section headings and the thin lines under the filled in details are gone from every PDF. Names and details now use the same plain lettering as the rest of the document, so a filled in invoice looks like the blank layout'
+  ]},
   { v:'2026.10.103', items:[
     'Email any document to anyone: when you download a receipt, invoice, statement, quote, report, Profit and Loss or accounting pack, tap Email it to send the PDF to a saved contact or to any email address you type, several at once if you like. It opens your own email app with the PDF ready, and nothing is sent until you tap Send there'
   ]},
