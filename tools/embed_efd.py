@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Embeds docs/efd/pesa-efd.js and tools/efd_app.js into index.html between marker comments.
+"""Embeds docs/efd/pesa-efd.js and tools/efd_app.js into app.js between marker comments.
 Run again after editing either source file.   python3 tools/embed_efd.py"""
 import os, re, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-idx = os.path.join(ROOT, 'index.html')
+idx = os.path.join(ROOT, 'app.js')
 src = open(idx, encoding='utf-8').read()
 mod = open(os.path.join(ROOT, 'docs', 'efd', 'pesa-efd.js'), encoding='utf-8').read()
 app = open(os.path.join(ROOT, 'tools', 'efd_app.js'), encoding='utf-8').read()

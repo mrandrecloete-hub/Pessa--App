@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Embeds tools/courses.js into index.html between /*COURSES:START*/ and /*COURSES:END*/ marker comments.
+"""Embeds tools/courses.js into app.js between /*COURSES:START*/ and /*COURSES:END*/ marker comments.
 Run again after editing tools/courses.js.   python3 tools/embed_courses.py"""
 import os, re, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-idx = os.path.join(ROOT, 'index.html')
+idx = os.path.join(ROOT, 'app.js')
 src = open(idx, encoding='utf-8').read()
 js = open(os.path.join(ROOT, 'tools', 'courses.js'), encoding='utf-8').read()
 if '</script' in js.lower(): sys.exit('source contains </script')

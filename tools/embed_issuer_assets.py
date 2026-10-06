@@ -3,7 +3,7 @@
 Run it after the artwork changes. Safe to run again."""
 import re, os
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-app = open(os.path.join(root, 'index.html'), encoding='utf-8').read()
+app = open(os.path.join(root, 'app.js'), encoding='utf-8').read()
 logo = re.search(r'var PESA_LOGO_DATA_URL = "(data:[^"]+)"', app).group(1)
 stamp = re.search(r'var STAMP_IMG_DATA_URL = "(data:[^"]+)"', app).group(1)
 p = os.path.join(root, 'tools', 'issuer.html'); s = open(p, encoding='utf-8').read()

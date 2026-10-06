@@ -5,8 +5,9 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v174';
-var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './icon-512-maskable.png', './jspdf.umd.min.js',
+var CACHE = 'pesa-shell-v176';
+var APPJS = './app.js?v=2026.10.143';
+var SHELL = ['./index.html', APPJS, './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './icon-512-maskable.png', './jspdf.umd.min.js', './lang_af.js', './lang_de.js',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
 // The page itself is updated often during testing — always prefer a fresh
@@ -21,7 +22,7 @@ var NETWORK_FIRST = ['index.html', 'manifest.json'];
 
 // The page and its small files must be saved before this version takes over. The big files (fonts, PDF library)
 // download quietly afterwards, so a weak mobile connection is never asked for 5 MB at once.
-var CORE = ['./index.html', './manifest.json', './icon-192.png', './apple-touch-icon.png'];
+var CORE = ['./index.html', APPJS, './manifest.json', './icon-192.png', './apple-touch-icon.png'];
 function keep(cache, u, fresh){
   // a file that cannot be downloaded right now keeps the copy already saved by the previous version
   return fetch(new Request(u, fresh ? { cache:'reload' } : {})).then(function(res){
@@ -100,7 +101,7 @@ self.addEventListener('fetch', function(evt){
           caches.open(CACHE).then(function(cache){ cache.put(evt.request, copy); });
         }
         return res;
-      }).catch(function(){ return cached; });
+      }).catch(function(){ return cached || (/\/app\.js(\?|$)/.test(url) ? caches.match(evt.request, { ignoreSearch:true }) : cached); });
       return cached || network;
     })
   );

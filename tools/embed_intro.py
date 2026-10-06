@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Embeds tools/intro.js into index.html between /*INTRO:START*/ and /*INTRO:END*/ marker comments.
+"""Embeds tools/intro.js into app.js between /*INTRO:START*/ and /*INTRO:END*/ marker comments.
 Run again after editing tools/intro.js.   python3 tools/embed_intro.py"""
 import os, re, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-idx = os.path.join(ROOT, 'index.html')
+idx = os.path.join(ROOT, 'app.js')
 src = open(idx, encoding='utf-8').read()
 js = open(os.path.join(ROOT, 'tools', 'intro.js'), encoding='utf-8').read()
 if '</script' in js.lower(): sys.exit('source contains </script')

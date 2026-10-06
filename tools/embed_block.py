@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Embeds tools/<file> into index.html between /*<NAME>:START*/ and /*<NAME>:END*/.
+"""Embeds tools/<file> into app.js between /*<NAME>:START*/ and /*<NAME>:END*/.
 Usage: python3 tools/embed_block.py NAME file.js 'anchor text (inserted before it, first time only)'
 Run again after editing the source file."""
 import os, re, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 name, fn = sys.argv[1], sys.argv[2]
 anchor = sys.argv[3] if len(sys.argv) > 3 else None
-idx = os.path.join(ROOT, 'index.html')
+idx = os.path.join(ROOT, 'app.js')
 src = open(idx, encoding='utf-8').read()
 js = open(os.path.join(ROOT, 'tools', fn), encoding='utf-8').read()
 if '</script' in js.lower(): sys.exit('source contains </script')

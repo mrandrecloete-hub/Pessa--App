@@ -72,7 +72,8 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.evaluate(()=>{ window.__t.closeModal(); window.__t.render(); }); await p.waitForTimeout(300);
   ck('card now says submitted, no urgent style', /submitted/i.test(await p.innerText('[data-me="pilotform"]')) && !(await p.$('.me-msg.urgent[data-me="pilotform"]')));
   // af
-  await p.evaluate(()=>{ const S=window.__t.State; S.settings=Object.assign({},S.settings,{language:'af'}); window.__t.i18nRefresh(); window.__t.pfSave({subs:[],draft:null}); window.__t.openPilotFillSheet(); }); await p.waitForSelector('#pfSubmit');
+  await p.evaluate(()=>{ const S=window.__t.State; S.settings=Object.assign({},S.settings,{language:'af'}); window.__t.langEnsure('af'); }); await p.waitForTimeout(800);
+  await p.evaluate(()=>{ window.__t.i18nRefresh(); window.__t.pfSave({subs:[],draft:null}); window.__t.openPilotFillSheet(); }); await p.waitForSelector('#pfSubmit');
   const af=await p.innerText('.sheet'); ck('Afrikaans form', /Tik jou antwoorde/.test(af) && /Voeg hierdie probleem by/.test(af) && /Stoor en dien in/.test(af));
   await p.evaluate(()=>{ window.__t.closeModal(); const S=window.__t.State; S.settings=Object.assign({},S.settings,{language:'en'}); window.__t.i18nRefresh(); });
   ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));

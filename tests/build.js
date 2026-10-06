@@ -5,6 +5,8 @@ const root=process.cwd(),out=path.join(root,'tests','.build');
 fs.mkdirSync(path.join(out,'fonts'),{recursive:true});
 for(const f of fs.readdirSync('fonts'))if(f.endsWith('.ttf')||f.endsWith('.woff2'))fs.copyFileSync(path.join('fonts',f),path.join(out,'fonts',f));
 let s=fs.readFileSync('index.html','utf8');
+// the app code lives in app.js; the test build puts it back inline so the test hooks can be added
+s=s.replace(/<script src="app\.js[^"]*"><\/script>/,()=>'<script>'+fs.readFileSync('app.js','utf8')+'</script>');
 const end=s.lastIndexOf('})();\n</script>');
 const body=s.slice(0,end);
 const names=new Set();
@@ -19,7 +21,7 @@ s=s.slice(0,end)+"window.__t={"+items+","+extras+"};\n"+s.slice(end);
 s=s.replace('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','jspdf.umd.min.js');
 const c=path.join(root,'node_modules','jspdf','dist','jspdf.umd.min.js');
 if(fs.existsSync(c))fs.copyFileSync(c,path.join(out,'jspdf.umd.min.js'));
-for(const f of ['version.json','manifest.json','icon-192.png','icon-512.png','apple-touch-icon.png'])if(fs.existsSync(f))fs.copyFileSync(f,path.join(out,f));
+for(const f of ['lang_af.js','lang_de.js','version.json','manifest.json','icon-192.png','icon-512.png','apple-touch-icon.png'])if(fs.existsSync(f))fs.copyFileSync(f,path.join(out,f));
 for(const d of ['voice','tools','media'])if(fs.existsSync(d))fs.cpSync(d,path.join(out,d),{recursive:true});
 fs.writeFileSync(path.join(out,'index.html'),s);
 // old browser copy: the main script has a syntax error, so Pesa never starts and the compatibility guard must show its message
