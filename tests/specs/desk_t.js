@@ -14,7 +14,7 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
     S.sales.push({ id: 'sNew', items: [{ productId: 'p1', name: 'Product 1', qty: 1, unitPrice: 20, cost: 10, lineTotal: 20 }], total: 777, cost: 10, profit: 767, paymentMethod: 'cash', cashierName: 'Owner', createdAt: new Date().toISOString() });
     const after = T.brainToday(new Date()).total; return { before, after }; });
   ck('today takings follow a new sale straight away', r.after - r.before === 777, r);
-  const same = await p.evaluate(() => { const T = window.__t; const a = T.brainDaySales(T.todayKey(new Date())); const b2 = T.brainDaySales(T.todayKey(new Date())); return a === b2; });
+  const same = await p.evaluate(() => { const T = window.__t; return T.brainDayIndex() === T.brainDayIndex(); });
   ck('the same day is not scanned twice in a row', same === true);
   // wide screen page switches stay quick on a big shop
   const times = []; for (const t of ['credit', 'expenses', 'stock', 'credit', 'expenses', 'dashboard', 'credit']) { times.push(await p.evaluate(async (t) => { const t0 = performance.now(); window.__t.setTab(t); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); return performance.now() - t0; }, t)); }
