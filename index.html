@@ -12775,7 +12775,7 @@ function openSendSheet(ctx){
       '<div class="field"><label>'+tr('Mobile number')+'</label><input id="sdPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="081 234 5678"></div>' +
     '</div>' +
     '<div class="section-title">'+tr('Send by')+'</div>' +
-    '<div class="actions" style="margin-top:0;">' +
+    '<div class="actions" style="margin-top:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       (emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
       '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>' +
       (waReady() ? '<button class="btn btn-primary" type="button" data-channel="wanow">'+tr('Send now by WhatsApp')+'</button>' : '') +
@@ -21403,7 +21403,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.110';
+var APP_VERSION = '2026.10.111';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21647,6 +21647,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.111', items:[
+    'Send sheet: the Send now and Email buttons now sit in two tidy columns, so none are cut off on a narrow phone. New promotion video: a new introduction of the developer and four new slides (Accounting, Employee tracking, Send now, VAT figures)'
+  ]},
   { v:'2026.10.110', items:[
     'Dashboard has the same look as the new Accounting page: a dark green page with the Pesa logo behind it, glass style cards with a soft green edge, and gold accents. Every button and figure works as before'
   ]},
