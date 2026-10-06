@@ -922,7 +922,7 @@
     /* the dark panel colour lives on the screen itself, so the content can fade softly into it near the top and bottom, clear of the wording */
     .app.dash-bg{ background:radial-gradient(120% 55% at 90% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 45% at 0% 100%,rgba(217,154,30,.20) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%); }
     .app.dash-bg .dkd{ background:none; }
-    .app.dash-bg .content{ -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .45),#000 calc(var(--tb-h,76px) + 14px),#000 calc(100% - var(--ft-h,90px) - 16px),rgba(0,0,0,0) calc(100% - var(--ft-h,90px) * .35)); mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .45),#000 calc(var(--tb-h,76px) + 14px),#000 calc(100% - var(--ft-h,90px) - 16px),rgba(0,0,0,0) calc(100% - var(--ft-h,90px) * .35)); }
+    .app.dash-bg .content{ -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .45),#000 calc(var(--tb-h,76px) + 14px),#000 calc(100% - max(var(--ft-h,90px),84px) - 40px),rgba(0,0,0,0) calc(100% - max(var(--ft-h,90px),84px) * .6)); mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .45),#000 calc(var(--tb-h,76px) + 14px),#000 calc(100% - max(var(--ft-h,90px),84px) - 40px),rgba(0,0,0,0) calc(100% - max(var(--ft-h,90px),84px) * .6)); }
     .app.dash-bg .dkd{ border-radius:0; margin:0; min-height:100%; padding-top:calc(var(--tb-h,76px) + env(safe-area-inset-top,0px) + 12px); padding-bottom:calc(var(--ft-h,90px) + 14px); }
     .app.dash-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:none; -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:none; border-bottom:0; }
     .app.dash-bg .topbar .shopname, .app.dash-bg .topbar .shopdate, .app.dash-bg .topbar .tagline, .app.dash-bg .topbar .shopmeta{ text-shadow:0 1px 4px rgba(0,0,0,.65); }
@@ -958,15 +958,60 @@
 
   /* Every other page on a phone or tablet: no header or footer bar, the page runs the full height of the screen and only the logo, the shop name and figures, the emblem and the wording float over it */
   @media (max-width:1023px){
-    .app.pg-bg .content, .app.inv-bg .content{ position:absolute; top:0; right:0; bottom:0; left:0; z-index:0; max-width:none; width:auto; margin:0; height:auto; padding:calc(var(--tb-h,76px) + env(safe-area-inset-top,0px) + 12px) 14px calc(var(--ft-h,70px) + 14px);
-      -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .5),#000 calc(var(--tb-h,76px) + 10px),#000 calc(100% - var(--ft-h,70px) - 14px),rgba(0,0,0,0) calc(100% - var(--ft-h,70px) * .4)); mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .5),#000 calc(var(--tb-h,76px) + 10px),#000 calc(100% - var(--ft-h,70px) - 14px),rgba(0,0,0,0) calc(100% - var(--ft-h,70px) * .4)); }
-    .app.pg-bg .topbar, .app.inv-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:none; box-shadow:none; color:#0B3B2E; }
+    .app.pg-bg .content, .app.inv-bg .content{ position:absolute; top:0; right:0; bottom:0; left:0; z-index:0; max-width:none; width:auto; margin:0; height:auto; padding:calc(var(--tb-h,76px) + env(safe-area-inset-top,0px) + 12px) 14px calc(max(var(--ft-h,70px),84px) + 18px);
+      -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .5),#000 calc(var(--tb-h,76px) + 10px),#000 calc(100% - max(var(--ft-h,70px),84px) - 40px),rgba(0,0,0,0) calc(100% - max(var(--ft-h,70px),84px) * .6)); mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .5),#000 calc(var(--tb-h,76px) + 10px),#000 calc(100% - max(var(--ft-h,70px),84px) - 40px),rgba(0,0,0,0) calc(100% - max(var(--ft-h,70px),84px) * .6)); }
+    .app.pg-bg .topbar, .app.inv-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:none; box-shadow:none; color:#fff; }
     .app.pg-bg .topbar:after, .app.inv-bg .topbar:after{ display:none; }
-    .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname{ color:#0B2A20; }
-    .app.pg-bg .topbar .shopmeta, .app.inv-bg .topbar .shopmeta, .app.pg-bg .topbar .shopdate, .app.inv-bg .topbar .shopdate{ color:#14553F; }
-    .app.pg-bg .topbar .icon-btn, .app.inv-bg .topbar .icon-btn{ color:#0B3B2E; border-color:rgba(176,120,20,.75); background:rgba(255,255,255,.35); }
     .app.pg-bg .app-emblem, .app.inv-bg .app-emblem{ position:absolute; left:0; right:0; bottom:0; z-index:30; background:none; border:0; box-shadow:none; }
   }
+
+  /* ===== ONE LOOK: every page and every sheet is dark emerald glass with gold accents, like the Dashboard and Accounting ===== */
+  .app.pg-bg, .app.inv-bg, .overlay .sheet:not(.vs-dark):not(.ac-dark), .drawer{
+    --surface:rgba(255,255,255,.07); --surface-2:rgba(255,255,255,.12); --surface-3:rgba(43,212,160,.18); --text:#EAFBF3; --text-muted:#9FCDB9; --border:rgba(124,240,196,.26);
+    --primary:#2BD4A0; --primary-dim:#2BD4A0; --primary-contrast:#04251C; --success:#4BE3A2; --danger:#FF8A7A; --shadow:none; --bg:#03261D; --accent:#F2C25A; color:#EAFBF3; color-scheme:dark;
+  }
+  .app.pg-bg, .app.inv-bg{ background:radial-gradient(120% 55% at 90% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 45% at 0% 100%,rgba(217,154,30,.18) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%); }
+  .overlay .sheet:not(.vs-dark):not(.ac-dark){ background:radial-gradient(120% 40% at 90% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),linear-gradient(170deg,#06291F 0%,#031A13 60%,#041F17 100%); }
+  .overlay .sheet:not(.vs-dark):not(.ac-dark)::before{ opacity:.12; }
+  .app.pg-bg .app-watermark::before, .app.inv-bg .app-watermark::before{ opacity:.1; width:360px; height:350px; margin-left:-180px; margin-top:-175px; }
+  .app.pg-bg .card, .app.pg-bg .row, .app.pg-bg .stat, .app.pg-bg .tillcard, .app.pg-bg .me-stat, .app.pg-bg .inv-card, .app.inv-bg .inv-card, .app.pg-bg .att-row, .app.pg-bg .searchbar, .app.inv-bg .searchbar, .app.pg-bg .tk-stat, .app.pg-bg .tk-banner, .app.pg-bg .tk-pill, .app.pg-bg .tk-act.alt{
+    background:linear-gradient(165deg,rgba(60,210,160,.16),rgba(8,60,44,.55)); border:1px solid rgba(150,255,214,.26); box-shadow:0 12px 24px -16px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.10); color:#EAFBF3; }
+  .app.inv-bg .inv-card{ border-left:7px solid #2BD4A0; }
+  .app.inv-bg .inv-tools .searchbar, .app.pg-bg .searchbar{ background:rgba(255,255,255,.08); border:1px solid rgba(124,240,196,.3); box-shadow:none; }
+  .app.inv-bg .inv-tools .searchbar input{ background:none; border:0; }
+  .drawer{ background:linear-gradient(170deg,#06291F 0%,#031A13 100%); }
+  .drawer .drawer-head h2{ color:#fff; }
+  .drawer-close{ color:#EAFBF3; }
+  .app.inv-bg .inv-top .main .title, .app.inv-bg .inv-actions button, .app.pg-bg .row .title{ color:#EAFBF3; }
+  .app.inv-bg .inv-top .main .sub{ color:#9FCDB9; }
+  .app.inv-bg .inv-ic, .app.inv-bg .inv-top .amt{ background:rgba(43,212,160,.18); color:#7CF0C4; }
+  .app.inv-bg .inv-actions{ border-top-color:rgba(124,240,196,.2); }
+  .app.inv-bg .inv-actions button svg{ color:#7CF0C4; }
+  .app.inv-bg .inv-actions button.danger, .app.inv-bg .inv-actions button.danger svg{ color:#FF8A7A; }
+  .app.inv-bg .inv-filters .segbtn{ background:rgba(255,255,255,.08); color:#EAFBF3; border-color:rgba(124,240,196,.3); }
+  .app.pg-bg input, .app.pg-bg select, .app.pg-bg textarea, .app.inv-bg input, .app.inv-bg select, .overlay .sheet:not(.vs-dark):not(.ac-dark) input, .overlay .sheet:not(.vs-dark):not(.ac-dark) select, .overlay .sheet:not(.vs-dark):not(.ac-dark) textarea{ background:rgba(255,255,255,.08); color:#EAFBF3; border-color:rgba(124,240,196,.35); color-scheme:dark; }
+  .app.pg-bg input::placeholder, .app.inv-bg input::placeholder, .overlay .sheet input::placeholder{ color:#7FAE9B; }
+  .app.pg-bg .btn-ghost, .app.pg-bg .segbtn, .overlay .sheet:not(.vs-dark):not(.ac-dark) .btn-ghost, .overlay .sheet:not(.vs-dark):not(.ac-dark) .segbtn{ background:rgba(255,255,255,.08); color:#EAFBF3; border-color:rgba(124,240,196,.35); }
+  .app.pg-bg .segbtn.active, .overlay .sheet:not(.vs-dark):not(.ac-dark) .segbtn.active{ background:#2BD4A0; color:#04251C; border-color:transparent; box-shadow:none; }
+  .app.pg-bg .btn-primary, .app.inv-bg .btn-primary, .overlay .sheet:not(.vs-dark):not(.ac-dark) .btn-primary{ background:linear-gradient(135deg,#2BD4A0,#14996F); color:#04251C; border:0; box-shadow:0 10px 18px -12px rgba(0,0,0,.7); }
+  .app.pg-bg .btn-accent, .app.inv-bg .btn-accent, .overlay .sheet:not(.vs-dark):not(.ac-dark) .btn-accent{ background:linear-gradient(135deg,#F2C25A,#D99A1E); color:#3D2A02; border:0; }
+  .app.pg-bg .section-title, .app.inv-bg .section-title, .overlay .sheet:not(.vs-dark):not(.ac-dark) .section-title{ color:#9FCDB9; }
+  .app.pg-bg .banner, .overlay .sheet:not(.vs-dark):not(.ac-dark) .banner, .overlay .sheet:not(.vs-dark):not(.ac-dark) .tillcard, .overlay .sheet:not(.vs-dark):not(.ac-dark) .card, .overlay .sheet:not(.vs-dark):not(.ac-dark) .row{ background:rgba(255,255,255,.07); border-color:rgba(124,240,196,.24); color:#EAFBF3; }
+  .overlay .sheet:not(.vs-dark):not(.ac-dark) .sheet-head h2{ color:#fff; font-family:Inter,system-ui,sans-serif; }
+  .overlay .sheet:not(.vs-dark):not(.ac-dark) .sheet-backrow{ background:rgba(255,255,255,.1); color:#EAFBF3; border-color:rgba(124,240,196,.3); }
+  .app.pg-bg .tk-ic, .app.pg-bg .tk-stat.y .tk-ic{ background:radial-gradient(circle at 32% 28%,#2FC79A,#07533F); box-shadow:0 8px 14px -6px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.4); }
+  .app.pg-bg .tk-l{ color:#BFE4D3; } .app.pg-bg .tk-v{ color:#7CF0C4; } .app.pg-bg .tk-stat.y .tk-v{ color:#F2C25A; } .app.pg-bg .tk-bt h2{ color:#fff; } .app.pg-bg .tk-bs{ color:#EAFBF3; }
+  .app.pg-bg .tk-pill.active{ background:#2BD4A0; color:#04251C; }
+  .app.pg-bg .tk-pill.active svg{ color:#04251C; }
+  .app.pg-bg .tk-pill svg, .app.pg-bg .tk-act.alt svg{ color:#7CF0C4; }
+  .app.pg-bg .tk-empty .s, .app.pg-bg .empty .s{ color:#9FCDB9; }
+  .app.pg-bg .empty .t, .app.inv-bg .empty .t{ color:#EAFBF3; }
+  .app.pg-bg .app-emblem span, .app.pg-bg .app-emblem small, .app.inv-bg .app-emblem span, .app.inv-bg .app-emblem small{ color:#F4FFF9; text-shadow:0 1px 4px rgba(0,0,0,.75); }
+  .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname{ color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.6); }
+  .app.pg-bg .topbar .shopmeta, .app.inv-bg .topbar .shopmeta{ color:#F2C25A; }
+  .app.pg-bg .topbar .icon-btn, .app.inv-bg .topbar .icon-btn{ color:#fff; border-color:rgba(242,194,90,.7); background:rgba(255,255,255,.08); }
+  /* header: one tidy line each, never wrapping */
+  .topbar .shopmeta > *, .topbar .shopname, .topbar .shopdate, #syncBadgeSlot, #syncBadgeSlot *{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
@@ -21544,7 +21589,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.126';
+var APP_VERSION = '2026.10.127';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21788,6 +21833,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.127', items:[
+    'One look for the whole app: every page and every sheet, including Settings, is now dark emerald glass with gold accents like the Dashboard and Accounting. The emblem no longer lands on top of the content, the header stays tidy on one line, the logo behind pages is softer and the Team icons are one colour'
+  ]},
   { v:'2026.10.126', items:[
     'Promotion video: a new Join the Pesa family slide with the team photo, just before the final slide'
   ]},
