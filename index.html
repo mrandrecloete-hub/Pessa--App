@@ -387,6 +387,7 @@
   @media (prefers-reduced-motion:reduce){ .gc-colon{ animation:none; } }
   .topbar .shopdate{ display:none; }
   .todaypill{ border-radius:16px; padding:6px 10px 7px; }
+  @media (max-width:459px){ .topbar{ gap:6px; } .todaypill{ padding:4px 7px 5px; } .todaypill .val{ font-size:12px; } .todaypill .lbl{ font-size:8px; } .glassclock{ min-width:0; padding:4px 8px 5px; } .gc-time{ font-size:17px; } .gc-date{ font-size:8.5px; } .topbar .icon-btn{ width:34px; height:34px; } .topbar .brandmark{ width:34px; height:34px; } }
   .todaypill .lbl{ color:#f6ecd4; text-shadow:none; }
   .todaypill .val{ background:linear-gradient(180deg,#ffe7a8,#e9a842); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; text-shadow:none; }
   @media (max-width:459px){ .gc-yr{ display:none; } }
@@ -1006,6 +1007,7 @@
   .app.pg-bg .tk-pill svg, .app.pg-bg .tk-act.alt svg{ color:#7CF0C4; }
   .app.pg-bg .tk-empty .s, .app.pg-bg .empty .s{ color:#9FCDB9; }
   .app.pg-bg .empty .t, .app.inv-bg .empty .t{ color:#EAFBF3; }
+  .overlay .sheet, .app.pg-bg{ --mv-wall:#0B1812; --mv-bub-in:#1C2B24; }
   .app.pg-bg .app-emblem span, .app.pg-bg .app-emblem small, .app.inv-bg .app-emblem span, .app.inv-bg .app-emblem small{ color:#F4FFF9; text-shadow:0 1px 4px rgba(0,0,0,.75); }
   .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname{ color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.6); }
   .app.pg-bg .topbar .shopmeta, .app.inv-bg .topbar .shopmeta{ color:#F2C25A; }
@@ -21589,7 +21591,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.127';
+var APP_VERSION = '2026.10.128';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21833,6 +21835,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.128', items:[
+    'Fixes after the new look: the Messages chat is readable on its dark background, and the header pills are smaller on narrow phones so more of the shop name shows'
+  ]},
   { v:'2026.10.127', items:[
     'One look for the whole app: every page and every sheet, including Settings, is now dark emerald glass with gold accents like the Dashboard and Accounting. The emblem no longer lands on top of the content, the header stays tidy on one line, the logo behind pages is softer and the Team icons are one colour'
   ]},
