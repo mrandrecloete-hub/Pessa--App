@@ -50,6 +50,31 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
   ck('with the attach switch the PDF is attached', a2.n === 2 && a2.hasDoc.every(x => x) && /^data:application\/pdf;base64,/.test(a2.first.document) && a2.first.document_name === 'receipt-INV-0007.pdf' && /attached/i.test(a2.msg), a2);
   const a3 = await sendNowRun(true, true);
   ck('if the plan rejects the PDF it falls back to sending without it', a3.n === 4 && /did not accept the PDF/.test(a3.msg), a3);
+
+  // Send now by WhatsApp: goes to the shop's own sending service with the key in a header and the PDF as base64
+  const w1 = await p.evaluate(async () => {
+    localStorage.setItem('pesa_wa_v1', JSON.stringify({ url: 'https://abc.supabase.co/functions/v1/whatsapp', key: 'secret-key-1' }));
+    localStorage.removeItem('pesa_wa_count_v1'); document.querySelectorAll('.send-overlay').forEach(e => e.remove());
+    const calls = []; window.fetch = (u, init) => { calls.push({ u, h: init.headers, b: JSON.parse(init.body) }); return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true, attached: true }) }); };
+    const fake = { output: () => new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }), getNumberOfPages: () => 1 };
+    window.__t.emailGeneratedDoc(fake, 'receipt-INV-0007.pdf'); await new Promise(r => setTimeout(r, 300));
+    const ov = document.querySelector('.send-overlay'); ov.querySelector('#sdRecipient').value = 'manual'; ov.querySelector('#sdPhone').value = '081 234 5678';
+    ov.querySelector('[data-channel="wanow"]').click(); await new Promise(r => setTimeout(r, 700));
+    return { n: calls.length, c: calls[0], msg: ov.querySelector('#sdResult').textContent };
+  });
+  ck('Send now by WhatsApp posts to the sending service with the key and the PDF', w1.n === 1 && w1.c.u === 'https://abc.supabase.co/functions/v1/whatsapp' && w1.c.h['x-pesa-key'] === 'secret-key-1' && w1.c.b.to === '081 234 5678' && /^JVBER/.test(w1.c.b.pdf) && w1.c.b.filename === 'receipt-INV-0007.pdf', w1);
+  ck('the result says it was sent', /Sent to 081 234 5678/.test(w1.msg) && /PDF was attached/.test(w1.msg), w1.msg);
+  const w2 = await p.evaluate(async () => {
+    localStorage.removeItem('pesa_wa_count_v1'); document.querySelectorAll('.send-overlay').forEach(e => e.remove());
+    window.fetch = () => Promise.resolve({ ok: false, json: () => Promise.resolve({ error: 'template_missing' }) });
+    const fake = { output: () => new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }), getNumberOfPages: () => 1 };
+    window.__t.emailGeneratedDoc(fake, 'x.pdf'); await new Promise(r => setTimeout(r, 300));
+    const ov = document.querySelector('.send-overlay'); ov.querySelector('#sdPhone').value = '0812345678';
+    ov.querySelector('[data-channel="wanow"]').click(); await new Promise(r => setTimeout(r, 500)); return ov.querySelector('#sdResult').textContent; });
+  ck('a Meta problem is explained in plain words', /approved template/.test(w2), w2);
+  const w3 = await p.evaluate(() => { localStorage.removeItem('pesa_wa_v1'); document.querySelectorAll('.send-overlay').forEach(e => e.remove());
+    const fake = { output: () => new Blob(['x']), getNumberOfPages: () => 1 }; window.__t.emailGeneratedDoc(fake, 'x.pdf'); return !!document.querySelector('[data-channel="wanow"]'); });
+  ck('the button is hidden until WhatsApp sending is set up', w3 === false);
   ck('no page errors', errs.length === 0, errs);
   console.log(fail ? 'FAILED ' + fail : 'ALL OK'); await b.close(); process.exit(fail ? 1 : 0);
 })();

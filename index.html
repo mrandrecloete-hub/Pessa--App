@@ -12720,7 +12720,8 @@ function openSendSheet(ctx){
     '<div class="actions" style="margin-top:0;">' +
       (emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
       '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>' +
-      '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+tr('WhatsApp')+'</button>' +
+      (waReady() ? '<button class="btn btn-primary" type="button" data-channel="wanow">'+tr('Send now by WhatsApp')+'</button>' : '') +
+      '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+(waReady() ? tr('WhatsApp app') : tr('WhatsApp'))+'</button>' +
       '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>' +
     '</div>' +
     '<div class="banner" style="margin-top:12px;">'+(emailSendCfg() ? tr('Send now emails straight from Pesa. The PDF is attached only if your EmailJS plan allows attachments (turn that on under Notifications in Settings); otherwise the details are sent without it. Email with PDF, WhatsApp and SMS open your own app with everything filled in, so you check it and tap Send there.') : tr('This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.'))+'</div>' +
@@ -12851,6 +12852,19 @@ function openSendSheet(ctx){
     if(okN === list.length) showResult(tr('Sent to')+' '+list.join(', ')+'.' + (file ? (attachedAll ? ' '+tr('The PDF was attached.') : ' '+tr('Your EmailJS plan did not accept the PDF, so the details were sent without it. Use Email with PDF to attach it.')) : ''), null, null);
     else showResult(why === 'daily_limit' ? tr('Today’s limit of 30 direct emails on this device is used up. Use Email with PDF instead.') : tr('The email could not be sent. Check your internet connection and the EmailJS settings, or use Email with PDF.'), null, body);
   }
+  async function sendWaNow(btn){
+    var phone = phoneIn.value.trim();
+    if(normalizeNamPhone(phone).length < 9){ toast(tr('Check the mobile number')); phoneIn.focus(); return; }
+    var name = recipientName(), file = null;
+    btn.disabled = true; showResult(tr('Sending…'), null, null);
+    if(ctx.buildFile){ file = (readyFile !== undefined) ? readyFile : await filePromise; }
+    var res = await waSendNow(phone, name, ctx.shortText(name, 'whatsapp'), file, file && file.name);
+    btn.disabled = false;
+    if(res.ok){
+      logSend('whatsapp', 'sent from Pesa through WhatsApp Business' + (res.attached ? ' with the PDF' : ''));
+      showResult(tr('Sent to')+' '+phone+'.' + (file ? (res.attached ? ' '+tr('The PDF was attached.') : '') : ''), null, null);
+    } else showResult(tr(waReasonText(res.reason)) + (res.detail ? ' (' + res.detail + ')' : ''), null, null);
+  }
   function sendText(channel){
     var phone = phoneIn.value.trim();
     var n = normalizeNamPhone(phone);
@@ -12866,7 +12880,7 @@ function openSendSheet(ctx){
   overlay.querySelectorAll('[data-channel]').forEach(function(b){
     b.addEventListener('click', function(){
       var ch = b.getAttribute('data-channel');
-      if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else sendText(ch);
+      if(ch === 'wanow') sendWaNow(b); else if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else sendText(ch);
     });
   });
   return overlay;
@@ -13358,6 +13372,65 @@ async function emailSendNow(to, subject, message, attach){
     return { ok:true, attached:attached, wanted:!!uri };
   }catch(e){ return { ok:false, reason:'network' }; }
 }
+/* ---- Send now by WhatsApp: through the shop's own Supabase function (supabase/functions/whatsapp), which holds the Meta token ---- */
+var WA_KEY = 'pesa_wa_v1';
+function waCfg(){
+  var c = {}; try{ c = JSON.parse(localStorage.getItem(WA_KEY) || '{}') || {}; }catch(e){}
+  var url = String(c.url || '').trim(), key = String(c.key || '').trim();
+  return { url:url, key:key, ready: /^https:\/\/[^\s]+$/i.test(url) && key.length >= 8 };
+}
+function waReady(){ try{ return waCfg().ready; }catch(e){ return false; } }
+function fileToBase64(file){ return fileToDataUrl(file).then(function(u){ var i = u.indexOf('base64,'); return i < 0 ? '' : u.slice(i + 7); }); }
+/** Sends one WhatsApp message (with the PDF when given). Resolves { ok, attached } or { ok:false, reason }. At most 50 a day on this device. */
+async function waSendNow(to, name, text, file, filename){
+  var c = waCfg(); if(!c.ready) return { ok:false, reason:'not_configured' };
+  var day = new Date().toISOString().slice(0,10), k = 'pesa_wa_count_v1', n = 0;
+  try{ var o = JSON.parse(localStorage.getItem(k) || '{}') || {}; n = o.day === day ? (o.n || 0) : 0; }catch(e){}
+  if(n >= 50) return { ok:false, reason:'daily_limit' };
+  try{
+    var body = { to:to, name:name || '', shop:(State.settings && State.settings.shopName) || 'Pesa', text:text };
+    if(file){ var b64 = await fileToBase64(file); if(b64){ body.pdf = b64; body.filename = filename || file.name; } }
+    var r = await fetch(c.url, { method:'POST', headers:{ 'Content-Type':'application/json', 'x-pesa-key':c.key }, body:JSON.stringify(body) });
+    var j = {}; try{ j = await r.json(); }catch(e){}
+    if(!r.ok) return { ok:false, reason:j.error || 'failed', detail:j.detail || '' };
+    try{ localStorage.setItem(k, JSON.stringify({ day:day, n:n + 1 })); }catch(e){}
+    return { ok:true, attached:!!j.attached };
+  }catch(e){ return { ok:false, reason:'network' }; }
+}
+function waReasonText(why){
+  return ({
+    bad_key:'The send key does not match. Check it under Notifications in Settings.', not_configured:'WhatsApp sending is not set up yet. See Notifications in Settings.',
+    token_invalid:'Meta rejected the access token. Make a new permanent token and save it as the WHATSAPP_TOKEN secret.',
+    template_missing:'Meta has no approved template with that name. Create and get approval for the pesa_document and pesa_message templates.',
+    number_not_allowed:'This number is not allowed yet. While your Meta app is in test mode, add the number as a test recipient.',
+    window_closed:'The customer has not messaged you in the last 24 hours, so a free message is not allowed.',
+    bad_number:'Check the mobile number.', pdf_too_big:'The PDF is too big to send.', hourly_limit:'Too many messages this hour. Try again later.',
+    daily_limit:'Today’s limit of 50 WhatsApp messages on this device is used up. Use WhatsApp (the app) instead.', network:'Could not reach the sending service. Check your internet connection.'
+  })[why] || 'The WhatsApp message could not be sent. Use WhatsApp (the app) instead.';
+}
+function waSettingsHtml(){
+  var c = waCfg();
+  return '<div class="section-title">'+tr('WhatsApp sending')+'</div>' +
+    '<div class="banner" id="waNote">'+(c.ready ? ICONS.check : ICONS.info)+'<span>'+tr('Send invoices, receipts and reports to a customer’s WhatsApp straight from Pesa, with the PDF. It needs a WhatsApp Business account from Meta and a small sending service in your own Supabase project. The steps are in docs/provisioning/WHATSAPP.md. Meta charges for some business messages, and it only allows a first message to a customer through a template it has approved.')+'</span></div>' +
+    '<div class="field"><label>'+tr('Sending service address')+'</label><input id="waUrl" placeholder="https://xxxx.supabase.co/functions/v1/whatsapp" value="'+esc(c.url)+'"></div>' +
+    '<div class="field"><label>'+tr('Send key')+'</label><input id="waKey" type="password" autocomplete="off" placeholder="'+esc(tr('The same key you set as PESA_SEND_KEY'))+'" value="'+esc(c.key)+'"></div>' +
+    '<div class="field"><label>'+tr('Send a test WhatsApp to')+'</label><input id="waTo" type="tel" inputmode="tel" placeholder="081 234 5678"></div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="waSave" type="button">'+tr('Save WhatsApp settings')+'</button><button class="btn btn-ghost" id="waTest" type="button">'+tr('Send test WhatsApp')+'</button></div><div id="waMsg"></div>';
+}
+function wireWaSettings(ov){
+  var save = ov.querySelector('#waSave'); if(!save) return;
+  var msg = ov.querySelector('#waMsg');
+  function say(t, ok){ msg.innerHTML = '<div class="banner">'+(ok?ICONS.check:ICONS.warn)+'<span>'+esc(t)+'</span></div>'; }
+  function persist(){ try{ localStorage.setItem(WA_KEY, JSON.stringify({ url:ov.querySelector('#waUrl').value.trim(), key:ov.querySelector('#waKey').value.trim() })); }catch(e){} return waCfg(); }
+  save.addEventListener('click', function(){ var c = persist(); say(c.ready ? tr('WhatsApp settings saved.') : tr('Saved, but the address must start with https and the key needs at least 8 characters.'), c.ready); });
+  ov.querySelector('#waTest').addEventListener('click', async function(){
+    var c = persist(); if(!c.ready) return say(tr('Fill in the address and the key first.'), false);
+    var to = ov.querySelector('#waTo').value.trim(); if(normalizeNamPhone(to).length < 9) return say(tr('Check the mobile number'), false);
+    say(tr('Sending…'), true);
+    var res = await waSendNow(to, 'there', 'WhatsApp sending from Pesa is working.', null);
+    say(res.ok ? tr('Test WhatsApp sent to')+' '+to+'.' : tr(waReasonText(res.reason)) + (res.detail ? ' (' + res.detail + ')' : ''), res.ok);
+  });
+}
 function emailAlertsOn(){ try{ return emailAlertCfg().ready; }catch(e){ return false; } }
 /** Sends one alert email. The same alert (same tag) is sent at most once every 6 hours and no more than 10 a day,
  * so a busy shop cannot use up the free EmailJS allowance. A failed send is written to the log and never stops a sale. */
@@ -13504,7 +13577,7 @@ function wireEmailAlertSettings(ov){
     }catch(e){ say(tr('The email could not be sent. Check the values and your internet connection.'), false); }
   });
 }
-function notificationSettingsHtml(){ return notifyDeviceHtml() + emailAlertSettingsHtml(); }
+function notificationSettingsHtml(){ return notifyDeviceHtml() + emailAlertSettingsHtml() + waSettingsHtml(); }
 function notifyDeviceHtml(){
   var html = '<div class="section-title">'+tr('Notifications')+'</div>';
   if(!notifySupported()){
@@ -13521,6 +13594,7 @@ function notifyDeviceHtml(){
 }
 function wireNotificationSettings(ov){
   try{ wireEmailAlertSettings(ov); }catch(e){}
+  try{ wireWaSettings(ov); }catch(e){}
   var seg = ov.querySelector('#stNotifySeg');
   if(!seg) return;
   function paint(){
@@ -21021,7 +21095,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.105';
+var APP_VERSION = '2026.10.106';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21265,6 +21339,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.106', items:[
+    'Send now by WhatsApp: through Meta WhatsApp Business, Pesa can send an invoice, receipt or report to a customer’s WhatsApp with the PDF attached, without opening the WhatsApp app. It needs a Meta business account and a small sending service in your own Supabase project (setup steps in docs/provisioning/WHATSAPP.md). Set it up under Notifications in Settings'
+  ]},
   { v:'2026.10.105', items:[
     'Send now by email: when you send an invoice, receipt, report or any document, choose who to send to and tap Send now by email. Pesa sends it straight away through your EmailJS account without opening your email app. With a paid EmailJS plan the PDF is attached too; on the free plan the document details are sent and Email with PDF is still there for the file. Set it up under Notifications in Settings'
   ]},
