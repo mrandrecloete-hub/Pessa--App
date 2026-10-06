@@ -12718,11 +12718,12 @@ function openSendSheet(ctx){
     '</div>' +
     '<div class="section-title">'+tr('Send by')+'</div>' +
     '<div class="actions" style="margin-top:0;">' +
-      '<button class="btn btn-primary" type="button" data-channel="email">'+tr('Email')+'</button>' +
+      (emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
+      '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>' +
       '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+tr('WhatsApp')+'</button>' +
       '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>' +
     '</div>' +
-    '<div class="banner" style="margin-top:12px;">'+tr('This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.')+'</div>' +
+    '<div class="banner" style="margin-top:12px;">'+(emailSendCfg() ? tr('Send now emails straight from Pesa. The PDF is attached only if your EmailJS plan allows attachments (turn that on under Notifications in Settings); otherwise the details are sent without it. Email with PDF, WhatsApp and SMS open your own app with everything filled in, so you check it and tap Send there.') : tr('This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.'))+'</div>' +
     '<div id="sdResult"></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" type="button" id="sdDone">'+tr('Done')+'</button></div>' +
   '</div>';
@@ -12833,6 +12834,23 @@ function openSendSheet(ctx){
       showResult(tr('Opening your email app…'), url, body);
     }
   }
+  async function sendNow(btn){
+    var list = emailIn.value.split(/[;,]/).map(function(a){ return a.trim(); }).filter(Boolean);
+    if(!list.length || !list.every(looksLikeEmail)){ toast(tr('Enter a valid email address')); emailIn.focus(); return; }
+    if(list.length > 5){ toast(tr('Send to 5 addresses or fewer at a time')); return; }
+    var name = recipientName(), okN = 0, why = '', wanted = false, attachedAll = true, file = null;
+    btn.disabled = true; showResult(tr('Sending…'), null, null);
+    if(ctx.buildFile && emailAttachOn()){ file = (readyFile !== undefined) ? readyFile : await filePromise; }
+    var body = ctx.emailBody(name, !!file);
+    for(var i = 0; i < list.length; i++){
+      var res = await emailSendNow(list[i], ctx.subject, body, file ? { file:file } : null);
+      if(res.ok){ okN++; if(res.wanted) wanted = true; if(file && !res.attached) attachedAll = false; } else why = res.reason;
+    }
+    btn.disabled = false;
+    if(okN){ logSend('email', 'sent from Pesa through the email service to ' + okN + ' address(es)' + (file && attachedAll ? ' with the PDF' : '')); }
+    if(okN === list.length) showResult(tr('Sent to')+' '+list.join(', ')+'.' + (file ? (attachedAll ? ' '+tr('The PDF was attached.') : ' '+tr('Your EmailJS plan did not accept the PDF, so the details were sent without it. Use Email with PDF to attach it.')) : ''), null, null);
+    else showResult(why === 'daily_limit' ? tr('Today’s limit of 30 direct emails on this device is used up. Use Email with PDF instead.') : tr('The email could not be sent. Check your internet connection and the EmailJS settings, or use Email with PDF.'), null, body);
+  }
   function sendText(channel){
     var phone = phoneIn.value.trim();
     var n = normalizeNamPhone(phone);
@@ -12848,7 +12866,7 @@ function openSendSheet(ctx){
   overlay.querySelectorAll('[data-channel]').forEach(function(b){
     b.addEventListener('click', function(){
       var ch = b.getAttribute('data-channel');
-      if(ch === 'email') sendEmail(); else sendText(ch);
+      if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else sendText(ch);
     });
   });
   return overlay;
@@ -13312,6 +13330,34 @@ function emailAlertCfg(){
   var svc = c.service || EMAILJS_DEFAULTS.service, key = c.key || EMAILJS_DEFAULTS.key, tpl = a.template || '';
   return { on:!!a.on, to:String(a.to || ''), template:tpl, service:svc, key:key, ready: !!(a.on && isEmail(a.to) && svc && key && tpl) };
 }
+/** Direct sending of documents: needs the EmailJS service, public key and the message template (the same one email alerts use). */
+function emailSendCfg(){ var c = emailAlertCfg(); return (c.service && c.key && c.template) ? c : null; }
+function emailAttachOn(){ try{ return !!(JSON.parse(localStorage.getItem(EMAIL_ALERT_KEY) || '{}') || {}).attach; }catch(e){ return false; } }
+function fileToDataUrl(file){ return new Promise(function(res){ try{ var fr = new FileReader(); fr.onload = function(){ res(String(fr.result || '')); }; fr.onerror = function(){ res(''); }; fr.readAsDataURL(file); }catch(e){ res(''); } }); }
+/** Sends one email straight away through EmailJS. attach = { file } adds the PDF as the "document" attachment variable
+ * (EmailJS paid plans only). Resolves { ok, attached } or { ok:false, reason }. At most 30 a day on this device. */
+async function emailSendNow(to, subject, message, attach){
+  var c = emailSendCfg(); if(!c) return { ok:false, reason:'not_configured' };
+  var day = new Date().toISOString().slice(0,10), k = 'pesa_email_send_count_v1', n = 0;
+  try{ var o = JSON.parse(localStorage.getItem(k) || '{}') || {}; n = o.day === day ? (o.n || 0) : 0; }catch(e){}
+  if(n >= 30) return { ok:false, reason:'daily_limit' };
+  var params = { to_email:to, subject:subject, message:message, shop_name:(State.settings && State.settings.shopName) || 'Pesa', app_name:'Pesa' };
+  var uri = (attach && attach.file) ? await fileToDataUrl(attach.file) : '';
+  async function post(withPdf){
+    var pr = Object.assign({}, params); if(withPdf){ pr.document = uri; pr.document_name = attach.file.name; }
+    var r = await fetch('https://api.emailjs.com/api/v1.0/email/send', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ service_id:c.service, template_id:c.template, user_id:c.key, template_params:pr }) });
+    return r.ok;
+  }
+  try{
+    var attached = false, ok = false;
+    if(uri){ try{ ok = await post(true); attached = ok; }catch(e){ ok = false; } }
+    if(!ok){ ok = await post(false); attached = false; }
+    if(!ok) return { ok:false, reason:'failed' };
+    try{ localStorage.setItem(k, JSON.stringify({ day:day, n:n + 1 })); }catch(e){}
+    return { ok:true, attached:attached, wanted:!!uri };
+  }catch(e){ return { ok:false, reason:'network' }; }
+}
 function emailAlertsOn(){ try{ return emailAlertCfg().ready; }catch(e){ return false; } }
 /** Sends one alert email. The same alert (same tag) is sent at most once every 6 hours and no more than 10 a day,
  * so a busy shop cannot use up the free EmailJS allowance. A failed send is written to the log and never stops a sale. */
@@ -13422,22 +13468,25 @@ function emailAlertSettingsHtml(){
     '<div class="banner" id="eaNote">'+(c.ready ? ICONS.check : ICONS.info)+'<span>'+tr('The same low stock, till and smart alerts can also be emailed to you, so you see them even when Pesa is closed. Emails are sent from this device through your own EmailJS account (set up above), so the alert text passes through that service. The same alert is emailed at most once every 6 hours and no more than 10 emails a day.')+'</span></div>' +
     '<div class="field"><label>'+tr('Email alerts on this device')+'</label><div class="segbtns" id="eaSeg"><button type="button" class="segbtn'+(a.on?'':' active')+'" data-ea="off">'+tr('Off')+'</button><button type="button" class="segbtn'+(a.on?' active':'')+'" data-ea="on">'+tr('On')+'</button></div></div>' +
     '<div class="field"><label>'+tr('Send alerts to')+'</label><input id="eaTo" type="email" placeholder="you@example.com" value="'+esc(a.to || (isEmail(me.email) ? me.email : ''))+'"></div>' +
-    '<div class="field"><label>'+tr('EmailJS Alert Template ID')+'</label><input id="eaTpl" placeholder="template_xxxxxxx" value="'+esc(a.template||'')+'"></div>' +
+    '<div class="field"><label>'+tr('EmailJS message Template ID (alerts and Send now)')+'</label><input id="eaTpl" placeholder="template_xxxxxxx" value="'+esc(a.template||'')+'"></div>' +
+    '<div class="field"><label>'+tr('Attach the PDF when using Send now')+'</label><div class="segbtns" id="eaAttSeg"><button type="button" class="segbtn'+(a.attach?'':' active')+'" data-eaatt="off">'+tr('Off')+'</button><button type="button" class="segbtn'+(a.attach?' active':'')+'" data-eaatt="on">'+tr('On')+'</button></div><div class="small" style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+tr('Needs a paid EmailJS plan (Personal or higher). In the template add an Attachment of type Variable with the parameter name document. The free plan allows only 50 KB per message, which is smaller than a Pesa PDF.')+'</div></div>' +
     '<div class="actions"><button class="btn btn-ghost" id="eaSave" type="button">'+tr('Save email alerts')+'</button><button class="btn btn-ghost" id="eaTest" type="button">'+tr('Send test alert')+'</button></div>' +
     '<details style="margin-top:10px;font-size:12.5px;color:var(--text-muted);line-height:1.6;"><summary style="cursor:pointer;font-weight:700;color:var(--text);">'+tr('How to set this up (2 minutes)')+'</summary><ol style="padding-left:18px;margin:8px 0;"><li>In EmailJS, create a second Email Template for alerts.</li><li>Set “To email” to <b>{{to_email}}</b>, Subject to <b>{{subject}}</b> and the body to <b>{{message}}</b>.</li><li>Paste its Template ID above. The Service ID and Public Key are the ones from Password reset email.</li><li>Tap Save email alerts, then Send test alert.</li></ol></details>' +
     '<div id="eaMsg"></div>';
 }
 function wireEmailAlertSettings(ov){
   var save = ov.querySelector('#eaSave'); if(!save) return;
+  var attach = emailAttachOn();
   var msg = ov.querySelector('#eaMsg'), on = (function(){ try{ return !!(JSON.parse(localStorage.getItem(EMAIL_ALERT_KEY) || '{}') || {}).on; }catch(e){ return false; } })();
   function say(t, ok){ msg.innerHTML = '<div class="banner">'+(ok?ICONS.check:ICONS.warn)+'<span>'+esc(t)+'</span></div>'; }
   function paint(){ ov.querySelectorAll('[data-ea]').forEach(function(b){ b.classList.toggle('active', (b.getAttribute('data-ea') === 'on') === on); }); }
   function persist(){
-    var cfg = { on:on, to:ov.querySelector('#eaTo').value.trim(), template:ov.querySelector('#eaTpl').value.trim() };
+    var cfg = { on:on, attach:attach, to:ov.querySelector('#eaTo').value.trim(), template:ov.querySelector('#eaTpl').value.trim() };
     try{ localStorage.setItem(EMAIL_ALERT_KEY, JSON.stringify(cfg)); }catch(e){}
     return cfg;
   }
   ov.querySelectorAll('[data-ea]').forEach(function(b){ b.addEventListener('click', function(){ on = b.getAttribute('data-ea') === 'on'; paint(); persist(); }); });
+  ov.querySelectorAll('[data-eaatt]').forEach(function(b){ b.addEventListener('click', function(){ attach = b.getAttribute('data-eaatt') === 'on'; ov.querySelectorAll('[data-eaatt]').forEach(function(x){ x.classList.toggle('active', (x.getAttribute('data-eaatt') === 'on') === attach); }); persist(); }); });
   save.addEventListener('click', function(){
     persist(); var c = emailAlertCfg();
     if(c.ready) return say(tr('Email alerts saved. They will be sent to')+' '+c.to+'.', true);
@@ -20972,7 +21021,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.104';
+var APP_VERSION = '2026.10.105';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21216,6 +21265,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.105', items:[
+    'Send now by email: when you send an invoice, receipt, report or any document, choose who to send to and tap Send now by email. Pesa sends it straight away through your EmailJS account without opening your email app. With a paid EmailJS plan the PDF is attached too; on the free plan the document details are sent and Email with PDF is still there for the file. Set it up under Notifications in Settings'
+  ]},
   { v:'2026.10.104', items:[
     'Cleaner documents: the gold lines beside the section headings and the thin lines under the filled in details are gone from every PDF. Names and details now use the same plain lettering as the rest of the document, so a filled in invoice looks like the blank layout'
   ]},

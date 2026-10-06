@@ -24,6 +24,32 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
   // a bad address is refused
   await p.fill('#sdEmail', 'not-an-email'); await p.evaluate(() => { window.__opened = []; }); await p.click('[data-channel="email"]'); await p.waitForTimeout(300);
   ck('a bad address is refused', (await p.evaluate(() => window.__opened.length)) === 0);
+
+  // Send now: straight from Pesa through the email service, with the PDF when the plan allows it
+  async function sendNowRun(attach, rejectPdf){
+    return p.evaluate(async ({ attach, rejectPdf }) => {
+      localStorage.setItem('pesa_emailjs_v1', JSON.stringify({ service: 'service_a', template: 'template_reset', key: 'pubkey' }));
+      localStorage.setItem('pesa_email_alerts_v1', JSON.stringify({ on: false, attach, to: 'owner@example.com', template: 'template_msg' }));
+      localStorage.removeItem('pesa_email_send_count_v1');
+      document.querySelectorAll('.send-overlay').forEach(e => e.remove());
+      const calls = []; window.fetch = (u, init) => { if (!/emailjs/.test(u)) return Promise.reject(new Error('x')); const b = JSON.parse(init.body); calls.push(b); return Promise.resolve({ ok: !(rejectPdf && b.template_params.document) }); };
+      const fake = { output: () => new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }), getNumberOfPages: () => 1 };
+      window.__t.emailGeneratedDoc(fake, 'receipt-INV-0007.pdf');
+      await new Promise(r => setTimeout(r, 300));
+      const ov = document.querySelector('.send-overlay');
+      ov.querySelector('#sdRecipient').value = 'manual'; ov.querySelector('#sdEmail').value = 'a@x.com, b@y.com';
+      ov.querySelector('[data-channel="emailnow"]').click();
+      await new Promise(r => setTimeout(r, 900));
+      return { n: calls.length, first: calls[0] && calls[0].template_params, tpl: calls[0] && calls[0].template_id, hasDoc: calls.map(c => !!c.template_params.document), msg: ov.querySelector('#sdResult').textContent };
+    }, { attach, rejectPdf });
+  }
+  const a1 = await sendNowRun(false, false);
+  ck('Send now emails each address straight away', a1.n === 2 && a1.first.to_email === 'a@x.com' && a1.tpl === 'template_msg', a1);
+  ck('without the attach switch no PDF is sent', a1.hasDoc.every(x => !x) && /Sent to/.test(a1.msg), a1);
+  const a2 = await sendNowRun(true, false);
+  ck('with the attach switch the PDF is attached', a2.n === 2 && a2.hasDoc.every(x => x) && /^data:application\/pdf;base64,/.test(a2.first.document) && a2.first.document_name === 'receipt-INV-0007.pdf' && /attached/i.test(a2.msg), a2);
+  const a3 = await sendNowRun(true, true);
+  ck('if the plan rejects the PDF it falls back to sending without it', a3.n === 4 && /did not accept the PDF/.test(a3.msg), a3);
   ck('no page errors', errs.length === 0, errs);
   console.log(fail ? 'FAILED ' + fail : 'ALL OK'); await b.close(); process.exit(fail ? 1 : 0);
 })();
