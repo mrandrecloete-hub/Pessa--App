@@ -878,6 +878,21 @@
 
   ::-webkit-scrollbar{ width:0; height:0; }
 
+  /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
+  @media (orientation:landscape) and (max-height:520px){
+    .app .topbar{ padding:5px 14px; gap:8px; }
+    .topbar .shopname{ font-size:15px; }
+    .glassclock{ padding:3px 10px 4px; min-width:76px; }
+    .todaypill{ padding:3px 10px 4px; }
+    .app .app-emblem{ flex-direction:row; gap:12px; padding:2px 0 calc(2px + env(safe-area-inset-bottom,0px)); }
+    .app .app-emblem img{ height:26px; }
+    .app .app-emblem .emb-row{ margin-right:28px; }
+    .app .app-emblem small, .app .app-emblem span{ font-size:10px; margin:0; }
+    .app .content{ padding-top:8px; }
+    .overlay .sheet{ max-height:94vh; }
+    .overlay.center .sheet{ max-height:92vh; }
+  }
+
   /* ---------- tablet: full-width single column, still an overlay drawer ---------- */
   @media (min-width:640px) and (max-width:1023px){
     body{ align-items:flex-start; }
@@ -21418,7 +21433,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.115';
+var APP_VERSION = '2026.10.116';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21662,6 +21677,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.116', items:[
+    'Pesa can now turn sideways on a phone or tablet. In landscape the header and footer shrink so the page gets more room. If Pesa is installed on the home screen, remove it and add it again once so the phone picks up the new setting'
+  ]},
   { v:'2026.10.115', items:[
     'The Namibian emblem footer is shorter, so every page, including the Dashboard, comes further down the screen. The emblem sits in the middle and its mirror reflection now falls sideways to the right, fading like a shadow'
   ]},
