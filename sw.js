@@ -5,7 +5,7 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v132';
+var CACHE = 'pesa-shell-v133';
 var SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './icon-512-maskable.png', './jspdf.umd.min.js',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
@@ -19,26 +19,43 @@ var EXTERNAL = [
 ];
 var NETWORK_FIRST = ['index.html', 'manifest.json'];
 
+// The page and its small files must be saved before this version takes over. The big files (fonts, PDF library)
+// download quietly afterwards, so a weak mobile connection is never asked for 5 MB at once.
+var CORE = ['./index.html', './manifest.json', './icon-192.png', './apple-touch-icon.png'];
+function keep(cache, u, fresh){
+  // a file that cannot be downloaded right now keeps the copy already saved by the previous version
+  return fetch(new Request(u, fresh ? { cache:'reload' } : {})).then(function(res){
+    if(!res || !res.ok) throw new Error('x');
+    return cache.put(u, res);
+  }).catch(function(){
+    return caches.match(u).then(function(old){ if(old) return cache.put(u, old); });
+  });
+}
+
 self.addEventListener('install', function(evt){
   self.skipWaiting();
   evt.waitUntil(
     caches.open(CACHE).then(function(cache){
-      var jobs = SHELL.map(function(u){
-        // 'reload' skips the browser's own saved copy, so a new version is never stored from a stale download
-        return cache.add(new Request(u, { cache:'reload' })).catch(function(){ /* ignore individual failures */ });
-      });
-      EXTERNAL.forEach(function(u){
-        jobs.push(fetch(new Request(u, {mode:'no-cors'})).then(function(res){ return cache.put(u, res); }).catch(function(){}));
-      });
-      return Promise.all(jobs);
+      var rest = SHELL.filter(function(u){ return CORE.indexOf(u) === -1; });
+      var later = function(){
+        EXTERNAL.forEach(function(u){
+          fetch(new Request(u, {mode:'no-cors'})).then(function(res){ return cache.put(u, res); }).catch(function(){});
+        });
+        return rest.reduce(function(chain, u){ return chain.then(function(){ return keep(cache, u, false); }); }, Promise.resolve());
+      };
+      return Promise.all(CORE.map(function(u){ return keep(cache, u, true); })).then(function(){ later(); });
     })
   );
 });
 
 self.addEventListener('activate', function(evt){
   evt.waitUntil(
-    caches.keys().then(function(keys){
-      return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+    caches.open(CACHE).then(function(cache){ return cache.match('./index.html'); }).then(function(ok){
+      // never delete the older saved copy unless this version has its own page saved
+      if(!ok) return null;
+      return caches.keys().then(function(keys){
+        return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+      });
     }).then(function(){ return self.clients.claim(); })
   );
 });
@@ -60,7 +77,10 @@ self.addEventListener('fetch', function(evt){
     // mobile connection) while the newest copy downloads quietly for the next open. The app
     // itself checks version.json and offers the update while it is running. The very first
     // visit has nothing saved, so it waits for the network.
-    evt.respondWith(caches.match(evt.request, { ignoreSearch:true }).then(function(cached){
+    evt.respondWith(caches.match(evt.request, { ignoreSearch:true }).then(function(c0){
+      // opening the app address (ending in a slash) uses the saved page too, so it opens with no network
+      return c0 || (evt.request.mode === 'navigate' ? caches.match('./index.html') : null);
+    }).then(function(cached){
       var fresh = fetch(evt.request, { cache:'no-cache' }).then(function(res){
         if(res && res.ok){ var copy = res.clone(); caches.open(CACHE).then(function(cache){ cache.put(evt.request, copy); }); }
         return res;

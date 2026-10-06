@@ -20742,7 +20742,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.99';
+var APP_VERSION = '2026.10.100';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20771,11 +20771,22 @@ function pesaShowUpdateBar(v){
 }
 function pesaForceRefresh(){
   var go = function(){ try{ location.reload(); }catch(e){} };
-  // only clear the saved copy once the newest page is confirmed reachable, so going offline mid-update never leaves Pesa without a copy
+  // download the newest page first and save it into the app cache, then reload from that saved copy. Nothing is deleted,
+  // so a weak mobile connection can never leave Pesa without a copy, and the reload itself needs no network.
+  toast(tr('Downloading the update...'));
   fetch('index.html', { cache:'no-store' }).then(function(r){
     if(!r.ok) throw new Error('x');
-    var upd = (navigator.serviceWorker && navigator.serviceWorker.getRegistration) ? navigator.serviceWorker.getRegistration().then(function(reg){ try{ return reg && reg.update().catch(function(){}); }catch(e){} }).catch(function(){}) : Promise.resolve();
-    return upd.then(function(){ return (window.caches && caches.keys) ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }) : null; });
+    var copy = r.clone();
+    return r.arrayBuffer().then(function(){
+      if(!(window.caches && caches.keys)) return null;
+      return caches.keys().then(function(ks){
+        var cur = ks.filter(function(k){ return /^pesa-shell-/.test(k); }).sort().pop();
+        return cur ? caches.open(cur).then(function(c){ return c.put(new Request('./index.html'), copy); }) : null;
+      });
+    });
+  }).then(function(){
+    var reg = (navigator.serviceWorker && navigator.serviceWorker.getRegistration) ? navigator.serviceWorker.getRegistration() : Promise.resolve();
+    return reg.then(function(rg){ try{ return rg && rg.update().catch(function(){}); }catch(e){} }).catch(function(){});
   }).then(go, function(){ try{ toast(tr('Could not download the update. Try again when the connection is better.')); }catch(e){} });
 }
 function backupPayload(){
@@ -20975,6 +20986,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.100', items:[
+    'Fixed Pesa not opening on mobile data. A new version now saves the page first and the big font and PDF files download quietly afterwards, an older saved copy is never thrown away until the new one is safely saved, and Update now no longer clears the saved copy'
+  ]},
   { v:'2026.10.99', items:[
     'Removed the black Pesa hit a snag box that could appear when the phone had no signal while checking for a new app version. A failed update check is now quietly tried again later'
   ]},
