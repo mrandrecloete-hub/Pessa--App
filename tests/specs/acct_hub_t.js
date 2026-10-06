@@ -1,0 +1,34 @@
+// The Accounting hub: five tiles, each opens a view of the figures with a download button, dark theme with the Pesa logo watermark.
+const { chromium } = require('playwright'); const fs = require('fs');
+let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL ') + n + (c ? '' : (extra !== undefined ? '  -> ' + JSON.stringify(extra) : ''))); if (!c) fail++; };
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' });
+  await ctx.route('**/jspdf.umd.min.js', r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(__dirname + '/../../jspdf.umd.min.js') }));
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await require('./biz_boot.js')(p, { demo: true });
+  await p.evaluate(() => { const T = window.__t, S = T.State, now = Date.now(), pr = S.products[0];
+    for (let i = 0; i < 12; i++) S.sales.push({ id: 'sx' + i, items: [{ productId: pr.id, name: pr.name, qty: 2, unitPrice: 30, cost: 18, lineTotal: 60 }], total: 60, cost: 36, profit: 24, paymentMethod: 'cash', cashierName: 'Owner', createdAt: new Date(now - i * 3600000).toISOString() });
+    T.openAccountantSheet(); });
+  await p.waitForFunction(() => /✓|!|✗/.test(document.querySelector('#acDot') ? document.querySelector('#acDot').textContent : ''), null, { timeout: 15000 });
+  ck('five tiles', (await p.$$('[data-actile]')).length === 5);
+  ck('dark theme with the Pesa logo watermark', await p.evaluate(() => !!document.querySelector('.sheet.ac-dark') && !!document.querySelector('.ac-wm img') && document.querySelector('.ac-wm img').src.startsWith('data:image')));
+  ck('title and tagline', /Accounting/.test(await p.textContent('.ac-h')) && /Accurate records/.test(await p.textContent('.ac-tag')));
+  ck('the older sections are still there', await p.evaluate(() => !!document.querySelector('#acList') && !!document.querySelector('#acVerifyAll') && !!document.querySelector('[data-acdoc="journal"]') && !!document.querySelector('#acSetVat')));
+  const open = async k => { await p.evaluate(k => document.querySelector(`[data-actile="${k}"]`).click(), k); await p.waitForTimeout(400); };
+  const back = () => p.evaluate(() => document.querySelector('#acBack').click());
+  await open('tb'); ck('trial balance shows a table and the in balance badge', await p.evaluate(() => !!document.querySelector('#acViewOther .ac-t') && /In balance/.test(document.querySelector('#acViewOther .ac-badge').textContent)));
+  ck('hub is hidden while a view is open', await p.evaluate(() => getComputedStyle(document.querySelector('#acHub')).display === 'none'));
+  await p.evaluate(() => document.querySelector('#acViewDl').click()); await p.waitForSelector('#xpMail', { timeout: 8000 });
+  ck('Download opens the format box, which has Email it', true); await p.click('#xpNo');
+  await back(); ck('Back returns to the tiles', await p.evaluate(() => getComputedStyle(document.querySelector('#acHub')).display !== 'none'));
+  await open('bs'); ck('balance sheet balances', await p.evaluate(() => /Assets equal liabilities plus equity/.test(document.querySelector('#acViewOther .ac-badge').textContent)));
+  await p.evaluate(() => document.querySelector('#acViewDl').click()); await p.waitForSelector('#xpMail', { timeout: 8000 }); await p.click('#xpNo'); await back();
+  await open('pl'); ck('profit and loss shows the figures', await p.evaluate(() => /N\$/.test(document.querySelector('#acHero').textContent) && !document.querySelector('#acPlPdf').disabled));
+  await back();
+  await open('gl'); ck('general ledger lists accounts with entries', await p.evaluate(() => document.querySelectorAll('#acViewOther .ac-gl').length >= 2));
+  await p.evaluate(() => document.querySelector('#acViewDl').click()); await p.waitForSelector('#xpMail', { timeout: 8000 }); await p.click('#xpNo'); await back();
+  await open('jr'); ck('journal lists entries', await p.evaluate(() => document.querySelectorAll('#acViewOther .ac-je').length >= 5));
+  await p.evaluate(() => document.querySelector('#acViewDl').click()); await p.waitForSelector('#xpMail', { timeout: 8000 }); await p.click('#xpNo');
+  ck('no page errors', errs.length === 0, errs);
+  console.log(fail ? 'FAILED ' + fail : 'ALL OK'); await b.close(); process.exit(fail ? 1 : 0);
+})();

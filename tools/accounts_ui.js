@@ -308,6 +308,152 @@ var ACCT_CSS2 = '<style>' +
   '.ac-safe{border:1px dashed var(--border);border-radius:14px;padding:12px 13px;margin:8px 0;font-size:12.5px;line-height:1.5;color:var(--text-muted);}' +
   '</style>';
 
+/* ---- Accounting hub: five tiles, each opening a view of the figures with a download button ---- */
+var ACCT_TILES = [
+  { k:'tb', t:'Trial Balance', d:'View your account balances and check that your books are in balance.' },
+  { k:'bs', t:'Balance Sheet', d:'See your assets, liabilities and equity at a glance.' },
+  { k:'pl', t:'Profit and Loss', d:'Track your income, expenses and net profit.' },
+  { k:'gl', t:'General Ledger', d:'View all transactions across all accounts in one place.' },
+  { k:'jr', t:'Journal', d:'See every accounting entry made from your sales, expenses and payments.' }
+];
+function acctTileIcon(k){
+  var g = '<defs><linearGradient id="acg' + k + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7CF0C4"/><stop offset="1" stop-color="#14996F"/></linearGradient><linearGradient id="acy' + k + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE08A"/><stop offset="1" stop-color="#D99A1E"/></linearGradient></defs>';
+  var body = {
+    tb:'<rect x="8" y="10" width="34" height="44" rx="6" fill="#EEF8F2"/><path d="M14 21h22M14 28h22M14 35h22M14 42h13" stroke="#1E7A5C" stroke-width="2.4" stroke-linecap="round"/><g stroke="url(#acy' + k + ')" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M47 27v25M39 52h16M36 32h22"/><path d="M36 32l-5 10h10zM58 32l-5 10h10z" fill="#E7B73C" fill-opacity=".4"/></g>',
+    bs:'<rect x="6" y="10" width="36" height="44" rx="6" fill="#EEF8F2"/><path d="M12 20h24M12 27h16" stroke="#1E7A5C" stroke-width="2.4" stroke-linecap="round"/><rect x="12" y="38" width="6" height="10" rx="1.5" fill="url(#acg' + k + ')"/><rect x="21" y="33" width="6" height="15" rx="1.5" fill="url(#acg' + k + ')"/><circle cx="46" cy="40" r="12" fill="#0E6B52" stroke="url(#acy' + k + ')" stroke-width="2.4"/><path d="M46 40V28a12 12 0 0111 7.6z" fill="url(#acy' + k + ')"/>',
+    pl:'<rect x="6" y="36" width="9" height="18" rx="2.5" fill="url(#acg' + k + ')"/><rect x="19" y="28" width="9" height="26" rx="2.5" fill="url(#acg' + k + ')"/><rect x="32" y="20" width="9" height="34" rx="2.5" fill="url(#acg' + k + ')"/><path d="M8 28L26 14l10 6 16-12" stroke="url(#acy' + k + ')" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M44 6h9v9" stroke="url(#acy' + k + ')" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="48" cy="44" r="11" fill="url(#acy' + k + ')"/><text x="48" y="49" text-anchor="middle" font-size="14" font-weight="800" fill="#7A4E00" font-family="Arial,sans-serif">$</text>',
+    gl:'<rect x="8" y="8" width="34" height="46" rx="5" fill="#EEF8F2"/><path d="M14 8v46" stroke="#1E7A5C" stroke-width="2.4"/><path d="M20 20h16M20 28h16M20 36h10" stroke="#1E7A5C" stroke-width="2.4" stroke-linecap="round"/><g fill="url(#acy' + k + ')" stroke="#B87C10" stroke-width="1"><ellipse cx="48" cy="48" rx="10" ry="4"/><path d="M38 48v5c0 2.2 4.5 4 10 4s10-1.8 10-4v-5c0 2.2-4.5 4-10 4s-10-1.8-10-4z"/><ellipse cx="48" cy="40" rx="10" ry="4"/><path d="M38 40v5c0 2.2 4.5 4 10 4s10-1.8 10-4v-5c0 2.2-4.5 4-10 4s-10-1.8-10-4z"/></g>',
+    jr:'<rect x="8" y="8" width="38" height="46" rx="6" fill="#EEF8F2"/><path d="M15 20h24M15 28h24M15 36h14" stroke="#1E7A5C" stroke-width="2.4" stroke-linecap="round"/><path d="M40 52l3-10 13-13 7 7-13 13z" fill="url(#acy' + k + ')" stroke="#B87C10" stroke-width="1.2" stroke-linejoin="round"/><path d="M40 52l3-10 7 7z" fill="#7A4E00"/>'
+  }[k] || '';
+  return '<svg viewBox="0 0 64 64" width="62" height="62" aria-hidden="true">' + g + body + '</svg>';
+}
+function acctTilesHtml(){
+  return '<div class="ac-tiles">' + ACCT_TILES.map(function(t){
+    return '<button type="button" class="ac-tile" data-actile="' + t.k + '"><span class="ic">' + acctTileIcon(t.k) + '</span><span class="nm">' + tr(t.t) + '</span><span class="ds">' + tr(t.d) + '</span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>';
+  }).join('') + '</div>';
+}
+function acctTableHtml(head, rows, boldRows){
+  return '<div class="ac-tw"><table class="ac-t"><thead><tr>' + head.map(function(h, i){ return '<th' + (i > 1 || h.r ? ' class="r"' : '') + '>' + esc(tr(h.l || h)) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    rows.map(function(r, ri){ return '<tr' + (boldRows && boldRows.indexOf(ri) > -1 ? ' class="b"' : '') + '>' + r.map(function(c, i){ return '<td' + (i > 1 || head[i] && head[i].r ? ' class="r num"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+}
+function acctTbViewHtml(v){
+  var T = v.tb, ok = T.totalDr === T.totalCr && T.closeNet === 0;
+  var rows = T.rows.map(function(r){ return [r.code, r.name, acctM(r.open), acctM(r.dr), acctM(r.cr), acctM(r.close)]; });
+  rows.push([tr('Totals'), '', acctM(T.openNet), acctM(T.totalDr), acctM(T.totalCr), acctM(T.closeNet)]);
+  return '<div class="ac-badge ' + (ok ? 'ok' : 'bad') + '">' + (ok ? tr('In balance: debits equal credits') : tr('Not in balance. Check the notes on the Profit and Loss view')) + '</div>' +
+    (T.rows.length ? acctTableHtml([tr('Code'), tr('Account'), tr('Opening'), tr('Debits'), tr('Credits'), tr('Closing')], rows, [rows.length - 1]) : '<div class="ac-help">' + tr('No entries for these dates yet.') + '</div>') +
+    '<div class="ac-help">' + tr('Opening and closing are debit minus credit: a positive figure is a debit balance, a negative figure a credit balance.') + '</div>';
+}
+function acctBsViewHtml(v){
+  var b = v.bs, ok = b.totalAssets === b.totalLiabilities + b.totalEquity;
+  function part(title, list, total, totalLabel){
+    var rows = list.filter(function(r){ return r.amount !== 0 || r.code === 'CP'; }).map(function(r){ return [r.name, acctM(r.amount)]; });
+    rows.push([tr(totalLabel), acctM(total)]);
+    return '<div class="section-title"><span>' + tr(title) + '</span></div>' + acctTableHtml([tr('Account'), { l:'Amount', r:true }], rows, [rows.length - 1]);
+  }
+  return '<div class="ac-badge ' + (ok ? 'ok' : 'bad') + '">' + (ok ? tr('Assets equal liabilities plus equity') : tr('Assets do not equal liabilities plus equity')) + '</div>' +
+    part('Assets', b.assets, b.totalAssets, 'Total assets') + part('Liabilities', b.liabilities, b.totalLiabilities, 'Total liabilities') + part('Equity', b.equity, b.totalEquity, 'Total equity') +
+    '<div class="ac-help">' + tr('Pesa does not see your bank, fixed assets, loans or owner drawings, so this is a working view from the records in Pesa, not a full set of financial statements.') + '</div>';
+}
+/** Every account with its opening balance, each posting in order with a running balance, and its closing balance. */
+function acctLedger(B, from, to){
+  var open = {}, lines = {};
+  B.journals.forEach(function(j){
+    if(to && j.date > to) return;
+    j.lines.forEach(function(l){
+      if(j.date < from){ open[l.account] = (open[l.account] || 0) + l.dr - l.cr; return; }
+      (lines[l.account] || (lines[l.account] = [])).push({ date:j.date, id:j.id, memo:j.memo || (j.kind + (j.ref ? ' ' + j.ref : '')), dr:l.dr, cr:l.cr });
+    });
+  });
+  return ACCT_CHART.map(function(a){
+    var bal = open[a.code] || 0, ls = (lines[a.code] || []).map(function(x){ bal += x.dr - x.cr; return Object.assign({ bal:bal }, x); });
+    return { code:a.code, name:a.name, type:a.type, open:open[a.code] || 0, lines:ls, close:bal };
+  }).filter(function(a){ return a.open !== 0 || a.lines.length; });
+}
+function acctGlViewHtml(B, from, to){
+  var L = acctLedger(B, from, to);
+  if(!L.length) return '<div class="ac-help">' + tr('No entries for these dates yet.') + '</div>';
+  return L.map(function(a){
+    var shown = a.lines.slice(-60), hidden = a.lines.length - shown.length;
+    return '<details class="ac-gl"><summary><span><b>' + esc(a.code) + '</b> ' + esc(a.name) + '</span><span class="num">' + esc(acctM(a.close)) + '</span></summary>' +
+      '<div class="ac-help" style="margin:6px 0 4px;">' + tr('Opening') + ': ' + esc(acctM(a.open)) + ' · ' + a.lines.length + ' ' + tr('entries') + (hidden > 0 ? ' · ' + tr('showing the latest 60, download for all') : '') + '</div>' +
+      (shown.length ? acctTableHtml([tr('Date'), tr('Description'), { l:'Debit', r:true }, { l:'Credit', r:true }, { l:'Balance', r:true }], shown.map(function(x){ return [x.date, x.memo, x.dr ? acctM(x.dr) : '', x.cr ? acctM(x.cr) : '', acctM(x.bal)]; })) : '') + '</details>';
+  }).join('');
+}
+function acctJrViewHtml(B, from, to){
+  var js = B.journals.filter(function(j){ return j.date >= from && j.date <= to; }), shown = js.slice(-40).reverse();
+  if(!js.length) return '<div class="ac-help">' + tr('No entries for these dates yet.') + '</div>';
+  return '<div class="ac-help">' + js.length + ' ' + tr('entries') + (js.length > shown.length ? ' · ' + tr('showing the latest 40, download for all') : '') + '</div>' + shown.map(function(j){
+    return '<div class="ac-je"><div class="h"><b>' + esc(j.date) + '</b> <span>' + esc(j.memo || (j.kind + ' ' + (j.ref || ''))) + '</span></div>' +
+      j.lines.map(function(l){ return '<div class="r"><span>' + esc(l.account + ' ' + (ACCT_BY[l.account] ? ACCT_BY[l.account].name : '')) + '</span><span class="num">' + esc(l.dr ? acctM(l.dr) + ' Dr' : acctM(l.cr) + ' Cr') + '</span></div>'; }).join('') + '</div>';
+  }).join('');
+}
+function acctDlHtml(label){ return '<div class="ac-btns"><button class="btn btn-primary" id="acViewDl" type="button">' + tr(label) + '</button></div><div class="ac-help">' + tr('Choose PDF, Excel or another format, or tap Email it to send it to anyone.') + '</div>'; }
+async function acctDownloadBs(v, G){
+  var ready = await ensureJsPDF(); if(!ready){ toast(tr('Couldn’t load the PDF engine. Check your connection and try again')); return; }
+  var b = v.bs, pdf = [], bold = [], xr = [];
+  function part(label, list, total, tl){
+    pdf.push([label, '']); bold.push(pdf.length - 1);
+    list.filter(function(r){ return r.amount !== 0 || r.code === 'CP'; }).forEach(function(r){ pdf.push([r.name, acctNum(r.amount)]); xr.push([label, r.name, acctNum(r.amount)]); });
+    pdf.push([tl, acctNum(total)]); bold.push(pdf.length - 1); xr.push([label, tl, acctNum(total)]);
+  }
+  part('Assets', b.assets, b.totalAssets, 'Total assets'); part('Liabilities', b.liabilities, b.totalLiabilities, 'Total liabilities'); part('Equity', b.equity, b.totalEquity, 'Total equity');
+  var details = [['Business', G.shopName], ['Period end', acctDateText(v.to)], ['Amounts in', 'NAD']];
+  var doc = acctTableDoc(getJsPDF(), { title:'Balance sheet', pill:'Interim', details:details,
+    notes:[tr('A working view from the records in Pesa. It does not include your bank, fixed assets, loans or owner drawings. To be confirmed with your accountant.')],
+    cols:[{ label:'Account', width:132, wrap:true }, { label:'Amount', width:50, align:'right' }], rows:pdf, bold:bold });
+  var xb = acctXlsxBlocks('Balance sheet', [['Business', G.shopName], ['Period end', v.to], ['Amounts in', 'NAD']], [{ label:'Section' }, { label:'Account' }, { label:'Amount', align:'right' }], xr, []);
+  var csv = '﻿' + [['Section', 'Account', 'Amount']].concat(xr).map(function(r){ return r.map(acctCsvQ).join(','); }).join('\r\n') + '\r\n';
+  var ok = await saveGeneratedPdf(doc, 'balance-sheet-' + v.to + '.pdf', { csv:csv, xlsxBlocks:xb, maxPicturePages:8 });
+  if(ok){ logAudit('accounts_downloaded', 'accounting', null, 'Downloaded balance sheet ' + v.to); toast(tr('Balance sheet downloaded')); }
+}
+async function acctDownloadGl(from, to){
+  var ready = await ensureJsPDF(); if(!ready){ toast(tr('Couldn’t load the PDF engine. Check your connection and try again')); return; }
+  var G = await acctGather(), B = acctBuild(G), L = acctLedger(B, from, to), pdf = [], bold = [], xr = [];
+  L.forEach(function(a){
+    pdf.push([a.code + '  ' + a.name, '', tr('Opening'), '', acctNum(a.open)]); bold.push(pdf.length - 1);
+    a.lines.forEach(function(x){ pdf.push([x.date, x.memo, x.dr ? acctNum(x.dr) : '', x.cr ? acctNum(x.cr) : '', acctNum(x.bal)]); xr.push([a.code, a.name, x.date, x.id, x.memo, x.dr ? acctNum(x.dr) : '', x.cr ? acctNum(x.cr) : '', acctNum(x.bal)]); });
+    pdf.push(['', tr('Closing'), '', '', acctNum(a.close)]); bold.push(pdf.length - 1);
+  });
+  var details = [['Business', G.shopName], ['Period', acctDateText(from) + ' to ' + acctDateText(to)], ['Accounts', String(L.length)]];
+  var doc = acctTableDoc(getJsPDF(), { title:'General ledger', pill:'Interim', details:details,
+    notes:[tr('Balance is debit minus credit: a positive figure is a debit balance, a negative figure a credit balance. Amounts are in NAD.')],
+    cols:[{ label:'Date', width:34, wrap:true }, { label:'Description', width:62, wrap:true }, { label:'Debit', width:28, align:'right' }, { label:'Credit', width:28, align:'right' }, { label:'Balance', width:30, align:'right' }], rows:pdf, bold:bold });
+  var xcols = [{ label:'Account code' }, { label:'Account name' }, { label:'Date' }, { label:'Journal id' }, { label:'Description' }, { label:'Debit', align:'right' }, { label:'Credit', align:'right' }, { label:'Balance', align:'right' }];
+  var xb = acctXlsxBlocks('General ledger', [['Business', G.shopName], ['Period', from + ' to ' + to], ['Amounts in', 'NAD']], xcols, xr, []);
+  var csv = '﻿' + [xcols.map(function(c){ return c.label; })].concat(xr).map(function(r){ return r.map(acctCsvQ).join(','); }).join('\r\n') + '\r\n';
+  var ok = await saveGeneratedPdf(doc, 'general-ledger-' + from + '-to-' + to + '.pdf', { csv:csv, xlsxBlocks:xb, maxPicturePages:8 });
+  if(ok){ logAudit('accounts_downloaded', 'accounting', null, 'Downloaded general ledger ' + from + ' to ' + to); toast(tr('General ledger downloaded')); }
+}
+function acctFiledFor(from, to){ return State.accountingPeriods.find(function(r){ return r.from === from && r.to === to; }) || null; }
+var ACCT_CSS3 = '<style>' +
+  '.sheet.ac-dark{max-width:min(1080px,98vw);background:radial-gradient(120% 70% at 85% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 60% at 0% 100%,rgba(217,154,30,.20) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%);' +
+    '--surface:rgba(255,255,255,.07);--surface-2:rgba(255,255,255,.12);--text:#EAFBF3;--text-muted:#9FCDB9;--border:rgba(124,240,196,.24);--primary:#2BD4A0;--primary-dim:#2BD4A0;--primary-contrast:#04251C;--success:#4BE3A2;--danger:#FF8A7A;--bg:#03261D;color:#EAFBF3;position:relative;}' +
+  '.ac-dark .sheet-head h2,.ac-dark h3{color:#EAFBF3;}.ac-dark .section-title,.ac-dark .ac-help,.ac-dark .ac-grp{color:#9FCDB9;}.ac-dark .ac-per button{background:rgba(255,255,255,.08);color:#EAFBF3;border-color:rgba(124,240,196,.3);}.ac-dark .ac-per button[aria-pressed="true"]{background:#2BD4A0;color:#04251C;}.ac-dark .sheet-backrow{color:#BFF5DF;}' +
+  '.ac-dark .btn-ghost{background:rgba(255,255,255,.08);color:#EAFBF3;border-color:rgba(124,240,196,.35);}.ac-dark .btn-primary{background:linear-gradient(135deg,#2BD4A0,#14996F);color:#04251C;border:0;}' +
+  '.ac-dark select,.ac-dark input[type=date],.ac-dark input[type=text],.ac-dark input[type=file]{background:rgba(255,255,255,.08);color:#EAFBF3;border-color:rgba(124,240,196,.35);color-scheme:dark;}' +
+  '.ac-dark .tillcard,.ac-dark .rep-note{background:rgba(255,255,255,.06);border-color:rgba(124,240,196,.22);color:#EAFBF3;}' +
+  '.ac-dark .ac-status,.ac-dark .ac-doc,.ac-dark .ac-hero,.ac-dark .ac-res{background:rgba(255,255,255,.07);border-color:rgba(124,240,196,.26);}' +
+  '.ac-wm{position:sticky;top:0;height:0;z-index:0;pointer-events:none;overflow:visible;}.ac-wm img{position:absolute;right:-30px;top:26px;width:min(72%,430px);opacity:.14;filter:saturate(1.2);}' +
+  '.ac-dark>*:not(.ac-wm){position:relative;z-index:1;}' +
+  '.ac-top{display:flex;align-items:center;gap:10px;margin:2px 0 14px;}.ac-top img{height:40px;width:auto;}.ac-word{font-size:30px;font-weight:800;letter-spacing:-.01em;color:#fff;}' +
+  '.ac-pill{margin-left:auto;border:1px solid rgba(124,240,196,.35);border-radius:999px;padding:7px 12px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;line-height:1.45;color:#CFF5E4;text-align:left;white-space:nowrap;}@media (min-width:600px){.ac-pill{font-size:9.5px;letter-spacing:.14em;}}' +
+  '.ac-gold{width:54px;height:3px;border-radius:3px;background:linear-gradient(90deg,#F2C25A,#D99A1E);margin:6px 0 12px;}' +
+  '.ac-h{font-family:Inter,system-ui,sans-serif;margin:0;font-size:40px;line-height:1.05;font-weight:800;color:#fff;letter-spacing:-.01em;}.ac-tag{margin:10px 0 16px;font-size:16px;line-height:1.45;color:#8FF0C8;}' +
+  '.ac-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 16px;}@media (min-width:760px){.ac-tiles{grid-template-columns:repeat(5,minmax(0,1fr));}}' +
+  '.ac-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:236px;padding:16px 14px 52px;border-radius:24px;border:1px solid rgba(150,255,214,.30);background:linear-gradient(165deg,rgba(60,210,160,.22),rgba(8,60,44,.62));box-shadow:0 14px 30px -16px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.14);color:#fff;font:inherit;cursor:pointer;transition:transform .08s ease-out,border-color .15s;}' +
+  '.ac-tile:hover,.ac-tile:focus-visible{border-color:#F2C25A;}.ac-tile:active{transform:scale(.98);}' +
+  '.ac-tile .ic{display:block;margin:2px 0 14px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45));}.ac-tile .nm{font-size:19px;font-weight:800;line-height:1.15;}' +
+  '.ac-tile .ds{font-size:12.5px;line-height:1.45;color:#BFE4D3;margin-top:8px;}.ac-tile .go{position:absolute;right:12px;bottom:12px;width:44px;height:30px;border-radius:15px;background:rgba(43,212,160,.22);border:1px solid rgba(124,240,196,.35);display:grid;place-items:center;color:#EAFBF3;}' +
+  '.ac-foot{margin:20px 0 4px;padding-top:12px;border-top:1px solid rgba(124,240,196,.18);display:flex;gap:12px;align-items:center;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E8C770;}.ac-foot i{font:italic 700 24px Georgia,serif;letter-spacing:0;text-transform:none;color:#F2C25A;}' +
+  '.ac-back{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(124,240,196,.35);background:rgba(255,255,255,.08);color:#EAFBF3;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;margin:2px 0 10px;}' +
+  '.ac-badge{border-radius:14px;padding:11px 13px;font-size:13.5px;font-weight:700;margin:6px 0 10px;border:1px solid;}.ac-badge.ok{background:rgba(75,227,162,.14);border-color:rgba(75,227,162,.5);color:#8FF0C8;}.ac-badge.bad{background:rgba(255,138,122,.14);border-color:rgba(255,138,122,.5);color:#FFB3A8;}' +
+  '.ac-tw{overflow-x:auto;border:1px solid rgba(124,240,196,.22);border-radius:14px;margin:6px 0 10px;}.ac-t{width:100%;border-collapse:collapse;font-size:12.5px;min-width:600px;}.ac-t td:nth-child(2){min-width:170px;}.ac-t th{background:rgba(43,212,160,.18);color:#CFF5E4;text-transform:uppercase;font-size:10.5px;letter-spacing:.08em;padding:8px 10px;text-align:left;}' +
+  '.ac-t td{color:#EAFBF3;padding:7px 10px;border-top:1px solid rgba(124,240,196,.14);}.ac-t .r{text-align:right;white-space:nowrap;}.ac-t tr.b td{font-weight:800;background:rgba(255,255,255,.06);}' +
+  '.ac-gl{border:1px solid rgba(124,240,196,.22);border-radius:14px;padding:4px 12px 8px;margin-bottom:8px;background:rgba(255,255,255,.05);}.ac-gl summary{display:flex;justify-content:space-between;gap:10px;padding:9px 0;cursor:pointer;font-size:13.5px;}' +
+  '.ac-je{border:1px solid rgba(124,240,196,.22);border-radius:14px;padding:9px 12px;margin-bottom:8px;background:rgba(255,255,255,.05);font-size:12.5px;}.ac-je .h{margin-bottom:5px;}.ac-je .h span{color:var(--text-muted);}.ac-je .r{display:flex;justify-content:space-between;gap:10px;padding:2px 0;}' +
+  '</style>';
+
 /** The Accountant page. */
 function openAccountantSheet(){
   if(!acctGuard()) return;
@@ -315,18 +461,14 @@ function openAccountantSheet(){
   var last = acctPeriods().slice(-1)[0], cat = acctVatCategory();
   var choices = acctPeriodChoices(), cur = periodKeyOf(new Date());
   function secTitle(t, extra){ return '<div class="section-title"><span>' + tr(t) + '</span>' + (extra || '') + '</div>'; }
-  var html = ACCT_CSS + ACCT_CSS2 + '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><img src="' + ICON3D.accountant + '" alt="" width="44" height="44" draggable="false" style="display:block;flex:none;"><h2 style="margin:0;">' + tr('Accountant') + '</h2></div>' +
-    '<div class="ac-status"><div class="ac-dot" id="acDot">…</div><div><div class="ac-st-t" id="acStatus">' + tr('Checking…') + '</div>' +
+  var logo = (typeof PESA_LOGO_DATA_URL !== 'undefined' && PESA_LOGO_DATA_URL) ? PESA_LOGO_DATA_URL : '';
+  var html = ACCT_CSS + ACCT_CSS2 + ACCT_CSS3 +
+    '<div class="ac-wm"><img src="' + logo + '" alt="" draggable="false"></div>' +
+    '<div class="ac-top"><img src="' + logo + '" alt="" draggable="false"><span class="ac-word">Pesa</span><span class="ac-pill">' + tr('Smarter bookkeeping') + '<br>' + tr('Stronger tomorrows') + '</span></div>' +
+    '<div class="ac-gold ac-hubonly"></div><h2 class="ac-h ac-hubonly">' + tr('Accounting') + '</h2><div class="ac-tag ac-hubonly">' + tr('Accurate records. Better decisions.') + '<br>' + tr('Grow your business.') + '</div>' +
+    '<div class="ac-status ac-hubonly"><div class="ac-dot" id="acDot">…</div><div><div class="ac-st-t" id="acStatus">' + tr('Checking…') + '</div>' +
       '<div class="ac-st-s">' + tr('Books start') + ': ' + esc(op && op.date ? acctDateText(op.date) : tr('First record in Pesa')) + '<br>' + tr('Latest month filed') + ': ' + esc(last ? acctLabelOf(last.periodKey) : tr('none yet')) + '</div></div></div>' +
-    secTitle('Profit or loss') +
-    '<div class="ac-per" id="acPer" role="group" aria-label="' + esc(tr('Choose the period')) + '">' + choices.map(function(c){ return '<button type="button" data-acper="' + c.k + '" aria-pressed="false">' + esc(tr(c.t)) + '</button>'; }).join('') + '</div>' +
-    '<div id="acCustom" style="display:none;"><div class="field-row"><div class="field"><label>' + tr('From') + '</label><input id="acFrom" type="date" max="' + todayKey() + '" value="' + cur + '-01"></div><div class="field"><label>' + tr('To') + '</label><input id="acTo" type="date" max="' + todayKey() + '" value="' + todayKey() + '"></div><button class="btn btn-accent" id="acShow" type="button" style="align-self:flex-end;">' + tr('Show') + '</button></div></div>' +
-    '<div id="acHero"><div class="ac-hero"><div class="ac-hero-s">' + tr('Working out your figures…') + '</div></div></div>' +
-    '<div id="acBar"></div><div id="acBreak"></div><div id="acNotes"></div>' +
-    '<div class="ac-help">' + tr('Profit is your sales less the cost of what you sold and your running costs. It is not the same as cash in the bank.') + '</div>' +
-    secTitle('Make a report to keep') +
-    '<div class="ac-help">' + tr('A Profit and Loss report for the dates above. Each report gets a number and a fingerprint, and Pesa keeps a list of the reports you make so you can check them later.') + '</div>' +
-    '<div class="ac-btns"><button class="btn btn-primary" id="acPlPdf" type="button" disabled>' + tr('Save the report') + '</button><button class="btn btn-ghost" id="acPlPrint" type="button" disabled>' + tr('Print the report') + '</button></div>' +
+    '<div id="acHub">' + acctTilesHtml() +
     '<div id="acSmart"></div>' +
     secTitle('More documents') +
     ACCT_DOCS.map(function(d){ return '<button type="button" class="ac-doc" data-acdoc="' + d.k + '"><span class="ic">' + acctDocIcon(d) + '</span><span class="tx"><span class="nm" style="display:block;">' + tr(d.t) + '</span><span class="ds" style="display:block;">' + tr(d.d) + '</span></span></button>'; }).join('') +
@@ -350,8 +492,25 @@ function openAccountantSheet(){
         '<select id="acSetVat"><option value="">' + tr('Choose') + '</option><option value="A"' + (cat === 'A' ? ' selected' : '') + '>A</option><option value="B"' + (cat === 'B' ? ' selected' : '') + '>B</option></select></div>' +
     '</div>' +
     '<div class="rep-note" style="margin-top:12px;">' + tr('Pesa does not see your bank, fixed assets, loans, payroll taxes, owner drawings or income tax. These documents support your records and your accountant. They are not audited and are to be confirmed with the relevant legal bodies, authorities and entities of Namibia and your accountant.') + '</div>';
+  html += '<div class="ac-foot"><i>Pesa</i><span>' + tr('Your numbers. Our focus.') + '</span></div></div>' +
+    '<div id="acDetail" style="display:none;">' +
+      '<button type="button" class="ac-back" id="acBack">&larr; ' + tr('Back to Accounting') + '</button>' +
+      '<h2 class="ac-h" id="acVTitle" style="font-size:30px;"></h2><div class="ac-gold"></div>' +
+      '<div class="ac-per" id="acPer" role="group" aria-label="' + esc(tr('Choose the period')) + '">' + choices.map(function(c){ return '<button type="button" data-acper="' + c.k + '" aria-pressed="false">' + esc(tr(c.t)) + '</button>'; }).join('') + '</div>' +
+      '<div id="acCustom" style="display:none;"><div class="field-row"><div class="field"><label>' + tr('From') + '</label><input id="acFrom" type="date" max="' + todayKey() + '" value="' + cur + '-01"></div><div class="field"><label>' + tr('To') + '</label><input id="acTo" type="date" max="' + todayKey() + '" value="' + todayKey() + '"></div><button class="btn btn-accent" id="acShow" type="button" style="align-self:flex-end;">' + tr('Show') + '</button></div></div>' +
+      '<div id="acViewPl">' +
+        '<div id="acHero"><div class="ac-hero"><div class="ac-hero-s">' + tr('Working out your figures…') + '</div></div></div>' +
+        '<div id="acBar"></div><div id="acBreak"></div><div id="acNotes"></div>' +
+        '<div class="ac-help">' + tr('Profit is your sales less the cost of what you sold and your running costs. It is not the same as cash in the bank.') + '</div>' +
+        secTitle('Make a report to keep') +
+        '<div class="ac-help">' + tr('A Profit and Loss report for the dates above. Each report gets a number and a fingerprint, and Pesa keeps a list of the reports you make so you can check them later.') + '</div>' +
+        '<div class="ac-btns"><button class="btn btn-primary" id="acPlPdf" type="button" disabled>' + tr('Save the report') + '</button><button class="btn btn-ghost" id="acPlPrint" type="button" disabled>' + tr('Print the report') + '</button></div>' +
+      '</div>' +
+      '<div id="acViewOther" style="display:none;"></div>' +
+    '</div>';
   var ov = openSheet(html);
-  var S = { G:null, B:null, status:null, per:'month', from:choices[0].from, to:choices[0].to, v:null };
+  var shEl = ov.querySelector('.sheet'); if(shEl) shEl.classList.add('ac-dark');
+  var S = { G:null, B:null, status:null, per:'month', from:choices[0].from, to:choices[0].to, v:null, view:null };
   function alive(){ return document.body.contains(ov); }
   function $(id){ return ov.querySelector(id); }
 
@@ -367,6 +526,7 @@ function openAccountantSheet(){
     try{
       var v = acctView(S.G, S.B, from, to), pr = acctPrevRange(from, to), pv = (S.B.first && pr.to >= S.B.first) ? acctView(S.G, S.B, pr.from, pr.to) : null;
       S.v = v;
+      if(S.view && S.view !== 'pl') paintOther();
       $('#acHero').innerHTML = acctHeroHtml(v, pv, pr);
       $('#acBar').innerHTML = acctBarHtml(v);
       $('#acBreak').innerHTML = acctBreakdownHtml(v);
@@ -378,6 +538,39 @@ function openAccountantSheet(){
       $('#acPlPdf').disabled = true; $('#acPlPrint').disabled = true;
     }
   }
+  var VIEW_TITLE = { tb:'Trial Balance', bs:'Balance Sheet', pl:'Profit and Loss', gl:'General Ledger', jr:'Journal' };
+  function paintOther(){
+    var box = $('#acViewOther'), v = S.v, k = S.view;
+    if(!S.G || !v){ box.innerHTML = '<div class="ac-help">' + tr('Working out your figures…') + '</div>'; return; }
+    var h = '';
+    if(k === 'tb') h = acctTbViewHtml(v) + acctDlHtml('Download trial balance');
+    else if(k === 'bs') h = acctBsViewHtml(v) + acctDlHtml('Download balance sheet');
+    else if(k === 'gl') h = acctGlViewHtml(S.B, v.from, v.to) + acctDlHtml('Download general ledger');
+    else if(k === 'jr') h = acctJrViewHtml(S.B, v.from, v.to) + acctDlHtml('Download journal');
+    box.innerHTML = h;
+    var b = box.querySelector('#acViewDl');
+    if(b) b.addEventListener('click', function(){
+      if(!acctGuard()) return;
+      var rec = acctFiledFor(v.from, v.to);
+      if(k === 'tb') (rec ? acctDownloadTb(rec) : acctDownloadTbLive(v.from, v.to));
+      else if(k === 'bs') acctDownloadBs(v, S.G);
+      else if(k === 'gl') acctDownloadGl(v.from, v.to);
+      else if(k === 'jr') acctDownloadJournal(v.from, v.to, rec);
+    });
+  }
+  function showView(k){
+    S.view = k;
+    $('#acHub').style.display = 'none'; $('#acDetail').style.display = 'block'; ov.querySelectorAll('.ac-hubonly').forEach(function(e){ e.style.display = 'none'; });
+    $('#acVTitle').textContent = tr(VIEW_TITLE[k] || '');
+    $('#acViewPl').style.display = k === 'pl' ? 'block' : 'none';
+    $('#acViewOther').style.display = k === 'pl' ? 'none' : 'block';
+    if(k !== 'pl') paintOther();
+    if(S.G) paintPeriod();
+    if(shEl) shEl.scrollTop = 0;
+  }
+  function showHub(){ S.view = null; ov.querySelectorAll('.ac-hubonly').forEach(function(e){ e.style.display = ''; }); $('#acDetail').style.display = 'none'; $('#acHub').style.display = 'block'; if(shEl) shEl.scrollTop = 0; }
+  ov.querySelectorAll('[data-actile]').forEach(function(b){ b.addEventListener('click', function(){ if(acctGuard()) showView(b.getAttribute('data-actile')); }); });
+  $('#acBack').addEventListener('click', showHub);
   function setPer(k){
     var c = choices.filter(function(x){ return x.k === k; })[0]; if(!c) return;
     S.per = k;
