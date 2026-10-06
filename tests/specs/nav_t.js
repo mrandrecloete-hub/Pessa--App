@@ -6,6 +6,8 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await p.fill('#rcCompanyName','Nav'); await p.fill('#rcOwnerName','A'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
  ck('top bar gear is gone', !(await p.isVisible('#settingsBtn')));
+
+ await p.waitForTimeout(500);
  const keys=await p.evaluate(()=>[...document.querySelectorAll('#appSidebar [data-drawer-row]')].map(e=>e.getAttribute('data-drawer-row')));
  ck('Settings is the last menu row', keys[keys.length-1]==='settings', keys);
  for(const k of ['audit','security','licence','setup','training','helpsearch','display','compat','pilotform','legal','about']) ck('menu no longer lists '+k, !keys.includes(k));
