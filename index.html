@@ -8395,22 +8395,79 @@ function teamCardHtml(){
     (staff.length ? staff.length+' '+tr('employees')+' · '+active+' '+tr('Active now').toLowerCase()+' · '+tr('Staff sales')+' '+fmtMoney(tot)+' · '+open+' '+tr('Tills open now').toLowerCase()+' · '+fmtMoney(drawer)
       : tr('No employees yet')+'. '+tr('Add employees under Settings → Team.')) + '</div></div>';
 }
+var TK_CSS = '<style>' +
+  '.tk{--tk-g:#0B6B50;--tk-g2:#1FA97F;--tk-y:#C97A0A;--tk-card:linear-gradient(160deg,#FFFFFF 0%,#F1F8F4 100%);}' +
+  ':root[data-theme="dark"] .tk{--tk-g:#4BE3A2;--tk-y:#F2B53A;--tk-card:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));}' +
+  '@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tk{--tk-g:#4BE3A2;--tk-y:#F2B53A;--tk-card:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));}}' +
+  '.tk-banner{position:relative;overflow:hidden;border-radius:24px;border:1px solid var(--border);background:var(--tk-card);padding:14px 14px 14px 16px;margin:2px 0 12px;box-shadow:0 12px 26px -18px rgba(8,70,50,.5);}' +
+  '.tk-banner:before{content:"";position:absolute;right:-40px;bottom:-46px;width:260px;height:120px;border-radius:50%;background:radial-gradient(closest-side,rgba(43,212,160,.28),rgba(43,212,160,0));transform:rotate(-12deg);}' +
+  '.tk-banner:after{content:"";position:absolute;right:-20px;bottom:-14px;width:200px;height:60px;border-radius:50%;background:linear-gradient(90deg,rgba(242,181,58,0),rgba(242,181,58,.45));transform:rotate(-10deg);}' +
+  '.tk-bt{position:relative;z-index:1;display:flex;align-items:center;gap:10px;}.tk-bt h2{margin:0;font-size:22px;letter-spacing:.02em;text-transform:uppercase;font-weight:800;font-family:Inter,system-ui,sans-serif;}' +
+  '.tk-bs{position:relative;z-index:1;display:flex;gap:12px;align-items:flex-start;margin-top:8px;padding-right:46px;font-size:14px;line-height:1.45;color:var(--text);}.tk-bs svg{flex:none;margin-top:2px;color:var(--tk-g);}' +
+  '.tk-go{position:absolute;z-index:2;right:12px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:1px solid var(--border);background:linear-gradient(160deg,#BDEBD7,#7FD0B0);color:#06513C;display:grid;place-items:center;cursor:pointer;}' +
+  '.tk-pills{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 14px;}@media (max-width:420px){.tk-pills{grid-template-columns:repeat(2,minmax(0,1fr));}}' +
+  '.tk-pill{display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--border);border-radius:18px;background:var(--tk-card);color:var(--text);font:inherit;font-size:14px;font-weight:700;padding:12px 8px;cursor:pointer;}.tk-pill svg{flex:none;color:var(--tk-g);}' +
+  '.tk-pill.active{background:linear-gradient(180deg,#0E8466,#065543);color:#fff;border-color:transparent;box-shadow:0 10px 18px -10px rgba(4,70,50,.9);}.tk-pill.active svg{color:#fff;}' +
+  '.tk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px;}' +
+  '.tk-stat{position:relative;display:flex;align-items:center;gap:10px;min-height:88px;padding:12px 10px 12px 16px;border-radius:22px;border:1px solid var(--border);background:var(--tk-card);box-shadow:0 12px 24px -18px rgba(8,70,50,.5);overflow:hidden;}' +
+  '.tk-stat:before{content:"";position:absolute;left:0;top:14%;bottom:14%;width:5px;border-radius:0 5px 5px 0;background:linear-gradient(180deg,#2BD4A0,#0B7A5C);}.tk-stat.y:before{background:linear-gradient(180deg,#F7C65A,#D18A12);}' +
+  '.tk-ic{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;background:radial-gradient(circle at 32% 28%,#2FC79A,#07533F);box-shadow:0 8px 14px -6px rgba(4,70,50,.7),inset 0 2px 3px rgba(255,255,255,.45);}.tk-stat.y .tk-ic{background:radial-gradient(circle at 32% 28%,#FFD36E,#C97A0A);box-shadow:0 8px 14px -6px rgba(150,90,0,.7),inset 0 2px 3px rgba(255,255,255,.5);}' +
+  '.tk-tx{min-width:0;flex:1;}.tk-l{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text);opacity:.85;line-height:1.25;}.tk-v{font-size:19px;font-weight:800;line-height:1.2;margin-top:3px;color:var(--tk-g);white-space:nowrap;letter-spacing:-.03em;}@media (min-width:600px){.tk-v{font-size:25px;letter-spacing:0;}}.tk-stat.y .tk-v{color:var(--tk-y);}.tk-v.sm{font-size:13.5px;line-height:1.25;}.tk-v .tk-sub{display:block;}' +
+  '.tk-corner{flex:none;align-self:flex-start;color:var(--tk-g);opacity:.9;}@media (max-width:480px){.tk-corner{display:none;}}.tk-stat.y .tk-corner{color:var(--tk-y);}' +
+  '.tk-acts{display:grid;grid-template-columns:1.1fr 1fr;gap:12px;margin:0 0 14px;}@media (max-width:360px){.tk-acts{grid-template-columns:1fr;}}' +
+  '.tk-act{display:flex;align-items:center;gap:10px;border-radius:20px;font:inherit;font-size:15px;font-weight:800;padding:14px 12px;cursor:pointer;border:1px solid var(--border);white-space:nowrap;}.tk-act .t{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;}' +
+  '.tk-act.main{background:linear-gradient(100deg,#0B7A5C 0%,#2AA37C 45%,#E5A12B 100%);color:#fff;border-color:transparent;box-shadow:0 12px 22px -12px rgba(150,90,0,.8);}.tk-act.alt{background:var(--tk-card);color:var(--text);}.tk-act.alt svg{color:var(--tk-g);}' +
+  '.tk-empty{text-align:center;padding:14px 10px 6px;}.tk-empty .t{font-size:19px;font-weight:800;margin-top:6px;}.tk-empty .s{font-size:14.5px;color:var(--text-muted);margin-top:3px;}' +
+  '.tk .rowlist .row{border-radius:20px;background:var(--tk-card);box-shadow:0 10px 20px -16px rgba(8,70,50,.5);}' +
+  '</style>';
+function tkIcon(k, sz){
+  var a = 'viewBox="0 0 24 24" width="' + (sz || 26) + '" height="' + (sz || 26) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+  return ({
+    people:'<svg ' + a + '><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.4"/><path d="M16.5 14.3c2.6.1 4.5 2.2 4.5 5"/></svg>',
+    cart:'<svg ' + a + '><path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg>',
+    clock:'<svg ' + a + '><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>',
+    cash:'<svg ' + a + '><rect x="3" y="6" width="18" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6.5 9.5h.01M17.5 14.5h.01"/></svg>',
+    pulse:'<svg ' + a + '><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>',
+    card:'<svg ' + a + '><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg>',
+    trend:'<svg ' + a + '><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+    shop:'<svg ' + a + '><path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3M10 20v-5h4v5"/></svg>',
+    user:'<svg ' + a + '><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3-6.2 7-6.2s7 2.6 7 6.2"/></svg>',
+    wallet:'<svg ' + a + '><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M16 14.5h2"/></svg>',
+    cal:'<svg ' + a + '><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h.01M12 14h.01M16 14h.01"/></svg>',
+    grid:'<svg ' + a + '><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
+    send:'<svg ' + a + '><path d="M21 3L3 11l7 3 3 7z"/><path d="M10 14l11-11"/></svg>',
+    chat:'<svg ' + a + '><path d="M4 5h16v11H9l-5 4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg>',
+    arrow:'<svg ' + a + '><path d="M9 5l7 7-7 7"/></svg>',
+    globe:'<svg ' + a + '><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.3 3 14.7 0 18M12 3c-3 3.3-3 14.7 0 18"/></svg>'
+  })[k] || '';
+}
+function tkStat(ic, label, value, y, corner, small){
+  return '<div class="tk-stat' + (y ? ' y' : '') + '"><span class="tk-ic">' + tkIcon(ic, 28) + '</span><div class="tk-tx"><div class="tk-l">' + label + '</div><div class="tk-v num' + (small ? ' sm' : '') + '">' + value + '</div></div><span class="tk-corner">' + tkIcon(corner, 22) + '</span></div>';
+}
+function tkBannerHtml(){
+  var st = { state:'off', label:'' }; try{ st = Sync.status(); }catch(e){}
+  var txt = st.state === 'off' ? tr('Devices are not connected. Turn on Advanced Pesa Connection in Settings so every computer and device shares the same data.') : (st.state === 'cloud' ? tr('Live cloud storage: all devices share the same data.') : st.label);
+  var act = st.state === 'off' ? tr('Open Settings') : (st.state !== 'cloud' ? tr('Sync now') : '');
+  return '<div class="tk-banner"><div class="tk-bt"><span style="color:var(--tk-g);">' + tkIcon('people', 34) + '</span><h2>' + tr('Employee tracking') + '</h2></div>' +
+    '<div class="tk-bs">' + tkIcon('globe', 24) + '<span>' + esc(txt) + '</span></div>' +
+    (act ? '<button class="tk-go" data-trkgo="' + (st.state === 'off' ? 'settings' : 'sync') + '" type="button" aria-label="' + esc(act) + '">' + tkIcon('arrow', 22) + '</button>' : '') + '</div>';
+}
 function renderTeamTracking(){
   if(!isManagerOrOwner()) return '<div class="empty"><div class="t">'+tr('Only the owner and managers can see this.')+'</div></div>';
   var from = trkRange(TRK.range), staff = staffList();
-  var h = '<div class="section-title" style="margin-top:0;">'+tr('Employee tracking')+'</div>' + syncStripHtml();
-  h += '<div class="segbtns" style="margin:10px 0;">' + [['today','Today'],['7','Last 7 days'],['month','This month'],['all','All']].map(function(r){ return '<button class="segbtn'+(TRK.range===r[0]?' active':'')+'" data-trk="'+r[0]+'" style="padding:8px 4px;font-size:12.5px;">'+tr(r[1])+'</button>'; }).join('') + '</div>';
+  var h = TK_CSS + '<div class="tk">' + tkBannerHtml();
+  h += '<div class="tk-pills">' + [['today','Today','cal'],['7','Last 7 days','cal'],['month','This month','cal'],['all','All','grid']].map(function(r){ return '<button class="tk-pill'+(TRK.range===r[0]?' active':'')+'" data-trk="'+r[0]+'" type="button">'+tkIcon(r[2], 20)+'<span>'+tr(r[1])+'</span></button>'; }).join('') + '</div>';
   var stats = staff.map(function(u){ return { u:u, s:staffStats(u, from, null) }; }).sort(function(a,b){ return b.s.total - a.s.total; });
   var team = stats.reduce(function(a,x){ a.total += x.s.total; a.count += x.s.count; a.cash += x.s.by.cash.t; a.card += x.s.by.card.t; a.drawer += x.s.openTill ? x.s.expected : 0; a.open += x.s.openTill ? 1 : 0; a.active += (x.u.lastActiveAt && Date.now()-new Date(x.u.lastActiveAt).getTime() < 600000) ? 1 : 0; return a; }, { total:0, count:0, cash:0, card:0, drawer:0, open:0, active:0 });
-  h += '<div class="me-grid">' +
-    '<div class="me-stat"><div class="l">'+tr('Staff sales')+'</div><div class="v num">'+fmtMoney(team.total)+'</div></div>' +
-    '<div class="me-stat"><div class="l">'+tr('Sales')+'</div><div class="v num">'+team.count+'</div></div>' +
-    '<div class="me-stat"><div class="l">'+tr('Tills open now')+'</div><div class="v num">'+team.open+'</div></div>' +
-    '<div class="me-stat"><div class="l">'+tr('Cash in open tills')+'</div><div class="v num">'+fmtMoney(team.drawer)+'</div></div>' +
-    '<div class="me-stat"><div class="l">'+tr('Active now')+'</div><div class="v num">'+team.active+' / '+staff.length+'</div></div>' +
-    '<div class="me-stat"><div class="l">'+tr('Cash')+' / '+tr('Card')+'</div><div class="v num" style="font-size:15px;">'+fmtMoney(team.cash)+' / '+fmtMoney(team.card)+'</div></div></div>';
-  h += '<div class="actions" style="margin-bottom:12px;"><button class="btn btn-accent btn-block" data-trkmsg="all" type="button">'+tr('Send a message')+'</button><button class="btn btn-ghost btn-block" data-trklog="1" type="button">'+tr('Messages')+(unreadMessages().length?' ('+unreadMessages().length+')':'')+'</button></div>';
-  if(!staff.length) return h + '<div class="empty"><div class="t">'+tr('No employees yet')+'</div><div class="s">'+tr('Add employees under Settings → Team.')+'</div></div>';
+  h += '<div class="tk-grid">' +
+    tkStat('people', tr('Staff sales'), fmtMoney(team.total), false, 'trend') +
+    tkStat('cart', tr('Sales'), team.count, true, 'trend') +
+    tkStat('clock', tr('Tills open now'), team.open, false, 'shop') +
+    tkStat('cash', tr('Cash in open tills'), fmtMoney(team.drawer), true, 'wallet') +
+    tkStat('pulse', tr('Active now'), team.active + ' / ' + staff.length, false, 'user') +
+    tkStat('card', tr('Cash') + ' / ' + tr('Card'), fmtMoney(team.cash) + '<span class="tk-sub">/ ' + fmtMoney(team.card) + '</span>', true, 'card', true) + '</div>';
+  h += '<div class="tk-acts"><button class="tk-act main" data-trkmsg="all" type="button">'+tkIcon('send', 22)+'<span class="t">'+tr('Send a message')+'</span>'+tkIcon('arrow', 16)+'</button><button class="tk-act alt" data-trklog="1" type="button">'+tkIcon('chat', 22)+'<span class="t">'+tr('Messages')+(unreadMessages().length?' ('+unreadMessages().length+')':'')+'</span>'+tkIcon('arrow', 16)+'</button></div>';
+  if(!staff.length) return h + '<div class="tk-empty"><span style="color:var(--tk-g);">'+tkIcon('people', 46)+'</span><div class="t">'+tr('No employees yet')+'</div><div class="s">'+tr('Add employees under Settings → Team.')+'</div></div></div>';
   var best = stats[0] && stats[0].s.total > 0 ? stats[0].u.id : null;
   h += '<div class="rowlist">' + stats.map(function(x){
     var u = x.u, s = x.s;
@@ -8421,11 +8478,12 @@ function renderTeamTracking(){
       '<div class="sub">'+esc(u.jobTitle||tr(ROLE_LABELS[u.role]||u.role))+' · '+esc(lastSeenText(u))+'</div>' +
       '<div class="sub">'+esc(main)+(u.role!=='stockclerk'?' · '+esc(tillTxt):'')+(varTxt?' · '+esc(varTxt):'')+'</div></div>' +
       '<div class="trail"><div class="amt num">'+(u.role==='stockclerk'?'':fmtMoney(s.total))+'</div></div></div>';
-  }).join('') + '</div>';
+  }).join('') + '</div></div>';
   return h;
 }
 function wireTeamTracking(root){
   wireSyncStrip(root);
+  root.querySelectorAll('[data-trkgo]').forEach(function(b){ b.addEventListener('click', function(){ if(b.getAttribute('data-trkgo') === 'settings') openSettingsSheet(); else { syncNowSafe(); toast(tr('Syncing…')); } }); });
   root.querySelectorAll('[data-trk]').forEach(function(b){ b.addEventListener('click', function(){ TRK.range = b.getAttribute('data-trk'); render(); }); });
   root.querySelectorAll('[data-trku]').forEach(function(b){ b.addEventListener('click', function(){ openStaffDetailSheet(b.getAttribute('data-trku')); }); });
   root.querySelectorAll('[data-trkmsg]').forEach(function(b){ b.addEventListener('click', function(){ openComposeMessageSheet(b.getAttribute('data-trkmsg')); }); });
@@ -21322,7 +21380,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.108';
+var APP_VERSION = '2026.10.109';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21566,6 +21624,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.109', items:[
+    'Employee tracking has a new look: a banner with the connection status, rounded period buttons, six figure cards with round icons and green and gold bars, and larger Send a message and Messages buttons. The figures and the staff list are unchanged'
+  ]},
   { v:'2026.10.108', items:[
     'NamRA VAT summary has a new look: the Pesa logo, a green page with a white card, an icon on every figure and a dark green download button. The figures, the VAT rate and the PDF are unchanged'
   ]},
