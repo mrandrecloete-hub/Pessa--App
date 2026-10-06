@@ -310,6 +310,12 @@
     position:absolute; top:0; right:0; bottom:0; left:0; z-index:-1; pointer-events:none;
     overflow:hidden;
   }
+  /* menu drawer: the big P is drawn clear, and fades in at Sell and out again between Credit and Invoices (positions are measured when the menu opens) */
+  .drawer .app-watermark{ -webkit-mask-image:var(--wm-mask,none); mask-image:var(--wm-mask,none); }
+  .drawer .app-watermark::before{ top:var(--wm-y,44%); width:440px; height:427px; margin-left:-220px; margin-top:-213px; opacity:.34; filter:none; }
+  .drawer .app-watermark::after{ opacity:0; }
+  :root[data-theme="dark"] .drawer .app-watermark::before{ opacity:.24; }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .drawer .app-watermark::before{ opacity:.24; } }
   .app-watermark::before{
     content:""; position:absolute; left:50%; top:44%; width:380px; height:369px;
     margin-left:-190px; margin-top:-184.5px;
@@ -15766,6 +15772,17 @@ function openDashboardDrawer(){
   '</div>';
   root.innerHTML = '';
   root.appendChild(overlay);
+  try{
+    var dr = overlay.querySelector('.drawer'), wmEl = dr.querySelector('.app-watermark');
+    var top = function(k){ var e = dr.querySelector('[data-drawer-row="'+k+'"]'); return e ? (e.getBoundingClientRect().top - dr.getBoundingClientRect().top + dr.scrollTop) : null; };
+    var rb = function(k){ var e = dr.querySelector('[data-drawer-row="'+k+'"]'); return e ? (e.getBoundingClientRect().bottom - dr.getBoundingClientRect().top + dr.scrollTop) : null; };
+    var tSell = top('tab-sell'), bCredit = rb('tab-credit'), tInv = top('tab-invoices');
+    if(tSell != null && bCredit != null && tInv != null){
+      var a0 = Math.max(0, tSell - 24), a1 = tSell + 40, b0 = bCredit - 6, b1 = tInv + 6;
+      dr.style.setProperty('--wm-mask', 'linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) '+a0+'px, #000 '+a1+'px, #000 '+b0+'px, rgba(0,0,0,0) '+b1+'px, rgba(0,0,0,0) 100%)');
+      dr.style.setProperty('--wm-y', Math.round((a1 + b0) / 2)+'px');
+    }
+  }catch(e){}
   function closeDrawer(){ if(overlay.parentNode) overlay.parentNode.removeChild(overlay); }
   overlay.addEventListener('click', function(e){ if(e.target === overlay) closeDrawer(); });
   overlay.querySelector('#drawerCloseBtn').addEventListener('click', closeDrawer);
@@ -21433,7 +21450,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.116';
+var APP_VERSION = '2026.10.117';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21677,6 +21694,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.117', items:[
+    'Menu: the big P behind the menu is now clear, fades in at Sell and fades out again between Credit and Invoices'
+  ]},
   { v:'2026.10.116', items:[
     'Pesa can now turn sideways on a phone or tablet. In landscape the header and footer shrink so the page gets more room. If Pesa is installed on the home screen, remove it and add it again once so the phone picks up the new setting'
   ]},
