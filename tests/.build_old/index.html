@@ -425,6 +425,10 @@
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .section-title .see-all{ color:var(--primary); } }
 
   #content{ animation: contentIn 0.08s ease-out; }
+  /* Dashboard page: a soft light green that warms to a little sand brown instead of plain white around the green panel */
+  .app.dash-bg{ background:linear-gradient(180deg,#D3E6D8 0%,#DCE8D2 45%,#E2E1C8 100%); }
+  :root[data-theme="dark"] .app.dash-bg{ background:var(--bg); }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app.dash-bg{ background:var(--bg); } }
   /* never starts see through, so a stalled animation cannot leave the page faded */
   @keyframes contentIn{ from{ transform:translateY(3px); } to{ transform:translateY(0); } }
   @media (prefers-reduced-motion: reduce){ #content{ animation:none; } }
@@ -16407,6 +16411,7 @@ function renderSoon(){
 }
 function render(){
   _rsPending = false;
+  try{ var _ap = document.getElementById('app'); if(_ap) _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); }catch(e){}
   if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
   applyAppFont();
   updateHeader();
@@ -21403,7 +21408,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.111';
+var APP_VERSION = '2026.10.112';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21647,6 +21652,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.112', items:[
+    'Dashboard: the plain white around the green panel is now a soft light green that warms to a little sand brown'
+  ]},
   { v:'2026.10.111', items:[
     'Send sheet: the Send now and Email buttons now sit in two tidy columns, so none are cut off on a narrow phone. New promotion video: a new introduction of the developer, four new slides (Accounting, Employee tracking, Send now, VAT figures) and a Launching soon in the Namibian market slide'
   ]},
