@@ -917,6 +917,15 @@
     .app.inv-bg .app-emblem:after{ content:""; position:absolute; left:0; right:0; bottom:0; height:60px; pointer-events:none; background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23073B2D'/><stop offset='1' stop-color='%230A5A43'/></linearGradient><linearGradient id='y' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23F2C25A' stop-opacity='0'/><stop offset='.5' stop-color='%23F2C25A'/><stop offset='1' stop-color='%23F2C25A' stop-opacity='.2'/></linearGradient></defs><path d='M0 30 C90 6 170 46 270 30 S360 10 400 22 V60 H0 Z' fill='url(%23g)'/><path d='M0 28 C90 4 170 44 270 28 S360 8 400 20' fill='none' stroke='url(%23y)' stroke-width='2.2'/></svg>") bottom/100% 100% no-repeat; }
   }
 
+  /* Dashboard on a phone: the dark panel fills the whole screen and the header and footer become see-through glass floating over it */
+  @media (max-width:1023px){
+    .app.dash-bg .content{ position:absolute; top:0; right:0; bottom:0; left:0; padding:0; z-index:0; max-width:none; width:auto; margin:0; height:auto; }
+    .app.dash-bg .dkd{ border-radius:0; margin:0; min-height:100%; padding-top:calc(var(--tb-h,76px) + env(safe-area-inset-top,0px) + 12px); padding-bottom:calc(var(--ft-h,90px) + 14px); }
+    .app.dash-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:rgba(8,70,54,.42); -webkit-backdrop-filter:blur(18px) saturate(1.4); backdrop-filter:blur(18px) saturate(1.4); box-shadow:0 1px 0 rgba(255,255,255,.18) inset, 0 8px 24px -14px rgba(0,0,0,.6); border-bottom:1px solid rgba(255,255,255,.14); }
+    .app.dash-bg .app-emblem{ position:absolute; left:0; right:0; bottom:0; z-index:30; background:rgba(8,70,54,.46); -webkit-backdrop-filter:blur(18px) saturate(1.4); backdrop-filter:blur(18px) saturate(1.4); border-top:1px solid rgba(255,255,255,.14); }
+    .app.dash-bg .app-emblem span, .app.dash-bg .app-emblem small{ color:#EAFBF3; text-shadow:0 1px 3px rgba(0,0,0,.45); }
+  }
+
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
     .app .topbar{ padding:5px 14px; gap:8px; }
@@ -16477,6 +16486,15 @@ function updateHeader(){
   function add(){ try{ document.querySelectorAll('.app-emblem').forEach(function(e){ var im = e.querySelector('img:not(.refl)'); if(im && !e.querySelector('img.refl')){ var c = im.cloneNode(true); c.className = 'refl'; c.setAttribute('aria-hidden', 'true'); c.setAttribute('alt', ''); var row = document.createElement('span'); row.className = 'emb-row'; im.parentNode.insertBefore(row, im); row.appendChild(im); row.appendChild(c); } }); }catch(e){} }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();
 })();
+function dashGlassSize(){
+  try{
+    var ap = document.getElementById('app'), tb = ap && ap.querySelector('.topbar'), em = ap && ap.querySelector('.app-emblem');
+    if(tb) ap.style.setProperty('--tb-h', tb.offsetHeight + 'px');
+    if(em) ap.style.setProperty('--ft-h', em.offsetHeight + 'px');
+  }catch(e){}
+}
+window.addEventListener('resize', function(){ try{ if(State.tab === 'dashboard') dashGlassSize(); }catch(e){} });
+window.addEventListener('orientationchange', function(){ setTimeout(function(){ try{ if(State.tab === 'dashboard') dashGlassSize(); }catch(e){} }, 250); });
 var _rsPending = false;
 /** Many records arriving at once (start up, sync) now cause one redraw instead of one per collection. */
 function renderSoon(){
@@ -16487,7 +16505,7 @@ function renderSoon(){
 }
 function render(){
   _rsPending = false;
-  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); } }catch(e){}
+  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); if(State.tab === 'dashboard') dashGlassSize(); } }catch(e){}
   if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
   applyAppFont();
   updateHeader();
@@ -21484,7 +21502,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.118';
+var APP_VERSION = '2026.10.119';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21728,6 +21746,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.119', items:[
+    'Dashboard on a phone now fills the whole screen. The header and the Proudly Namibian footer are see through glass floating over it, still fully visible'
+  ]},
   { v:'2026.10.118', items:[
     'Invoices page has a new look: a dark emerald header with a gold edge, the Pesa logo clear behind the page, a search box and a New invoice button, period buttons with icons, invoice cards with a green bar and an amount badge, and a dark green wave with a gold swoosh under the Proudly Namibian words'
   ]},
