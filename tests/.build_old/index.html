@@ -20732,7 +20732,7 @@ function openStockTakeResultSheet(take){
 var _errN = 0, _errAt = 0;
 function safetyNote(msg){
   var m = String((msg && msg.message) || msg || '');
-  if(!m || /^script error|resizeobserver|loading chunk|network ?error|failed to fetch|load failed|abort/i.test(m)) return;
+  if(!m || /^script error|resizeobserver|loading chunk|network ?error|failed to fetch|load failed|abort|serviceworker|service worker/i.test(m)) return;
   var now = Date.now();
   if(_errN >= 3 || now - _errAt < 15000) return;
   _errN++; _errAt = now;
@@ -20742,7 +20742,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.98';
+var APP_VERSION = '2026.10.99';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20774,7 +20774,7 @@ function pesaForceRefresh(){
   // only clear the saved copy once the newest page is confirmed reachable, so going offline mid-update never leaves Pesa without a copy
   fetch('index.html', { cache:'no-store' }).then(function(r){
     if(!r.ok) throw new Error('x');
-    var upd = (navigator.serviceWorker && navigator.serviceWorker.getRegistration) ? navigator.serviceWorker.getRegistration().then(function(reg){ try{ return reg && reg.update(); }catch(e){} }).catch(function(){}) : Promise.resolve();
+    var upd = (navigator.serviceWorker && navigator.serviceWorker.getRegistration) ? navigator.serviceWorker.getRegistration().then(function(reg){ try{ return reg && reg.update().catch(function(){}); }catch(e){} }).catch(function(){}) : Promise.resolve();
     return upd.then(function(){ return (window.caches && caches.keys) ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }) : null; });
   }).then(go, function(){ try{ toast(tr('Could not download the update. Try again when the connection is better.')); }catch(e){} });
 }
@@ -20975,6 +20975,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.99', items:[
+    'Removed the black Pesa hit a snag box that could appear when the phone had no signal while checking for a new app version. A failed update check is now quietly tried again later'
+  ]},
   { v:'2026.10.98', items:[
     'Fixed the home page sometimes showing faded and hard to read on a phone. Pages now never start see through, so nothing can get stuck half hidden'
   ]},
@@ -24085,10 +24088,10 @@ setInterval(updateHeader, 60000);
   try{
     if('serviceWorker' in navigator && window.self === window.top){
       navigator.serviceWorker.register('sw.js').then(function(reg){
-          try{ reg.update(); }catch(e){}
+          try{ reg.update().catch(function(){}); }catch(e){}
           // phones on mobile data lose and regain the connection often: look for a newer version whenever the
           // app comes back to the front or the network returns. Offline, nothing happens and Pesa keeps working.
-          function checkUpdate(){ try{ if(navigator.onLine !== false) reg.update(); }catch(e){} }
+          function checkUpdate(){ try{ if(navigator.onLine !== false) reg.update().catch(function(){}); }catch(e){} }
           window.addEventListener('online', checkUpdate);
           document.addEventListener('visibilitychange', function(){ if(!document.hidden) checkUpdate(); });
           setInterval(checkUpdate, 10*60000);
