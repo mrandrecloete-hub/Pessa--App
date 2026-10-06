@@ -21593,7 +21593,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.136';
+var APP_VERSION = '2026.10.137';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21837,6 +21837,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.137', items:[
+    'Promotion video: the VAT slide now shows the dark VAT screen, so every screen in the video matches the app'
+  ]},
   { v:'2026.10.136', items:[
     'The NamRA VAT summary now has the same dark emerald glass colours as the rest of the app, instead of a white card'
   ]},
