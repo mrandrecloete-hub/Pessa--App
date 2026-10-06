@@ -21591,7 +21591,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.128';
+var APP_VERSION = '2026.10.129';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21835,6 +21835,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.129', items:[
+    'Promotion video: two new slides explain the name. Pesa means money in Swahili and a weight in Spanish, so Pesa is a weightlifter for Namibia. The same line is in the Pesa Ad words'
+  ]},
   { v:'2026.10.128', items:[
     'Fixes after the new look: the Messages chat is readable on its dark background, and the header pills are smaller on narrow phones so more of the shop name shows'
   ]},
