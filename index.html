@@ -1018,6 +1018,17 @@
   .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname{ color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.6); }
   .app.pg-bg .topbar .shopmeta, .app.inv-bg .topbar .shopmeta{ color:#F2C25A; }
   .app.pg-bg .topbar .icon-btn, .app.inv-bg .topbar .icon-btn{ color:#fff; border-color:rgba(242,194,90,.7); background:rgba(255,255,255,.08); }
+  /* employee home: the big figures use the bright mint and gold gradients, not the dark green meant for light pages */
+  .app.pg-bg #content .me-grid .me-stat .v{ background:linear-gradient(135deg,#B6FFE3,#2BD4A0); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
+  .app.pg-bg #content .me-grid .me-stat:nth-child(even) .v{ background:linear-gradient(135deg,#FFE9A8,#F2C25A); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .app.pg-bg #content .me-stat{ background:linear-gradient(165deg,rgba(60,210,160,.16),rgba(8,60,44,.55)); border-color:rgba(150,255,214,.26); }
+  .app.pg-bg #content .me-stat .l{ color:#CDEFE0; }
+  /* point of sale terminal: same dark emerald glass */
+  #posRoot{ --surface:rgba(255,255,255,.07); --surface-2:rgba(255,255,255,.12); --surface-3:rgba(43,212,160,.18); --text:#F6FFFA; --text-muted:#CDEFE0; --border:rgba(124,240,196,.26); --primary:#2BD4A0; --primary-dim:#2BD4A0; --primary-contrast:#04251C; --success:#4BE3A2; --danger:#FF8A7A; --bg:#03261D; background:radial-gradient(120% 50% at 90% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%); color-scheme:dark; }
+  #posRoot .pos-head{ background:linear-gradient(115deg,#052A21 0%,#0A4A38 52%,#06362A 100%); color:#fff; border-bottom:2px solid #F2C25A; }
+  #posRoot .card, #posRoot .row, #posRoot button.pos-card, #posRoot [class*="pos-"][class*="card"]{ background:linear-gradient(165deg,rgba(60,210,160,.16),rgba(8,60,44,.55)); border-color:rgba(150,255,214,.26); color:#F6FFFA; }
+  #posRoot input, #posRoot select{ background:rgba(255,255,255,.08); color:#fff; border-color:rgba(124,240,196,.35); color-scheme:dark; }
+  #posRoot .btn-ghost{ background:rgba(255,255,255,.08); color:#F6FFFA; border-color:rgba(124,240,196,.35); }
   /* bright, readable lettering on the dark pages */
   .app.pg-bg, .app.inv-bg, .app.dash-bg, .overlay .sheet, .drawer{ --text-muted:#CDEFE0; --text:#F6FFFA; }
   .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname, .app.dash-bg .topbar .shopname{ color:#fff; text-shadow:0 1px 5px rgba(0,0,0,.85); font-weight:800; }
@@ -21603,7 +21614,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.138';
+var APP_VERSION = '2026.10.139';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21847,6 +21858,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.139', items:[
+    'Employee pages: the figures on the cashier and stock clerk home page are now bright and easy to read on the dark look, and the point of sale terminal uses the same dark emerald glass'
+  ]},
   { v:'2026.10.138', items:[
     'Brighter lettering on the dark look: the header name and status, labels, hints, placeholders, typed text and the chat messages are all brighter so they are easy to read'
   ]},
