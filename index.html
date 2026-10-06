@@ -4654,7 +4654,7 @@ function crsIssue(uid, cid, kind){
   if(certs[kind]) return certs[kind];
   var rec = { no:crsCertNo(cid, kind), at:new Date().toISOString() };
   crsMut(uid, function(p){ p.courses[cid] = p.courses[cid] || { modules:{} }; p.courses[cid].certs = Object.assign({}, p.courses[cid].certs || {}, (function(o){ o[kind] = rec; return o; })({})); });
-  logAudit('create', 'certificate', uid, (kind === 'attendance' ? 'Certificate of attendance' : 'Certificate of completion') + ' ' + rec.no + ' issued to ' + crsUser(uid).name);
+  logAudit('create', 'certificate', uid, (kind === 'attendance' ? 'Attendance record' : 'Completion record') + ' ' + rec.no + ' issued to ' + crsUser(uid).name);
   return rec;
 }
 function crsShuffle(a){ a = a.slice(); for(var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
@@ -4662,7 +4662,7 @@ function crsShuffle(a){ a = a.slice(); for(var i = a.length - 1; i > 0; i--){ va
 function openCoursesSheet(){
   var me = crsMeId(), mgr = isManagerOrOwner();
   var html = '<div class="sheet-head"><h2>' + ICONS.book + '<span style="margin-left:8px;">' + tr('Real practical training') + '</span></h2></div>' +
-    '<div class="banner" style="display:block;"><b>' + tr('Theory and practical') + '</b><br>' + tr('Read the notes, watch the slides, do the practical activity at work, then take the quiz. Finish a course to earn a certificate from your shop.') + '</div>' +
+    '<div class="banner" style="display:block;"><b>' + tr('Theory and practical') + '</b><br>' + tr('Training in Pesa is for internal staff training and development only.') + ' ' + '' + tr('Read the notes, watch the slides, do the practical activity at work, then take the quiz. Finish a course to get an internal training record from your shop. This training is for internal staff training and development only.') + '</div>' +
     '<div class="section-title">' + tr('Courses') + '</div><div class="rowlist">' + COURSES.map(function(c){
       var s = crsSummary(me, c.id), g = s.overall != null ? crsGrade(s.overall) : null;
       return '<button class="row" type="button" data-course="' + c.id + '" style="width:100%;text-align:left;"><div class="ico" style="width:40px;height:40px;border-radius:11px;background:' + c.color + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">' + esc(c.code) + '</div>' +
@@ -4675,7 +4675,7 @@ function openCoursesSheet(){
       var st = ((crsProgOf(me).ext || {})[e.id] || {}).status || '';
       return '<div class="row"><div class="main"><div class="title">' + esc(e.title) + '</div><div class="sub">' + esc(e.by) + ' · ' + esc(e.hours) + '<br>' + esc(e.note) + '</div></div><div class="trail"><button class="btn btn-ghost" type="button" data-extopen="' + e.id + '" style="padding:5px 11px;">' + tr('Open') + '</button><br><button class="btn btn-ghost" type="button" data-extmark="' + e.id + '" style="padding:4px 10px;margin-top:4px;font-size:11.5px;">' + (st === 'completed' ? tr('Completed') : (st === 'started' ? tr('Started') : tr('Mark'))) + '</button></div></div>';
     }).join('') + '</div>' +
-    (mgr ? '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="crTeam" type="button">' + tr('Team progress and certificates') + '</button></div>' : '') +
+    (mgr ? '<div class="actions" style="margin-top:12px;"><button class="btn btn-primary btn-block" id="crTeam" type="button">' + tr('Team progress and records') + '</button></div>' : '') +
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="crBack" type="button">' + tr('Back to Training') + '</button></div>';
   var ov = openSheet(html);
   ov.querySelectorAll('[data-course]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openCourseSheet(b.getAttribute('data-course')); }); });
@@ -4698,13 +4698,13 @@ function openCourseSheet(cid, uid){
     '<div class="tillcard"><div style="font-size:13px;line-height:1.5;">' + (s.done === s.total ? tr('All modules are done. You can take the final exam.') : tr('Finish every module (read, practical and a quiz pass of 60 percent) to unlock the final exam.')) + '</div>' +
     (s.finBest != null ? '<div class="tillrow" style="margin-top:8px;"><span class="l">' + tr('Best exam mark') + '</span><span class="v num">' + s.finBest + '% ' + crsGrade(s.finBest).sym + '</span></div>' : '') +
     (mine ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-primary btn-block" id="cFinal" type="button"' + (s.done === s.total ? '' : ' disabled') + '>' + (s.finBest != null ? tr('Retake the final exam') : tr('Start the final exam')) + '</button></div>' : '') + '</div>' +
-    '<div class="section-title">' + tr('Results and certificates') + '</div>' +
+    '<div class="section-title">' + tr('Results and records') + '</div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="cWork" type="button">' + tr('Course workbook (PDF)') + '</button></div>' +
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="cStmt" type="button">' + tr('Statement of results (PDF)') + '</button></div>' +
-    '<div class="actions" style="margin-top:8px;"><button class="btn ' + (s.complete ? 'btn-primary' : 'btn-ghost') + ' btn-block" id="cCert" type="button"' + (s.complete ? '' : ' disabled') + '>' + tr('Certificate of completion (PDF)') + '</button></div>' +
-    '<div class="actions" style="margin-top:8px;"><button class="btn ' + (s.allRead ? 'btn-accent' : 'btn-ghost') + ' btn-block" id="cAtt" type="button"' + (s.allRead ? '' : ' disabled') + '>' + tr('Certificate of attendance (PDF)') + '</button></div>' +
-    '<div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;line-height:1.5;">' + tr('The certificate of attendance needs every module read and every practical done. The certificate of completion also needs a pass in every quiz and in the final exam. Certificates are for skills enhancement and are not an accredited qualification.') + '</div>' +
-    (isOwner() ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="cSign" type="button">' + tr('Owner signature for certificates') + '</button></div>' : '') +
+    '<div class="actions" style="margin-top:8px;"><button class="btn ' + (s.complete ? 'btn-primary' : 'btn-ghost') + ' btn-block" id="cCert" type="button"' + (s.complete ? '' : ' disabled') + '>' + tr('Completion record (PDF)') + '</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn ' + (s.allRead ? 'btn-accent' : 'btn-ghost') + ' btn-block" id="cAtt" type="button"' + (s.allRead ? '' : ' disabled') + '>' + tr('Attendance record (PDF)') + '</button></div>' +
+    '<div style="font-size:11.5px;color:var(--text-muted);margin-top:8px;line-height:1.5;">' + tr('The attendance record needs every module read and every practical done. The completion record also needs a pass in every quiz and in the final exam. These records are for internal staff training and development only. They are not accredited, registered or externally recognised qualifications, and are not issued or endorsed by any education or training authority.') + '</div>' +
+    (isOwner() ? '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="cSign" type="button">' + tr('Owner signature for training records') + '</button></div>' : '') +
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="cBack" type="button">' + tr('Back') + '</button></div>';
   var ov = openSheet(html);
   ov.querySelectorAll('[data-mod]').forEach(function(b){ b.addEventListener('click', function(){ if(!mine){ toast(tr('Only the learner can open the modules')); return; } closeModal(); openModuleSheet(cid, b.getAttribute('data-mod'), 'read'); }); });
@@ -4807,7 +4807,7 @@ function crsRunQuiz(title, questions, onSave, onDone){
 }
 function openSignatureSheet(after){
   var cur = State.settings.ownerSignature || '';
-  var html = '<div class="sheet-head"><h2>' + tr('Owner signature') + '</h2></div><div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + tr('Sign with your finger or mouse. This signature is printed on every certificate and statement the shop issues.') + '</div>' +
+  var html = '<div class="sheet-head"><h2>' + tr('Owner signature') + '</h2></div><div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + tr('Sign with your finger or mouse. This signature is printed on every internal training record and statement the shop issues.') + '</div>' +
     '<canvas id="sgPad" width="640" height="220" style="width:100%;height:auto;aspect-ratio:640/220;border:1px dashed var(--border);border-radius:12px;background:#fff;touch-action:none;"></canvas>' +
     (cur ? '<div style="font-size:11.5px;color:var(--text-muted);margin-top:6px;">' + tr('A signature is saved already. Drawing a new one replaces it.') + '</div>' : '') +
     '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost" id="sgClear" type="button">' + tr('Clear') + '</button><button class="btn btn-primary btn-block" id="sgSave" type="button">' + tr('Save signature') + '</button></div>' +
@@ -4915,7 +4915,7 @@ async function crsWorkbookPdf(c){
   c.outcomes.forEach(function(o){ pdSet(doc, 'f', pal.gold); doc.circle(mm + 1.5, y - 1.2, 0.9, 'F'); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); pdSet(doc, 't', pal.text); var l = doc.splitTextToSize(o, w - 6); doc.text(l, mm + 5, y); y += l.length * 5 + 1.5; });
   y += 4; pdSection(doc, pal, mm, y + 3, w, 'Modules'); y += 11;
   y = pdfTable(doc, { x:mm, y:y, width:w, columns:[{label:'Module',width:w - 36},{label:'Minutes',width:36,align:'right'}], rows:c.modules.map(function(m, i){ return [(i + 1) + '. ' + m.title, String(m.mins)]; }) }) + 6;
-  doc.setFontSize(9); pdSet(doc, 't', pal.muted); var gl = doc.splitTextToSize('Pass mark ' + CRS_PASS + ' percent. Grades: A 80 to 100 Distinction, B 70 to 79 Merit, C 60 to 69 Pass, D 50 to 59 Fail, E below 50 Fail. Certificates are for skills enhancement and are not an accredited qualification.', w); doc.text(gl, mm, y);
+  doc.setFontSize(9); pdSet(doc, 't', pal.muted); var gl = doc.splitTextToSize('Pass mark ' + CRS_PASS + ' percent. Grades: A 80 to 100 Distinction, B 70 to 79 Merit, C 60 to 69 Pass, D 50 to 59 Fail, E below 50 Fail. These records are for internal staff training and development only. They are not accredited, registered or externally recognised qualifications, and are not issued or endorsed by any education or training authority.', w); doc.text(gl, mm, y);
   c.modules.forEach(function(m, i){ doc.addPage(); crsNotesInto(doc, head, c, m, i + 1, { y:pdTop(doc, 16) }); });
   return doc;
 }
@@ -4947,9 +4947,9 @@ async function crsCertPdf(uid, cid, kind){
   if(useLogo && meta.clean){ var lh = 17, lw = lh * (meta.w || 1) / (meta.h || 1); if(lw > 50){ lw = 50; lh = 50 * (meta.h || 1) / (meta.w || 1); } try{ doc.addImage(useLogo, logoImgType(useLogo), 22, 14 + (26 - lh) / 2, lw, lh); drewLogo = true; }catch(e){} }
   doc.setFont('helvetica', 'bold'); doc.setFontSize(drewLogo ? 9 : 14); pdSet(doc, 't', [255, 255, 255]);
   if(!drewLogo) doc.text(doc.splitTextToSize(shop, 100)[0], 22, 29);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); pdSet(doc, 't', pal.gold2); pdCS(doc, 0); doc.text('SKILLS TRAINING CERTIFICATE', W - 22, 29, { align:'right' });
-  doc.setFont('times', 'bold'); doc.setFontSize(35); pdSet(doc, 't', pal.deep); doc.text(kind === 'attendance' ? 'Certificate of Attendance' : 'Certificate of Completion', W / 2, 66, { align:'center' });
-  doc.setFont('times', 'italic'); doc.setFontSize(13); pdSet(doc, 't', pal.muted); doc.text('This is to certify that', W / 2, 78, { align:'center' });
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); pdSet(doc, 't', pal.gold2); pdCS(doc, 0); doc.text('INTERNAL STAFF TRAINING RECORD', W - 22, 29, { align:'right' });
+  doc.setFont('times', 'bold'); doc.setFontSize(35); pdSet(doc, 't', pal.deep); doc.text(kind === 'attendance' ? 'Record of Attendance' : 'Record of Completion', W / 2, 66, { align:'center' });
+  doc.setFont('times', 'italic'); doc.setFontSize(13); pdSet(doc, 't', pal.muted); doc.text('This record shows that', W / 2, 78, { align:'center' });
   doc.setFont('times', 'bolditalic'); doc.setFontSize(36); pdSet(doc, 't', pal.mid); doc.text(u.name, W / 2, 94, { align:'center' });
   var nw = Math.min(150, doc.getTextWidth(u.name) + 20); pdSet(doc, 'd', pal.gold); doc.setLineWidth(0.6); doc.line(W / 2 - nw / 2, 98, W / 2 + nw / 2, 98);
   doc.setFont('times', 'italic'); doc.setFontSize(13); pdSet(doc, 't', pal.muted); doc.text(kind === 'attendance' ? 'attended and took part in every module and practical activity of' : 'has successfully completed the theory and practical training course', W / 2, 108, { align:'center' });
@@ -4958,12 +4958,12 @@ async function crsCertPdf(uid, cid, kind){
   var det = c.code + '  ·  ' + c.modules.length + ' modules  ·  ' + c.hours + ' hours of study' + (kind === 'completion' && g ? '  ·  Final result ' + s.overall + ' percent, Grade ' + g.sym + ' (' + g.word + '), PASS' : '');
   doc.text(det, W / 2, 130, { align:'center' });
   doc.setFont('helvetica', 'italic'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted);
-  var dl = doc.splitTextToSize('This certificate is issued by ' + shop + ' for skills enhancement and personal development. It is not an accredited or registered qualification.', 190); doc.text(dl, W / 2, 138, { align:'center' });
+  var dl = doc.splitTextToSize('This record is issued by ' + shop + ' for internal staff training and development only. It is not an accredited, registered or externally recognised qualification, and it is not issued or endorsed by any education or training authority.', 190); doc.text(dl, W / 2, 138, { align:'center' });
   crsSignatureBlock(doc, 30, 170, 70, owner, shop, pal);
   crsStudentBlock(doc, W - 100, 170, 70, crsUser(uid).name, pal);
   var cx = W / 2, cy = 160; pdSet(doc, 'd', pal.gold); doc.setLineWidth(1); doc.circle(cx, cy, 13); doc.setLineWidth(0.3); doc.circle(cx, cy, 10.5); pdSet(doc, 'f', pal.gold); doc.circle(cx, cy, 2.2, 'F');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(5.8); pdSet(doc, 't', pal.mid); doc.text('SKILLS', cx, cy - 4.5, { align:'center' }); doc.text('TRAINING', cx, cy + 7.2, { align:'center' });
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted); doc.text('Certificate no. ' + rec.no + '  ·  Issued ' + fmtDateNice(rec.at) + '  ·  Issued digitally with Pesa  ·  ' + shop, W / 2, H - 16, { align:'center' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted); doc.text('Record no. ' + rec.no + '  ·  Issued ' + fmtDateNice(rec.at) + '  ·  Issued digitally with Pesa  ·  ' + shop, W / 2, H - 16, { align:'center' });
   return doc;
 }
 async function crsStatementPdf(uid, cid){
@@ -4990,7 +4990,7 @@ async function crsStatementPdf(uid, cid){
   if(y + 52 > head.limit){ doc.addPage(); y = pdTop(doc, 16); }
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.2); pdSet(doc, 't', pal.muted);
   var ct = (certs.completion ? 'Certificate of completion no. ' + certs.completion.no + '. ' : '') + (certs.attendance ? 'Certificate of attendance no. ' + certs.attendance.no + '. ' : '');
-  var note = doc.splitTextToSize(ct + 'This statement is issued by ' + btShop() + ' for skills enhancement. It is not an accredited or registered qualification.', w); doc.text(note, mm, y); y += note.length * 4 + 18;
+  var note = doc.splitTextToSize(ct + 'This statement is issued by ' + btShop() + ' for internal staff training and development only. It is not an accredited, registered or externally recognised qualification, and it is not issued or endorsed by any education or training authority.', w); doc.text(note, mm, y); y += note.length * 4 + 18;
   crsSignatureBlock(doc, mm, y + 8, 62, crsOwnerName(), btShop(), pal);
   crsStudentBlock(doc, mm + w - 62, y + 8, 62, crsUser(uid).name, pal);
   return doc;
@@ -20174,7 +20174,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.87';
+var APP_VERSION = '2026.10.88';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20407,6 +20407,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.88', items:[
+    'Training is now clearly for internal staff training and development only. Certificates are now called training records, and every record states it is not an accredited, registered or externally recognised qualification'
+  ]},
   { v:'2026.10.87', items:[
     'Safer wording: tax, privacy and electronic record notices now say these are to be confirmed with the relevant legal bodies, authorities and entities of Namibia, and no approval is claimed anywhere',
     'The store badges are removed from the menu and from the promo video until Pesa is available on those stores'
@@ -20427,7 +20430,7 @@ var CHANGELOG = [
     'New: Customer Service Excellence course (6 modules), plus Personal Effectiveness and Money Skills courses, each with reading, slides, practical tasks, module quizzes and a final exam',
     'New: Download PDF slides, notes and a workbook for every module',
     'New: Certificate of completion and certificate of attendance, signed by the shop owner (draw your signature once), with a statement of results showing every module, mark, symbol and PASS or FAIL',
-    'New: Free external courses for self advancement, with progress tracking. Certificates are for skills enhancement and are not accredited'
+    'New: Free external courses for self advancement, with progress tracking. Training records are for internal staff training and development only and are not accredited'
   ]},
   { v:'2026.10.83', items:[
     'New: Clock in and clock out for every employee (on the home page), with an Attendance page for owners and managers: who is on shift, hours per person, missed shifts, and a spreadsheet timesheet',
