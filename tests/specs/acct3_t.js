@@ -6,7 +6,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await p.evaluate(()=>window.__t.openAccountantSheet()); await p.waitForSelector('[data-acdoc]');
  await p.waitForFunction(()=>!/Checking/.test(document.querySelector('#acStatus').textContent),null,{timeout:8000});
  ck('four documents listed', (await p.$$('[data-acdoc]')).length===4);
- const t=await p.innerText('.sheet'); ck('has labelled sections', /More documents/i.test(t)&&/Profit or loss/i.test(t)&&/Filed months/i.test(t)&&/Settings/i.test(t));
+ const t=await p.innerText('.sheet'); ck('has labelled sections', /More documents/i.test(t)&&/Profit and Loss/i.test(t)&&/Filed months/i.test(t)&&/Settings/i.test(t));
  ck('status shows a result', /All passed|review|Failed/.test(await p.innerText('#acStatus')));
 
  const L=await p.evaluate(()=>{const f=window.__t.acctVatLatest; const o=(c,y,m,d)=>{const r=f(c,new Date(y,m,d)); return r.start+'>'+r.end+' due '+r.due+' d'+r.days;}; return [o('A',2026,9,5),o('B',2026,9,5),o('A',2027,0,10),o('B',2027,0,10),o('A',2026,0,31)];});

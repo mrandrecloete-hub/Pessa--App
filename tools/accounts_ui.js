@@ -329,7 +329,7 @@ function acctTileIcon(k){
 }
 function acctTilesHtml(){
   return '<div class="ac-tiles">' + ACCT_TILES.map(function(t){
-    return '<button type="button" class="ac-tile" data-actile="' + t.k + '"><span class="ic">' + acctTileIcon(t.k) + '</span><span class="nm">' + tr(t.t) + '</span><span class="ds">' + tr(t.d) + '</span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>';
+    return '<button type="button" class="ac-hubtile" data-actile="' + t.k + '"><span class="ic">' + acctTileIcon(t.k) + '</span><span class="nm">' + tr(t.t) + '</span><span class="ds">' + tr(t.d) + '</span><span class="go" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>';
   }).join('') + '</div>';
 }
 function acctTableHtml(head, rows, boldRows){
@@ -427,7 +427,7 @@ async function acctDownloadGl(from, to){
 }
 function acctFiledFor(from, to){ return State.accountingPeriods.find(function(r){ return r.from === from && r.to === to; }) || null; }
 var ACCT_CSS3 = '<style>' +
-  '.sheet.ac-dark{max-width:min(1080px,98vw);background:radial-gradient(120% 70% at 85% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 60% at 0% 100%,rgba(217,154,30,.20) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%);' +
+  '.sheet.ac-dark{max-width:min(1080px,98vw);overflow-x:hidden;background:radial-gradient(120% 70% at 85% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 60% at 0% 100%,rgba(217,154,30,.20) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%);' +
     '--surface:rgba(255,255,255,.07);--surface-2:rgba(255,255,255,.12);--text:#EAFBF3;--text-muted:#9FCDB9;--border:rgba(124,240,196,.24);--primary:#2BD4A0;--primary-dim:#2BD4A0;--primary-contrast:#04251C;--success:#4BE3A2;--danger:#FF8A7A;--bg:#03261D;color:#EAFBF3;position:relative;}' +
   '.ac-dark .sheet-head h2,.ac-dark h3{color:#EAFBF3;}.ac-dark .section-title,.ac-dark .ac-help,.ac-dark .ac-grp{color:#9FCDB9;}.ac-dark .ac-per button{background:rgba(255,255,255,.08);color:#EAFBF3;border-color:rgba(124,240,196,.3);}.ac-dark .ac-per button[aria-pressed="true"]{background:#2BD4A0;color:#04251C;}.ac-dark .sheet-backrow{color:#BFF5DF;}' +
   '.ac-dark .btn-ghost{background:rgba(255,255,255,.08);color:#EAFBF3;border-color:rgba(124,240,196,.35);}.ac-dark .btn-primary{background:linear-gradient(135deg,#2BD4A0,#14996F);color:#04251C;border:0;}' +
@@ -441,10 +441,10 @@ var ACCT_CSS3 = '<style>' +
   '.ac-gold{width:54px;height:3px;border-radius:3px;background:linear-gradient(90deg,#F2C25A,#D99A1E);margin:6px 0 12px;}' +
   '.ac-h{font-family:Inter,system-ui,sans-serif;margin:0;font-size:40px;line-height:1.05;font-weight:800;color:#fff;letter-spacing:-.01em;}.ac-tag{margin:10px 0 16px;font-size:16px;line-height:1.45;color:#8FF0C8;}' +
   '.ac-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 16px;}@media (min-width:760px){.ac-tiles{grid-template-columns:repeat(5,minmax(0,1fr));}}' +
-  '.ac-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:236px;padding:16px 14px 52px;border-radius:24px;border:1px solid rgba(150,255,214,.30);background:linear-gradient(165deg,rgba(60,210,160,.22),rgba(8,60,44,.62));box-shadow:0 14px 30px -16px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.14);color:#fff;font:inherit;cursor:pointer;transition:transform .08s ease-out,border-color .15s;}' +
-  '.ac-tile:hover,.ac-tile:focus-visible{border-color:#F2C25A;}.ac-tile:active{transform:scale(.98);}' +
-  '.ac-tile .ic{display:block;margin:2px 0 14px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45));}.ac-tile .nm{font-size:19px;font-weight:800;line-height:1.15;}' +
-  '.ac-tile .ds{font-size:12.5px;line-height:1.45;color:#BFE4D3;margin-top:8px;}.ac-tile .go{position:absolute;right:12px;bottom:12px;width:44px;height:30px;border-radius:15px;background:rgba(43,212,160,.22);border:1px solid rgba(124,240,196,.35);display:grid;place-items:center;color:#EAFBF3;}' +
+  '.ac-hubtile{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:236px;padding:16px 14px 52px;border-radius:24px;border:1px solid rgba(150,255,214,.30);background:linear-gradient(165deg,rgba(60,210,160,.22),rgba(8,60,44,.62));box-shadow:0 14px 30px -16px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.14);color:#fff;font:inherit;cursor:pointer;transition:transform .08s ease-out,border-color .15s;}' +
+  '.ac-hubtile:hover,.ac-hubtile:focus-visible{border-color:#F2C25A;}.ac-hubtile:active{transform:scale(.98);}' +
+  '.ac-hubtile .ic{display:block;margin:2px 0 14px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45));}.ac-hubtile .nm{font-size:19px;font-weight:800;line-height:1.15;}' +
+  '.ac-hubtile .ds{font-size:12.5px;line-height:1.45;color:#BFE4D3;margin-top:8px;}.ac-hubtile .go{position:absolute;right:12px;bottom:12px;width:44px;height:30px;border-radius:15px;background:rgba(43,212,160,.22);border:1px solid rgba(124,240,196,.35);display:grid;place-items:center;color:#EAFBF3;}' +
   '.ac-foot{margin:20px 0 4px;padding-top:12px;border-top:1px solid rgba(124,240,196,.18);display:flex;gap:12px;align-items:center;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#E8C770;}.ac-foot i{font:italic 700 24px Georgia,serif;letter-spacing:0;text-transform:none;color:#F2C25A;}' +
   '.ac-back{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(124,240,196,.35);background:rgba(255,255,255,.08);color:#EAFBF3;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;margin:2px 0 10px;}' +
   '.ac-badge{border-radius:14px;padding:11px 13px;font-size:13.5px;font-weight:700;margin:6px 0 10px;border:1px solid;}.ac-badge.ok{background:rgba(75,227,162,.14);border-color:rgba(75,227,162,.5);color:#8FF0C8;}.ac-badge.bad{background:rgba(255,138,122,.14);border-color:rgba(255,138,122,.5);color:#FFB3A8;}' +

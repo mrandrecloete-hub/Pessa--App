@@ -29,6 +29,7 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
   await p.waitForTimeout(400);
   await p.evaluate(() => window.__t.openAccountantSheet());
   await p.waitForFunction(() => { const e = document.getElementById('acStatus'); return e && !/Checking/.test(e.textContent); }, null, { timeout: 15000 });
+  await p.click('[data-actile="pl"]');
   const hero = () => p.innerText('#acHero');
   // 1. this month: 40 - 30 - 100 = loss 90
   let h = await hero();
