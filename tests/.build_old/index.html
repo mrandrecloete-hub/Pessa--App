@@ -21544,7 +21544,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.125';
+var APP_VERSION = '2026.10.126';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21788,6 +21788,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.126', items:[
+    'Promotion video: a new Join the Pesa family slide with the team photo, just before the final slide'
+  ]},
   { v:'2026.10.125', items:[
     'Promotion video updated: the app slides now show the new look (Dashboard, Sell, Stock, Credit, Invoices, Accounting, Employee tracking, Send now and VAT), with the developer introduction and the waving flag Launching soon slide'
   ]},
