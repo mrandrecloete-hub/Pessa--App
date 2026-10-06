@@ -3083,6 +3083,8 @@ function secAllow(level, what){
   return ok;
 }
 /* ask again for the password or PIN before a high risk action (not asked twice within 90 seconds) */
+/** Removing people or registrations: the password or PIN is asked every time, never remembered from a moment ago. */
+function secAskEveryTime(reason, fn){ askPasswordSheet(reason || tr('Confirm with your password or PIN'), fn); }
 var _reauthAt = 0;
 function secReauth(reason, fn){
   if(Date.now() - _reauthAt < 90000){ fn(); return; }
@@ -3137,7 +3139,7 @@ function auditVerify(){
    through guardRun. */
 var _guardPass = 0;
 function guardRun(fn){ _guardPass++; try{ return fn(); } finally { _guardPass--; } }
-var GUARD_MANAGER_DELETE = ['expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','branches','suppliers','customers','payRuns','clockLogs','tips','quotes','stockTakes'];
+var GUARD_MANAGER_DELETE = ['posDevices','expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','branches','suppliers','customers','payRuns','clockLogs','tips','quotes','stockTakes'];
 var SALE_OPEN_KEYS = ['fiscalId', 'fiscalKey', 'receiptSentAt', 'receiptSent'];
 function dataGuard(coll, op, id, existing, patch){
   if(_guardPass) return true;
@@ -3183,7 +3185,7 @@ function dataGuard(coll, op, id, existing, patch){
   return true;
 }
 /* The original of a removed financial record is kept (who, when, why and a hash of its content). */
-var GUARD_ARCHIVE = ['expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];
+var GUARD_ARCHIVE = ['posDevices','users','expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];
 var secDeleteReason = '';
 /** Run a removal with the reason the person gave, so the archive and the activity log record it. */
 function secWithReason(reason, fn){ var old = secDeleteReason; secDeleteReason = String(reason || '').slice(0, 200); try{ return fn(); } finally { secDeleteReason = old; } }
@@ -9175,7 +9177,7 @@ function openStaffSheet(user){
     '<div id="sfError"></div>' +
     '<div class="actions">' +
       (isEdit && !isMe ? '<button class="btn '+(user.active===false?'btn-primary':'btn-danger')+'" id="sfToggleActive">'+(user.active===false?tr('Reactivate'):tr('Deactivate'))+'</button>' : '') +
-      (isEdit && !isMe && user.active === false && isOwner() && !staffHasRecords(user) ? '<button class="btn btn-danger" id="sfDelete" type="button">'+tr('Delete')+'</button>' : '') +
+      (isEdit && !isMe && isOwner() && user.role !== 'owner' ? '<button class="btn btn-danger" id="sfDelete" type="button">'+tr('Remove')+'</button>' : '') +
       '<button class="btn btn-primary btn-block" id="sfSave">'+(isEdit?tr('Save changes'):tr('Add staff member'))+'</button>' +
     '</div>';
   var ov = openSheet(html, {center:true});
@@ -9200,9 +9202,13 @@ function openStaffSheet(user){
   ov.querySelectorAll('[data-sfmode]').forEach(function(b){ b.addEventListener('click', function(){ sfMode = b.getAttribute('data-sfmode'); ov.querySelectorAll('[data-sfmode]').forEach(function(x){ x.classList.toggle('active', x===b); }); renderCredFields(); }); });
   var sfDel = ov.querySelector('#sfDelete');
   if(sfDel) sfDel.addEventListener('click', function(){
-    confirmSheet(tr('Delete')+' '+user.name+'?', tr('Their login is removed for good. They have no sales or till sessions on record, so no history is lost.'), tr('Delete'), function(){
-      if(!secAllow('owner', 'deleting a staff member')) return;
-      secReauth(tr('Confirm with your password to delete this staff member'), function(){ refs.users.doc(user.id).delete(); logAudit('delete','staff',user.id,'Deleted staff member '+user.name); toast(tr('Staff member deleted')); openTeamSheet(); });
+    var hist = staffHasRecords(user);
+    confirmSheet(tr('Remove')+' '+user.name+'?', hist ? tr('Their login and Point of sale access are removed. Their past sales and till records stay under their name, so no history is lost. A copy of the staff record is kept in the archive.') : tr('Their login and Point of sale access are removed. A copy of the staff record is kept in the archive.'), tr('Remove'), function(){
+      if(!secAllow('owner', 'removing a staff member')) return;
+      secAskEveryTime(tr('Enter your password to remove this staff member'), function(){
+        secWithReason('Staff member removed', function(){ archiveRemoved('users', user.id, Object.assign({}, user, { passHash:'', inviteCode:'' })); guardRun(function(){ refs.users.doc(user.id).delete(); }); });
+        logAudit('delete','staff',user.id,'Removed staff member '+user.name); toast(tr('Staff member removed')); openTeamSheet();
+      });
     }, true, true);
   });
   if(isEdit && !isMe){
@@ -10393,7 +10399,7 @@ function openPosDeviceDetail(id){
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="pdEdit">'+tr('Edit')+'</button>' +
       (d.linkedAt ? '<button class="btn btn-ghost btn-block" id="pdUnlink">'+tr('Unlink device')+'</button>' : '<button class="btn btn-ghost btn-block" id="pdNewCode">'+tr('New code')+'</button>') + '</div>' +
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="pdBlock">'+(d.status==='blocked'?tr('Unblock'):tr('Block terminal'))+'</button>' +
-      '<button class="btn btn-danger btn-block" id="pdDel">'+tr('Delete')+'</button></div>' +
+      '<button class="btn btn-danger btn-block" id="pdDel">'+tr('Remove')+'</button></div>' +
     '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="pdBack">'+tr('Back')+'</button></div>';
   var ov = openSheet(html);
   ov.querySelector('#pdBack').addEventListener('click', openPosDevicesSheet);
@@ -10410,9 +10416,14 @@ function openPosDeviceDetail(id){
     refs.posDevices.doc(d.id).update({ status:b }); logAudit('update','posDevice',d.id,'Terminal '+d.name+(b==='blocked'?' blocked':' unblocked'));
     setTimeout(function(){ openPosDeviceDetail(d.id); }, 80);
   });
-  ov.querySelector('#pdDel').addEventListener('click', function(){ confirmSheet(tr('Delete terminal?'), tr('Past card sales keep their record. This only removes the terminal and its limits.'), tr('Delete'), function(){
-    refs.posDevices.doc(d.id).delete(); logAudit('delete','posDevice',d.id,'Terminal '+d.name+' deleted'); setTimeout(openPosDevicesSheet, 80);
-  }, true, true); });
+  ov.querySelector('#pdDel').addEventListener('click', function(){
+    if(!secAllow('manager', 'removing a terminal')) return;
+    confirmSheet(tr('Remove terminal?'), tr('Past card sales keep their record. This only removes the terminal, its limits and its link to any phone or tablet. A copy is kept in the archive.'), tr('Remove'), function(){
+      secAskEveryTime(tr('Enter your password to remove this terminal'), function(){
+        secWithReason('Terminal removed', function(){ refs.posDevices.doc(d.id).delete(); });
+        logAudit('delete','posDevice',d.id,'Terminal '+d.name+' removed'); toast(tr('Terminal removed')); setTimeout(openPosDevicesSheet, 80);
+      });
+    }, true, true); });
 }
 function openPosSettleSheet(id){
   var d = State.posDevices.find(function(x){ return x.id === id; }); if(!d) return;
@@ -20214,7 +20225,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.90';
+var APP_VERSION = '2026.10.91';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20447,6 +20458,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.91', items:[
+    'New: Remove button with your password for employees and for card terminals (Point of sale registrations). The password is asked every time, past sales and till records stay, and a copy of what was removed is kept in the archive'
+  ]},
   { v:'2026.10.90', items:[
     'Faster: opening Pesa on a busy shop is about 3.5 times quicker, switching pages is up to 10 times quicker, and records that arrive together (start up, syncing) now redraw the screen once instead of many times'
   ]},

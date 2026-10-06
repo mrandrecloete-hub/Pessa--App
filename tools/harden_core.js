@@ -39,6 +39,8 @@ function secAllow(level, what){
   return ok;
 }
 /* ask again for the password or PIN before a high risk action (not asked twice within 90 seconds) */
+/** Removing people or registrations: the password or PIN is asked every time, never remembered from a moment ago. */
+function secAskEveryTime(reason, fn){ askPasswordSheet(reason || tr('Confirm with your password or PIN'), fn); }
 var _reauthAt = 0;
 function secReauth(reason, fn){
   if(Date.now() - _reauthAt < 90000){ fn(); return; }
@@ -93,7 +95,7 @@ function auditVerify(){
    through guardRun. */
 var _guardPass = 0;
 function guardRun(fn){ _guardPass++; try{ return fn(); } finally { _guardPass--; } }
-var GUARD_MANAGER_DELETE = ['expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','branches','suppliers','customers','payRuns','clockLogs','tips','quotes','stockTakes'];
+var GUARD_MANAGER_DELETE = ['posDevices','expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','branches','suppliers','customers','payRuns','clockLogs','tips','quotes','stockTakes'];
 var SALE_OPEN_KEYS = ['fiscalId', 'fiscalKey', 'receiptSentAt', 'receiptSent'];
 function dataGuard(coll, op, id, existing, patch){
   if(_guardPass) return true;
@@ -139,7 +141,7 @@ function dataGuard(coll, op, id, existing, patch){
   return true;
 }
 /* The original of a removed financial record is kept (who, when, why and a hash of its content). */
-var GUARD_ARCHIVE = ['expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];
+var GUARD_ARCHIVE = ['posDevices','users','expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];
 var secDeleteReason = '';
 /** Run a removal with the reason the person gave, so the archive and the activity log record it. */
 function secWithReason(reason, fn){ var old = secDeleteReason; secDeleteReason = String(reason || '').slice(0, 200); try{ return fn(); } finally { secDeleteReason = old; } }

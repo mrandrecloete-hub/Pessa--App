@@ -44,6 +44,16 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  // clear all sales
  const cl=await ev(async()=>{ const t=window.__t; const before=t.State.sales.length; const n=await t.clearAllSales('test'); await new Promise(r=>setTimeout(r,400)); return {before,n,after:t.State.sales.length,arch:t.State.deletedRecords.filter(d=>d.coll==='sales').length}; });
  ck('clear all sales removes them and keeps the originals in the archive', cl.before>0 && cl.after===0 && cl.arch===cl.n, cl);
+ // remove a terminal and an employee with the password
+ const pid=await ev(async()=>{ const r=await window.__t.refs.posDevices.add({name:'Front machine',kind:'Card machine',status:'active',linkCode:'123456',createdAt:new Date().toISOString()}); return r.id; }); await p.waitForTimeout(300);
+ await ev(id=>window.__t.openPosDeviceDetail(id),pid); await p.waitForSelector('#pdDel'); await p.click('#pdDel'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForSelector('#apPass');
+ await p.fill('#apPass','wrongpass1'); await p.click('#apOk'); await p.waitForTimeout(500);
+ ck('wrong password does not remove the terminal', await ev(id=>window.__t.State.posDevices.some(d=>d.id===id),pid));
+ await p.fill('#apPass','aaaa1111'); await p.click('#apOk'); await p.waitForTimeout(800);
+ ck('terminal removed with the password and a copy archived', await ev(id=>!window.__t.State.posDevices.some(d=>d.id===id) && window.__t.State.deletedRecords.some(d=>d.coll==='posDevices'&&d.recId===id),pid));
+ const uid2=await ev(async()=>{ const t=window.__t; const r=await t.refs.users.add({name:'Sam',role:'cashier',active:true,passHash:'x',createdAt:new Date().toISOString()}); await t.refs.sales.add({items:[{name:'B',qty:1,unitPrice:5,lineTotal:5}],total:5,cost:2,profit:3,paymentMethod:'cash',cashierName:'Sam',createdAt:new Date().toISOString()}); return r.id; }); await p.waitForTimeout(400);
+ await ev(id=>{ const t=window.__t; t.openStaffSheet(t.State.users.find(u=>u.id===id)); },uid2); await p.waitForSelector('#sfDelete'); await p.click('#sfDelete'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForSelector('#apPass'); await p.fill('#apPass','aaaa1111'); await p.click('#apOk'); await p.waitForTimeout(800);
+ ck('employee with sales removed with the password, history kept', await ev(id=>!window.__t.State.users.some(u=>u.id===id) && window.__t.State.sales.some(x=>x.cashierName==='Sam') && window.__t.State.deletedRecords.some(d=>d.coll==='users'&&d.recId===id && !d.data.passHash),uid2));
  ck('no page errors', errs.length===0, errs);
  await b.close(); process.exit(fail?1:0);
 })();
