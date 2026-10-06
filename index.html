@@ -302,7 +302,8 @@
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .section-title .see-all{ color:var(--primary); } }
 
   #content{ animation: contentIn 0.08s ease-out; }
-  @keyframes contentIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:translateY(0); } }
+  /* never starts see through, so a stalled animation cannot leave the page faded */
+  @keyframes contentIn{ from{ transform:translateY(3px); } to{ transform:translateY(0); } }
   @media (prefers-reduced-motion: reduce){ #content{ animation:none; } }
   /* press feedback: buttons dip slightly when tapped, so every tap feels answered at once (off for reduced motion and the simpler look) */
   html:not(.lite) .btn, html:not(.lite) .qa, html:not(.lite) .drawer-row{ transition:transform .08s ease-out; }
@@ -1115,7 +1116,7 @@
   .me-goal .gs{ font-size:12.5px; opacity:.85; font-weight:600; }
   .me-msg{ border-radius:16px; box-shadow:var(--shadow); }
   .me-week i{ background:linear-gradient(180deg,#2BD4A0,#0B7A5C); }
-  @keyframes pesaUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+  @keyframes pesaUp{ from{ opacity:.55; transform:translateY(8px); } to{ opacity:1; transform:none; } }
   #content .me-hero, #content .me-msg, #content .me-act, #content .me-stat, #content .me-goal, #content .tillcard{ animation:pesaUp .45s ease both; }
   #content .me-act:nth-child(2), #content .me-stat:nth-child(2){ animation-delay:.05s; } #content .me-act:nth-child(3), #content .me-stat:nth-child(3){ animation-delay:.1s; }
   #content .me-act:nth-child(4), #content .me-stat:nth-child(4){ animation-delay:.15s; } #content .me-stat:nth-child(5){ animation-delay:.2s; } #content .me-stat:nth-child(6){ animation-delay:.25s; }
@@ -20741,7 +20742,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.97';
+var APP_VERSION = '2026.10.98';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20974,6 +20975,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.98', items:[
+    'Fixed the home page sometimes showing faded and hard to read on a phone. Pages now never start see through, so nothing can get stuck half hidden'
+  ]},
   { v:'2026.10.97', items:[
     'Lightning one tap speed on phones and computers: taps answer at once with no tap delay, pages and sheets open in a fraction of the time, the blurred backdrop behind sheets is gone (it slowed older phones), and pictures load only when they scroll into view'
   ]},
