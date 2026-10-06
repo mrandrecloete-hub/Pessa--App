@@ -7,7 +7,11 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await require('./biz_boot.js')(p);
   const r = await p.evaluate(async () => {
-    const o = {}; o.supported = 'Notification' in window; o.perm = Notification.permission;
+    const T = window.__t, notifyActive = T.notifyActive, sendEmailAlert = T.sendEmailAlert, emailAlertsOn = T.emailAlertsOn, showDeviceNotification = T.showDeviceNotification; const o = {}; o.supported = 'Notification' in window;
+    // headless Chromium never grants notification permission, so the browser side is replaced by a recorder: this checks that Pesa asks the browser to show the alert
+    const shown = []; function Fake(){} Fake.permission = 'granted'; Fake.requestPermission = () => Promise.resolve('granted'); window.Notification = Fake;
+    Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: { getRegistration: () => Promise.resolve({ showNotification: (t, op) => { shown.push({ t, b: op.body }); return Promise.resolve(); } }) } });
+    o.perm = Notification.permission;
     localStorage.setItem('pesa_notify_v1', '1'); o.active = notifyActive();
     // the email service is stubbed so nothing really leaves the test
     const sent = []; window.fetch = (u, init) => { if (/emailjs/.test(u)) { sent.push(JSON.parse(init.body)); return Promise.resolve({ ok: true }); } return Promise.reject(new Error('x')); };
@@ -21,11 +25,13 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
     for (let i = 0; i < 20; i++) showDeviceNotification('T' + i, 'b', 'tag' + i);
     o.capped = sent.length;
     localStorage.setItem('pesa_email_alerts_v1', JSON.stringify({ on: false, to: 'owner@example.com', template: 'template_alert' }));
+    await new Promise(r => setTimeout(r, 100)); o.shown = shown.length; o.firstShown = shown[0];
     o.offStops = emailAlertsOn();
     return o; });
   console.log('   ', JSON.stringify(r));
   ck('browser supports notifications and they are allowed', r.supported && r.perm === 'granted', r);
   ck('device alerts are active once switched on', r.active === true);
+  ck('the browser is asked to show each alert with its title and text', r.shown >= 21 && r.firstShown && r.firstShown.t === 'Low stock: Milk' && r.firstShown.b === 'Milk: 2 left', r);
   ck('no email before email alerts are set up', r.noEmailYet === 0);
   ck('email alerts ready once set up', r.ready === true);
   ck('the same alert is emailed once, not twice', r.sentOnce === 1, r.sentOnce);
