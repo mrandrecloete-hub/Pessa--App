@@ -118,7 +118,8 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
   // 6. the page itself: filed list, status, register, buttons
   await p.evaluate(() => { window.__t.closeModal(); window.__t.openAccountantSheet(); });
   await p.waitForFunction(() => { const e = document.getElementById('acStatus'); return e && !/Checking/.test(e.textContent); }, null, { timeout: 15000 });
-  ck('page shows filed months', (await p.$$('[data-acct]')).length === 2);
+  const nAcct = (await p.$$('[data-acct]')).length;
+  ck('page shows filed months', nAcct === 2, nAcct);
   ck('page lists the report that was made', /PL-/.test(await p.innerText('#acRegList')));
   const st = await p.innerText('#acStatus');
   ck('status line is calm and clear', st.length > 0 && !/Checking/.test(st), st);
