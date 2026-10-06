@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pesa payment approvals</title>
+<style>
+:root{--g:#0B4A38;--gold:#C9962A;--ink:#10241C;--mut:#5B6F66;--line:#CFE5D8;--tint:#F1F7F4;--bad:#B3402A}
+*{box-sizing:border-box}body{margin:0;font:15px/1.45 system-ui,sans-serif;color:var(--ink);background:var(--tint)}
+header{background:var(--g);color:#fff;padding:14px 16px;border-bottom:4px solid var(--gold)}header h1{margin:0;font-size:18px}
+main{max-width:720px;margin:0 auto;padding:14px 16px 40px;display:grid;gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+label{font-size:12px;color:var(--mut);display:grid;gap:3px}input,select{font:inherit;padding:9px;border:1px solid var(--line);border-radius:8px;width:100%}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;font-weight:700;padding:11px 14px;border:0;border-radius:10px;background:var(--g);color:#fff;cursor:pointer}button.ghost{background:#fff;color:var(--g);border:1px solid var(--g)}
+button:disabled{opacity:.5}.msg{padding:9px 11px;border-radius:8px;background:var(--tint);font-size:13px}.msg.bad{background:#fbeae6;color:var(--bad)}
+h2{margin:0;font-size:16px}.mono{font-family:monospace}.sub{font-size:12px;color:var(--mut)}
+</style></head><body>
+<header><h1>Pesa payment approvals</h1></header>
+<main>
+ <div class="card"><h2>Connection</h2>
+  <label>Licence server address<input id="url" placeholder="https://xxxx.supabase.co/functions/v1/licence"></label>
+  <label>Admin token<input id="tok" type="password" placeholder="the ADMIN_TOKEN you set on the server"></label>
+  <div class="row2"><button id="save" type="button">Save on this device</button><button id="load" class="ghost" type="button">Refresh the list</button></div>
+  <div class="sub">Both are kept only in this browser. Check your bank first, then approve here. Approving makes the key and emails the client their two documents.</div>
+  <div id="top"></div></div>
+ <div id="list"></div>
+ <div class="card"><h2>Approve a payment with no request</h2><div class="sub">For a client who paid but did not tap "I have paid".</div>
+  <div class="row2"><label>Licence reference<input id="aRef" placeholder="PESA-XXXX-XXXX"></label><label>Plan<select id="aPlan"><option value="starter">Starter</option><option value="business" selected>Business</option><option value="premium">Premium</option></select></label></div>
+  <div class="row2"><label>Business name<input id="aShop"></label><label>Client email<input id="aEmail" type="email"></label></div>
+  <div class="row2"><label>Period<select id="aPer"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label><label>Amount received (N$)<input id="aAmt" type="number" min="0" step="0.01"></label></div>
+  <div class="row2"><label>Method<input id="aMeth" value="EFT / bank transfer"></label><label>Bank reference<input id="aBank"></label></div>
+  <button id="aGo" type="button">Approve</button><div id="aMsg"></div></div>
+</main>
+<script>
+(function(){
+ var $=function(i){return document.getElementById(i);}, esc=function(t){return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+ function get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}} function put(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+ $('url').value=get('pesa_srv_url'); $('tok').value=get('pesa_srv_tok');
+ function call(action,body){
+  var u=$('url').value.trim(); if(!u) return Promise.reject(new Error('Enter the server address first.'));
+  var opt={method:body?'POST':'GET',headers:{'x-admin-token':$('tok').value.trim()}}; if(body){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}
+  return fetch(u+(u.indexOf('?')<0?'?':'&')+'a='+action,opt).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error==='not_allowed'?'Wrong admin token.':(j.error||('http '+r.status)));return j;});});
+ }
+ function say(id,t,bad){$(id).innerHTML=t?'<div class="msg'+(bad?' bad':'')+'">'+esc(t)+'</div>':'';}
+ var today=new Date().toISOString().slice(0,10);
+ function draw(rows){
+  if(!rows.length){$('list').innerHTML='<div class="card"><h2>Waiting for approval</h2><div class="sub">Nothing is waiting.</div></div>';return;}
+  $('list').innerHTML=rows.map(function(r,i){return '<div class="card" data-i="'+i+'"><h2>'+esc(r.shop||'(no name)')+'</h2><div class="sub"><span class="mono">'+esc(r.ref)+'</span> · '+esc(r.plan)+' · '+esc(r.period)+' · due N$'+esc(r.amount_due)+' · '+esc((r.created_at||'').slice(0,16).replace('T',' '))+'</div>'+
+   '<div class="row2"><label>Amount received (N$)<input class="x-amt" type="number" min="0" step="0.01" value="'+esc(r.amount_due)+'"></label><label>Bank reference<input class="x-bank"></label></div>'+
+   '<div class="row2"><label>Method<input class="x-meth" value="EFT / bank transfer"></label><label>Client email<input class="x-mail" type="email" value="'+esc(r.email||'')+'"></label></div>'+
+   '<button class="x-go" type="button">Payment received, approve</button><div class="x-msg"></div></div>';}).join('');
+  Array.prototype.forEach.call($('list').querySelectorAll('.card'),function(c){var r=rows[+c.getAttribute('data-i')];
+   c.querySelector('.x-go').addEventListener('click',function(){var b=this; b.disabled=true;
+    var m=c.querySelector('.x-msg'); m.innerHTML='<div class="msg">Working…</div>';
+    call('approve',{ref:r.ref,amount:parseFloat(c.querySelector('.x-amt').value),method:c.querySelector('.x-meth').value,bankRef:c.querySelector('.x-bank').value,email:c.querySelector('.x-mail').value,paidDate:today}).then(function(j){
+     m.innerHTML='<div class="msg">Approved. Valid until '+esc(j.exp)+'. '+(j.emailed?'Email with both documents sent.':'Email NOT sent'+(j.mailError?': '+esc(j.mailError):' (no email address)')+'. The key is still active in the app.')+'</div>';
+    },function(e){b.disabled=false;m.innerHTML='<div class="msg bad">'+esc(e.message)+'</div>';});});});
+ }
+ function refresh(){say('top','Loading…');call('list').then(function(j){say('top','');draw(j.requests||[]);},function(e){say('top',e.message,true);});}
+ $('save').addEventListener('click',function(){put('pesa_srv_url',$('url').value.trim());put('pesa_srv_tok',$('tok').value.trim());refresh();});
+ $('load').addEventListener('click',refresh);
+ $('aGo').addEventListener('click',function(){var b=this;b.disabled=true;say('aMsg','Working…');
+  call('approve',{ref:$('aRef').value.trim(),plan:$('aPlan').value,period:$('aPer').value,shop:$('aShop').value,email:$('aEmail').value,amount:parseFloat($('aAmt').value),method:$('aMeth').value,bankRef:$('aBank').value,paidDate:today}).then(function(j){b.disabled=false;say('aMsg','Approved. Valid until '+j.exp+'. '+(j.emailed?'Email sent.':'Email not sent'+(j.mailError?': '+j.mailError:'')+'.'));},function(e){b.disabled=false;say('aMsg',e.message,true);});});
+ if($('url').value&&$('tok').value) refresh();
+})();
+</script></body></html>

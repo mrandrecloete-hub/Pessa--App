@@ -1,0 +1,316 @@
+<title>Pesa Shop App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F8F5; --surface:#FFFFFF; --fg:#0B241B; --muted:#47604F; --line:#D2E3DA;
+  --accent:#0E7C66; --accent-fg:#0B4A38; --gold:#C9962A; --gold-lt:#E9C766; --deep:#082E22; --mid:#0B4A38; --lit:#0E6A50;
+  --hero-fg:#F2F8F5; --hero-muted:#B7D3C6; --on-gold:#082E22;
+  --f-head:'Outfit',system-ui,sans-serif; --f-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#07130F; --surface:#0D1F18; --fg:#E6F1EB; --muted:#9DB5A9; --line:#1E3A2E;
+    --accent:#3CC5A4; --accent-fg:#7FDCC3; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#07130F; --surface:#0D1F18; --fg:#E6F1EB; --muted:#9DB5A9; --line:#1E3A2E;
+  --accent:#3CC5A4; --accent-fg:#7FDCC3; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.6 var(--f-body);-webkit-text-size-adjust:100%}
+img{max-width:100%;height:auto;display:block}
+a{color:var(--accent-fg)}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:6px}
+h1,h2,h3{font-family:var(--f-head);line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+p{margin:0}
+.wrap{max-width:1080px;margin-inline:auto;padding-inline:20px}
+section{padding-block:72px}
+
+/* hero */
+.hero{background:radial-gradient(120% 90% at 85% 0%,var(--lit) 0%,var(--mid) 45%,var(--deep) 100%);color:var(--hero-fg);padding-block:28px 0;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,var(--gold),var(--gold-lt),var(--gold))}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;color:var(--hero-fg);text-decoration:none}
+.brand img{width:44px;height:44px;border-radius:12px}
+.brand b{font:700 22px/1 var(--f-head);letter-spacing:.14em}
+.nav a.link{color:var(--hero-muted);text-decoration:none;font-weight:500;font-size:16px;padding:8px 2px}
+.nav a.link:hover{color:#fff}
+.hero-grid{display:grid;gap:40px;padding-block:56px 64px;align-items:center}
+.hero h1{font-size:clamp(38px,7vw,64px);font-weight:700}
+.hero .sub{margin-top:20px;font-size:19px;color:var(--hero-muted);max-width:34em}
+.tag{margin-top:14px;font:600 14px/1 var(--f-head);letter-spacing:.22em;color:var(--gold-lt);text-transform:uppercase}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 24px;border-radius:999px;font:600 17px/1 var(--f-body);text-decoration:none;cursor:pointer;border:2px solid transparent}
+.btn.gold{background:var(--gold-lt);color:var(--on-gold)}
+.btn.gold:hover{background:#F2D585}
+.btn.ghost{border-color:rgba(242,248,245,.45);color:var(--hero-fg);background:transparent}
+.btn.ghost:hover{border-color:#fff}
+.fine{margin-top:16px;font-size:15px;color:var(--hero-muted)}
+.shots{display:flex;justify-content:center;align-items:flex-end;padding-inline:4%}
+.shots img{width:37%;border-radius:22px;border:5px solid #04170F;box-shadow:0 18px 40px rgba(0,0,0,.4);background:#04170F}
+.shots img:nth-child(1){transform:translateY(0) rotate(-3deg)}
+.shots img:nth-child(2){width:41%;margin-inline:-7%;transform:translateY(-26px);position:relative;z-index:2}
+.shots img:nth-child(3){transform:translateY(8px) rotate(3deg)}
+@media(min-width:880px){.hero-grid{grid-template-columns:1.05fr .95fr;gap:48px}}
+
+/* facts strip */
+.facts{background:var(--surface);border-bottom:1px solid var(--line);padding-block:26px}
+.facts ul{list-style:none;margin:0;padding:0;display:grid;gap:12px 28px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.facts li{font-weight:500;padding-left:18px;position:relative}
+.facts li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+
+/* section titles */
+.h2{font-size:clamp(30px,5vw,44px);font-weight:700}
+.lede{margin-top:14px;color:var(--muted);max-width:38em;font-size:18px}
+
+/* features: plain ruled list */
+.feat{margin-top:40px;display:grid;gap:0 56px;grid-template-columns:1fr}
+.feat div{padding-block:20px;border-top:1px solid var(--line)}
+.feat h3{font-size:21px;font-weight:600}
+.feat p{margin-top:6px;color:var(--muted);font-size:16.5px}
+@media(min-width:760px){.feat{grid-template-columns:1fr 1fr}}
+
+/* documents */
+.docs{background:var(--surface);border-block:1px solid var(--line)}
+.docs-grid{display:grid;gap:40px;align-items:center;grid-template-columns:minmax(0,1fr)}
+.docs img{width:100%;border-radius:6px;border:1px solid var(--line);box-shadow:0 14px 34px rgba(8,46,34,.18);max-width:380px;margin-inline:auto}
+.docs ul{margin:22px 0 0;padding-left:20px;color:var(--muted)}
+.docs li{margin-block:6px}
+@media(min-width:820px){.docs-grid{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:64px}.docs img{margin:0}}
+
+/* pricing */
+.plans{margin-top:40px;display:grid;gap:18px;grid-template-columns:1fr}
+.plan{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--line);border-radius:14px;padding:26px 24px 28px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.plan.pick{border-top-color:var(--gold);border-color:var(--gold)}
+.plan h3{font-size:24px;font-weight:700}
+.plan .who{color:var(--muted);font-size:16px;min-height:3.2em}
+.price{font:700 44px/1 var(--f-head);font-variant-numeric:tabular-nums}
+.price small{font:500 16px var(--f-body);color:var(--muted)}
+.plan ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:8px;font-size:16.5px}
+.plan li{padding-left:24px;position:relative}
+.plan li::before{content:"";position:absolute;left:3px;top:.38em;width:10px;height:6px;border-left:2.5px solid var(--accent);border-bottom:2.5px solid var(--accent);transform:rotate(-45deg)}
+.plan .btn{margin-top:auto;background:var(--deep);color:#F2F8F5}
+.plan.pick .btn{background:var(--gold-lt);color:var(--on-gold)}
+.note{margin-top:24px;color:var(--muted);max-width:44em;font-size:16px}
+@media(min-width:820px){.plans{grid-template-columns:repeat(3,1fr)}}
+
+/* how to buy: a true sequence */
+.steps{margin:40px 0 0;padding:0;list-style:none;display:grid;gap:0;counter-reset:s;max-width:46em}
+.steps li{counter-increment:s;padding:20px 0 20px 64px;border-top:1px solid var(--line);position:relative}
+.steps li::before{content:counter(s);position:absolute;left:0;top:18px;width:40px;height:40px;border-radius:50%;background:var(--deep);color:var(--gold-lt);font:700 19px/40px var(--f-head);text-align:center}
+.steps h3{font-size:20px;font-weight:600}
+.steps p{margin-top:4px;color:var(--muted);font-size:16.5px}
+.pay{margin-top:30px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 24px;display:grid;gap:14px;max-width:46em}
+.pay h3{font-size:20px}
+.row{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px}
+.row .k{color:var(--muted);min-width:6.5em;font-size:15.5px}
+.row .v{font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.copy{font:500 14.5px var(--f-body);padding:6px 14px;border-radius:999px;border:1.5px solid var(--accent);background:transparent;color:var(--accent-fg);cursor:pointer;min-height:36px}
+.copy:hover{background:var(--accent);color:var(--bg)}
+
+/* trust */
+.trust{background:var(--deep);color:var(--hero-fg)}
+.trust .lede{color:var(--hero-muted)}
+.trust .feat div{border-color:rgba(242,248,245,.18)}
+.trust .feat p{color:var(--hero-muted)}
+
+/* faq */
+.faq{margin-top:34px;max-width:46em}
+details{border-top:1px solid var(--line)}
+details:last-child{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;list-style:none;padding:18px 36px 18px 0;font:600 19px/1.3 var(--f-head);position:relative}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:4px;top:14px;font:500 28px/1 var(--f-body);color:var(--accent)}
+details[open] summary::after{content:"\2212"}
+details p{padding:0 0 20px;color:var(--muted);max-width:40em}
+
+/* footer */
+footer{background:var(--deep);color:var(--hero-muted);padding-block:44px 52px;font-size:15.5px}
+footer .cols{display:grid;gap:28px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+footer h4{margin:0 0 10px;font:600 16px var(--f-head);color:var(--gold-lt);letter-spacing:.04em}
+footer a{color:var(--hero-fg)}
+footer ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+footer .end{margin-top:30px;padding-top:20px;border-top:1px solid rgba(242,248,245,.18);display:flex;gap:8px 24px;flex-wrap:wrap;justify-content:space-between}
+@media(prefers-reduced-motion:no-preference){.hero .shots img{animation:rise .8s ease-out both}.hero .shots img:nth-child(2){animation-delay:.1s}.hero .shots img:nth-child(3){animation-delay:.2s}}
+@keyframes rise{from{opacity:0;margin-top:30px}to{opacity:1;margin-top:0}}
+</style>
+<!--BODY-->
+<header class="hero">
+  <div class="wrap">
+    <nav class="nav" aria-label="Main">
+      <a class="brand" href="{{SITE}}"><img src="img/pesa-icon.png" alt="" width="44" height="44"><b>PESA</b></a>
+      <span>
+        <a class="link" href="#plans">Prices</a> &nbsp;
+        <a class="link" href="#buy">How to buy</a> &nbsp;
+        <a class="link" href="#faq">Questions</a>
+      </span>
+    </nav>
+    <div class="hero-grid">
+      <div>
+        <h1>Know what your shop earned today.</h1>
+        <p class="tag">Your Mula, Your Pride</p>
+        <p class="sub">Pesa is the shop and till app made in Namibia. Sell, keep stock, record who owes you, print invoices and see your VAT. It works without internet and runs on any computer or device.</p>
+        <div class="cta">
+          <a class="btn gold" href="{{APP}}">Start 14 days free</a>
+          <a class="btn ghost" href="https://wa.me/264818211692?text=Hi%2C%20I%20would%20like%20to%20know%20more%20about%20Pesa">Ask us on WhatsApp</a>
+        </div>
+        <p class="fine">No card needed. Nothing to install first.</p>
+      </div>
+      <div class="shots" aria-label="Pesa on a device: the day's sales, the till and credit customers">
+        <img src="img/dashboard.jpg" alt="Pesa home screen showing today's sales in Namibian dollars" width="520" height="940">
+        <img src="img/sell.jpg" alt="Pesa till with products and stock levels" width="520" height="940">
+        <img src="img/credit.jpg" alt="Pesa list of customers who owe money" width="520" height="940">
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="facts">
+  <div class="wrap">
+    <ul>
+      <li>Prices in N$, VAT summary for NamRA</li>
+      <li>Works offline, syncs when you choose</li>
+      <li>English, Afrikaans and Deutsch</li>
+      <li>Your records stay with you</li>
+    </ul>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <h2 class="h2">Everything a shop does in a day</h2>
+    <p class="lede">One app for the till, the stockroom and the books. Every plan has every feature.</p>
+    <div class="feat">
+      <div><h3>Sell fast at the till</h3><p>Tap or scan products, take cash, card or mobile wallet, and print or share a receipt.</p></div>
+      <div><h3>Stock that counts itself</h3><p>Every sale lowers stock. See what is running out, print barcode labels, and value your stock at cost or at selling price.</p></div>
+      <div><h3>Credit customers</h3><p>Record what each customer took and what they still owe, take part payments, and share a reminder on WhatsApp.</p></div>
+      <div><h3>Cashiers with their own PIN</h3><p>Give each person a role. Cashiers sell, managers see reports, only the owner sees everything. Every change is logged.</p></div>
+      <div><h3>Cash up the till</h3><p>Count the drawer at the end of the day and see at once if it matches what Pesa expects.</p></div>
+      <div><h3>Expenses and profit</h3><p>Record rent, electricity and wages. See sales, cost of goods and what is left, by day, week or month.</p></div>
+      <div><h3>VAT summary</h3><p>A working VAT report built from your sales and expenses, ready to give to your accountant.</p></div>
+      <div><h3>More than one branch</h3><p>Keep each branch's sales and stock apart and still see the whole business.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="docs">
+  <div class="wrap docs-grid">
+    <img src="img/invoice.jpg" alt="A Pesa invoice for Kalahari Corner Store with logo, totals and balance due" width="662" height="936" loading="lazy">
+    <div>
+      <h2 class="h2">Invoices and reports your customers will keep</h2>
+      <p class="lede">Quotes, invoices and business reports come out as clean PDFs with your shop name and contact details, ready to send on WhatsApp or email.</p>
+      <ul>
+        <li>Quotes with a space for your customer to accept</li>
+        <li>Balance due and part payments shown clearly</li>
+        <li>Reports for sales, stock, credit and expenses</li>
+        <li>Your own logo and shop slogan</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="plans">
+  <div class="wrap">
+    <h2 class="h2">Pay monthly. Stop when you like.</h2>
+    <p class="lede">Every plan has every feature. The only difference is how many people and branches use Pesa. Start with 14 days free.</p>
+    <!-- PRICES: edit these three numbers and the 12 month line below -->
+    <div class="plans">
+      <div class="plan">
+        <h3>Starter</h3>
+        <p class="who">One shop with a small team.</p>
+        <p class="price">N$149<small> / month</small></p>
+        <ul><li>Up to 3 accounts</li><li>1 branch</li><li>Every feature</li><li>Support by WhatsApp and email</li></ul>
+        <a class="btn" href="https://wa.me/264818211692?text=Hi%2C%20I%20would%20like%20the%20Pesa%20Starter%20plan">Choose Starter</a>
+      </div>
+      <div class="plan pick">
+        <h3>Business</h3>
+        <p class="who">A busy shop, or a few branches.</p>
+        <p class="price">N$299<small> / month</small></p>
+        <ul><li>Up to 10 accounts</li><li>Up to 3 branches</li><li>Every feature</li><li>Support by WhatsApp and email</li></ul>
+        <a class="btn" href="https://wa.me/264818211692?text=Hi%2C%20I%20would%20like%20the%20Pesa%20Business%20plan">Choose Business</a>
+      </div>
+      <div class="plan">
+        <h3>Premium</h3>
+        <p class="who">A larger business with no limits.</p>
+        <p class="price">N$549<small> / month</small></p>
+        <ul><li>Unlimited accounts</li><li>Unlimited branches</li><li>Every feature</li><li>Support by WhatsApp and email</li></ul>
+        <a class="btn" href="https://wa.me/264818211692?text=Hi%2C%20I%20would%20like%20the%20Pesa%20Premium%20plan">Choose Premium</a>
+      </div>
+    </div>
+    <p class="note">Pay for 12 months and get 2 months free: you pay for 10. You can also pay for 1, 3 or 6 months. Prices are in Namibian dollars. Nothing renews by itself and we never keep your payment details.</p>
+  </div>
+</section>
+
+<section id="buy" style="padding-top:0">
+  <div class="wrap">
+    <h2 class="h2">How to get your licence</h2>
+    <p class="lede">No card, no sign up form. You pay by transfer or mobile wallet and we send a key.</p>
+    <ol class="steps">
+      <li><h3>Try Pesa free for 14 days</h3><p>Open the app, register your shop and use every feature. Nothing is deleted when the trial ends.</p></li>
+      <li><h3>Find your Licence reference</h3><p>In Pesa open the menu, then Licence and subscription. Your reference looks like PESA-XXXX-XXXX and belongs to your shop only.</p></li>
+      <li><h3>Pay and send us the proof</h3><p>Pay the plan you chose by electronic transfer or mobile wallet. We will give you the payment details when you message us. Send your reference and proof of payment on WhatsApp.</p></li>
+      <li><h3>Paste your key</h3><p>We confirm your payment and send a licence key. Paste it in Licence and subscription and Pesa unlocks for the period you paid for.</p></li>
+    </ol>
+    <div class="pay">
+      <h3>Talk to us</h3>
+      <div class="row"><span class="k">WhatsApp</span><span class="v" id="ctWa">0818211692</span><button class="copy" type="button" data-copy="0818211692">Copy</button><a href="https://wa.me/264818211692">Open chat</a></div>
+      <div class="row"><span class="k">Email</span><span class="v" id="ctEm">ecrypted5@gmail.com</span><button class="copy" type="button" data-copy="ecrypted5@gmail.com">Copy</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap">
+    <h2 class="h2">Your records are yours</h2>
+    <p class="lede">Pesa has no server of ours that holds your sales. Your records live on your own computer or device. If you want your devices to share them, you connect your own online project and nobody else holds the key.</p>
+    <div class="feat">
+      <div><h3>We cannot see your shop</h3><p>We do not hold your sales, customers or staff details, so we cannot read them, sell them or lose them.</p></div>
+      <div><h3>Locked sign in</h3><p>Passwords and PINs are stored scrambled, and sign in locks after wrong tries.</p></div>
+      <div><h3>Backups in your hands</h3><p>Download a full backup whenever you like. Even when a licence ends, the owner can still take a backup.</p></div>
+      <div><h3>Honest about limits</h3><p>Back up often. Online sync is not a backup, and losing a device without a backup means losing what was only on it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <h2 class="h2">Questions shop owners ask</h2>
+    <div class="faq">
+      <details><summary>Do I need internet?</summary><p>No. Pesa works offline for selling, stock, credit and reports. You need internet to turn on online sync, to receive password reset emails and the first time you make a PDF.</p></details>
+      <details><summary>What happens when the free trial ends?</summary><p>Pesa asks for a licence. Nothing is deleted and the owner can still make a backup. When you send your key, Pesa opens again with everything as you left it.</p></details>
+      <details><summary>What if I stop paying?</summary><p>Your licence works until the end of the period you paid for, plus 7 days of grace. Then Pesa locks, but your records stay where they are. Renew when you are ready and carry on.</p></details>
+      <details><summary>Does Pesa take card payments?</summary><p>Pesa records card sales and adds them to your cash up, but it does not process card payments. You take card payments on your own card machine.</p></details>
+      <details><summary>Is the VAT report official?</summary><p>It is a working summary built from what you record. Check it with NamRA or your accountant before you file. It is not tax advice.</p></details>
+      <details><summary>Which devices does it run on?</summary><p>Any computer or device with a modern browser. You can install it to the home screen like an app.</p></details>
+      <details><summary>Can I get my money back?</summary><p>Yes, in the cases listed in our <a href="{{SITE}}refunds.html">refunds and cancellation terms</a>. That is why the free trial exists: try everything before you pay.</p></details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div><h4>Pesa</h4><p>Your Mula, Your Pride.<br>Proudly Namibian product. Est. 2026, Windhoek, Namibia.</p></div>
+      <div><h4>Read</h4><ul>
+        <li><a href="{{SITE}}terms.html">Terms of service</a></li>
+        <li><a href="{{SITE}}privacy.html">Confidentiality and privacy</a></li>
+        <li><a href="{{SITE}}refunds.html">Refunds and cancellation</a></li>
+        <li><a href="{{SITE}}support.html">Support</a></li>
+      </ul></div>
+      <div><h4>Contact</h4><ul><li>WhatsApp 0818211692</li><li>ecrypted5@gmail.com</li></ul></div>
+    </div>
+    <div class="end"><span>Developed by Björn Van Rensburg</span><a href="{{APP}}">Open the app</a></div>
+  </div>
+</footer>
+<script>
+document.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('.copy'); if(!b) return;
+  var t=b.getAttribute('data-copy'), old=b.textContent;
+  function done(ok){ b.textContent=ok?'Copied':'Select and copy'; setTimeout(function(){b.textContent=old},1600); }
+  try{ navigator.clipboard.writeText(t).then(function(){done(true)},function(){fallback()}); }catch(_){ fallback(); }
+  function fallback(){ var s=b.previousElementSibling; try{ var r=document.createRange(); r.selectNodeContents(s); var sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); }catch(_){} done(false); }
+});
+</script>
