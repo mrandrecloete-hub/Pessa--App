@@ -956,6 +956,18 @@
     .app.pg-bg .app-emblem span, .app.pg-bg .app-emblem small{ letter-spacing:.2em; text-transform:uppercase; font-size:10.5px; color:#1B4D3E; }
   }
 
+  /* Every other page on a phone or tablet: no header or footer bar, the page runs the full height of the screen and only the logo, the shop name and figures, the emblem and the wording float over it */
+  @media (max-width:1023px){
+    .app.pg-bg .content, .app.inv-bg .content{ position:absolute; top:0; right:0; bottom:0; left:0; z-index:0; max-width:none; width:auto; margin:0; height:auto; padding:calc(var(--tb-h,76px) + env(safe-area-inset-top,0px) + 12px) 14px calc(var(--ft-h,70px) + 14px);
+      -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .5),#000 calc(var(--tb-h,76px) + 10px),#000 calc(100% - var(--ft-h,70px) - 14px),rgba(0,0,0,0) calc(100% - var(--ft-h,70px) * .4)); mask-image:linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(var(--tb-h,76px) * .5),#000 calc(var(--tb-h,76px) + 10px),#000 calc(100% - var(--ft-h,70px) - 14px),rgba(0,0,0,0) calc(100% - var(--ft-h,70px) * .4)); }
+    .app.pg-bg .topbar, .app.inv-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:none; box-shadow:none; color:#0B3B2E; }
+    .app.pg-bg .topbar:after, .app.inv-bg .topbar:after{ display:none; }
+    .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname{ color:#0B2A20; }
+    .app.pg-bg .topbar .shopmeta, .app.inv-bg .topbar .shopmeta, .app.pg-bg .topbar .shopdate, .app.inv-bg .topbar .shopdate{ color:#14553F; }
+    .app.pg-bg .topbar .icon-btn, .app.inv-bg .topbar .icon-btn{ color:#0B3B2E; border-color:rgba(176,120,20,.75); background:rgba(255,255,255,.35); }
+    .app.pg-bg .app-emblem, .app.inv-bg .app-emblem{ position:absolute; left:0; right:0; bottom:0; z-index:30; background:none; border:0; box-shadow:none; }
+  }
+
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
     .app .topbar{ padding:5px 14px; gap:8px; }
@@ -16523,8 +16535,8 @@ function dashGlassSize(){
     if(em) ap.style.setProperty('--ft-h', em.offsetHeight + 'px');
   }catch(e){}
 }
-window.addEventListener('resize', function(){ try{ if(State.tab === 'dashboard') dashGlassSize(); }catch(e){} });
-window.addEventListener('orientationchange', function(){ setTimeout(function(){ try{ if(State.tab === 'dashboard') dashGlassSize(); }catch(e){} }, 250); });
+window.addEventListener('resize', function(){ try{ dashGlassSize(); }catch(e){} });
+window.addEventListener('orientationchange', function(){ setTimeout(function(){ try{ dashGlassSize(); }catch(e){} }, 250); });
 var _rsPending = false;
 /** Many records arriving at once (start up, sync) now cause one redraw instead of one per collection. */
 function renderSoon(){
@@ -16536,7 +16548,7 @@ function renderSoon(){
 function render(){
   _rsPending = false;
   if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
-  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); if(State.tab === 'dashboard') dashGlassSize(); _ap.classList.toggle('pg-bg', State.tab !== 'dashboard'); } }catch(e){}
+  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); _ap.classList.toggle('pg-bg', State.tab !== 'dashboard' && State.tab !== 'invoices'); dashGlassSize(); } }catch(e){}
   applyAppFont();
   updateHeader();
   // The hamburger lives in the persistent app-shell topbar, so it opens the
@@ -21532,7 +21544,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.123';
+var APP_VERSION = '2026.10.124';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21776,6 +21788,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.124', items:[
+    'Every page on a phone now runs the full height of the screen with no header or footer bar, like the Dashboard. Only the logo, the shop name and figures, the Namibian emblem and the wording are left floating over the page'
+  ]},
   { v:'2026.10.123', items:[
     'The green wave under the Proudly Namibian words is removed from every page'
   ]},
