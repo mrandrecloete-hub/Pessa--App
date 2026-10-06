@@ -426,9 +426,11 @@
 
   #content{ animation: contentIn 0.08s ease-out; }
   /* Dashboard page: a soft light green that warms to a little sand brown instead of plain white around the green panel */
-  .app.dash-bg{ background:linear-gradient(180deg,#D3E6D8 0%,#DCE8D2 45%,#E2E1C8 100%); }
+  .app.dash-bg{ background:linear-gradient(180deg,#4A9884 0%,#6E9068 38%,#9A8648 72%,#B57A2D 100%); }
+  .app.dash-bg .app-emblem small,.app.dash-bg .app-emblem span{ color:#1F1608; }
   :root[data-theme="dark"] .app.dash-bg{ background:var(--bg); }
-  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app.dash-bg{ background:var(--bg); } }
+  :root[data-theme="dark"] .app.dash-bg .app-emblem small,:root[data-theme="dark"] .app.dash-bg .app-emblem span{ color:var(--text-muted); }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app.dash-bg{ background:var(--bg); } :root:not([data-theme="light"]) .app.dash-bg .app-emblem small,:root:not([data-theme="light"]) .app.dash-bg .app-emblem span{ color:var(--text-muted); } }
   /* never starts see through, so a stalled animation cannot leave the page faded */
   @keyframes contentIn{ from{ transform:translateY(3px); } to{ transform:translateY(0); } }
   @media (prefers-reduced-motion: reduce){ #content{ animation:none; } }
@@ -21408,7 +21410,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.112';
+var APP_VERSION = '2026.10.113';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21652,6 +21654,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.113', items:[
+    'Dashboard: the colour around the green panel now follows the colours of an eye, from teal green at the top to warm amber brown at the bottom'
+  ]},
   { v:'2026.10.112', items:[
     'Dashboard: the plain white around the green panel is now a soft light green that warms to a little sand brown'
   ]},
