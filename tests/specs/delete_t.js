@@ -23,7 +23,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  // staff
  await p.evaluate(id=>{ const t=window.__t; t.openStaffSheet(t.State.users.find(x=>x.id===id.us)); },ids); await p.waitForTimeout(300);
  ck('deactivated staff with no records can be deleted', !!(await p.$('#sfDelete')));
- await p.click('#sfDelete'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForTimeout(1500); // may ask for biometric gate; fall through if not
+ await p.click('#sfDelete'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForSelector('#apPass'); await p.fill('#apPass','aaaa1111'); await p.click('#apOk'); await p.waitForTimeout(1500); // may ask for biometric gate; fall through if not
  const gone=await p.evaluate(id=>!window.__t.State.users.some(x=>x.id===id.us),ids); ck('staff member deleted', gone);
  // customer payment
  await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(300);

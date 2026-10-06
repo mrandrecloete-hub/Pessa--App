@@ -2219,6 +2219,12 @@ var Store = (function(){
   var subs = {}; // path -> {cb, list}
   var writeHook = null; // set by the Sync engine: called after every local write
   function fireWrite(collPath, id, data){ if(writeHook){ try{ writeHook(collPath, id, data); }catch(e){} } }
+  // data layer protection: set once by the app (dataGuard). Returns false to refuse a write.
+  var guardFn = null;
+  function guardOk(collPath, op, id, patch){
+    if(!guardFn || collPath.indexOf('/') > -1) return true;
+    try{ return guardFn(collPath, op, id, (localReadAll()[collPath] || {})[id], patch) !== false; }catch(e){ return true; }
+  }
 
   function localReadAll(){ return Persist.data(); }
   // all = the whole data object; touched (optional) = [[collPath,id],...] when only some records changed
@@ -2272,6 +2278,7 @@ var Store = (function(){
       },
       // write many records at once: [{id, data}, ...], one save, one screen refresh (used by bulk stock upload)
       setMany: function(list){
+        list = list.filter(function(e){ return guardOk(collPath, 'set', e.id, e.data); });
         var all = localReadAll();
         var coll = (all[collPath] = all[collPath] || {});
         var touched = [];
@@ -2283,6 +2290,7 @@ var Store = (function(){
       },
       // delete many records at once: [id, ...]
       deleteMany: function(ids){
+        ids = ids.filter(function(id){ return guardOk(collPath, 'delete', id); });
         var all = localReadAll();
         var coll = all[collPath] || {};
         var touched = [];
@@ -2298,6 +2306,7 @@ var Store = (function(){
         return {
           id:id,
           set: function(data){
+            if(!guardOk(collPath, 'set', id, data)) return Promise.resolve();
             var all = localReadAll();
             all[collPath] = all[collPath] || {};
             all[collPath][id] = Object.assign({}, data);
@@ -2307,6 +2316,7 @@ var Store = (function(){
             return Promise.resolve();
           },
           update: function(patch){
+            if(!guardOk(collPath, 'update', id, patch)) return Promise.resolve();
             var all = localReadAll();
             all[collPath] = all[collPath] || {};
             all[collPath][id] = Object.assign({}, all[collPath][id]||{}, patch);
@@ -2316,6 +2326,7 @@ var Store = (function(){
             return Promise.resolve();
           },
           delete: function(){
+            if(!guardOk(collPath, 'delete', id)) return Promise.resolve();
             var all = localReadAll();
             if(all[collPath]) delete all[collPath][id];
             localWriteAll(all, [[collPath, id]]);
@@ -2434,6 +2445,7 @@ var Store = (function(){
       list.forEach(function(e){ var cp = WS.prefix + e.coll; fireWrite(cp, e.id, all[cp][e.id]); });
       return Promise.resolve();
     },
+    setGuard: function(fn){ guardFn = fn; },
     raw: { read: localReadAll, write: localWriteAll, notify: localNotify, notifyDoc: localNotifyDoc, touch: Persist.touch }
   };
 })();
@@ -2708,6 +2720,7 @@ var State = {
   clockLogs: [],       // {id, userId, userName, inAt, outAt|null, auto, edited}
   tips: [],            // {id, userId, userName, amount, method, note, createdAt, pool}
   calEvents: [],       // {id, title, date:'YYYY-MM-DD', time, note}
+  deletedRecords: [],  // originals kept when a record is removed (who, when, why, hash). Cannot be edited or deleted.
   courseProgress: [],  // one document per person: {id:userId, courses:{cid:{modules:{mid:{read,practical,reflection,best,attempts}}, final, certs, completedAt}}, ext:{}}
   payRuns: [],         // monthly pay runs: {id:'YYYY-MM', month, lines, totalNet, status:'saved'|'paid'}
   accountingPeriods: [], // frozen monthly accounting packs: {id:'YYYY-MM', periodKey, revision, tb, pl, vat, bs, hash, prevHash, ...}
@@ -2757,6 +2770,7 @@ function selectAllInTab(tab){
   render();
 }
 function deleteSelectedInTab(tab){
+  if(!secAllow('manager', 'bulk delete')) return;
   var s = selState(tab);
   var ids = Object.keys(s.ids);
   if(ids.length===0) return;
@@ -2770,6 +2784,7 @@ function deleteSelectedInTab(tab){
   }, true, true);
 }
 function deleteAllInTab(tab){
+  if(!secAllow('manager', 'bulk delete')) return;
   var list = selListFor(tab);
   if(list.length===0) return;
   var refCol = selRefFor(tab);
@@ -2841,6 +2856,7 @@ function initRefs(){
   refs.accountingPeriods = Store.collection('accountingPeriods');
   refs.payRuns = Store.collection('payRuns');
   refs.courseProgress = Store.collection('courseProgress');
+  refs.deletedRecords = Store.collection('deletedRecords');
   refs.clockLogs = Store.collection('clockLogs');
   refs.tips = Store.collection('tips');
   refs.calEvents = Store.collection('calEvents');
@@ -2962,7 +2978,7 @@ function subscribeAll(){
       if(State.tab === 'reconcile' && document.getElementById('app').style.display !== 'none') render();
     });
   });
-  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog'],['payRuns','payRuns'],['courseProgress','courseProgress']].forEach(function(c){
+  [['quotes','quotes'],['recurring','recurring'],['loyaltyLog','loyaltyLog'],['payRuns','payRuns'],['courseProgress','courseProgress'],['deletedRecords','deletedRecords']].forEach(function(c){
     refs[c[0]].onSnapshot(function(docs){
       State[c[1]] = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return String(b.createdAt||'').localeCompare(String(a.createdAt||'')); });
     });
@@ -2993,7 +3009,7 @@ function subscribeAll(){
 // document handed to the owner's email/WhatsApp/SMS app).
 function logAudit(action, entityType, entityId, summary, whenDate, extra){
   try{
-    refs.auditLog.add(Object.assign({}, extra || {}, {
+    var entry = Object.assign({}, extra || {}, {
       action: action, // 'create' | 'update' | 'delete' | 'other' | 'invoice_shared' | 'receipt_shared' | 'po_shared' | 'reminder_shared'
       entityType: entityType, // 'product' | 'sale' | 'expense' | 'staff' | 'till' | 'purchaseOrder' | 'wastage' | 'branch' | 'supplier' | 'verification_stamp' | 'invoice' | 'receipt' | 'customer'; action also 'invoice_deleted'
       entityId: entityId || null,
@@ -3001,10 +3017,271 @@ function logAudit(action, entityType, entityId, summary, whenDate, extra){
       userId: State.session ? State.session.userId : null,
       userName: State.session ? State.session.name : 'System',
       createdAt: (whenDate instanceof Date ? whenDate : new Date()).toISOString()
-    }));
+    });
+    refs.auditLog.add(auditStamp(entry));
   }catch(e){ /* never let audit logging break the app */ }
 }
 
+/*HARDEN1:START (generated by tools/embed_block.py from tools/harden_core.js, edit that file instead)*/
+/* ============================== SECURITY CORE ==============================
+ * Pesa runs on the owner's own devices, so these controls are enforced inside the app's data layer and in the
+ * functions themselves, not only by hiding buttons. They protect against honest mistakes, curious staff and casual
+ * tampering. They cannot stop someone who controls the browser itself; only per user cloud accounts and server side
+ * rules can do that (see the Security status in Settings). */
+
+/* ---- this device ---- */
+var Dev = (function(){
+  var id = '';
+  try{ id = localStorage.getItem('pesa_device_id') || ''; }catch(e){}
+  if(!/^d-[a-z0-9]{8,}$/.test(id)){
+    id = 'd-' + String(uid()).replace(/[^a-z0-9]/gi, '').slice(0, 12).toLowerCase();
+    try{ localStorage.setItem('pesa_device_id', id); }catch(e){}
+  }
+  return { id:function(){ return id; }, short:function(){ return id.slice(2, 6).toUpperCase(); } };
+})();
+
+/* ---- who is signed in, checked against the staff records (never only against the saved session) ---- */
+function secRoleNow(){
+  var s = State.session; if(!s) return null;
+  var u = null;
+  for(var i = 0; i < State.users.length; i++){ if(State.users[i].id === s.userId){ u = State.users[i]; break; } }
+  if(u){ if(u.active === false) return null; return u.role || s.role || null; }
+  return s.role || null;
+}
+var _secNoteAt = 0;
+function secBlocked(what){
+  try{
+    logAudit('other', 'security', null, 'Blocked: ' + what + ' (signed in as ' + (secRoleNow() || 'nobody') + ')');
+    if(Date.now() - _secNoteAt > 2500){ _secNoteAt = Date.now(); toast(tr('You do not have permission to do that.')); }
+  }catch(e){}
+}
+function secAllow(level, what){
+  var r = secRoleNow(), ok = false;
+  if(level === 'owner') ok = r === 'owner';
+  else if(level === 'manager') ok = r === 'owner' || r === 'manager';
+  else ok = !!r;
+  if(!ok) secBlocked(what || 'an action that needs ' + level + ' access');
+  return ok;
+}
+/* ask again for the password or PIN before a high risk action (not asked twice within 90 seconds) */
+var _reauthAt = 0;
+function secReauth(reason, fn){
+  if(Date.now() - _reauthAt < 90000){ fn(); return; }
+  askPasswordSheet(reason || tr('Confirm with your password or PIN'), function(){ _reauthAt = Date.now(); fn(); });
+}
+
+/* ---- tamper evident audit log ----
+   Every entry records the device, a counter for that device, the hash of the previous entry from that device and
+   its own hash. Editing, removing or reordering an entry breaks the chain, and the Activity log says so. */
+var AUDIT_TAIL_KEY = 'pesa_audit_tail_' + WS.id;
+function auditCanon(e){
+  return [e.dev, e.seq, e.prev, e.action, e.entityType, e.entityId || '', e.summary || '', e.userId || '', e.userName || '', e.createdAt].join('\u001f');
+}
+function auditStamp(e){
+  var t = null; try{ t = JSON.parse(localStorage.getItem(AUDIT_TAIL_KEY) || 'null'); }catch(x){}
+  var me = Dev.id();
+  if(!t || t.dev !== me){
+    t = { dev:me, seq:0, hash:'GENESIS' };
+    (State.auditLog || []).forEach(function(a){ if(a.dev === me && a.seq > t.seq){ t.seq = a.seq; t.hash = a.hash; } });
+  }
+  e.dev = me; e.seq = t.seq + 1; e.prev = t.hash;
+  e.hash = sha256Pure(auditCanon(e));
+  try{ localStorage.setItem(AUDIT_TAIL_KEY, JSON.stringify({ dev:me, seq:e.seq, hash:e.hash })); }catch(x){}
+  return e;
+}
+function auditVerify(){
+  var by = {}, legacy = 0, problems = [];
+  (State.auditLog || []).forEach(function(a){
+    if(!a.hash || !a.seq){ legacy++; return; }
+    (by[a.dev || '?'] = by[a.dev || '?'] || []).push(a);
+  });
+  var checked = 0;
+  Object.keys(by).forEach(function(dev){
+    var list = by[dev].slice().sort(function(a, b){ return a.seq - b.seq; }), prev = null;
+    list.forEach(function(a){
+      checked++;
+      if(sha256Pure(auditCanon(a)) !== a.hash) problems.push('Entry ' + a.seq + ' from device ' + String(dev).slice(2, 6) + ' was changed');
+      if(prev){
+        if(a.seq === prev.seq) problems.push('Entry ' + a.seq + ' from device ' + String(dev).slice(2, 6) + ' appears twice');
+        else if(a.seq !== prev.seq + 1) problems.push((a.seq - prev.seq - 1) + ' entries are missing after ' + prev.seq + ' on device ' + String(dev).slice(2, 6));
+        if(a.prev !== prev.hash && a.seq === prev.seq + 1) problems.push('Entry ' + a.seq + ' from device ' + String(dev).slice(2, 6) + ' does not follow the one before it');
+      }
+      prev = a;
+    });
+  });
+  return { ok:problems.length === 0, checked:checked, legacy:legacy, problems:problems };
+}
+
+/* ---- data layer protection (see Store.setGuard) ----
+   Finalised financial records cannot be silently changed or deleted from anywhere in the app. Deleting from the
+   records that may be removed needs a manager or the owner. Controlled routes (void, refund, archive) pass
+   through guardRun. */
+var _guardPass = 0;
+function guardRun(fn){ _guardPass++; try{ return fn(); } finally { _guardPass--; } }
+var GUARD_MANAGER_DELETE = ['expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','branches','suppliers','customers','payRuns','clockLogs','tips','quotes','stockTakes'];
+var SALE_OPEN_KEYS = ['fiscalId', 'fiscalKey', 'receiptSentAt', 'receiptSent'];
+function dataGuard(coll, op, id, existing, patch){
+  if(_guardPass) return true;
+  var role = secRoleNow();
+  if(coll === 'auditLog' || coll === 'deletedRecords' || coll === 'syncLog'){
+    if(op === 'set' && !existing) return true;
+    secBlocked('changing the ' + coll + ' (it can only be added to)'); return false;
+  }
+  if(coll === 'sales'){
+    if(op === 'delete'){ secBlocked('deleting a sale (use Refund or Void)'); return false; }
+    if(op === 'set' && existing) return false;
+    if(op === 'update' && patch){
+      var bad = Object.keys(patch).filter(function(k){ return SALE_OPEN_KEYS.indexOf(k) < 0; });
+      if(bad.length){ secBlocked('changing a completed sale (' + bad[0] + ')'); return false; }
+    }
+    return true;
+  }
+  if(coll === 'tillSessions'){
+    if(op === 'delete'){ secBlocked('deleting a till session'); return false; }
+    if(existing && existing.status === 'closed'){ secBlocked('changing a closed till session'); return false; }
+    return true;
+  }
+  if(coll === 'accountingPeriods'){
+    if(op === 'delete'){ secBlocked('deleting a filed accounting period'); return false; }
+    return true;
+  }
+  if(coll === 'users' && existing && role){
+    if(op === 'delete'){ if(role !== 'owner' || existing.role === 'owner'){ secBlocked('deleting a staff account'); return false; } return true; }
+    if(patch){
+      var isSelf = State.session && State.session.userId === id;
+      if('role' in patch && patch.role !== existing.role && role !== 'owner'){ secBlocked('changing a role'); return false; }
+      if(existing.role === 'owner' && !isSelf && role !== 'owner'){ secBlocked('changing the owner account'); return false; }
+      if(existing.role === 'manager' && !isSelf && role !== 'owner' && ('passHash' in patch || 'active' in patch || 'role' in patch)){ secBlocked('changing a manager'); return false; }
+      var touches = ('active' in patch && patch.active !== existing.active) || ('passHash' in patch) || ('role' in patch && patch.role !== existing.role);
+      if(touches && !isSelf && role !== 'owner' && role !== 'manager'){ secBlocked('changing a staff account'); return false; }
+    }
+    return true;
+  }
+  if(op === 'delete' && role && GUARD_MANAGER_DELETE.indexOf(coll) > -1 && role !== 'owner' && role !== 'manager'){
+    secBlocked('deleting from ' + coll); return false;
+  }
+  if(op === 'delete' && existing && GUARD_ARCHIVE.indexOf(coll) > -1) archiveRemoved(coll, id, existing);
+  return true;
+}
+/* The original of a removed financial record is kept (who, when, why and a hash of its content). */
+var GUARD_ARCHIVE = ['expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];
+var secDeleteReason = '';
+/** Run a removal with the reason the person gave, so the archive and the activity log record it. */
+function secWithReason(reason, fn){ var old = secDeleteReason; secDeleteReason = String(reason || '').slice(0, 200); try{ return fn(); } finally { secDeleteReason = old; } }
+function archiveRemoved(coll, id, existing){
+  try{
+    var snap = JSON.parse(JSON.stringify(existing));
+    var rec = { coll:coll, recId:id, data:snap, reason:secDeleteReason || '', deletedAt:new Date().toISOString(), by:State.session ? State.session.name : '', byId:State.session ? State.session.userId : '', dev:Dev.id(), hash:sha256Pure(JSON.stringify(snap)) };
+    guardRun(function(){ refs.deletedRecords.add(rec); });
+    logAudit('delete', 'archive', id, 'Removed ' + coll + ' record ' + String(id).slice(0, 6) + ' (original kept)' + (secDeleteReason ? ': ' + secDeleteReason : ''));
+  }catch(e){}
+}
+
+/* ---- safe images and uploads ---- */
+var SEC_IMG_MAX = 8 * 1024 * 1024, SEC_TEXT_MAX = 60 * 1024 * 1024;
+function safeImg(src){
+  var s = String(src == null ? '' : src);
+  if(/^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(s)) return s;
+  if(/^blob:[A-Za-z0-9:\/\.\-]+$/.test(s)) return s;
+  return '';
+}
+function safeAudio(src){
+  var s = String(src == null ? '' : src);
+  if(/^data:audio\/[a-z0-9.+\-]+(;codecs=[a-z0-9.,\-]+)?;base64,[A-Za-z0-9+\/=]+$/i.test(s)) return s;
+  if(/^blob:[A-Za-z0-9:\/\.\-]+$/.test(s)) return s;
+  return '';
+}
+function secImageKind(b){
+  if(b.length >= 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return 'png';
+  if(b.length >= 3 && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'jpeg';
+  if(b.length >= 6 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return 'gif';
+  if(b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'webp';
+  return '';
+}
+/** Resolves {ok, msg}. Looks at the real file contents, not the name or the type the browser reports. */
+function secCheckImage(file){
+  return new Promise(function(resolve){
+    if(!file || typeof file.size !== 'number') return resolve({ ok:false, msg:tr('Choose a picture file.') });
+    if(file.size > SEC_IMG_MAX) return resolve({ ok:false, msg:tr('That picture is too large. Choose one under 8 MB.') });
+    if(file.size < 16) return resolve({ ok:false, msg:tr('That file is empty.') });
+    var fr = new FileReader();
+    fr.onload = function(){
+      var kind = secImageKind(new Uint8Array(fr.result));
+      resolve(kind ? { ok:true, kind:kind } : { ok:false, msg:tr('Only PNG, JPG, WebP or GIF pictures are allowed.') });
+    };
+    fr.onerror = function(){ resolve({ ok:false, msg:tr('That file could not be read.') }); };
+    fr.readAsArrayBuffer(file.slice(0, 16));
+  });
+}
+var SEC_BAD_EXT = /\.(exe|bat|cmd|com|scr|msi|dll|jar|apk|app|js|jse|mjs|vbs|vbe|ps1|psm1|sh|bash|php|py|rb|pl|html?|xhtml|svg|swf|hta|lnk|reg|iso|dmg)$/i;
+function secCheckTextFile(file, maxBytes){
+  if(!file) return { ok:false, msg:tr('Choose a file.') };
+  if(SEC_BAD_EXT.test(String(file.name || ''))) return { ok:false, msg:tr('That type of file is not allowed.') };
+  if(file.size > (maxBytes || SEC_TEXT_MAX)) return { ok:false, msg:tr('That file is too large.') };
+  return { ok:true };
+}
+function secWrapImageFn(orig){
+  return function(file){
+    var args = arguments, self = this;
+    if(!(file instanceof Blob)) return orig.apply(self, args);
+    return secCheckImage(file).then(function(c){ if(!c.ok){ var e = new Error(c.msg); e.userMessage = c.msg; throw e; } return orig.apply(self, args); });
+  };
+}
+squarePhoto = secWrapImageFn(squarePhoto);
+resizeImageFile = secWrapImageFn(resizeImageFile);
+logoLoadCanvas = secWrapImageFn(logoLoadCanvas);
+// every text style upload (CSV, JSON, backups) goes through readAsText: refuse program files and oversize files there
+(function(){
+  try{
+    var orig = FileReader.prototype.readAsText;
+    FileReader.prototype.readAsText = function(blob){
+      var c = secCheckTextFile(blob, SEC_TEXT_MAX);
+      if(!c.ok){ try{ toast(c.msg); }catch(e){} var self = this; setTimeout(function(){ try{ self.onerror && self.onerror(new Error(c.msg)); }catch(e){} }, 0); return; }
+      return orig.apply(this, arguments);
+    };
+  }catch(e){}
+})();
+
+/* ---- spreadsheet formula injection: a cell that starts with = + - @ is stored as text ---- */
+function secCell(v){
+  if(typeof v !== 'string') return v;
+  return /^[=+\-@\t\r]/.test(v) && !/^[-+]?\d+([.,]\d+)?$/.test(v) ? "'" + v : v;
+}
+
+/* ---- sign in sessions: expiry and inactivity ---- */
+var SESSION_MAX_AGE_MS = 7 * 86400000;
+var _sessTouchAt = 0;
+function sessionTouch(){
+  var now = Date.now(); if(now - _sessTouchAt < 30000) return; _sessTouchAt = now;
+  try{
+    var s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(s && s.userId){ s.last = now; localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+  }catch(e){}
+}
+function sessionFresh(saved){
+  if(!saved || !saved.userId) return false;
+  var now = Date.now(), at = saved.at || 0, last = saved.last || at;
+  if(!at) return true;   // a session saved before expiry existed: accept it once, it is stamped right away
+  if(now - at > SESSION_MAX_AGE_MS) return false;
+  var mins = idleMinutes(), limit = (mins > 0 ? mins * 60000 : 12 * 3600000);
+  return now - last <= Math.max(limit, 60000);
+}
+
+/* ---- a typed sync key must never be the all powerful service key ---- */
+function secKeyProblem(key){
+  try{
+    var p = String(key || '').split('.');
+    if(p.length === 3){
+      var j = JSON.parse(atob(p[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if(j && /service/i.test(String(j.role || ''))) return tr('That is a private service key. Never paste it into Pesa. Use the anon public key instead.');
+    }
+  }catch(e){}
+  if(/service_role/i.test(String(key || ''))) return tr('That is a private service key. Never paste it into Pesa. Use the anon public key instead.');
+  return '';
+}
+
+Store.setGuard(dataGuard);
+/*HARDEN1:END*/
 /* ============================== company / staff accounts / login / roles ============================== */
 var SESSION_KEY = 'pesa_session_v2' + (WS.id === 'default' ? '' : '_' + WS.id);
 var NAMIBIA_REGIONS = ['Erongo','Hardap','ǁKaras','Kavango East','Kavango West','Khomas','Kunene','Ohangwena','Omaheke','Omusati','Oshana','Oshikoto','Otjozondjupa','Zambezi'];
@@ -3228,7 +3505,7 @@ function wireForgot(root){
     var sent = true;
     if(acct){
       var code = randomCode6();
-      var hash = await sha256Hex(code + ':' + acct.id);
+      var hash = await pwHash(code + ':' + acct.id);
       var res = await sendEmailJs({ to_email:email, to_name:acct.name, code:code, shop_name:acct.wsName || 'Pesa', expires_minutes:String(RESET_MINUTES), app_name:'Pesa' });
       if(res.ok){
         try{ localStorage.setItem(RESET_KEY, JSON.stringify({ email:email, ws:acct.ws, userId:acct.id, hash:hash, exp:Date.now()+RESET_MINUTES*60000, tries:0 })); }catch(e){}
@@ -3268,9 +3545,11 @@ function wireForgot(root){
     if(r.tries >= 5){ try{ localStorage.removeItem(RESET_KEY); }catch(e){} return banner(err, tr('Too many wrong attempts. Tap Resend code to get a new one.')); }
     var _pp = pwProblem(pw); if(_pp) return banner(err, _pp);
     if(pw !== pw2) return banner(err, tr('Passwords don’t match.'));
+    var _rl = authLockText('reset:'+r.userId); if(_rl) return banner(err, _rl);
     r.tries++; try{ localStorage.setItem(RESET_KEY, JSON.stringify(r)); }catch(e){}
-    var hash = await sha256Hex(code + ':' + r.userId);
-    if(hash !== r.hash) return banner(err, tr('Incorrect code.'));
+    var codeOk = await pwCheck(code + ':' + r.userId, r.hash);
+    if(!codeOk){ authFailed('reset:'+r.userId, 'password reset code'); return banner(err, tr('Incorrect code.')); }
+    authOk('reset:'+r.userId); logAudit('other','staff',r.userId,'Password reset with an emailed code');
     var newHash = await pwHash(pw);
     try{ localStorage.removeItem(RESET_KEY); }catch(e){}
     if(r.ws === WS.id){
@@ -3426,7 +3705,9 @@ function wireSyncSettings(ov){
   var cp = root.querySelector('[data-copysql]'); if(cp) cp.addEventListener('click', function(){ copyText(SYNC_SQL, tr('Setup script copied')); });
   function vals(){
     var u = root.querySelector('#syUrl'), k = root.querySelector('#syKey');
-    return { url: u ? u.value.trim() : SYNC_DEFAULTS.url, key: k ? k.value.trim() : SYNC_DEFAULTS.key, code: Sync.normCode(root.querySelector('#syCode').value) };
+    var kv = k ? k.value.trim() : SYNC_DEFAULTS.key, kp = secKeyProblem(kv);
+    if(kp){ say(kp, false); kv = ''; }
+    return { url: u ? u.value.trim() : SYNC_DEFAULTS.url, key: kv, code: Sync.normCode(root.querySelector('#syCode').value) };
   }
   var gen = root.querySelector('#syGen'); if(gen) gen.addEventListener('click', function(){ root.querySelector('#syCode').value = Sync.genCode(); });
   var test = root.querySelector('#syTest');
@@ -3477,6 +3758,7 @@ function openJoinSyncSheet(){
   ov.querySelector('#jsGo').addEventListener('click', function(){
     var u = ov.querySelector('#jsUrl'), k = ov.querySelector('#jsKey');
     var url = u ? u.value.trim() : SYNC_DEFAULTS.url, key = k ? k.value.trim() : SYNC_DEFAULTS.key, code = Sync.normCode(ov.querySelector('#jsCode').value);
+    var _kp = secKeyProblem(key); if(_kp) return say(_kp, false);
     if(!url || !key || !code) return say(tr('Fill in the URL, key and sync code first.'), false);
     var btn = ov.querySelector('#jsGo'); btn.disabled = true; say(tr('Connecting…'), true);
     Sync.test(url, key, code).then(function(){
@@ -3826,10 +4108,10 @@ function authLockText(uid){ var s = authLeft(uid); return s ? tr('Too many wrong
 
 // Automatic sign out when nobody uses Pesa for a while (the owner chooses how long in Security check).
 var _lastActive = Date.now(), _idleStarted = false;
-function idleMinutes(){ var m = Number(State.settings && State.settings.autoLogoutMin); return m > 0 ? m : 0; }
+function idleMinutes(){ var raw = State.settings && State.settings.autoLogoutMin; if(raw === undefined || raw === null || raw === '') return 30; var m = Number(raw); return m > 0 ? m : 0; }
 function startIdleWatch(){
   if(_idleStarted) return; _idleStarted = true;
-  ['pointerdown','keydown','touchstart','wheel'].forEach(function(ev){ document.addEventListener(ev, function(){ _lastActive = Date.now(); }, { capture:true, passive:true }); });
+  ['pointerdown','keydown','touchstart','wheel'].forEach(function(ev){ document.addEventListener(ev, function(){ _lastActive = Date.now(); sessionTouch(); }, { capture:true, passive:true }); });
   setInterval(function(){
     try{
       var mins = idleMinutes();
@@ -3851,6 +4133,7 @@ function idleSignOut(mins){
 
 // The owner's Security check: what is protecting the business, and what to do next.
 function openSecuritySheet(){
+  if(!secAllow('owner', 'opening the security check')) return;
   var secure = !!window.isSecureContext, uid = State.session && State.session.userId;
   var cloud = false; try{ var st = Sync.status(); cloud = st && st.state !== 'off'; }catch(e){}
   var d30 = Date.now() - 30*86400000, locks = State.auditLog.filter(function(a){ return /Sign in locked/.test(a.summary||'') && new Date(a.createdAt).getTime() > d30; });
@@ -7089,11 +7372,11 @@ function roleTabs(role){
   if(role === 'stockclerk') return ['me','stock','records'];
   return ['dashboard','sell','stock','credit','invoices','reports','expenses','till','reconcile','team'];
 }
-function isManagerOrOwner(){ return !!(State.session && (State.session.role==='owner' || State.session.role==='manager')); }
-function isOwner(){ return !!(State.session && State.session.role==='owner'); }
-function isRestricted(){ return !!(State.session && State.session.role !== 'owner' && State.session.role !== 'manager'); }
-function isCashier(){ return !!(State.session && State.session.role==='cashier'); }
-function saveSessionLocal(userId){ try{ localStorage.setItem(SESSION_KEY, JSON.stringify({userId:userId})); }catch(e){} }
+function isManagerOrOwner(){ var r = secRoleNow(); return r === 'owner' || r === 'manager'; }
+function isOwner(){ return secRoleNow() === 'owner'; }
+function isRestricted(){ return !!State.session && !isManagerOrOwner(); }
+function isCashier(){ return secRoleNow() === 'cashier'; }
+function saveSessionLocal(userId){ try{ var n = Date.now(); localStorage.setItem(SESSION_KEY, JSON.stringify({userId:userId, at:n, last:n})); }catch(e){} }
 function clearSessionLocal(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 
 var signedOutPending = false;
@@ -7123,6 +7406,8 @@ function checkAuthAndRoute(){
   if(!State.session){
     var saved = null;
     try{ saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }catch(e){}
+    if(saved && saved.userId && !sessionFresh(saved)){ clearSessionLocal(); logAudit('other','staff',saved.userId,'Saved sign in expired, sign in required'); saved = null; }
+    if(saved && !saved.at){ saveSessionLocal(saved.userId); }
     if(saved && saved.userId){
       var u = State.users.find(function(x){ return x.id===saved.userId && x.active!==false && !x.pending; });
       if(u){ State.session = { userId:u.id, name:u.name, role:u.role }; if(bioEnrolled(u.id) && bioLockOn(u.id) && bioSupported()) _bioLockPending = true; }
@@ -7281,13 +7566,17 @@ function openDeleteBusinessSheet(rid){
   ov.querySelector('#dbCancel').addEventListener('click', closeModal);
   function attempt(){
     var val = pass.value; if(!val) return;
+    var lt = authLockText('delbiz:'+rid); if(lt){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(lt)+'</span></div>'; pass.value = ''; return; }
     go.disabled = true;
     Promise.all(owners.map(function(o){ return pwCheck(val, o.passHash); })).then(function(rs){
       if(!rs.some(Boolean)){
+        var f = authFailed('delbiz:'+rid, 'delete business');
         go.disabled = false; pass.value = ''; pass.focus();
-        err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Incorrect password.')+'</span></div>';
+        err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(f.locked ? authLockText('delbiz:'+rid) : tr('Incorrect password.'))+'</span></div>';
         return;
       }
+      authOk('delbiz:'+rid);
+      logAudit('delete','business',rid,'Business deleted from this device by owner password');
       try{ Persist.dropWs(rid); }catch(e){}
       WS.remove(rid);
       if(cur){ var nid = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2,5); WS.add(nid); WS.setActive(nid); try{ clearSessionLocal(); }catch(e){} }
@@ -7512,15 +7801,18 @@ function wireAccountPicker(root){
     function attempt(){
       var val = pass.value; if(!val) return;
       var btn = box.querySelector('#rcAcctLogin'), err = box.querySelector('#rcAcctError');
+      var lt = authLockText('xlogin:'+a.id); if(lt){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(lt)+'</span></div>'; pass.value = ''; return; }
       btn.disabled = true;
       (a.passHash ? pwCheck(val, a.passHash) : Promise.resolve(true)).then(function(ok){
         // when this device holds that business's data we can check the password right here
         if(!ok){
+          var f = authFailed('xlogin:'+a.id, a.name);
           btn.disabled = false;
-          err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+(isCash?tr('Incorrect PIN.'):tr('Incorrect password.'))+'</span></div>';
+          err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(f.locked ? authLockText('xlogin:'+a.id) : (isCash?tr('Incorrect PIN.'):tr('Incorrect password.')))+'</span></div>';
           pass.value = ''; pass.focus();
           return;
         }
+        authOk('xlogin:'+a.id);
         try{ sessionStorage.setItem('pesa_autologin', JSON.stringify({ ws:a.ws, userId:a.id, secret:val })); }catch(e){}
         switchBusiness(a.ws);
       });
@@ -7649,12 +7941,12 @@ function wireEmployeeSignup(root){
     function go(){
       var err = box.querySelector('#empErr');
       function fail(m){ err.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(m)+'</span></div>'; }
-      if(Date.now() < _empUntil){ fail(tr('Too many wrong tries. Try again in')+' '+Math.ceil((_empUntil-Date.now())/1000)+' '+tr('seconds')+'.'); return; }
+      var _il = authLockText('invite'); if(_il){ fail(_il); return; }
       var code = inp.value.replace(/\D/g,'');
       var u = State.users.find(function(x){ return x.pending && x.inviteCode && x.inviteCode === code; });
-      if(!u){ _empFails++; if(_empFails >= 5){ _empUntil = Date.now()+60000; _empFails = 0; } fail(tr('That code was not found. Check it, or ask your employer for a new one. This computer or device must be connected to the business.')); return; }
+      if(!u){ authFailed('invite', 'employee invite code'); fail(tr('That code was not found. Check it, or ask your employer for a new one. This computer or device must be connected to the business.')); return; }
       if(u.inviteExpires && new Date(u.inviteExpires) < new Date()){ fail(tr('This code has expired. Ask your employer for a new one.')); return; }
-      _empFails = 0; step2(u);
+      authOk('invite'); step2(u);
     }
     box.querySelector('#empNext').addEventListener('click', go);
     inp.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(); });
@@ -8120,7 +8412,7 @@ function msgWirePlayers(box){
 }
 function msgLightbox(ov, src){
   var lb = document.createElement('div'); lb.className = 'mv-lb';
-  lb.innerHTML = '<img src="'+src+'" alt="">' + '<div class="mv-lbbar"><a class="btn btn-accent" download="pesa-photo.jpg" href="'+src+'">'+tr('Save photo')+'</a><button type="button" class="btn btn-ghost" data-lbx>'+tr('Close')+'</button></div>';
+  src = safeImg(src); lb.innerHTML = '<img src="'+esc(src)+'" alt="">' + '<div class="mv-lbbar"><a class="btn btn-accent" download="pesa-photo.jpg" href="'+esc(src)+'">'+tr('Save photo')+'</a><button type="button" class="btn btn-ghost" data-lbx>'+tr('Close')+'</button></div>';
   lb.addEventListener('click', function(e){ if(e.target === lb || e.target.hasAttribute('data-lbx')) lb.remove(); });
   ov.appendChild(lb);
 }
@@ -8155,8 +8447,8 @@ function openComposeMessageSheet(to){
   var ov = openSheet(html), kind = 'message', img = null, aud = null, recording = false;
   function att(){
     var h = '';
-    if(img) h += '<div class="mv-pend"><img src="'+img.dataUrl+'" alt=""><span>'+tr('Photo')+' · '+Math.round(img.dataUrl.length*0.75/1024)+' KB</span><button type="button" class="mv-ib dark" data-rm="img" aria-label="'+tr('Remove')+'">'+MV_IC.x+'</button></div>';
-    if(aud) h += '<div class="mv-pend"><audio controls src="'+aud.url+'" style="flex:1;min-width:0;height:36px;"></audio><button type="button" class="mv-ib dark" data-rm="aud" aria-label="'+tr('Remove')+'">'+MV_IC.x+'</button></div>';
+    if(img) h += '<div class="mv-pend"><img src="'+esc(safeImg(img.dataUrl))+'" alt=""><span>'+tr('Photo')+' · '+Math.round(img.dataUrl.length*0.75/1024)+' KB</span><button type="button" class="mv-ib dark" data-rm="img" aria-label="'+tr('Remove')+'">'+MV_IC.x+'</button></div>';
+    if(aud) h += '<div class="mv-pend"><audio controls src="'+esc(safeAudio(aud.url))+'" style="flex:1;min-width:0;height:36px;"></audio><button type="button" class="mv-ib dark" data-rm="aud" aria-label="'+tr('Remove')+'">'+MV_IC.x+'</button></div>';
     var box = ov.querySelector('#cmAtt'); box.innerHTML = h;
     box.querySelectorAll('[data-rm]').forEach(function(b){ b.addEventListener('click', function(){ if(b.getAttribute('data-rm') === 'img') img = null; else aud = null; att(); }); });
   }
@@ -8354,7 +8646,7 @@ function openThreadSheet(rootId){
       if(day !== lastDay){ lastDay = day; sep = '<div class="mv-day">'+esc(msgDayLabel(x.createdAt))+'</div>'; }
       var media = !!(x.img || x.audio);
       return sep + '<div class="mv-row'+(mine?' me':'')+'">'+(selMode ? '<span class="tick mv-tick'+(bsel[x.id]?' on':'')+'" data-btick="'+x.id+'" role="checkbox" aria-checked="'+(!!bsel[x.id])+'"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>' : '')+(mine?'':msgAvatar(x.fromName))+'<div class="mv-bub'+(mine?' me':'')+(x.kind==='instruction'?' inst':'')+(media?' media':'')+'">' + (mine?'':'<div class="mv-who">'+esc(x.fromName)+'</div>') +
-        (x.img ? '<img class="mv-img" data-lb="'+x.id+'" src="'+x.img+'" alt="'+tr('Photo')+'"'+(x.imgW && x.imgH ? ' width="'+x.imgW+'" height="'+x.imgH+'"' : '')+'>' : '') + (x.audio ? msgVoiceHtml(x) : '') + (x.mediaGone && !x.img && !x.audio ? '<div class="mv-gone">'+(/img/.test(x.mediaGone) ? '📷 '+tr('Photo removed to save space') : '🎤 '+tr('Voice note removed to save space'))+'</div>' : '') +
+        (x.img ? '<img class="mv-img" data-lb="'+x.id+'" src="'+esc(safeImg(x.img))+'" alt="'+tr('Photo')+'"'+(x.imgW && x.imgH ? ' width="'+x.imgW+'" height="'+x.imgH+'"' : '')+'>' : '') + (x.audio ? msgVoiceHtml(x) : '') + (x.mediaGone && !x.img && !x.audio ? '<div class="mv-gone">'+(/img/.test(x.mediaGone) ? '📷 '+tr('Photo removed to save space') : '🎤 '+tr('Voice note removed to save space'))+'</div>' : '') +
         (x.body ? '<div class="mv-txt">'+esc(x.body)+'</div>' : '') + '<div class="mv-meta">'+esc(msgTime(x.createdAt))+ticks(x)+'</div></div></div>';
     }).join('');
     if(first || near || t.items.length !== lastN) chat.scrollTop = chat.scrollHeight;
@@ -8411,7 +8703,7 @@ function openThreadSheet(rootId){
     var staff = !isManagerOrOwner();
     var h = '<div class="mv-compose">' + (target && target.length > 1 ? '<div class="mv-to">'+tr('Reply to')+' <select id="mvTo">'+target.map(function(c){ return '<option value="'+c.id+'"'+(c.id===replyTo.id?' selected':'')+'>'+esc(c.name)+'</option>'; }).join('')+'</select></div>' : '') +
       (staff && !recOn && !pend ? '<div class="mv-chips">'+['Understood 👍','Done ✅','On it','I need help'].map(function(q){ return '<button type="button" class="mv-chip" data-q="'+esc(q)+'">'+esc(tr(q))+'</button>'; }).join('')+'</div>' : '') +
-      (pend ? '<div class="mv-pend"><img src="'+pend.dataUrl+'" alt=""><span>'+tr('Photo')+' · '+Math.round(pend.dataUrl.length*0.75/1024)+' KB</span><button type="button" class="mv-ib dark" id="mvPendX" aria-label="'+tr('Remove')+'">'+MV_IC.x+'</button></div>' : '') +
+      (pend ? '<div class="mv-pend"><img src="'+esc(safeImg(pend.dataUrl))+'" alt=""><span>'+tr('Photo')+' · '+Math.round(pend.dataUrl.length*0.75/1024)+' KB</span><button type="button" class="mv-ib dark" id="mvPendX" aria-label="'+tr('Remove')+'">'+MV_IC.x+'</button></div>' : '') +
       (emojiOn && !recOn ? '<div class="mv-emo">'+MV_EMOJI.map(function(e){ return '<button type="button" data-emo="'+e+'">'+e+'</button>'; }).join('')+'</div>' : '') +
       (attachOn && !recOn ? '<div class="mv-attm"><button type="button" id="mvPick">'+MV_IC.image+'<span>'+tr('Photo')+'</span></button><button type="button" id="mvTake">'+MV_IC.cam+'<span>'+tr('Camera')+'</span></button></div>' : '');
     if(recOn){
@@ -8795,6 +9087,7 @@ function openCompanyDetailsSheet(){
 
 /* ---- team management (owner adds managers & cashiers; manager adds cashiers) ---- */
 function openTeamSheet(){
+  if(!secAllow('manager', 'opening the team list')) return;
   var html = '<div class="sheet-head"><h2>'+tr('Team')+'</h2></div>' +
     '<div class="banner">'+tr('Managers and Supervisors can see everything except your company’s legal details. Cashiers can only sell and run their own till.')+'</div>' +
     '<div id="teamList"></div>' +
@@ -8828,6 +9121,9 @@ function staffHasRecords(u){
     State.wastage.some(function(w){ return w.recordedBy === u.name; });
 }
 function openStaffSheet(user){
+  if(!secAllow('manager', 'editing staff')) return;
+  if(user && user.role === 'owner' && !isOwner()){ secBlocked('opening the owner account'); return; }
+  if(user && user.role === 'manager' && !isOwner() && !(State.session && State.session.userId === user.id)){ secBlocked('editing another manager'); return; }
   var isEdit = !!user;
   var isMe = isEdit && State.session && State.session.userId === user.id;
   var canPickManager = isOwner(); // only the Owner can create/change Managers
@@ -8875,7 +9171,8 @@ function openStaffSheet(user){
   var sfDel = ov.querySelector('#sfDelete');
   if(sfDel) sfDel.addEventListener('click', function(){
     confirmSheet(tr('Delete')+' '+user.name+'?', tr('Their login is removed for good. They have no sales or till sessions on record, so no history is lost.'), tr('Delete'), function(){
-      refs.users.doc(user.id).delete(); logAudit('delete','staff',user.id,'Deleted staff member '+user.name); toast(tr('Staff member deleted')); openTeamSheet();
+      if(!secAllow('owner', 'deleting a staff member')) return;
+      secReauth(tr('Confirm with your password to delete this staff member'), function(){ refs.users.doc(user.id).delete(); logAudit('delete','staff',user.id,'Deleted staff member '+user.name); toast(tr('Staff member deleted')); openTeamSheet(); });
     }, true, true);
   });
   if(isEdit && !isMe){
@@ -8903,11 +9200,15 @@ function openStaffSheet(user){
           if(role === 'cashier' ? !/^\d{4}$/.test(newPass) : !!pwProblem(newPass)) return fail(role === 'cashier' ? tr('PIN must be exactly 4 digits.') : pwProblem(newPass));
           patch.passHash = await pwHash(newPass);
         }
+        var doSave = function(){
         refs.users.doc(user.id).update(patch);
-        logAudit('update','staff',user.id,'Edited '+name);
+        logAudit('update','staff',user.id,'Edited '+name+(patch.passHash ? ' (password or PIN reset)' : ''));
+        if(patch.passHash) logAudit('other','security',user.id,'Password or PIN reset for '+name+' by '+(State.session ? State.session.name : ''));
         toast(tr('Staff member updated'));
         if(isMe) State.session.name = name;
         openTeamSheet();
+        };
+        if(patch.passHash && !isMe) secReauth(tr('Confirm with your own password or PIN to reset theirs'), doSave); else doSave();
       } else {
         if(!licAllow('users')) return;
         if(sfMode === 'invite'){
@@ -15113,7 +15414,7 @@ function openSettingsSheet(){
     '<div class="field">' +
       '<label>'+tr('Logo')+'</label>' +
       '<div style="display:flex;align-items:center;gap:10px;">' +
-        (s.logoDataUrl ? '<img src="'+s.logoDataUrl+'" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:repeating-conic-gradient(var(--surface-3) 0% 25%, var(--surface) 0% 50%) 0 0/10px 10px;flex-shrink:0;">' : '<div style="width:44px;height:44px;border:1px dashed var(--border);border-radius:8px;flex-shrink:0;"></div>') +
+        (s.logoDataUrl ? '<img src="'+esc(safeImg(s.logoDataUrl))+'" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:repeating-conic-gradient(var(--surface-3) 0% 25%, var(--surface) 0% 50%) 0 0/10px 10px;flex-shrink:0;">' : '<div style="width:44px;height:44px;border:1px dashed var(--border);border-radius:8px;flex-shrink:0;"></div>') +
         '<label class="btn btn-ghost" for="stLogoInput" style="cursor:pointer;flex:1;margin:0;font-size:14.5px;font-weight:600;color:var(--text);display:inline-flex;align-items:center;justify-content:center;">'+tr('Choose image')+'</label>' +
         (s.logoDataUrl ? '<button class="bulk-del" id="stLogoRemove" type="button">×</button>' : '') +
       '</div>' +
@@ -15497,7 +15798,7 @@ function logoMigrateOnce(){
 function applyBrandLogo(){
   try{ setTimeout(logoMigrateOnce, 0); }catch(e){}
   try{
-    var url = (State.settings && State.settings.logoDataUrl) ? State.settings.logoDataUrl : PESA_LOGO_DATA_URL;
+    var url = safeImg(State.settings && State.settings.logoDataUrl) || PESA_LOGO_DATA_URL;
     document.documentElement.style.setProperty('--brand-logo-img', 'url("'+url+'")');
   }catch(e){}
 }
@@ -16477,7 +16778,10 @@ function openRecordWastageSheet(onDone){
 
 /* ============================== AUDIT TRAIL VIEWER ============================== */
 function openAuditLogSheet(){
+  if(!secAllow('manager', 'opening the activity log')) return;
+  var av = auditVerify();
   var html = '<div class="sheet-head"><h2>Activity log</h2></div>' +
+    '<div class="banner" style="display:block;color:'+(av.ok ? 'var(--success)' : 'var(--danger)')+';">'+(av.ok ? '✓ '+tr('Log chain checked')+': '+av.checked+' '+tr('protected entries in order, none changed or missing.') : '⚠ '+tr('This log shows signs of change')+': '+esc(av.problems.slice(0,3).join('; '))+'. '+tr('Keep a backup and ask a professional to review.'))+'<div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;">'+tr('Entries cannot be edited or deleted in Pesa. The chain makes changes made outside Pesa visible, it does not stop them.')+'</div></div>' +
     (State.auditLog.length===0 ? '<div class="empty" style="padding:16px 0;">No activity recorded yet. Actions your team takes will show up here.</div>' :
       '<div class="rowlist">' + State.auditLog.slice(0,300).map(function(a){
         return '<div class="row" style="cursor:default;"><div class="avatar">'+esc(initials(a.userName||'?'))+'</div>' +
@@ -19874,7 +20178,7 @@ function backupPayload(){
     branches: State.branches, wastage: State.wastage, tillSessions: State.tillSessions,
     posDevices: State.posDevices, posBatches: State.posBatches, messages: State.messages, workReports: State.workReports,
     stockTakes: State.stockTakes, stockMoves: State.stockMoves, supplierInvoices: State.supplierInvoices, supplierPayments: State.supplierPayments, supplierStatements: State.supplierStatements,
-    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns, courseProgress: State.courseProgress, clockLogs: State.clockLogs, tips: State.tips, calEvents: State.calEvents
+    quotes: State.quotes, recurring: State.recurring, loyaltyLog: State.loyaltyLog, accountingPeriods: State.accountingPeriods, payRuns: State.payRuns, courseProgress: State.courseProgress, deletedRecords: State.deletedRecords, clockLogs: State.clockLogs, tips: State.tips, calEvents: State.calEvents
   };
 }
 // Customer ledgers live under each customer, so they are read separately.
@@ -19906,7 +20210,7 @@ async function restoreBackupData(data){
   await put(refs.posDevices, data.posDevices); await put(refs.posBatches, data.posBatches); await put(refs.messages, data.messages); await put(refs.workReports, data.workReports);
   await put(refs.stockTakes, data.stockTakes); await put(refs.stockMoves, data.stockMoves); await put(refs.supplierInvoices, data.supplierInvoices);
   await put(refs.supplierPayments, data.supplierPayments); await put(refs.supplierStatements, data.supplierStatements);
-  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns); await put(refs.courseProgress, data.courseProgress); await put(refs.clockLogs, data.clockLogs); await put(refs.tips, data.tips); await put(refs.calEvents, data.calEvents);
+  await put(refs.quotes, data.quotes); await put(refs.recurring, data.recurring); await put(refs.loyaltyLog, data.loyaltyLog); await put(refs.accountingPeriods, data.accountingPeriods); await put(refs.payRuns, data.payRuns); await put(refs.courseProgress, data.courseProgress); await put(refs.deletedRecords, data.deletedRecords); await put(refs.clockLogs, data.clockLogs); await put(refs.tips, data.tips); await put(refs.calEvents, data.calEvents);
   if(data.ledgers){
     for(var cid in data.ledgers){ await put(refs.customers.doc(cid).collection('ledger'), data.ledgers[cid]); }
   }
