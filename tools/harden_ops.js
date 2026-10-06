@@ -224,3 +224,43 @@ function openClearSalesSheet(){
       });
     }, true, true);
 }
+
+/* ---------------- Removal approval sheet (manager or owner password and a reason) ---------------- */
+var REMOVAL_REASONS = ['Entered by mistake', 'Duplicate record', 'Test or practice data', 'No longer needed', 'Other (write it below)'];
+function askRemovalSheet(what, onApproved, onCancel){
+  var bosses = State.users.filter(function(u){ return (u.role === 'manager' || u.role === 'owner') && u.active !== false && !u.pending; });
+  var me = State.session ? State.session.userId : '', done = false;
+  var ov = openSheet('<div class="sheet-head"><h2>' + tr('Approve removal') + '</h2></div>' +
+    '<div class="banner" style="display:block;">' + tr('You are removing') + ': <b>' + esc(what) + '</b>. ' + tr('A manager or the owner must approve this with their own password and a reason. A copy is kept in the archive.') + '</div>' +
+    '<div class="field"><label>' + tr('Approved by') + '</label><select id="rmWho">' + bosses.map(function(u){ return '<option value="' + esc(u.id) + '"' + (u.id === me ? ' selected' : '') + '>' + esc(u.name) + ' (' + esc(tr(ROLE_LABELS[u.role] || u.role)) + ')</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>' + tr('Their password') + '</label><input id="rmPass" type="password" autocomplete="off"></div>' +
+    '<div class="field"><label>' + tr('Reason (required)') + '</label><select id="rmWhy">' + REMOVAL_REASONS.map(function(x){ return '<option>' + esc(tr(x)) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>' + tr('Note') + '</label><input id="rmNote" maxlength="200" placeholder="' + esc(tr('Add detail, needed for Other')) + '"></div><div id="rmErr"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="rmOk" type="button">' + tr('Remove') + '</button><button class="btn btn-ghost btn-block" id="rmNo" type="button" style="margin-top:8px;">' + tr('Cancel') + '</button></div>');
+  var pass = ov.querySelector('#rmPass'), err = ov.querySelector('#rmErr'); pass.focus();
+  function cancel(){ if(done) return; done = true; closeModal(); if(onCancel) onCancel(); }
+  ov.querySelector('#rmNo').addEventListener('click', cancel);
+  function go(){
+    var u = bosses.find(function(x){ return x.id === ov.querySelector('#rmWho').value; });
+    var why = ov.querySelector('#rmWhy').value, note = ov.querySelector('#rmNote').value.trim();
+    var reason = (note ? why + ': ' + note : why).slice(0, 200);
+    if(!u || !pass.value) return;
+    if(ov.querySelector('#rmWhy').selectedIndex === REMOVAL_REASONS.length - 1 && note.length < 3){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(tr('Write the reason in the note.')) + '</span></div>'; return; }
+    var key = 'approve:' + u.id, lt = authLockText(key);
+    if(lt){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(lt) + '</span></div>'; pass.value = ''; return; }
+    pwCheck(pass.value, u.passHash).then(function(ok){
+      if(ok){ authOk(key); if(done) return; done = true; closeModal(); onApproved({ id:u.id, name:u.name }, reason); }
+      else { var f = authFailed(key, u.name); pass.value = ''; err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(f.locked ? authLockText(key) : tr('Incorrect password.')) + '</span></div>'; }
+    });
+  }
+  ov.querySelector('#rmOk').addEventListener('click', go);
+  pass.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(); });
+}
+
+/** Runs fn only after a manager or owner has typed their password and given a reason. Used by every screen that removes important records. */
+function withRemoval(what, fn){
+  askRemovalSheet(what, function(ap, reason){
+    secWithReason(reason + ' (approved by ' + ap.name + ')', function(){ _remOk++; try{ fn(ap, reason); } finally { _remOk--; } });
+    logAudit('delete', 'removal', null, 'Removed ' + what + '. Approved by ' + ap.name + '. Reason: ' + reason);
+  }, function(){ toast(tr('Nothing was removed')); });
+}

@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const approve=async(p)=>{ await p.waitForSelector('#rmPass'); await p.fill('#rmPass','aaaa1111'); await p.click('#rmOk'); await p.waitForTimeout(700); };
 let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
 (async()=>{
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
@@ -14,11 +15,11 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
    return {pr:pr.id,w:w.id,po:po.id,cu:cu.id,us:us.id}; });
  await p.waitForTimeout(600);
  // wastage
- await p.evaluate(()=>window.__t.openWastageSheet()); await p.waitForSelector('[data-wdel]'); await p.click('[data-wdel]'); await p.waitForSelector('#wdBack'); await p.click('#wdBack'); await p.waitForTimeout(600);
+ await p.evaluate(()=>window.__t.openWastageSheet()); await p.waitForSelector('[data-wdel]'); await p.click('[data-wdel]'); await p.waitForSelector('#wdBack'); await p.click('#wdBack'); await approve(p);
  const st=await p.evaluate(id=>({stock:window.__t.State.products.find(x=>x.id===id.pr).stockQty, w:window.__t.State.wastage.length}),ids);
  ck('wastage deleted and stock put back', st.stock===7&&st.w===0, st);
  // purchase order
- await p.evaluate(id=>{ const t=window.__t; t.openPODetailSheet(t.State.purchaseOrders.find(x=>x.id===id.po)); },ids); await p.waitForSelector('#poDeleteBtn'); await p.click('#poDeleteBtn'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForTimeout(800);
+ await p.evaluate(id=>{ const t=window.__t; t.openPODetailSheet(t.State.purchaseOrders.find(x=>x.id===id.po)); },ids); await p.waitForSelector('#poDeleteBtn'); await p.click('#poDeleteBtn'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await approve(p);
  ck('purchase order deleted', (await p.evaluate(()=>window.__t.State.purchaseOrders.length))===0);
  // staff
  await p.evaluate(id=>{ const t=window.__t; t.openStaffSheet(t.State.users.find(x=>x.id===id.us)); },ids); await p.waitForTimeout(300);
@@ -27,7 +28,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const gone=await p.evaluate(id=>!window.__t.State.users.some(x=>x.id===id.us),ids); ck('staff member deleted', gone);
  // customer payment
  await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(300);
- await p.evaluate(id=>{ const t=window.__t; t.openLedgerSheet(t.State.customers.find(x=>x.id===id.cu)); },ids); await p.waitForTimeout(1200); if(process.env.DBG){ console.log(await p.evaluate(()=>[window.__t.State.customers.length, document.querySelectorAll('.sheet').length, (document.querySelector('.sheet')||{}).innerText&&document.querySelector('.sheet').innerText.slice(0,200)])); await p.screenshot({path:'/tmp/dl.png'}); } await p.waitForSelector('[data-ldel]',{timeout:5000}); await p.click('[data-ldel]'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForTimeout(800);
+ await p.evaluate(id=>{ const t=window.__t; t.openLedgerSheet(t.State.customers.find(x=>x.id===id.cu)); },ids); await p.waitForTimeout(1200); if(process.env.DBG){ console.log(await p.evaluate(()=>[window.__t.State.customers.length, document.querySelectorAll('.sheet').length, (document.querySelector('.sheet')||{}).innerText&&document.querySelector('.sheet').innerText.slice(0,200)])); await p.screenshot({path:'/tmp/dl.png'}); } await p.waitForSelector('[data-ldel]',{timeout:5000}); await p.click('[data-ldel]'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await approve(p);
  const bal=await p.evaluate(id=>window.__t.State.customers.find(x=>x.id===id.cu).balance,ids); ck('payment removed and balance restored', bal===50, bal);
  ck('no page errors', errs.length===0, errs);
  await b.close(); console.log(fail?'FAILED':'ALL OK'); process.exit(fail?1:0);

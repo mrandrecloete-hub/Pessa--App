@@ -54,6 +54,16 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const uid2=await ev(async()=>{ const t=window.__t; const r=await t.refs.users.add({name:'Sam',role:'cashier',active:true,passHash:'x',createdAt:new Date().toISOString()}); await t.refs.sales.add({items:[{name:'B',qty:1,unitPrice:5,lineTotal:5}],total:5,cost:2,profit:3,paymentMethod:'cash',cashierName:'Sam',createdAt:new Date().toISOString()}); return r.id; }); await p.waitForTimeout(400);
  await ev(id=>{ const t=window.__t; t.openStaffSheet(t.State.users.find(u=>u.id===id)); },uid2); await p.waitForSelector('#sfDelete'); await p.click('#sfDelete'); await p.waitForSelector('#cfOk'); await p.click('#cfOk'); await p.waitForSelector('#apPass'); await p.fill('#apPass','aaaa1111'); await p.click('#apOk'); await p.waitForTimeout(800);
  ck('employee with sales removed with the password, history kept', await ev(id=>!window.__t.State.users.some(u=>u.id===id) && window.__t.State.sales.some(x=>x.cashierName==='Sam') && window.__t.State.deletedRecords.some(d=>d.coll==='users'&&d.recId===id && !d.data.passHash),uid2));
+ // removal approval for important records
+ const eid=await ev(async()=>{ const r=await window.__t.refs.expenses.add({category:'Rent',amount:100,createdAt:new Date().toISOString()}); return r.id; }); await p.waitForTimeout(300);
+ await ev(id=>{ window.__t.refs.expenses.doc(id).delete(); },eid); await p.waitForSelector('#rmPass');
+ ck('a delete is held until a manager or owner approves', await ev(id=>window.__t.State.expenses.some(e=>e.id===id),eid));
+ await p.fill('#rmPass','wrongpass1'); await p.click('#rmOk'); await p.waitForTimeout(500);
+ ck('wrong password does not remove it', await ev(id=>window.__t.State.expenses.some(e=>e.id===id),eid));
+ await p.fill('#rmPass','aaaa1111'); await p.selectOption('#rmWhy',{index:4}); await p.click('#rmOk'); await p.waitForTimeout(400);
+ ck('the Other reason needs a note', await ev(id=>window.__t.State.expenses.some(e=>e.id===id),eid));
+ await p.fill('#rmNote','double entry'); await p.click('#rmOk'); await p.waitForTimeout(800);
+ ck('approved removal works, reason and approver archived', await ev(id=>{ const t=window.__t; const d=t.State.deletedRecords.find(x=>x.recId===id); return !t.State.expenses.some(e=>e.id===id) && !!d && /double entry/.test(d.reason) && /approved by Owner/.test(d.reason); },eid));
  ck('no page errors', errs.length===0, errs);
  await b.close(); process.exit(fail?1:0);
 })();

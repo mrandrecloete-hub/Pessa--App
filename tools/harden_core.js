@@ -137,8 +137,34 @@ function dataGuard(coll, op, id, existing, patch){
   if(op === 'delete' && role && GUARD_MANAGER_DELETE.indexOf(coll) > -1 && role !== 'owner' && role !== 'manager'){
     secBlocked('deleting from ' + coll); return false;
   }
+  if(op === 'delete' && existing && role && REMOVAL_GATED.indexOf(coll) > -1){
+    if(_remOk <= 0){ removalQueue(coll, id, existing); return false; }   // wait for a manager or owner password and a reason
+    archiveRemoved(coll, id, existing); return true;
+  }
   if(op === 'delete' && existing && GUARD_ARCHIVE.indexOf(coll) > -1) archiveRemoved(coll, id, existing);
   return true;
+}
+/* ---- removal approval: important records are only removed with a manager or owner password and a reason ----
+   The delete is held, one approval sheet covers everything removed together, and the originals go to the archive. */
+var REMOVAL_GATED = ['products','customers','suppliers','expenses','invoices','purchaseOrders','supplierInvoices','supplierPayments','supplierStatements','stockTakes','stockMoves','wastage','payRuns','branches','clockLogs','tips'];
+var _remOk = 0, _remQ = [], _remTimer = null;
+function removalQueue(coll, id, existing){
+  if(!_remQ.some(function(x){ return x.coll === coll && x.id === id; })) _remQ.push({ coll:coll, id:id, data:existing });
+  if(!_remTimer) _remTimer = setTimeout(removalFlush, 40);
+}
+function removalFlush(){
+  var items = _remQ; _remQ = []; _remTimer = null;
+  if(!items.length) return;
+  var by = {}; items.forEach(function(x){ by[x.coll] = (by[x.coll] || 0) + 1; });
+  var what = Object.keys(by).map(function(k){ return by[k] + ' ' + k; }).join(', ');
+  askRemovalSheet(what, function(ap, reason){
+    secWithReason(reason + ' (approved by ' + ap.name + ')', function(){
+      _remOk++;
+      try{ items.forEach(function(it){ if(refs[it.coll]) refs[it.coll].doc(it.id).delete(); }); } finally { _remOk--; }
+    });
+    logAudit('delete', 'removal', null, 'Removed ' + what + '. Approved by ' + ap.name + '. Reason: ' + reason);
+    toast(tr('Removed. A copy is kept in the archive.'));
+  }, function(){ toast(tr('Nothing was removed')); try{ render(); }catch(e){} });
 }
 /* The original of a removed financial record is kept (who, when, why and a hash of its content). */
 var GUARD_ARCHIVE = ['posDevices','users','expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];

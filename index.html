@@ -2796,10 +2796,11 @@ function deleteSelectedInTab(tab){
   var refCol = selRefFor(tab);
   var label = selLabelFor(tab, ids.length>1);
   confirmSheet('Delete '+ids.length+' '+label+'?', 'This cannot be undone. Past sales already recorded are not affected.', 'Delete '+ids.length, function(){
+    withRemoval(ids.length+' '+label, function(){
     if(refCol.deleteMany) refCol.deleteMany(ids); else ids.forEach(function(id){ refCol.doc(id).delete(); });
     toast(ids.length+' '+label+' deleted');
     s.active = false; s.ids = {};
-    render();
+    render(); });
   }, true, true);
 }
 function deleteAllInTab(tab){
@@ -2809,10 +2810,11 @@ function deleteAllInTab(tab){
   var refCol = selRefFor(tab);
   var label = selLabelFor(tab, true);
   confirmSheet('Delete all '+label+'?', 'This removes all '+list.length+' '+label+' and cannot be undone. Past sales already recorded are not affected.', 'Delete all', function(){
+    withRemoval('all '+list.length+' '+label, function(){
     if(refCol.deleteMany) refCol.deleteMany(list.map(function(x){ return x.id; })); else list.forEach(function(x){ refCol.doc(x.id).delete(); });
     toast('All '+label+' deleted');
     var s = selState(tab); s.active = false; s.ids = {};
-    render();
+    render(); });
   }, true, true);
 }
 function renderSelectToolbar(tab){
@@ -3181,8 +3183,34 @@ function dataGuard(coll, op, id, existing, patch){
   if(op === 'delete' && role && GUARD_MANAGER_DELETE.indexOf(coll) > -1 && role !== 'owner' && role !== 'manager'){
     secBlocked('deleting from ' + coll); return false;
   }
+  if(op === 'delete' && existing && role && REMOVAL_GATED.indexOf(coll) > -1){
+    if(_remOk <= 0){ removalQueue(coll, id, existing); return false; }   // wait for a manager or owner password and a reason
+    archiveRemoved(coll, id, existing); return true;
+  }
   if(op === 'delete' && existing && GUARD_ARCHIVE.indexOf(coll) > -1) archiveRemoved(coll, id, existing);
   return true;
+}
+/* ---- removal approval: important records are only removed with a manager or owner password and a reason ----
+   The delete is held, one approval sheet covers everything removed together, and the originals go to the archive. */
+var REMOVAL_GATED = ['products','customers','suppliers','expenses','invoices','purchaseOrders','supplierInvoices','supplierPayments','supplierStatements','stockTakes','stockMoves','wastage','payRuns','branches','clockLogs','tips'];
+var _remOk = 0, _remQ = [], _remTimer = null;
+function removalQueue(coll, id, existing){
+  if(!_remQ.some(function(x){ return x.coll === coll && x.id === id; })) _remQ.push({ coll:coll, id:id, data:existing });
+  if(!_remTimer) _remTimer = setTimeout(removalFlush, 40);
+}
+function removalFlush(){
+  var items = _remQ; _remQ = []; _remTimer = null;
+  if(!items.length) return;
+  var by = {}; items.forEach(function(x){ by[x.coll] = (by[x.coll] || 0) + 1; });
+  var what = Object.keys(by).map(function(k){ return by[k] + ' ' + k; }).join(', ');
+  askRemovalSheet(what, function(ap, reason){
+    secWithReason(reason + ' (approved by ' + ap.name + ')', function(){
+      _remOk++;
+      try{ items.forEach(function(it){ if(refs[it.coll]) refs[it.coll].doc(it.id).delete(); }); } finally { _remOk--; }
+    });
+    logAudit('delete', 'removal', null, 'Removed ' + what + '. Approved by ' + ap.name + '. Reason: ' + reason);
+    toast(tr('Removed. A copy is kept in the archive.'));
+  }, function(){ toast(tr('Nothing was removed')); try{ render(); }catch(e){} });
 }
 /* The original of a removed financial record is kept (who, when, why and a hash of its content). */
 var GUARD_ARCHIVE = ['posDevices','users','expenses','supplierPayments','supplierInvoices','wastage','invoices','purchaseOrders','payRuns','clockLogs','tips'];
@@ -4464,7 +4492,7 @@ function openClockEditSheet(u, log, month){
     toast(tr('Saved')); closeModal(); openClockLogsSheet(u.id, todayKey(new Date(inI)).slice(0, 7));
   });
   var del = ov.querySelector('#ceDel');
-  if(del) del.addEventListener('click', function(){ confirmSheet(tr('Delete this shift?'), tr('The hours are taken off this person’s record.'), tr('Delete'), function(){ refs.clockLogs.doc(log.id).delete(); logAudit('delete', 'clock', u.id, 'Shift deleted for ' + u.name); toast(tr('Shift deleted')); openClockLogsSheet(u.id, month); }, true); });
+  if(del) del.addEventListener('click', function(){ confirmSheet(tr('Delete this shift?'), tr('The hours are taken off this person’s record.'), tr('Delete'), function(){ withRemoval('a shift for ' + u.name, function(){ refs.clockLogs.doc(log.id).delete(); logAudit('delete', 'clock', u.id, 'Shift deleted for ' + u.name); toast(tr('Shift deleted')); openClockLogsSheet(u.id, month); }); }, true); });
 }
 /* ---- tips ---- */
 function openTipSheet(){
@@ -4510,7 +4538,7 @@ function openTipsSheet(month){
   ov.querySelector('#tsMonth').addEventListener('change', function(e){ if(e.target.value){ closeModal(); openTipsSheet(e.target.value); } });
   ov.querySelector('#tsAdd').addEventListener('click', function(){ closeModal(); openTipSheet(); });
   ov.querySelectorAll('[data-tpdel]').forEach(function(b){ b.addEventListener('click', function(){ var t = State.tips.find(function(x){ return x.id === b.getAttribute('data-tpdel'); }); if(!t) return;
-    confirmSheet(tr('Remove this tip?'), fmtMoney(t.amount) + ' ' + tr('for') + ' ' + t.userName + ' ' + tr('is taken off the record.'), tr('Remove'), function(){ refs.tips.doc(t.id).delete(); logAudit('delete', 'tip', t.id, 'Tip of ' + fmtMoney(t.amount) + ' removed for ' + t.userName); toast(tr('Tip removed')); setTimeout(function(){ openTipsSheet(month); }, 200); }, true); }); });
+    confirmSheet(tr('Remove this tip?'), fmtMoney(t.amount) + ' ' + tr('for') + ' ' + t.userName + ' ' + tr('is taken off the record.'), tr('Remove'), function(){ withRemoval('a tip for ' + t.userName, function(){ refs.tips.doc(t.id).delete(); logAudit('delete', 'tip', t.id, 'Tip of ' + fmtMoney(t.amount) + ' removed for ' + t.userName); toast(tr('Tip removed')); setTimeout(function(){ openTipsSheet(month); }, 200); }); }, true); }); });
 }
 /* ---- staff rating chart ---- */
 var RATE_PARTS = [['sales', 'Sales', 40, '#0B7A5C'], ['acc', 'Till accuracy', 20, '#3B82F6'], ['att', 'Attendance', 20, '#E8A21E'], ['mgr', 'Manager rating', 20, '#9B5DE5']];
@@ -10954,9 +10982,10 @@ function openProductSheet(product, prefillBarcode){
   if(isEdit){
     ov.querySelector('#pfDelete').addEventListener('click', function(){
       confirmSheet('Delete '+product.name+'?', 'This removes it from your stock list. Past sales already recorded are not affected.', 'Delete', function(){
+        withRemoval(product.name, function(){
         refs.products.doc(product.id).delete();
         logAudit('delete','product',product.id,'Deleted '+product.name);
-        toast('Product deleted');
+        toast('Product deleted'); });
       }, true, true);
     });
   }
@@ -13029,11 +13058,12 @@ function deleteInvoiceRecord(rec, after){
   confirmSheet(tr('Delete') + ' ' + rec.number + '?',
     tr('This removes the stored copy from the Invoices list only. It does not change your stock, sales, customer balances or the invoice numbers. Anything already sent stays with the client.'),
     tr('Delete'), function(){
+      withRemoval((rec.type === 'receipt' ? 'receipt ' : 'invoice ') + rec.number, function(){
       refs.invoices.doc(rec.id).delete();
       Object.keys(_invRecIds).forEach(function(k){ if(_invRecIds[k] === rec.id) delete _invRecIds[k]; });
       logAudit('invoice_deleted', 'invoice', rec.number, 'Deleted ' + word + ' ' + rec.number + ' for ' + (rec.billToName || 'Customer') + ' (' + fmtMoney(rec.total||0) + ')');
       toast(rec.type === 'receipt' ? 'Receipt deleted' : 'Invoice deleted');
-      if(after) after();
+      if(after) after(); });
     }, true, true);
 }
 function openInvoiceDetailSheet(rec){
@@ -14724,8 +14754,8 @@ function openCustomerSheet(customer){
   if(isEdit){
     ov.querySelector('#cfDelete').addEventListener('click', function(){
       confirmSheet('Delete '+customer.name+'?', 'This removes the customer record. Do this only once their balance is settled.', 'Delete', function(){
-        refs.customers.doc(customer.id).delete();
-        toast('Customer deleted');
+        withRemoval(customer.name, function(){ refs.customers.doc(customer.id).delete();
+        toast('Customer deleted'); });
       }, true, true);
     });
   }
@@ -14780,10 +14810,13 @@ function openLedgerSheet(customer){
       var t = list.find(function(x){ return x.id === b.getAttribute('data-ldel'); }); if(!t) return;
       confirmSheet(tr('Remove this payment?'), customer.name+' will owe '+fmtMoney(t.amount)+' more again, because this payment is taken off their account. Use this only if it was entered by mistake.', tr('Remove payment'), function(){
         var c = State.customers.find(function(x){ return x.id === customer.id; }) || customer;
-        refs.customers.doc(customer.id).update({ balance:r2((c.balance||0) + (Number(t.amount)||0)) });
-        ledgerRef.doc(t.id).delete();
-        logAudit('delete','customerPayment',customer.id,'Removed a payment of '+fmtMoney(t.amount)+' from '+customer.name);
-        toast(tr('Payment removed'));
+        askRemovalSheet(tr('a customer payment of')+' '+fmtMoney(t.amount), function(ap, reason){
+          refs.customers.doc(customer.id).update({ balance:r2((c.balance||0) + (Number(t.amount)||0)) });
+          archiveRemoved('customerPayments', t.id, Object.assign({ customerId:customer.id }, t));
+          ledgerRef.doc(t.id).delete();
+          logAudit('delete','customerPayment',customer.id,'Removed a payment of '+fmtMoney(t.amount)+' from '+customer.name+'. Approved by '+ap.name+'. Reason: '+reason);
+          toast(tr('Payment removed'));
+        });
       }, true, true);
     }); });
   });
@@ -14874,7 +14907,7 @@ function openExpenseSheet(expense){
   });
   if(isEdit){
     ov.querySelector('#efDelete').addEventListener('click', function(){
-      confirmSheet('Delete expense?', 'This cannot be undone.', 'Delete', function(){ refs.expenses.doc(expense.id).delete(); logAudit('delete','expense',expense.id,'Deleted expense'); toast('Expense deleted'); }, true, true);
+      confirmSheet('Delete expense?', 'This cannot be undone.', 'Delete', function(){ withRemoval('an expense', function(){ refs.expenses.doc(expense.id).delete(); logAudit('delete','expense',expense.id,'Deleted expense'); toast('Expense deleted'); }); }, true, true);
     });
   }
 }
@@ -16563,9 +16596,9 @@ function openSupplierFormSheet(supplier, onDone){
   if(isEdit){
     ov.querySelector('#supDelete').addEventListener('click', function(){
       confirmSheet('Delete '+supplier.name+'?', 'This does not affect past purchase orders.', 'Delete', function(){
-        refs.suppliers.doc(supplier.id).delete();
+        withRemoval(supplier.name, function(){ refs.suppliers.doc(supplier.id).delete();
         logAudit('delete','supplier',supplier.id,'Deleted supplier '+supplier.name);
-        toast('Supplier deleted');
+        toast('Supplier deleted'); });
         if(onDone) setTimeout(onDone, 50);
       }, true, true);
     });
@@ -16704,8 +16737,8 @@ function openPODetailSheet(po, onDone){
   var poDel = ov.querySelector('#poDeleteBtn');
   if(poDel) poDel.addEventListener('click', function(){
     confirmSheet(tr('Delete this purchase order?'), tr('The order is removed. Your stock is not changed, because nothing was received.'), tr('Delete order'), function(){
-      refs.purchaseOrders.doc(po.id).delete(); logAudit('delete','purchaseOrder',po.id,'Deleted purchase order'); toast(tr('Purchase order deleted'));
-      if(onDone) setTimeout(onDone, 50);
+      withRemoval('a purchase order', function(){ refs.purchaseOrders.doc(po.id).delete(); logAudit('delete','purchaseOrder',po.id,'Deleted purchase order'); toast(tr('Purchase order deleted'));
+      if(onDone) setTimeout(onDone, 50); });
     }, true, true);
   });
   var markReceived = ov.querySelector('#poMarkReceivedBtn');
@@ -16768,9 +16801,9 @@ function openBranchFormSheet(branch, onDone){
   if(isEdit){
     ov.querySelector('#brDelete').addEventListener('click', function(){
       confirmSheet('Delete '+branch.name+'?', 'Records already tagged to this branch keep their history but will show under "All branches".', 'Delete', function(){
-        refs.branches.doc(branch.id).delete();
+        withRemoval(branch.name, function(){ refs.branches.doc(branch.id).delete();
         logAudit('delete','branch',branch.id,'Deleted branch '+branch.name);
-        toast('Branch deleted');
+        toast('Branch deleted'); });
         if(onDone) setTimeout(onDone, 50);
       }, true, true);
     });
@@ -16820,10 +16853,12 @@ function openWastageDeleteSheet(w){
       '<button class="btn btn-ghost btn-block" id="wdCancel" type="button">'+tr('Cancel')+'</button></div>';
   var ov = openSheet(html, {center:true});
   function done(putBack){
+    closeModal();
+    withRemoval('a wastage record', function(){
     if(putBack && p) refs.products.doc(p.id).update({ stockQty:(p.stockQty||0) + (w.qty||0) });
     refs.wastage.doc(w.id).delete();
     logAudit('delete','wastage',w.id,'Deleted wastage '+w.qty+' x '+w.productName+(putBack ? ' (stock put back)' : ''));
-    toast(tr('Wastage record deleted')); closeModal(); setTimeout(openWastageSheet, 80);
+    toast(tr('Wastage record deleted')); setTimeout(openWastageSheet, 80); });
   }
   var a = ov.querySelector('#wdBack'); if(a) a.addEventListener('click', function(){ done(true); });
   ov.querySelector('#wdOnly').addEventListener('click', function(){ done(false); });
@@ -19980,7 +20015,7 @@ function openSupplierInvoiceSheet(supId, inv){
     else { data.createdAt = new Date().toISOString(); refs.supplierInvoices.doc().set(data); logAudit('create','supplierInvoice',null,'Supplier invoice '+data.number+' '+fmtMoney(data.amount)+' from '+sup.name); }
     closeModal(); toast('Invoice saved'); render();
   });
-  var del = ov.querySelector('#siDel'); if(del) del.addEventListener('click', function(){ confirmSheet('Delete this invoice?', 'It will no longer count towards what you owe '+sup.name+'.', 'Delete', function(){ refs.supplierInvoices.doc(inv.id).delete(); logAudit('delete','supplierInvoice',inv.id,'Deleted supplier invoice '+(inv.number||'')); toast('Invoice deleted'); render(); }, true, true); });
+  var del = ov.querySelector('#siDel'); if(del) del.addEventListener('click', function(){ confirmSheet('Delete this invoice?', 'It will no longer count towards what you owe '+sup.name+'.', 'Delete', function(){ withRemoval('a supplier invoice', function(){ refs.supplierInvoices.doc(inv.id).delete(); logAudit('delete','supplierInvoice',inv.id,'Deleted supplier invoice '+(inv.number||'')); toast('Invoice deleted'); render(); }); }, true, true); });
 }
 function openSupplierPaymentSheet(supId, pay){
   var sup = State.suppliers.find(function(s){ return s.id === supId; }); if(!sup) return;
@@ -19999,7 +20034,7 @@ function openSupplierPaymentSheet(supId, pay){
     else { data.createdAt = new Date().toISOString(); refs.supplierPayments.doc().set(data); logAudit('create','supplierPayment',null,'Paid '+sup.name+' '+fmtMoney(data.amount)+' ('+data.method+')'); }
     closeModal(); toast('Payment saved'); render();
   });
-  var del = ov.querySelector('#spDel'); if(del) del.addEventListener('click', function(){ confirmSheet('Delete this payment?', 'The amount will count as unpaid again.', 'Delete', function(){ refs.supplierPayments.doc(pay.id).delete(); logAudit('delete','supplierPayment',pay.id,'Deleted payment to '+sup.name); toast('Payment deleted'); render(); }, true, true); });
+  var del = ov.querySelector('#spDel'); if(del) del.addEventListener('click', function(){ confirmSheet('Delete this payment?', 'The amount will count as unpaid again.', 'Delete', function(){ withRemoval('a supplier payment', function(){ refs.supplierPayments.doc(pay.id).delete(); logAudit('delete','supplierPayment',pay.id,'Deleted payment to '+sup.name); toast('Payment deleted'); render(); }); }, true, true); });
 }
 function openSupplierStatementSheet(supId){
   var sup = State.suppliers.find(function(s){ return s.id === supId; }); if(!sup) return;
@@ -20015,7 +20050,7 @@ function openSupplierStatementSheet(supId){
   var ov = openSheet(html, {center:true});
   ov.querySelectorAll('[data-stdel]').forEach(function(b){ b.addEventListener('click', function(){
     confirmSheet(tr('Delete this statement check?'), tr('Only this saved check is removed. Your invoices and payments are not changed.'), tr('Delete'), function(){
-      refs.supplierStatements.doc(b.getAttribute('data-stdel')).delete(); logAudit('delete','reconciliation',supId,'Deleted a supplier statement check for '+sup.name); toast(tr('Statement check deleted')); render();
+      withRemoval('a supplier statement check', function(){ refs.supplierStatements.doc(b.getAttribute('data-stdel')).delete(); logAudit('delete','reconciliation',supId,'Deleted a supplier statement check for '+sup.name); toast(tr('Statement check deleted')); render(); });
     }, true);
   }); });
   function calc(){
@@ -20144,7 +20179,7 @@ function openStockTakeSheet(id){
     };
     reader.readAsText(file);
   });
-  ov.querySelector('#tkDel').addEventListener('click', function(){ confirmSheet('Discard this stock take?', 'The counts entered so far are deleted. The stock list is not changed.', 'Discard', function(){ refs.stockTakes.doc(id).delete(); TK = null; toast('Stock take discarded'); render(); }, true, true); });
+  ov.querySelector('#tkDel').addEventListener('click', function(){ confirmSheet('Discard this stock take?', 'The counts entered so far are deleted. The stock list is not changed.', 'Discard', function(){ withRemoval('a stock take', function(){ refs.stockTakes.doc(id).delete(); TK = null; toast('Stock take discarded'); render(); }); }, true, true); });
   ov.querySelector('#tkReview').addEventListener('click', function(){
     clearTimeout(TK.saveT);
     refs.stockTakes.doc(id).update({ counts:TK.counts, updatedAt:new Date().toISOString() });
@@ -20225,7 +20260,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.91';
+var APP_VERSION = '2026.10.92';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20458,6 +20493,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.92', items:[
+    'Safer removals: deleting important records (customers, suppliers, products, expenses, invoices, purchase orders, supplier invoices and payments, statement checks, stock takes, wastage, branches, shifts, tips and customer payments) now needs a manager or owner password and a reason. A copy is kept in the archive'
+  ]},
   { v:'2026.10.91', items:[
     'New: Remove button with your password for employees and for card terminals (Point of sale registrations). The password is asked every time, past sales and till records stay, and a copy of what was removed is kept in the archive'
   ]},
@@ -22438,6 +22476,46 @@ function openClearSalesSheet(){
         clearAllSales('Cleared all sales to start clean').then(function(c){ toast(tr('Sales cleared')); try{ render(); }catch(e){} }, function(e){ toast(String(e && e.message || tr('Could not clear sales'))); });
       });
     }, true, true);
+}
+
+/* ---------------- Removal approval sheet (manager or owner password and a reason) ---------------- */
+var REMOVAL_REASONS = ['Entered by mistake', 'Duplicate record', 'Test or practice data', 'No longer needed', 'Other (write it below)'];
+function askRemovalSheet(what, onApproved, onCancel){
+  var bosses = State.users.filter(function(u){ return (u.role === 'manager' || u.role === 'owner') && u.active !== false && !u.pending; });
+  var me = State.session ? State.session.userId : '', done = false;
+  var ov = openSheet('<div class="sheet-head"><h2>' + tr('Approve removal') + '</h2></div>' +
+    '<div class="banner" style="display:block;">' + tr('You are removing') + ': <b>' + esc(what) + '</b>. ' + tr('A manager or the owner must approve this with their own password and a reason. A copy is kept in the archive.') + '</div>' +
+    '<div class="field"><label>' + tr('Approved by') + '</label><select id="rmWho">' + bosses.map(function(u){ return '<option value="' + esc(u.id) + '"' + (u.id === me ? ' selected' : '') + '>' + esc(u.name) + ' (' + esc(tr(ROLE_LABELS[u.role] || u.role)) + ')</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>' + tr('Their password') + '</label><input id="rmPass" type="password" autocomplete="off"></div>' +
+    '<div class="field"><label>' + tr('Reason (required)') + '</label><select id="rmWhy">' + REMOVAL_REASONS.map(function(x){ return '<option>' + esc(tr(x)) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>' + tr('Note') + '</label><input id="rmNote" maxlength="200" placeholder="' + esc(tr('Add detail, needed for Other')) + '"></div><div id="rmErr"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="rmOk" type="button">' + tr('Remove') + '</button><button class="btn btn-ghost btn-block" id="rmNo" type="button" style="margin-top:8px;">' + tr('Cancel') + '</button></div>');
+  var pass = ov.querySelector('#rmPass'), err = ov.querySelector('#rmErr'); pass.focus();
+  function cancel(){ if(done) return; done = true; closeModal(); if(onCancel) onCancel(); }
+  ov.querySelector('#rmNo').addEventListener('click', cancel);
+  function go(){
+    var u = bosses.find(function(x){ return x.id === ov.querySelector('#rmWho').value; });
+    var why = ov.querySelector('#rmWhy').value, note = ov.querySelector('#rmNote').value.trim();
+    var reason = (note ? why + ': ' + note : why).slice(0, 200);
+    if(!u || !pass.value) return;
+    if(ov.querySelector('#rmWhy').selectedIndex === REMOVAL_REASONS.length - 1 && note.length < 3){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(tr('Write the reason in the note.')) + '</span></div>'; return; }
+    var key = 'approve:' + u.id, lt = authLockText(key);
+    if(lt){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(lt) + '</span></div>'; pass.value = ''; return; }
+    pwCheck(pass.value, u.passHash).then(function(ok){
+      if(ok){ authOk(key); if(done) return; done = true; closeModal(); onApproved({ id:u.id, name:u.name }, reason); }
+      else { var f = authFailed(key, u.name); pass.value = ''; err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(f.locked ? authLockText(key) : tr('Incorrect password.')) + '</span></div>'; }
+    });
+  }
+  ov.querySelector('#rmOk').addEventListener('click', go);
+  pass.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(); });
+}
+
+/** Runs fn only after a manager or owner has typed their password and given a reason. Used by every screen that removes important records. */
+function withRemoval(what, fn){
+  askRemovalSheet(what, function(ap, reason){
+    secWithReason(reason + ' (approved by ' + ap.name + ')', function(){ _remOk++; try{ fn(ap, reason); } finally { _remOk--; } });
+    logAudit('delete', 'removal', null, 'Removed ' + what + '. Approved by ' + ap.name + '. Reason: ' + reason);
+  }, function(){ toast(tr('Nothing was removed')); });
 }
 /*HARDEN4:END*/
 /*COURSES:START (generated by tools/embed_courses.py, edit tools/courses.js instead)*/

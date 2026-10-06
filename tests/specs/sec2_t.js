@@ -35,8 +35,8 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('cashier cannot reset the owner password', await ev((id)=>window.__t.State.users.find(x=>x.id===id).passHash!=='evil',ownerId));
  // back to owner, delete expense keeps original
  await ev((id)=>{ const t=window.__t; t.State.session={userId:id,name:'Owner',role:'owner'}; },ownerId);
- await ev(async(id)=>{ window.__t.secWithReason('entered twice', ()=>window.__t.refs.expenses.doc(id).delete()); },exp); await p.waitForTimeout(300);
- ck('owner delete keeps the original with who, when, why and a hash', await ev((id)=>{ const t=window.__t; const d=t.State.deletedRecords.find(x=>x.recId===id); return !t.State.expenses.some(x=>x.id===id) && !!d && d.data.amount===500 && d.reason==='entered twice' && /^[0-9a-f]{64}$/.test(d.hash) && d.by==='Owner'; },exp));
+ await ev((id)=>{ window.__t.refs.expenses.doc(id).delete(); },exp); await p.waitForSelector('#rmPass'); await p.fill('#rmPass','aaaa1111'); await p.click('#rmOk'); await p.waitForTimeout(500);
+ ck('owner delete keeps the original with who, when, why and a hash', await ev((id)=>{ const t=window.__t; const d=t.State.deletedRecords.find(x=>x.recId===id); return !t.State.expenses.some(x=>x.id===id) && !!d && d.data.amount===500 && /Entered by mistake/.test(d.reason) && /^[0-9a-f]{64}$/.test(d.hash) && d.by==='Owner'; },exp));
  await ev(async()=>{ const t=window.__t; const d=t.State.deletedRecords[0]; await t.refs.deletedRecords.doc(d.id).delete(); }); await p.waitForTimeout(150);
  ck('archived originals cannot be removed', await ev(()=>window.__t.State.deletedRecords.length===1));
  // sessions
