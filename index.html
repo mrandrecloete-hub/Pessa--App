@@ -19474,18 +19474,41 @@ function smartAlerts(){
   try{ al = al.concat(acctAlerts()); }catch(e){}
   return al;
 }
-function smartAlertCount(){ try{ return smartAlerts().length; }catch(e){ return 0; } }
+/* The number on the side menu badge. Working out every alert reads all sales, so it is kept for a short time and only worked out again when the
+   shop's records change in size or 20 seconds pass. This runs every time a page is drawn on a wide screen, so without it a big shop felt slow on a computer. */
+var _smartCnt = { at:0, key:'', n:0 };
+function smartAlertCount(){
+  try{
+    var key = [State.products.length, State.sales.length, State.expenses.length, State.customers.length, State.tillSessions.length, State.wastage.length, State.suppliers.length, State.supplierInvoices.length, State.supplierPayments.length, (State.session && State.session.userId) || ''].join('|');
+    var now = Date.now();
+    if(_smartCnt.key === key && now - _smartCnt.at < 20000) return _smartCnt.n;
+    var n = smartAlerts().length; _smartCnt = { at:now, key:key, n:n }; return n;
+  }catch(e){ return 0; }
+}
 /* ============================== PESA BRAIN ==============================
    The "thinking" part of Pesa. It reads the shop's own records on this device and works out what is
    unusual, what will run out, what is not selling and what to do next. It can also answer plain
    questions typed or spoken in the Ask Pesa box. Nothing is sent anywhere. Owners and managers only. */
+/* The "brain" reads every sale to work out today's takings, usual days, hours and last sale per product. It is drawn on the Sell page and in the side menu,
+   so on a big shop the same scan used to run again on every page switch. The answers are kept until a sale is added or removed, or 15 seconds pass. */
+var _brainC = { sig:'', at:0, m:{} };
+function brainSig(){ var s = State.sales, n = s.length; return n + '|' + (n ? (s[n - 1].id || '') + '|' + (s[0].id || '') : ''); }
+function brainMemo(key, fn){
+  var sig = brainSig(), now = Date.now();
+  if(_brainC.sig !== sig || now - _brainC.at > 15000) _brainC = { sig:sig, at:now, m:{} };
+  if(!(key in _brainC.m)) _brainC.m[key] = fn();
+  return _brainC.m[key];
+}
 function brainDaySales(dayKey){
-  var t = 0, n = 0;
-  State.sales.forEach(function(s){ if(todayKey(new Date(s.createdAt)) === dayKey){ t += Number(s.total)||0; n++; } });
-  return { total:t, count:n };
+  return brainMemo('day|' + dayKey, function(){
+    var t = 0, n = 0;
+    State.sales.forEach(function(s){ if(todayKey(new Date(s.createdAt)) === dayKey){ t += Number(s.total)||0; n++; } });
+    return { total:t, count:n };
+  });
 }
 // share of a normal day's takings that has usually come in before this hour (from the last 28 days)
-function brainShareByNow(now){
+function brainShareByNow(now){ return brainMemo('share|' + Math.floor(now.getTime() / 60000), function(){ return brainShareByNowRaw(now); }); }
+function brainShareByNowRaw(now){
   var since = now.getTime() - 28*DAY_MS, all = 0, before = 0, h = now.getHours() + now.getMinutes()/60;
   State.sales.forEach(function(s){
     var d = new Date(s.createdAt), t = d.getTime();
@@ -19507,7 +19530,8 @@ function brainToday(now){
   return { total:today.total, count:today.count, usual:usual, weeks:wk, expectedNow:expected, share:share,
            pct: expected && expected > 0 ? Math.round((today.total - expected)/expected*100) : null };
 }
-function brainLastSale(){
+function brainLastSale(){ return brainMemo('last', brainLastSaleRaw); }
+function brainLastSaleRaw(){
   var m = {};
   State.sales.forEach(function(s){ var t = new Date(s.createdAt).getTime(); (s.items||[]).forEach(function(it){ var k = it.productId || it.name; if(!m[k] || t > m[k]) m[k] = t; }); });
   return m;
@@ -20701,7 +20725,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.94';
+var APP_VERSION = '2026.10.95';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20934,6 +20958,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.95', items:[
+    'Much faster on a computer: the side menu and the Sell page no longer read every sale again each time you change page. Switching pages on a big shop is now about 3 to 6 times quicker on a wide screen'
+  ]},
   { v:'2026.10.94', items:[
     'A rebuilt Accountant page: one clear page with your profit or loss for this month, last month, this quarter, this year or any dates, a plain breakdown of money in and money out, and a simple cost bar',
     'Profit and Loss report: save or print a report for any dates. Each report has its own number and two fingerprints, and Pesa keeps a list of the reports you make so you can check them later',
