@@ -21597,7 +21597,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.130';
+var APP_VERSION = '2026.10.131';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21841,6 +21841,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.131', items:[
+    'Promotion video updated to the consistent dark Pesa look: every phone, tablet and computer screen in the video now matches the app'
+  ]},
   { v:'2026.10.130', items:[
     'The white strip at the very bottom of the screen, which the phone navigation bar takes its colour from, is now dark emerald like the rest of the app, and the status bar colour matches the header'
   ]},
