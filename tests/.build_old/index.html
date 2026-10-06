@@ -921,9 +921,11 @@
   @media (max-width:1023px){
     .app.dash-bg .content{ position:absolute; top:0; right:0; bottom:0; left:0; padding:0; z-index:0; max-width:none; width:auto; margin:0; height:auto; }
     .app.dash-bg .dkd{ border-radius:0; margin:0; min-height:100%; padding-top:calc(var(--tb-h,76px) + env(safe-area-inset-top,0px) + 12px); padding-bottom:calc(var(--ft-h,90px) + 14px); }
-    .app.dash-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:rgba(8,70,54,.42); -webkit-backdrop-filter:blur(18px) saturate(1.4); backdrop-filter:blur(18px) saturate(1.4); box-shadow:0 1px 0 rgba(255,255,255,.18) inset, 0 8px 24px -14px rgba(0,0,0,.6); border-bottom:1px solid rgba(255,255,255,.14); }
-    .app.dash-bg .app-emblem{ position:absolute; left:0; right:0; bottom:0; z-index:30; background:rgba(8,70,54,.46); -webkit-backdrop-filter:blur(18px) saturate(1.4); backdrop-filter:blur(18px) saturate(1.4); border-top:1px solid rgba(255,255,255,.14); }
-    .app.dash-bg .app-emblem span, .app.dash-bg .app-emblem small{ color:#EAFBF3; text-shadow:0 1px 3px rgba(0,0,0,.45); }
+    .app.dash-bg .topbar{ position:absolute; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:30; background:rgba(8,70,54,.06); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); box-shadow:none; border-bottom:0; }
+    .app.dash-bg .topbar .shopname, .app.dash-bg .topbar .shopdate, .app.dash-bg .topbar .tagline, .app.dash-bg .topbar .shopmeta{ text-shadow:0 1px 4px rgba(0,0,0,.65); }
+    .app.dash-bg .app-emblem{ position:absolute; left:0; right:0; bottom:0; z-index:30; background:rgba(8,70,54,.06); -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px); border-top:0; }
+    .app.dash-bg .app-emblem span, .app.dash-bg .app-emblem small{ color:#F4FFF9; text-shadow:0 1px 4px rgba(0,0,0,.75); }
+    .app.dash-bg .app-emblem img:not(.refl){ filter:drop-shadow(0 2px 5px rgba(0,0,0,.6)); }
   }
 
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
@@ -21502,7 +21504,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.119';
+var APP_VERSION = '2026.10.120';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21746,6 +21748,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.120', items:[
+    'Dashboard: the header and footer glass is now almost invisible, so only the header wording and logo and the Namibian emblem and wording show'
+  ]},
   { v:'2026.10.119', items:[
     'Dashboard on a phone now fills the whole screen. The header and the Proudly Namibian footer are see through glass floating over it, still fully visible'
   ]},
