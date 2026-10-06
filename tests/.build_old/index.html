@@ -884,6 +884,39 @@
 
   ::-webkit-scrollbar{ width:0; height:0; }
 
+  /* Invoices page: dark emerald header with a gold edge, the Pesa logo clear behind the page, rounded cards with a green bar,
+     icons on the buttons, and a dark green wave with a gold swoosh under the Proudly Namibian words */
+  .app.inv-bg .topbar{ background:linear-gradient(115deg,#052A21 0%,#0A4A38 52%,#06362A 100%); color:#fff; box-shadow:0 8px 20px -10px rgba(0,0,0,.55); overflow:hidden; }
+  .app.inv-bg .topbar:after{ content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg,#F2C25A 0%,rgba(242,194,90,.55) 38%,rgba(242,194,90,0) 78%); }
+  .app.inv-bg .topbar .icon-btn{ border-radius:50%; border:1.5px solid rgba(242,194,90,.65); background:rgba(255,255,255,.06); color:#fff; }
+  .app.inv-bg{ background:linear-gradient(180deg,#F5FAF7 0%,#EAF4EE 100%); }
+  :root[data-theme="dark"] .app.inv-bg{ background:var(--bg); }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app.inv-bg{ background:var(--bg); } }
+  .app.inv-bg .app-watermark::before{ opacity:.3; filter:none; width:340px; height:330px; margin-left:-170px; margin-top:-165px; top:56%; }
+  .app.inv-bg .app-watermark::after{ opacity:0; }
+  .app.inv-bg .inv-tools{ align-items:center; gap:12px; }
+  .app.inv-bg .inv-tools .searchbar{ background:#fff; border:1px solid rgba(20,110,80,.18); border-radius:20px; padding:4px 14px; box-shadow:0 8px 18px -14px rgba(8,70,50,.5); }
+  .app.inv-bg .inv-tools .btn{ display:flex; align-items:center; gap:8px; border:0; border-radius:20px; padding:14px 18px; font-size:15px; font-weight:800; color:#fff; background:linear-gradient(180deg,#0B6B50,#053B2C); box-shadow:0 3px 0 #F2C25A, 0 12px 20px -12px rgba(4,60,44,.8); }
+  .app.inv-bg .inv-filters .segbtns{ gap:10px; }
+  .app.inv-bg .inv-filters .segbtn{ display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid rgba(20,110,80,.14); border-radius:20px; background:rgba(255,255,255,.65); color:#1B4D3E; font-size:13.5px; font-weight:700; padding:13px 6px; white-space:nowrap; box-shadow:0 8px 16px -14px rgba(8,70,50,.5); }
+  .app.inv-bg .inv-filters .segbtn svg{ flex:none; width:18px; height:18px; }
+  .app.inv-bg .inv-filters .segbtn.active{ background:linear-gradient(180deg,#0B6B50,#053B2C); color:#fff; border-color:transparent; box-shadow:0 3px 0 #F2C25A, 0 12px 20px -12px rgba(4,60,44,.8); }
+  .app.inv-bg .inv-card{ position:relative; border-radius:24px; background:#fff; border:1px solid rgba(20,110,80,.14); border-left:7px solid #0A5A43; box-shadow:0 14px 26px -18px rgba(8,70,50,.55); }
+  .app.inv-bg .inv-top{ display:flex; align-items:center; gap:14px; padding:14px 14px 12px 12px; }
+  .inv-ic{ flex:none; width:52px; height:52px; border-radius:16px; background:#DCF3E6; color:#0B6B50; display:grid; place-items:center; }
+  .app.inv-bg .inv-top .main .title{ font-size:20px; font-weight:800; color:#0B2A20; }
+  .app.inv-bg .inv-top .main .sub{ font-size:14px; color:#52695F; }
+  .app.inv-bg .inv-top .amt{ background:#DCF3E6; color:#0B6B50; border-radius:16px; padding:10px 14px; font-size:18px; font-weight:800; }
+  .app.inv-bg .inv-actions{ margin:0 14px; border-top:1px solid rgba(20,110,80,.16); }
+  .app.inv-bg .inv-actions button{ color:#0B3B2E; font-size:14.5px; font-weight:700; gap:8px; min-height:54px; }
+  .app.inv-bg .inv-actions button svg{ color:#0B6B50; }
+  .app.inv-bg .inv-actions button.danger, .app.inv-bg .inv-actions button.danger svg{ color:#D6342A; }
+  @media (orientation:portrait), (min-height:521px){
+    .app.inv-bg .app-emblem{ position:relative; padding-bottom:58px; }
+    .app.inv-bg .app-emblem span, .app.inv-bg .app-emblem small{ letter-spacing:.2em; text-transform:uppercase; font-size:10.5px; color:#1B4D3E; }
+    .app.inv-bg .app-emblem:after{ content:""; position:absolute; left:0; right:0; bottom:0; height:60px; pointer-events:none; background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23073B2D'/><stop offset='1' stop-color='%230A5A43'/></linearGradient><linearGradient id='y' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23F2C25A' stop-opacity='0'/><stop offset='.5' stop-color='%23F2C25A'/><stop offset='1' stop-color='%23F2C25A' stop-opacity='.2'/></linearGradient></defs><path d='M0 30 C90 6 170 46 270 30 S360 10 400 22 V60 H0 Z' fill='url(%23g)'/><path d='M0 28 C90 4 170 44 270 28 S360 8 400 20' fill='none' stroke='url(%23y)' stroke-width='2.2'/></svg>") bottom/100% 100% no-repeat; }
+  }
+
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
     .app .topbar{ padding:5px 14px; gap:8px; }
@@ -13226,7 +13259,8 @@ function invListHtml(){
     var named = r.billToName && r.billToName !== 'Customer';
     return '<div class="inv-card" data-inv="'+esc(r.id)+'">' +
       '<div class="inv-top" data-inv-act="view" role="button" tabindex="0">' +
-        '<div class="main"><div class="title"><span class="num">'+esc(r.number)+'</span><span class="chip inv-type">'+esc(invTypeLabel(r))+'</span></div>' +
+        '<span class="inv-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg></span>' +
+        '<div class="main"><div class="title"><span class="num">'+esc(r.number)+'</span>'+(r.type === 'receipt' ? '<span class="chip inv-type">'+esc(invTypeLabel(r))+'</span>' : '')+'</div>' +
         '<div class="sub">'+esc((named ? r.billToName : tr('No client name'))+' · '+fmtDateNice(invRecordDate(r)))+'</div></div>' +
         '<div class="amt num">'+esc(fmtMoney(r.total||0))+'</div>' +
       '</div>' +
@@ -13255,8 +13289,8 @@ function renderInvoicesPage(){
   all.forEach(function(r){ var n = r.billToName; if(n && n !== 'Customer' && clients.indexOf(n) === -1) clients.push(n); });
   clients.sort(function(a,b){ return a.localeCompare(b); });
   html += '<div class="inv-filters"><div class="segbtns" id="invPeriodBtns">' +
-    [['all',tr('All time')],['month',tr('This month')],['last',tr('Last month')]].map(function(p){
-      return '<button type="button" class="segbtn'+((f.period||'all')===p[0]?' active':'')+'" data-period="'+p[0]+'">'+esc(p[1])+'</button>';
+    [['all',tr('All time'),'clock'],['month',tr('This month'),'cal'],['last',tr('Last month'),'cal']].map(function(p){
+      return '<button type="button" class="segbtn'+((f.period||'all')===p[0]?' active':'')+'" data-period="'+p[0]+'">'+tkIcon(p[2], 20)+'<span>'+esc(p[1])+'</span></button>';
     }).join('') + '</div>' +
     (clients.length > 1 ? '<select id="invClientSel" aria-label="'+esc(tr('Client'))+'"><option value="">'+esc(tr('All clients'))+'</option>' +
       clients.map(function(c){ return '<option value="'+esc(c)+'"'+(f.client===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('') + '</select>' : '') +
@@ -16453,7 +16487,7 @@ function renderSoon(){
 }
 function render(){
   _rsPending = false;
-  try{ var _ap = document.getElementById('app'); if(_ap) _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); }catch(e){}
+  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); } }catch(e){}
   if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
   applyAppFont();
   updateHeader();
@@ -21450,7 +21484,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.117';
+var APP_VERSION = '2026.10.118';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21694,6 +21728,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.118', items:[
+    'Invoices page has a new look: a dark emerald header with a gold edge, the Pesa logo clear behind the page, a search box and a New invoice button, period buttons with icons, invoice cards with a green bar and an amount badge, and a dark green wave with a gold swoosh under the Proudly Namibian words'
+  ]},
   { v:'2026.10.117', items:[
     'Menu: the big P behind the menu is now clear, fades in at Sell and fades out again between Credit and Invoices'
   ]},
