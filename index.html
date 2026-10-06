@@ -966,6 +966,8 @@
     .app.pg-bg .app-emblem, .app.inv-bg .app-emblem{ position:absolute; left:0; right:0; bottom:0; z-index:30; background:none; border:0; box-shadow:none; }
   }
 
+  /* the colour behind the whole page, which is what the phone's own navigation bar and status bar take on newer Android */
+  html.pesa-dk, html.pesa-dk body{ background:#031A13; color-scheme:dark; }
   /* ===== ONE LOOK: every page and every sheet is dark emerald glass with gold accents, like the Dashboard and Accounting ===== */
   .app.pg-bg, .app.inv-bg, .overlay .sheet:not(.vs-dark):not(.ac-dark), .drawer{
     --surface:rgba(255,255,255,.07); --surface-2:rgba(255,255,255,.12); --surface-3:rgba(43,212,160,.18); --text:#EAFBF3; --text-muted:#9FCDB9; --border:rgba(124,240,196,.26);
@@ -16595,6 +16597,10 @@ function renderSoon(){
 function render(){
   _rsPending = false;
   if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
+  try{
+    var _dk = !!State.session; document.documentElement.classList.toggle('pesa-dk', _dk);
+    var _tc = document.querySelector('meta[name="theme-color"]'); if(_tc) _tc.setAttribute('content', _dk ? '#052A21' : '#0B7A5C');
+  }catch(e){}
   try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); _ap.classList.toggle('pg-bg', State.tab !== 'dashboard' && State.tab !== 'invoices'); dashGlassSize(); } }catch(e){}
   applyAppFont();
   updateHeader();
@@ -21591,7 +21597,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.129';
+var APP_VERSION = '2026.10.130';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21835,6 +21841,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.130', items:[
+    'The white strip at the very bottom of the screen, which the phone navigation bar takes its colour from, is now dark emerald like the rest of the app, and the status bar colour matches the header'
+  ]},
   { v:'2026.10.129', items:[
     'Promotion video: two new slides explain the name. Pesa means money in Swahili and a weight in Spanish, so Pesa is a weightlifter for Namibia. The same line is in the Pesa Ad words'
   ]},
