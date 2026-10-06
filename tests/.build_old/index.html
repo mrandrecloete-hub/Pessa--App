@@ -1025,7 +1025,6 @@
     .todaypill{ padding:3px 10px 4px; }
     .app .app-emblem{ flex-direction:row; gap:12px; padding:2px 0 calc(2px + env(safe-area-inset-bottom,0px)); }
     .app .app-emblem img{ height:26px; }
-    .app .app-emblem .emb-row{ margin-right:28px; }
     .app .app-emblem small, .app .app-emblem span{ font-size:10px; margin:0; }
     .app .content{ padding-top:8px; }
     .overlay .sheet{ max-height:94vh; }
@@ -1584,9 +1583,6 @@
   .variance-over{ color:#3B82F6; }
   .app-emblem{ flex:none; display:flex; flex-direction:column; gap:1px; align-items:center; justify-content:center; padding:4px 0 calc(4px + env(safe-area-inset-bottom,0px)); background:transparent; border:0; pointer-events:none; }
   .app-emblem img{ height:44px; width:auto; display:block; filter:drop-shadow(0 2px 3px rgba(10,40,25,.35)) saturate(1.1); }
-  /* sideways mirror: a flipped copy of the emblem to its right, fading away like a shadow, so the footer stays short and the page can come down */
-  .app-emblem .emb-row{ position:relative; display:block; line-height:0; }
-  .app-emblem img.refl{ position:absolute; left:100%; top:0; margin:0 0 0 -12px; transform:scaleX(-1); opacity:.85; filter:saturate(1.1) brightness(1.05); -webkit-mask-image:linear-gradient(to left,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 45%,rgba(0,0,0,0) 95%); mask-image:linear-gradient(to left,rgba(0,0,0,.95) 0%,rgba(0,0,0,.5) 45%,rgba(0,0,0,0) 95%); pointer-events:none; }
   .app-emblem small{ font-size:10px; font-weight:600; letter-spacing:0.03em; color:var(--text-muted); margin-top:-1px; }
   html.intro-on, html.intro-on body{ overflow:hidden; }
   .app-emblem span{ font-size:11px; font-weight:700; letter-spacing:0.04em; color:var(--text-muted); }
@@ -16573,10 +16569,6 @@ function updateHeader(){
   updateSyncBadge();
 }
 
-(function addEmblemReflection(){
-  function add(){ try{ document.querySelectorAll('.app-emblem').forEach(function(e){ var im = e.querySelector('img:not(.refl)'); if(im && !e.querySelector('img.refl')){ var c = im.cloneNode(true); c.className = 'refl'; c.setAttribute('aria-hidden', 'true'); c.setAttribute('alt', ''); var row = document.createElement('span'); row.className = 'emb-row'; im.parentNode.insertBefore(row, im); row.appendChild(im); row.appendChild(c); } }); }catch(e){} }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();
-})();
 function dashGlassSize(){
   try{
     var ap = document.getElementById('app'), tb = ap && ap.querySelector('.topbar'), em = ap && ap.querySelector('.app-emblem');
@@ -21597,7 +21589,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.131';
+var APP_VERSION = '2026.10.132';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21841,6 +21833,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.132', items:[
+    'The reflection of the Namibian emblem is removed. The emblem and the Proudly Namibian wording stay. The promotion video screens are updated to match'
+  ]},
   { v:'2026.10.131', items:[
     'Promotion video updated to the consistent dark Pesa look: every phone, tablet and computer screen in the video now matches the app'
   ]},
