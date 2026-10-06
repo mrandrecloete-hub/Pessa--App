@@ -14985,6 +14985,7 @@ function renderDashboard(){
         '<div class="trail"><div class="amt num">'+fmtMoney(s.total)+'</div><button class="note" data-invoice-sale="'+s.id+'" style="background:none;border:none;padding:0;color:var(--primary-dim);font-weight:600;font-size:10.5px;cursor:pointer;">'+tr('Invoice')+'</button></div>' +
       '</div>';
     }).join('') + '</div>';
+    if(isOwner()) html += '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="clearSalesBtn" type="button" style="color:var(--danger);">'+tr('Clear all')+'</button></div>';
   }
 
   /* ---- invoicing ---- */
@@ -16028,6 +16029,7 @@ function wireContent(){
 
   var insightsToggle = content.querySelector('#insightsToggle');
   if(insightsToggle) insightsToggle.addEventListener('click', function(){ _insightsOpen = !_insightsOpen; render(); });
+  var clearSalesBtn = content.querySelector('#clearSalesBtn'); if(clearSalesBtn) clearSalesBtn.addEventListener('click', openClearSalesSheet);
 
   if(State.tab === 'invoices') wireInvoicesPage(content);
   if(State.tab === 'reports') wireReportsPage(content);
@@ -20174,7 +20176,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.88';
+var APP_VERSION = '2026.10.89';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20407,6 +20409,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.89', items:[
+    'New: Clear all under Recent sales on the dashboard (owner only, password needed). It clears sales, refunds and voids from Recent sales, Sales insights and reports so the app is clean. A backup is saved first and the originals are kept in the archive'
+  ]},
   { v:'2026.10.88', items:[
     'Training is now clearly for internal staff training and development only. Certificates are now called training records, and every record states it is not an accredited, registered or externally recognised qualification'
   ]},
@@ -22301,7 +22306,7 @@ async function openIntegritySheet(){
 }
 
 /* ---------------- Privacy and data controls ---------------- */
-var PRIVACY_NOTE = 'Designed to support privacy. Use of customer and employee information is to be confirmed with the relevant legal bodies, authorities and entities of Namibia. The business owner remains responsible for lawful use.';
+var PRIVACY_NOTE = 'Designed to support privacy and applicable legal requirements. The business owner remains responsible for lawful use of customer and employee information.';
 function privacyServices(){
   var out = [{ n:'This device', d:'All records are stored in this browser by default.', on:true }];
   try{ var c = Sync.cfg(); out.push({ n:'Cloud connection (Supabase)', d:'Business records are uploaded to the server you set up' + (E2E.ok() ? ', encrypted on the device first.' : ', not end to end encrypted.'), on:!!c.on }); }catch(e){}
@@ -22348,6 +22353,36 @@ function openPrivacyControlsSheet(){
       });
     }, true, true);
   });
+}
+
+/* ---------------- Clear all sales (owner only, to start clean) ---------------- */
+/** Removes every sale, refund and void from view and from the sales insights. Each original is first copied into the
+    archive with who, when and why, and a backup is taken first. Owner only, password required. */
+async function clearAllSales(reason){
+  var list = State.sales.slice();
+  var snap = await Backups.make('before clear sales');
+  if(!snap) throw new Error('A backup could not be saved first, so nothing was cleared.');
+  secWithReason(reason || 'Cleared all sales to start clean', function(){
+    list.forEach(function(s){
+      var data = Object.assign({}, s); var id = s.id; delete data.id;
+      archiveRemoved('sales', id, data);
+      guardRun(function(){ refs.sales.doc(id).delete(); });
+    });
+  });
+  logAudit('delete', 'sales', null, 'Cleared all sales (' + list.length + ' records, originals kept in the archive)');
+  return list.length;
+}
+function openClearSalesSheet(){
+  if(!secAllow('owner', 'clearing all sales')) return;
+  var n = State.sales.length;
+  if(!n){ toast(tr('There are no sales to clear')); return; }
+  confirmSheet(tr('Clear all sales?'),
+    tr('This clears all {0} sales, refunds and voids from Recent sales, Sales insights and reports so the app is clean. A backup is saved first and the originals are kept in the archive. Stock and customer balances are not changed. Monthly accounting files already saved may no longer match, so check with your accountant before clearing real sales.').replace('{0}', String(n)),
+    tr('Clear all sales'), function(){
+      secReauth('Clear all sales', function(){
+        clearAllSales('Cleared all sales to start clean').then(function(c){ toast(tr('Sales cleared')); try{ render(); }catch(e){} }, function(e){ toast(String(e && e.message || tr('Could not clear sales'))); });
+      });
+    }, true, true);
 }
 /*HARDEN4:END*/
 /*COURSES:START (generated by tools/embed_courses.py, edit tools/courses.js instead)*/

@@ -194,3 +194,33 @@ function openPrivacyControlsSheet(){
     }, true, true);
   });
 }
+
+/* ---------------- Clear all sales (owner only, to start clean) ---------------- */
+/** Removes every sale, refund and void from view and from the sales insights. Each original is first copied into the
+    archive with who, when and why, and a backup is taken first. Owner only, password required. */
+async function clearAllSales(reason){
+  var list = State.sales.slice();
+  var snap = await Backups.make('before clear sales');
+  if(!snap) throw new Error('A backup could not be saved first, so nothing was cleared.');
+  secWithReason(reason || 'Cleared all sales to start clean', function(){
+    list.forEach(function(s){
+      var data = Object.assign({}, s); var id = s.id; delete data.id;
+      archiveRemoved('sales', id, data);
+      guardRun(function(){ refs.sales.doc(id).delete(); });
+    });
+  });
+  logAudit('delete', 'sales', null, 'Cleared all sales (' + list.length + ' records, originals kept in the archive)');
+  return list.length;
+}
+function openClearSalesSheet(){
+  if(!secAllow('owner', 'clearing all sales')) return;
+  var n = State.sales.length;
+  if(!n){ toast(tr('There are no sales to clear')); return; }
+  confirmSheet(tr('Clear all sales?'),
+    tr('This clears all {0} sales, refunds and voids from Recent sales, Sales insights and reports so the app is clean. A backup is saved first and the originals are kept in the archive. Stock and customer balances are not changed. Monthly accounting files already saved may no longer match, so check with your accountant before clearing real sales.').replace('{0}', String(n)),
+    tr('Clear all sales'), function(){
+      secReauth('Clear all sales', function(){
+        clearAllSales('Cleared all sales to start clean').then(function(c){ toast(tr('Sales cleared')); try{ render(); }catch(e){} }, function(e){ toast(String(e && e.message || tr('Could not clear sales'))); });
+      });
+    }, true, true);
+}

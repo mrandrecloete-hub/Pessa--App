@@ -41,6 +41,9 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await ev(id=>window.__t.privacyAnonymise(window.__t.State.customers.find(c=>c.id===id)),cid); await p.waitForTimeout(300);
  ck('anonymise removes personal details', await ev(id=>{ const c=window.__t.State.customers.find(x=>x.id===id); return c.name==='Anonymised customer' && !c.phone && !c.email; },cid));
  const ex=await ev(async(id)=>{ const e=await window.__t.privacyCustomerExport(window.__t.State.customers.find(c=>c.id===id)); return !!e.customer && Array.isArray(e.sales); },cid); ck('customer data export works', ex);
+ // clear all sales
+ const cl=await ev(async()=>{ const t=window.__t; const before=t.State.sales.length; const n=await t.clearAllSales('test'); await new Promise(r=>setTimeout(r,400)); return {before,n,after:t.State.sales.length,arch:t.State.deletedRecords.filter(d=>d.coll==='sales').length}; });
+ ck('clear all sales removes them and keeps the originals in the archive', cl.before>0 && cl.after===0 && cl.arch===cl.n, cl);
  ck('no page errors', errs.length===0, errs);
  await b.close(); process.exit(fail?1:0);
 })();
