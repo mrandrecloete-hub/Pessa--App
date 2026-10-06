@@ -932,6 +932,32 @@
     .app.dash-bg .app-emblem img:not(.refl){ filter:drop-shadow(0 2px 5px rgba(0,0,0,.6)); }
   }
 
+  /* Every page except the Dashboard: the same colour upgrade as the Invoices page, light on the page and dark emerald with gold at the edges */
+  .app.pg-bg .topbar{ background:linear-gradient(115deg,#052A21 0%,#0A4A38 52%,#06362A 100%); color:#fff; box-shadow:0 8px 20px -10px rgba(0,0,0,.55); overflow:hidden; }
+  .app.pg-bg .topbar:after{ content:""; position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg,#F2C25A 0%,rgba(242,194,90,.55) 38%,rgba(242,194,90,0) 78%); }
+  .app.pg-bg .topbar .icon-btn{ border-radius:50%; border:1.5px solid rgba(242,194,90,.65); background:rgba(255,255,255,.06); color:#fff; }
+  .app.pg-bg{ background:linear-gradient(180deg,#F5FAF7 0%,#E9F3EC 55%,#EFEFDF 100%); }
+  :root[data-theme="dark"] .app.pg-bg{ background:var(--bg); }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app.pg-bg{ background:var(--bg); } }
+  .app.pg-bg .app-watermark::before{ opacity:.16; filter:none; width:320px; height:310px; margin-left:-160px; margin-top:-155px; top:54%; }
+  .app.pg-bg .app-watermark::after{ opacity:0; }
+  .app.pg-bg .card, .app.pg-bg .row, .app.pg-bg .stat, .app.pg-bg .tillcard, .app.pg-bg .me-stat, .app.pg-bg .paysplit .pt, .app.pg-bg .inv-card, .app.pg-bg .att-row{ border-radius:20px; border-color:rgba(20,110,80,.16); box-shadow:0 12px 24px -18px rgba(8,70,50,.55); }
+  .app.pg-bg .searchbar{ border-radius:20px; border-color:rgba(20,110,80,.18); box-shadow:0 8px 18px -14px rgba(8,70,50,.5); }
+  .app.pg-bg .btn-primary, .app.pg-bg .segbtn.active{ background:linear-gradient(180deg,#0B6B50,#053B2C); color:#fff; border-color:transparent; box-shadow:0 3px 0 #F2C25A, 0 12px 20px -12px rgba(4,60,44,.8); }
+  .app.pg-bg .btn-accent{ background:linear-gradient(135deg,#F2C25A,#D99A1E); color:#3D2A02; border:0; box-shadow:0 10px 18px -12px rgba(150,90,0,.7); }
+  .app.pg-bg .segbtn{ border-radius:16px; }
+  .app.pg-bg .section-title{ color:#0B5A44; letter-spacing:.07em; }
+  .app.pg-bg .section-title{ justify-content:flex-start; gap:8px; }
+  .app.pg-bg .section-title:before{ content:""; flex:none; width:4px; height:14px; border-radius:2px; background:linear-gradient(180deg,#F2C25A,#D99A1E); }
+  .app.pg-bg .section-title .see-all{ margin-left:auto; }
+  :root[data-theme="dark"] .app.pg-bg .section-title{ color:var(--text-muted); }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .app.pg-bg .section-title{ color:var(--text-muted); } }
+  @media (orientation:portrait), (min-height:521px){
+    .app.pg-bg .app-emblem{ position:relative; padding-bottom:58px; }
+    .app.pg-bg .app-emblem span, .app.pg-bg .app-emblem small{ letter-spacing:.2em; text-transform:uppercase; font-size:10.5px; color:#1B4D3E; }
+    .app.pg-bg .app-emblem:after{ content:""; position:absolute; left:0; right:0; bottom:0; height:60px; pointer-events:none; background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23073B2D'/><stop offset='1' stop-color='%230A5A43'/></linearGradient><linearGradient id='y' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23F2C25A' stop-opacity='0'/><stop offset='.5' stop-color='%23F2C25A'/><stop offset='1' stop-color='%23F2C25A' stop-opacity='.2'/></linearGradient></defs><path d='M0 30 C90 6 170 46 270 30 S360 10 400 22 V60 H0 Z' fill='url(%23g)'/><path d='M0 28 C90 4 170 44 270 28 S360 8 400 20' fill='none' stroke='url(%23y)' stroke-width='2.2'/></svg>") bottom/100% 100% no-repeat; }
+  }
+
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
     .app .topbar{ padding:5px 14px; gap:8px; }
@@ -16511,8 +16537,8 @@ function renderSoon(){
 }
 function render(){
   _rsPending = false;
-  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); if(State.tab === 'dashboard') dashGlassSize(); } }catch(e){}
   if(State.session){ var _al = roleTabs(State.session.role); if(_al.indexOf(State.tab) === -1) State.tab = _al[0]; }
+  try{ var _ap = document.getElementById('app'); if(_ap){ _ap.classList.toggle('dash-bg', State.tab === 'dashboard'); _ap.classList.toggle('inv-bg', State.tab === 'invoices'); if(State.tab === 'dashboard') dashGlassSize(); _ap.classList.toggle('pg-bg', State.tab !== 'dashboard'); } }catch(e){}
   applyAppFont();
   updateHeader();
   // The hamburger lives in the persistent app-shell topbar, so it opens the
@@ -21508,7 +21534,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.121';
+var APP_VERSION = '2026.10.122';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21752,6 +21778,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.122', items:[
+    'Colour upgrade for the other pages: a dark emerald header with a gold edge, a clearer Pesa logo behind each page, rounder cards with soft shadows, dark green buttons with a gold underline, gold marks on the section titles and a dark green wave under the Proudly Namibian words'
+  ]},
   { v:'2026.10.121', items:[
     'Dashboard: the header and footer bars are gone completely. Only the logo, the shop name and figures, the Namibian emblem and the wording are left, floating over the Dashboard'
   ]},
