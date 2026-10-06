@@ -1010,6 +1010,7 @@
   .app.pg-bg .tk-empty .s, .app.pg-bg .empty .s{ color:#9FCDB9; }
   .app.pg-bg .empty .t, .app.inv-bg .empty .t{ color:#EAFBF3; }
   .overlay .sheet, .app.pg-bg{ --mv-wall:#0B1812; --mv-bub-in:#1C2B24; }
+  @media (max-width:1023px){ .app.pg-bg .cartbar{ bottom:calc(max(var(--ft-h,70px),84px) + 6px + env(safe-area-inset-bottom,0px)); } }
   .app.pg-bg .app-emblem span, .app.pg-bg .app-emblem small, .app.inv-bg .app-emblem span, .app.inv-bg .app-emblem small{ color:#F4FFF9; text-shadow:0 1px 4px rgba(0,0,0,.75); }
   .app.pg-bg .topbar .shopname, .app.inv-bg .topbar .shopname{ color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.6); }
   .app.pg-bg .topbar .shopmeta, .app.inv-bg .topbar .shopmeta{ color:#F2C25A; }
@@ -21589,7 +21590,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.132';
+var APP_VERSION = '2026.10.133';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -21833,6 +21834,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.133', items:[
+    'The View cart bar now sits above the Namibian emblem instead of on top of it. Promotion video: real recordings of the app in use, selling, asking Pesa Brain, and the new Accounting pages'
+  ]},
   { v:'2026.10.132', items:[
     'The reflection of the Namibian emblem is removed. The emblem and the Proudly Namibian wording stay. The promotion video screens are updated to match'
   ]},
