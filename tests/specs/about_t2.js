@@ -29,7 +29,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  await p.evaluate(()=>window.__t.openAboutSheet()); await p.waitForTimeout(300);
  const body = await p.innerText('.sheet');
  ck('page lists business tools', /Business tools \(Owner and Manager/.test(body) && /Import cost calculator:/.test(body) && /Speed check and test products:/.test(body));
- ck('page lists honest limits', /cannot confirm it with BIPA/.test(body) && /does not claim to be approved by NamRA/.test(body));
+ ck('page lists honest limits', /cannot confirm it with BIPA/.test(body) && /to be confirmed with the relevant authorities of Namibia/.test(body));
  await p.evaluate(()=>{ document.querySelector('.sheet').scrollTop=0; }); await p.screenshot({path:'about_new_1.png'});
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0); })();

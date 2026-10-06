@@ -1,8 +1,8 @@
 # Pesa production audit (v2026.10.86)
 
-This is an honest engineering review, not a certificate. Pesa is not 100 percent secure and is not guaranteed to be legally compliant. NamRA has not approved Pesa.
+This is an honest engineering review, not a certificate. Pesa is not 100 percent secure and no legal or regulatory position is claimed. Everything tax, legal and records related is to be confirmed with the relevant legal bodies, authorities and entities of Namibia.
 
-Legend: **Implemented** = built into the app. **Tested** = covered by an automated test in `tests/specs`. **Needs external confirmation** = needs a lawyer, accountant, NamRA or a security professional.
+Legend: **Implemented** = built into the app. **Tested** = covered by an automated test in `tests/specs`. **Needs external confirmation** = needs a lawyer, accountant, the relevant Namibian authorities or a security professional.
 
 ## Status summary
 
@@ -14,7 +14,7 @@ Legend: **Implemented** = built into the app. **Tested** = covered by an automat
 | Offline and sync | Partly hardened | Last write wins on conflicts; there is no per field merge. |
 | Backup and recovery | Improved | Fingerprinted, verified backups. Copies on one device are lost with the device. |
 | Privacy | Tools added | Owner remains responsible for lawful use. |
-| Namibian tax readiness | Recording tools only | No NamRA approval or integration. |
+| Namibian tax readiness | Recording tools only | Requirements to be confirmed with the relevant authorities of Namibia. |
 | Legal risk | Needs professional review | See below. |
 
 ## Findings
@@ -52,13 +52,13 @@ Legend: **Implemented** = built into the app. **Tested** = covered by an automat
 ## Recommended professional reviews
 - A Namibian lawyer: privacy duties for customer and employee data, electronic records and signatures, retention periods.
 - A registered accountant or tax practitioner: VAT treatment, rate settings, record keeping periods.
-- NamRA: written confirmation before Pesa is described as approved or integrated.
+- The relevant legal bodies, authorities and entities of Namibia: confirmation of tax, privacy and records requirements.
 - An independent security review or penetration test before handling a large number of customers.
 
 ## Required notices shown in the app
-- Privacy: "Designed to support privacy and applicable legal requirements. The business owner remains responsible for lawful use of customer and employee information."
-- Tax: "Pesa provides business and tax-recording tools. It does not replace professional tax advice and does not claim NamRA approval unless expressly confirmed by NamRA."
-- Electronic records: "Electronic records and signatures are subject to applicable Namibian law and the specific requirements of the transaction."
+- Privacy: "Designed to support privacy. Use of customer and employee information is to be confirmed with the relevant legal bodies, authorities and entities of Namibia. The business owner remains responsible for lawful use."
+- Tax: "Pesa provides business and tax-recording tools. It does not replace professional tax advice. Tax, legal and record-keeping requirements are to be confirmed with the relevant legal bodies, authorities and entities of Namibia."
+- Electronic records: "Electronic records and signatures are to be confirmed with the relevant legal bodies, authorities and entities of Namibia, as requirements differ by transaction."
 
 ## Tests
 Run `npm test` (or `NODE_PATH=$(npm root -g) node tests/run.js ops sec2`). Key specs: `ops_t` (tax self test, refunds, backups, recovery, integrity, privacy), `sec2_t` (security), `vat_t`, `acct*_t`.
