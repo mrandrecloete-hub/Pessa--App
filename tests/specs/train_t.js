@@ -17,7 +17,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const pdf=await p.evaluate(async()=>{ const t=window.__t; await t.ensureJsPDF(); const o=t.generateTrainingPdf(); const d=o.doc; return { pages:d.getNumberOfPages(), id:!!o.verification.id, lessons:t.lessonsForRole().length, slides:t.lessonsForRole().reduce((n,l)=>n+l.slides.length,0) }; });
  console.log('   pdf',pdf); ck('PDF builds with stamp and many pages', pdf.pages>=8 && pdf.id, pdf);
  const [dl]=await Promise.all([p.waitForEvent('download',{timeout:15000}).catch(()=>null), (async()=>{ await p.click('#trPdf'); await p.waitForSelector('#xpSel'); await p.selectOption('#xpSel','pdf'); await p.click('#xpGo'); })()]);
- await p.waitForTimeout(1500); ck('PDF button gives a file', !!dl); if(dl){ await dl.saveAs('/tmp/manual.pdf'); }
+ await p.waitForTimeout(1500); ck('PDF button gives a file', !!dl); if(dl){ await dl.saveAs(require('os').tmpdir()+'/manual.pdf'); }
  ck('nothing was spoken', (await p.evaluate(()=>window.__spoke))===0);
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs);
  console.log(fail?'FAILED '+fail:'ALL OK'); await b.close(); })();

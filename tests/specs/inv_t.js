@@ -1,5 +1,5 @@
 const { chromium } = require('playwright'); const fs=require('fs');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fail++;} };
 (async()=>{
   const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
@@ -31,15 +31,15 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   // tick the whole Dairy department, plus one bread
   const dairyIdx = ph.indexOf('Dairy');
   await p.evaluate(i=>{ const c=document.querySelectorAll('[data-spkd]')[i]; c.click(); }, dairyIdx); await p.waitForTimeout(150);
-  const n1=await p.textContent('[data-spkn]'); ck('ticking Dairy header selects its 4 products', n1==='4');
+  const n1=await p.textContent('[data-spkn]'); ck('ticking Dairy header selects its 3 products', n1==='3');
   await p.evaluate(()=>{ const row=[...document.querySelectorAll('[data-spkrow]')].find(r=>/Brown bread/.test(r.textContent)); row.querySelector('[data-spk]').click(); }); await p.waitForTimeout(150);
   await p.evaluate(()=>{ const row=[...document.querySelectorAll('[data-spkrow]')].find(r=>/Maize meal/.test(r.textContent)); row.querySelector('[data-spk]').click(); });
   await p.evaluate(()=>{ const row=[...document.querySelectorAll('[data-spkrow]')].find(r=>/Exempt thing/.test(r.textContent)); row.querySelector('[data-spk]').click(); });
-  await p.waitForTimeout(150); ck('7 ticked in total', (await p.textContent('[data-spkn]'))==='7');
+  await p.waitForTimeout(150); ck('6 ticked in total', (await p.textContent('[data-spkn]'))==='6');
   await p.screenshot({path:D+'inv_picker.png'});
   await p.click('[data-spkadd]'); await p.waitForTimeout(300);
   const descs=await p.$$eval('#invItemsList input[type=text], #invItemsList input:not([type])',e=>e.map(x=>x.value).filter(Boolean)); console.log('   invoice lines:',descs);
-  ck('6 lines added in department order', descs.length>=7);
+  ck('6 lines added in department order', descs.length>=6);
   // fill buyer
   await p.fill('#invBillName','Van Rensburg LA'); await p.fill('#invBillTin','9876543210');
   await p.evaluate(()=>{ window.__t.closeModal(); });

@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const crypto = require('crypto');
-const efdMock = require('/home/claude/pessa--app/docs/efd/mock-namra.js');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const efdMock = require('../../docs/efd/mock-namra.js');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c) fail++; };
 (async()=>{
   const mock = efdMock.createMockNamra(); const calls=[];
@@ -19,7 +19,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c) fai
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName','Demo Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   const T = f=>p.evaluate(f);
   ck('starts OFF', await T(()=>!window.__t.Fiscal.on() && !window.__t.Fiscal.ready()));
   await T(async()=>{ const r=window.__t.refs; const n=()=>new Date().toISOString();
@@ -64,7 +64,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c) fai
   const pdfOk = await T(()=>{ const id=window.__t.State.sales.find(s=>s.fiscalId).fiscalId; const d={number:'R-1',billToName:'Customer',dateStr:'2026-10-04',at:new Date().toISOString(),payMethod:'cash',received:214.5,fiscalKey:id,items:[{desc:'Soap',qty:3,unitPrice:11.5},{desc:'Maize meal',qty:2,unitPrice:40},{desc:'School book',qty:1,unitPrice:100}]}; const doc=window.__t.buildReceiptPdf(d); return !!doc && doc.getNumberOfPages()===1; });
   ck('receipt PDF builds', pdfOk);
   // bluetooth bytes: footer lands before the cut
-  const bt = await T(()=>{ const id=window.__t.State.sales.find(s=>s.fiscalId).fiscalId; const d={number:'R-1',billToName:'Customer',at:new Date().toISOString(),payMethod:'cash',received:214.5,fiscalKey:id,items:[{desc:'Soap',qty:3,unitPrice:11.5}]}; let b=window.__t.escposReceiptBytes(d,'Demo'); const f=window.__t.Fiscal.footerBytes(d); const out=window.__t.PesaEfd.withFiscalFooter(b,f); const t=Array.from(out).map(c=>String.fromCharCode(c)).join(''); return {cutLast: out[out.length-4]===0x1d&&out[out.length-3]===0x56, hasIrn:t.indexOf('FISCAL RECEIPT')>0&&t.indexOf('IRN: MOCK-')>0}; });
+  const bt = await T(()=>{ const id=window.__t.State.sales.find(s=>s.fiscalId).fiscalId; const d={number:'R-1',billToName:'Customer',at:new Date().toISOString(),payMethod:'cash',received:214.5,fiscalKey:id,items:[{desc:'Soap',qty:3,unitPrice:11.5}]}; let b=window.__t.escposReceiptBytes(d,'Demo'); const f=window.__t.Fiscal.footerBytes(d); const out=(window.PesaEfd||window.__t.PesaEfd).withFiscalFooter(b,f); const t=Array.from(out).map(c=>String.fromCharCode(c)).join(''); return {cutLast: out[out.length-4]===0x1d&&out[out.length-3]===0x56, hasIrn:t.indexOf('FISCAL RECEIPT')>0&&t.indexOf('IRN: MOCK-')>0}; });
   ck('Bluetooth bytes: tax block before cut', bt.cutLast && bt.hasIrn);
   // offline: sale never blocked, queued, then sent when back
   offline=true;

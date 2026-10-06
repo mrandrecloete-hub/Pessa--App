@@ -1,5 +1,5 @@
 const { chromium } = require('playwright'); const fs=require('fs'); const boot=require('./biz_boot.js');
-const D=''+(process.env.PESA_OUT||'/tmp/pesa-tests/')+'pdfout/'; fs.mkdirSync(D,{recursive:true});
+const D=''+(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/')+'pdfout/'; fs.mkdirSync(D,{recursive:true});
 let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
 (async()=>{
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:900},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[];

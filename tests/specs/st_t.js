@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#stDrawerTest');
   const t=await p.innerText('body'); console.log('letterhead mentions:', /letterhead/i.test(t), 'logoInput:', await p.locator('input[type=file]').count());
   await p.evaluate(()=>{ const m=document.querySelector('.modal-body, .sheet, .modal')||document.body; });

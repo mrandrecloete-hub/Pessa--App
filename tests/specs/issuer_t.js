@@ -10,8 +10,8 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('licence key created', /^PESA1\./.test(await p.inputValue('#iOut')));
  ck('document fields prefilled', (await p.inputValue('#dName'))==='Dinner Shop' && (await p.inputValue('#dAmount'))==='900.00', [await p.inputValue('#dName'), await p.inputValue('#dAmount')]);
  await p.fill('#dEmail','client@example.com'); await p.fill('#dBankRef','FNB 77123');
- const [d1]=await Promise.all([p.waitForEvent('download'), p.click('#dProof')]); const f1='/tmp/proof.pdf'; await d1.saveAs(f1);
- const [d2]=await Promise.all([p.waitForEvent('download'), p.click('#dCert')]); const f2='/tmp/cert.pdf'; await d2.saveAs(f2);
+ const [d1]=await Promise.all([p.waitForEvent('download'), p.click('#dProof')]); const f1=require('os').tmpdir()+'/proof.pdf'; await d1.saveAs(f1);
+ const [d2]=await Promise.all([p.waitForEvent('download'), p.click('#dCert')]); const f2=require('os').tmpdir()+'/cert.pdf'; await d2.saveAs(f2);
  ck('file names are clear', /Proof-of-Payment/.test(d1.suggestedFilename()) && /Licence-Certificate/.test(d2.suggestedFilename()), [d1.suggestedFilename(), d2.suggestedFilename()]);
  const key=await p.inputValue('#iOut');
  const t1=cp.execSync('pdftotext -layout '+f1+' -').toString(), t2=cp.execSync('pdftotext -layout '+f2+' -').toString();

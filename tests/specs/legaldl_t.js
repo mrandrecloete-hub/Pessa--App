@@ -14,7 +14,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(200);
  }
  const out=await p.evaluate(async()=>{ await window.__t.ensureJsPDF(); const t=window.__t; const pt=t.legalParts('privacy'); const r=t.generateLegalPdf('Confidentiality and privacy',pt.intro,pt.sections); return { pages:r.doc.getNumberOfPages(), id:r.verification.id, uri:r.doc.output('datauristring') }; });
- fs.writeFileSync('/tmp/legal_priv.pdf',Buffer.from(out.uri.split(',')[1],'base64'));
+ fs.writeFileSync(require('os').tmpdir()+'/legal_priv.pdf',Buffer.from(out.uri.split(',')[1],'base64'));
  ck('privacy PDF built with a verification id', out.pages>=1 && !!out.id, out);
  ck('no page errors', errs.length===0, errs);
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);

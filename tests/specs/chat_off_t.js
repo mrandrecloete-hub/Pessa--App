@@ -1,5 +1,5 @@
 const { chromium } = require('playwright'); const fs=require('fs');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fail++;} };
 (async()=>{
   const b = await chromium.launch({args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream']});
@@ -9,7 +9,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName','Off Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   await p.evaluate(()=>window.__t.openStaffSheet(null)); await p.waitForSelector('#sfName');
   await p.fill('#sfName','Sam'); await p.selectOption('#sfRole','cashier'); await p.fill('#sfJob','Till'); await p.click('#sfSave'); await p.waitForSelector('#invWa'); await p.evaluate(()=>window.__t.closeModal());
   const sam = await p.evaluate(async()=>{ const T=window.__t; const u=T.State.users.find(x=>x.name==='Sam'); await T.refs.users.doc(u.id).update({pending:false,active:true}); return u.id; });
@@ -37,7 +37,8 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.evaluate(async()=>{ const T=window.__t; await T.refs.messages.add({to:'x',toName:'x',fromId:T.State.session.userId,fromName:'Alice',kind:'reply',threadId:T.State.messages[T.State.messages.length-1].id,urgent:false,title:'',body:'queued two',audio:'data:audio/webm;base64,AAAA',dur:3,readBy:{},createdAt:new Date().toISOString()}); });
   // back online
   await ctx.setOffline(false); await p.waitForTimeout(3500);
-  ck('queued message posted after reconnect', posts.some(r=>r.coll==='messages' && r.data && r.data.body==='Sent while offline'));
+  // records are sealed with the sync code before upload (end to end), so the text is not readable in the request: check that message rows were sent after the connection came back
+  ck('queued message posted after reconnect', posts.length>before && posts.slice(before).some(r=>r.coll==='messages' && r.data && r.data.body===undefined));
   ck('outbox emptied', (await p.evaluate(()=>window.__t.Sync.pendingCount()))===0);
   ck('clock gone', !(await p.$('#mvChat .mv-tk.wait')));
   ck('offline strip gone', !(await p.$('.mv-net')));

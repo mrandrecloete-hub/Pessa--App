@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fail++;} };
 (async()=>{
   const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
-  const boot=require('./biz_boot.js'); await boot(p);
+  const boot=require('./biz_boot.js'); await boot(p,{demo:true});
   // ---- pure maths
   const m = await p.evaluate(()=>{ const t=window.__t;
     const a=t.lcCalc([{name:'A',qty:10,price:10},{name:'B',qty:5,price:20}],{rate:1,freight:100,clearing:50,duty:50});

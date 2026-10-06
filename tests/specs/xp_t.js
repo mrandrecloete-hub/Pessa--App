@@ -1,5 +1,5 @@
 const { chromium } = require('playwright'); const fs=require('fs'); const boot=require('./biz_boot.js');
-const D=''+(process.env.PESA_OUT||'/tmp/pesa-tests/')+'xpout/'; fs.mkdirSync(D,{recursive:true});
+const D=''+(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/')+'xpout/'; fs.mkdirSync(D,{recursive:true});
 (async()=>{
   const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:390,height:900}, serviceWorkers:'block', acceptDownloads:true});
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message)); p.on('console',m=>{ if(m.type()==='error' && !/TUNNEL|Failed to load resource/.test(m.text())) errs.push(m.text()); });

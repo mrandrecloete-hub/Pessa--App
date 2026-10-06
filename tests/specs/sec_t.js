@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
   await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   for(const bad of ['abc','password','aaaaaaaa']){ await p.fill('#rcOwnerPassword',bad); await p.fill('#rcOwnerPassword2',bad); await p.click('#rcSubmit'); await p.waitForTimeout(150); console.log('reg', bad, '->', (await p.innerText('#rcError')).trim()); }
   await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   // exercise features for CSP
   await p.evaluate(async()=>{ const r=window.__t.refs; await r.products.doc().set({name:'Milk',sellPrice:30,costPrice:20,stockQty:50,createdAt:new Date().toISOString()}); });
   for(const tab of ['sell','stock','credit','invoices','reports','expenses','till','dashboard']){ await p.evaluate(t=>window.__t.setTab(t),tab); await p.waitForTimeout(150); }

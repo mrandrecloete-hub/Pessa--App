@@ -1,12 +1,12 @@
 const { chromium } = require('playwright');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,200):'')); if(!c){fail++;} };
 (async()=>{
   const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName','M Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   const px='data:image/jpeg;base64,'+'A'.repeat(40000), au='data:audio/webm;base64,'+'B'.repeat(20000);
   await p.evaluate(async([px,au])=>{ const T=window.__t, me=T.State.session.userId, d=n=>new Date(Date.now()-n*86400000).toISOString();
     const add=(o)=>T.refs.messages.add(Object.assign({to:'all',toName:'All',fromId:me,fromName:'Alice',kind:'message',urgent:false,title:'',readBy:{}},o));

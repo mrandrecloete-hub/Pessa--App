@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fail++;} };
 (async()=>{
   const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:1100,height:900},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
-  await require('./biz_boot.js')(p);
+  await require('./biz_boot.js')(p,{demo:true});
   // correctness of the index
   const c = await p.evaluate(()=>{ const t=window.__t, S=t.State; const out={};
     out.hit = (t.findProductByBarcode('6001234567890')||{}).name;

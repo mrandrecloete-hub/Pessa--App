@@ -4,7 +4,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:900},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
  await p.fill('#rcCompanyName','Prof'); await p.fill('#rcOwnerName','Own'); await p.fill('#rcOwnerPassword','secret99'); await p.fill('#rcOwnerPassword2','secret99'); await p.click('#rcSubmit');
- await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.waitForTimeout(600);
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} }); await p.waitForTimeout(600);
  await p.evaluate(()=>{ const t=window.__t; t.State.session.role='cashier'; t.State.tab='me'; t.render(); });
  await p.waitForSelector('.me-hero');
  await p.evaluate(()=>window.__t.openMyProfileSheet()); await p.waitForSelector('#mpPhotoFile',{state:'attached'});

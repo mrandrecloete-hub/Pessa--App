@@ -27,7 +27,7 @@ const profiles=[
     }
     await overflow('dashboard');
     for(const [label,fn] of [['inbox',"openInboxSheet()"],['compose',"openComposeMessageSheet('u2')"],['accountant',"openAccountantSheet()"],['training',"openTrainingSheet()"],['settings',"openSettingsSheet()"],['business hub',"openBizHub()"],['team',"openTeamSheet()"],['pilot form',"openPilotFormSheet()"],['about',"openAboutSheet()"]]){
-      await p.evaluate(`window.__t.${fn}`); await overflow(label); await p.evaluate(()=>window.__t.closeModal());
+      console.log('   opening',label); await p.evaluate(`window.__t.${fn}`); await overflow(label); await p.evaluate(()=>window.__t.closeModal());
     }
     await p.evaluate(()=>window.__t.openThreadSheet(window.__t.State.messages[0].id)); await overflow('chat thread');
     // chat voice + emoji at this size

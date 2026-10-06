@@ -2,3 +2,4 @@ node_modules/
 tests/.build/
 *.png
 out_*.pdf
+tests/specs/tsc/

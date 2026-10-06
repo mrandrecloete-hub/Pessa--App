@@ -1,12 +1,12 @@
 const { chromium } = require('playwright');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 (async()=>{
   const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'});
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName','Dinner'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   await p.evaluate(async()=>{ const r=window.__t.refs; await r.products.doc().set({name:'Bread',sellPrice:17.99,costPrice:13,stockQty:2,createdAt:new Date().toISOString()}); await r.products.doc().set({name:'Milk',sellPrice:30,costPrice:20,stockQty:50,createdAt:new Date().toISOString()}); });
   // owner invites two employees via UI
   async function invite(name, role, job){

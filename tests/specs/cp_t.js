@@ -13,7 +13,7 @@ const { chromium } = require('playwright');
     console.log('subtle gone:', await p.evaluate(()=>typeof crypto.subtle));
     await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
     await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
-    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
     console.log('registered without subtle, hash ok:', await p.evaluate(async()=>{ const u=window.__t.State.users[0]; return u.passHash===window.__t.sha256Pure('Tr1cky-Pass'); }));
     await p.evaluate(()=>window.__t.openCompatSheet()); await p.waitForTimeout(300); console.log((await p.innerText('.sheet')).split('\n').filter(x=>/Secure|secure/.test(x)).slice(0,2));
     console.log(errs); await ctx.close(); }
@@ -32,7 +32,7 @@ const { chromium } = require('playwright');
     console.log('lite auto on weak pc:', await p.evaluate(()=>document.documentElement.className));
     await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
     await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
-    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
     await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#perfLite'); console.log('checkbox reflects auto:', await p.isChecked('#perfLite'));
     await p.uncheck('#perfLite'); console.log('after untick class:', JSON.stringify(await p.evaluate(()=>document.documentElement.className)), 'stored', await p.evaluate(()=>localStorage.getItem('pesa_lite')));
     await p.check('#perfLite'); console.log('after tick:', await p.evaluate(()=>document.documentElement.className));

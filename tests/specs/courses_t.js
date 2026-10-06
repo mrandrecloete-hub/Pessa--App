@@ -1,6 +1,7 @@
 const { chromium } = require('playwright'); const boot=require('./biz_boot.js'); const fs=require('fs');
 let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,300):'')); if(!c) fail++; };
-const OUT=process.env.CRS_OUT||'/tmp/claude-0/crs';
+const OUT=process.env.CRS_OUT||require('os').tmpdir()+'/crs';
+require('fs').mkdirSync(OUT,{recursive:true});
 (async()=>{
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:900},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[];
  p.on('pageerror',e=>errs.push(e.message)); p.on('console',m=>{ if(m.type()==='error' && !/TUNNEL|Failed to load resource/.test(m.text())) errs.push(m.text()); });

@@ -22,6 +22,6 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const cap=await p.inputValue('#adCaption'); ck('caption box holds the words', /Pesa. Your Mula/.test(cap)&&/Free 14 day trial/.test(cap), cap.slice(0,80));
  const ic=await p.$('.sheet-head .pg-ico, .sheet-head img'); ck('page icon at top left', !!ic);
  ck('no page errors', errs.length===0, errs);
- await p.screenshot({path:process.env.SHOT||'/tmp/pesaad.png'});
+ await p.screenshot({path:process.env.SHOT||require('os').tmpdir()+'/pesaad.png'});
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();

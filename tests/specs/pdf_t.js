@@ -1,5 +1,5 @@
 const { chromium } = require('playwright'); const fs=require('fs'); const boot=require('./biz_boot.js');
-const D=''+(process.env.PESA_OUT||'/tmp/pesa-tests/')+'pdfout/'; fs.mkdirSync(D,{recursive:true});
+const D=''+(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/')+'pdfout/'; fs.mkdirSync(D,{recursive:true});
 const logo = process.argv[2]==='logo'; const tpl = process.argv[3]||'classic';
 (async()=>{
   const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:390,height:900}, serviceWorkers:'block', acceptDownloads:true});

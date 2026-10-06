@@ -1,9 +1,9 @@
 const { chromium } = require('playwright');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 (async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); const e=[]; p.on('pageerror',x=>e.push(x.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
  await p.fill('#rcCompanyName','Dinner'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
- await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
  await p.evaluate(async()=>{const T=window.__t; await T.refs.users.doc().set({name:'Sam',role:'cashier',passHash:'x',active:true,jobTitle:'Till'}); await T.refs.users.doc().set({name:'Stella',role:'stockclerk',passHash:'x',active:true});});
  await p.waitForTimeout(300);
  await p.evaluate(()=>{const T=window.__t;const o=T.State.users.find(x=>x.role==='owner');const k=Object.keys(localStorage).find(k=>/consent/i.test(k));const v=localStorage.getItem(k);for(const n of ['Sam','Stella']){const u=T.State.users.find(x=>x.name===n);localStorage.setItem(k.replace(o.id,u.id),v);}});

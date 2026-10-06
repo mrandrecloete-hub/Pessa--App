@@ -5,7 +5,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   // make it a VAT vendor and seed Aug + Sep 2026 and a little of October
   await p.evaluate(async()=>{
     const T=window.__t, r=T.refs; const co=T.State.company||{};
@@ -46,7 +46,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   await p.waitForTimeout(800);
   await p.reload(); await p.waitForSelector('.hero-card',{timeout:15000}).catch(()=>{});
   await p.waitForFunction(()=>window.__t && window.__t.State.accountingPeriods.length>=2,null,{timeout:15000}).catch(()=>{});
-  const fs=require('fs'), cp=require('child_process'); const D=''+(process.env.PESA_OUT||'/tmp/pesa-tests/')+'fmt/'; fs.mkdirSync(D,{recursive:true});
+  const fs=require('fs'), cp=require('child_process'); const D=''+(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/')+'fmt/'; fs.mkdirSync(D,{recursive:true});
   const exts={pdf:'pdf',docx:'docx',xlsx:'xlsx',csv:'csv',html:'html',rtf:'rtf',txt:'txt',png:'png',jpg:'jpg'};
   async function grab(kind, fmt){
     const run = kind==='journal' ? ()=>window.__t.acctDownloadJournal('2026-09-01','2026-09-30',window.__t.State.accountingPeriods.find(r=>r.periodKey==='2026-09'))

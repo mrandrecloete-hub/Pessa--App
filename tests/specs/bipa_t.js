@@ -15,7 +15,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c) fai
   await p.fill('#rcLegal','Dinner Shop CC');
   await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
   await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   let c=await p.evaluate(()=>window.__t.State.company);
   ck('stored regNumber', c.regNumber==='CC/2024/00123'); ck('stored legalName', c.legalName==='Dinner Shop CC');
   ck('status ENTERED, never verified', c.bipaStatus==='ENTERED' && c.bipaVerifiedAt===null && c.verificationTier==='UNVERIFIED');

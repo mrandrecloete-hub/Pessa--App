@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fail++;} };
 (async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
- await require('./biz_boot.js')(p);
+ await require('./biz_boot.js')(p,{demo:true});
  const realN = await p.evaluate(()=>window.__t.State.products.length);
  // open from the health check sheet
  await p.evaluate(()=>window.__t.openHealthSheet()); await p.waitForSelector('#hcSpeed'); await p.click('#hcSpeed'); await p.waitForSelector('#spLoad');

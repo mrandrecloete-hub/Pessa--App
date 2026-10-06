@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
+const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 (async()=>{
   const b = await chromium.launch(); const errs=[];
   for (const [w,h,n] of [[1440,900,'lap'],[820,1100,'tab'],[360,740,'mob']]) {
@@ -7,7 +7,7 @@ const D=(process.env.PESA_OUT||'/tmp/pesa-tests/');
     await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
     await p.fill('#rcCompanyName','Dinner'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
     await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
+    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
     await p.evaluate(async()=>{ const T=window.__t,r=T.refs; await r.products.doc().set({name:'Bread',sellPrice:17.99,costPrice:13,stockQty:2,createdAt:new Date().toISOString()});
       const u=r.users.doc(); await u.set({name:'Sam',role:'cashier',jobTitle:'Front till',passHash:'x',active:true,employeeNo:'E001',createdAt:new Date().toISOString(),lastActiveAt:new Date().toISOString()});
       const now=new Date().toISOString(); const t=r.tills.doc(); await t.set({cashierId:u.id,cashierName:'Sam',openingFloat:100,openedAt:now,status:'open'});
