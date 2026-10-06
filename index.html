@@ -4279,9 +4279,14 @@ function openBizHub(){
     ['tips','Staff tips','Record and share tips, monthly totals per person'],
     ['calendar','Calendar','Public holidays, due dates, expiry dates and your own reminders'],
     ['payroll','Payroll and payslips','Pay details, monthly pay run and payslips'],
+    ['salesx','Sales and refunds','Find a sale, refund items or void a sale with approval'],
+    ['taxset','Tax settings (VAT)','VAT registration, rate versions and categories'],
+    ['integrity','Accounting integrity report','Automatic checks that the books balance and agree with the records'],
+    ['privacyx','Privacy and data controls','Who sees what, what leaves this device, export and anonymise'],
+    ['recovery','Disaster recovery','Backups, recovery points and unsynced records'],
     ['setup','Setup guide', sp.done+' of '+sp.total+' steps done']
   ];
-  if(!isOwner()) tiles = tiles.filter(function(t){ return t[0] !== 'payroll'; });
+  if(!isOwner()) tiles = tiles.filter(function(t){ return ['payroll','taxset','privacyx','recovery'].indexOf(t[0]) < 0; });
   var html = '<div class="sheet-head"><h2>'+tr('Business tools')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+tr('Tools to help you run and grow the business. They work from your own shop records on this device.')+'</div>' +
     '<div class="rowlist">' + tiles.map(function(t){
@@ -4310,6 +4315,11 @@ function openBizSection(k){
   else if(k==='setup') openSetupSheet();
   else if(k==='accountant') openAccountantSheet();
   else if(k==='payroll') openPayrollSheet();
+  else if(k==='salesx') openSalesLedgerSheet();
+  else if(k==='taxset') openTaxSettingsSheet();
+  else if(k==='integrity') openIntegritySheet();
+  else if(k==='privacyx') openPrivacyControlsSheet();
+  else if(k==='recovery') openRecoverySheet();
   else if(k==='attend') openAttendanceSheet();
   else if(k==='tips') openTipsSheet();
   else if(k==='calendar') openCalendarSheet();
@@ -8886,10 +8896,10 @@ function openWorkReportSheet(uid){
 /* ---- My records: reports, receipts, invoices and cash ups in one read only place ---- */
 var REC = { sec:'reports' };
 function saleReceiptDraft(s){
-  return { servedBy: s.cashierName || '', number:'R-'+String(s.id||'').slice(-6).toUpperCase(), billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:'',
+  return { servedBy: s.cashierName || '', number:s.receiptNo || ('R-'+String(s.id||'').slice(-6).toUpperCase()), saleReceipt:true, taxSnap:s.tax || null, billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:(s.type === 'refund' || s.type === 'void') ? ((s.type === 'void' ? 'Void' : 'Refund') + ' of ' + (s.refundOfReceipt || 'a sale') + '. Reason: ' + (s.reason || '')) : '',
     at:s.createdAt, payMethod:s.paymentMethod, fiscalKey:s.fiscalId||null, walletProvider:s.walletProvider||'', cashBack:s.cashBack||0,
     received: s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : s.total),
-    items:(s.items||[]).map(function(it){ return { desc:it.name, qty:it.qty, unitPrice:it.unitPrice }; }) };
+    items:(s.items||[]).map(function(it){ return { desc:it.name, qty:it.qty, unitPrice:it.unitPrice, cat:it.taxCategory, productId:it.productId }; }) };
 }
 function renderMyRecords(){
   var me = State.session, u = State.users.find(function(x){ return x.id === me.userId; }) || {};
@@ -8939,6 +8949,7 @@ function wireMyRecords(root){
   }); });
   root.querySelectorAll('[data-recsale]').forEach(function(b){ b.addEventListener('click', function(){
     var s = State.sales.find(function(x){ return x.id === b.getAttribute('data-recsale'); }); if(!s) return;
+    if(isRestricted() || true){ openSaleDetailSheet(s.id); return; }
     var d = saleReceiptDraft(s);
     openRecordDocSheet(tr(s.paymentMethod==='credit'?'Credit sale':'Receipt')+' '+d.number, fmtDateTime(s.createdAt)+' · '+fmtMoney(s.total), function(){ return s.paymentMethod==='credit' ? buildInvoicePdf(d) : buildReceiptPdf(d); }, 'receipt-'+d.number+'.pdf');
   }); });
@@ -9246,8 +9257,8 @@ function tillTotals(tillId){
   var items = {cash:0, card:0, wallet:0, credit:0};
   sales.forEach(function(s){
     var m = s.paymentMethod || 'cash';
-    totals[m] = (totals[m]||0) + s.total;
-    cashBack += s.cashBack || 0;
+    totals[m] = mRound2((totals[m]||0) + s.total);
+    cashBack = mRound2(cashBack + (s.cashBack || 0));
     var qty = (s.items||[]).reduce(function(a,it){ return a+it.qty; }, 0);
     items[m] = (items[m]||0) + qty;
   });
@@ -9344,21 +9355,24 @@ function openStartTillSheet(){
 
 function openCloseTillSheet(session){
   var t = tillTotals(session.id);
-  var expectedFloat = (session.openingFloat||0) + t.totals.cash - (t.cashBack||0);
+  var expectedFloat = mRound2((session.openingFloat||0) + t.totals.cash - (t.cashBack||0));
   var html = '<div class="sheet-head"><h2>'+tr('Close till')+'</h2></div>' +
     tillSummaryCardHtml(session, t) +
     '<div class="field"><label>'+tr('Cash paid out during shift (expenses paid from the drawer, if any)')+'</label><input id="tcPayout" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
     '<div class="field"><label>'+tr('Cash counted in drawer now')+'</label><input id="tcCounted" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>' +
     '<div id="tcResult"></div>' +
+    '<div class="field" id="tcWhyBox" style="display:none;"><label>'+tr('Why is the cash different? (required for a difference of')+' '+fmtMoney(tillVarianceLimit())+' '+tr('or more)')+'</label><input id="tcWhy" maxlength="200" placeholder="'+esc(tr('For example: change given wrongly, paid a supplier'))+'"></div>' +
+    '<div style="font-size:11.5px;color:var(--text-muted);margin:2px 0 8px;">'+tr('A difference is recorded for review. It is a warning to look into, not a finding about anyone.')+'</div>' +
     '<div class="actions"><button class="btn btn-danger btn-block" id="tcCloseBtn">'+tr('Confirm cash-up')+'</button></div>';
   var ov = openSheet(html, {center:true});
   function recalc(){
     var payout = parseFloat(ov.querySelector('#tcPayout').value) || 0;
     var counted = parseFloat(ov.querySelector('#tcCounted').value);
-    var expected = expectedFloat - payout;
+    var expected = mRound2(expectedFloat - payout);
     var box = ov.querySelector('#tcResult');
     if(isNaN(counted)){ box.innerHTML=''; return; }
-    var variance = counted - expected;
+    var variance = mRound2(counted - expected);
+    ov.querySelector('#tcWhyBox').style.display = Math.abs(variance) >= tillVarianceLimit() ? '' : 'none';
     var cls = Math.abs(variance)<0.01 ? 'variance-ok' : (variance<0?'variance-bad':'variance-over');
     var label = Math.abs(variance)<0.01 ? tr('Balanced, well done!') : (variance<0 ? tr('Cash is short by')+' '+fmtMoney(Math.abs(variance)) : tr('Cash is over by')+' '+fmtMoney(variance));
     box.innerHTML = '<div class="tillcard">' +
@@ -9373,13 +9387,18 @@ function openCloseTillSheet(session){
     var payout = parseFloat(ov.querySelector('#tcPayout').value) || 0;
     var counted = parseFloat(ov.querySelector('#tcCounted').value);
     if(isNaN(counted)){ toast(tr('Enter the cash counted in the drawer')); return; }
-    var expected = expectedFloat - payout;
-    var variance = counted - expected;
+    var expected = mRound2(expectedFloat - payout);
+    var variance = mRound2(counted - expected);
+    var why = (ov.querySelector('#tcWhy').value || '').trim();
+    if(Math.abs(variance) >= tillVarianceLimit() && !why){ toast(tr('Write why the cash is different')); ov.querySelector('#tcWhy').focus(); return; }
+    if(!uiOnce('closeTill:'+session.id, 3000)) return;
     refs.tills.doc(session.id).update({
       status:'closed', closedAt:new Date().toISOString(), cashPayout:payout,
       closingCash:counted, expectedCash:expected, variance:variance,
+      varianceNote:why, reviewStatus:Math.abs(variance) >= tillVarianceLimit() ? 'needs review' : 'none', closedById:State.session ? State.session.userId : '', deviceId:Dev.id(),
       totals:t.totals, items:t.items
     }).then(function(){
+      if(Math.abs(variance) >= tillVarianceLimit()) logAudit('other','till',session.id,'Cash up needs review: difference of '+fmtMoney(variance)+' (reason given: '+why+')');
       if(State.till.current && State.till.current.id === session.id) State.till.current = null;
       logAudit('update','till',session.id,'Till closed, variance '+fmtMoney(variance));
       if(notifyActive()){
@@ -9698,8 +9717,8 @@ function renderSell(){
 }
 var LIST_PAGE = 120;
 
-function cartTotal(){ return State.cart.reduce(function(s,i){ return s + i.unitPrice*i.qty; }, 0); }
-function cartCost(){ return State.cart.reduce(function(s,i){ return s + (i.cost||0)*i.qty; }, 0); }
+function cartTotal(){ var c = 0; State.cart.forEach(function(i){ c += mMul(i.unitPrice, i.qty); }); return c / 100; }
+function cartCost(){ var c = 0; State.cart.forEach(function(i){ c += mMul(i.cost || 0, i.qty); }); return c / 100; }
 function cartCount(){ return State.cart.reduce(function(s,i){ return s + i.qty; }, 0); }
 
 
@@ -10017,12 +10036,16 @@ function overCreditLimit(cust, addAmount){
   return lim > 0 && ((cust.balance||0) + addAmount) > lim;
 }
 function confirmOverLimit(cust, addAmount, proceed){
-  confirmSheet(tr('Over credit limit'), cust.name+' '+tr('has a credit limit of')+' '+fmtMoney(cust.creditLimit)+'. '+tr('This sale would take what they owe to')+' '+fmtMoney((cust.balance||0)+addAmount)+'. '+tr('Sell anyway?'), tr('Sell anyway'), proceed, true);
+  var go = function(approver){ logAudit('other','customer',cust.id,'Credit limit override for '+cust.name+': owes '+fmtMoney((cust.balance||0)+addAmount)+' against a limit of '+fmtMoney(cust.creditLimit)+(approver ? ' (approved by '+approver.name+')' : '')); proceed(); };
+  confirmSheet(tr('Over credit limit'), cust.name+' '+tr('has a credit limit of')+' '+fmtMoney(cust.creditLimit)+'. '+tr('This sale would take what they owe to')+' '+fmtMoney((cust.balance||0)+addAmount)+'. '+tr('Sell anyway?'), tr('Sell anyway'), function(){
+    if(isRestricted()) askApprovalSheet(tr('Approve selling over the credit limit'), go); else go(null);
+  }, true);
 }
 function finalizeSale(method, customer, extra){
+  if(!State.cart.length || !uiOnce('finalizeSale', 900)) return;   // a second tap on Complete sale does nothing
   if(cartHasMock()){ toast(tr('Test products cannot be sold. Remove them from the cart first.')); return; }
   loyaltyNormalize();
-  var items = State.cart.map(function(i){ var tp = State.products.find(function(x){ return x.id===i.productId; }); return { productId:i.productId, name:i.name, qty:i.qty, unitPrice:i.unitPrice, cost:i.cost||0, lineTotal:i.unitPrice*i.qty, taxCategory:(tp && tp.taxCategory) || 'STANDARD' }; });
+  var items = State.cart.map(function(i){ var tp = State.products.find(function(x){ return x.id===i.productId; }); return { productId:i.productId, name:i.name, qty:i.qty, unitPrice:i.unitPrice, cost:i.cost||0, lineTotal:mMul(i.unitPrice, i.qty) / 100, taxCategory:(tp && tp.taxCategory) || 'STANDARD' }; });
   var total = cartTotal();
   var cost = cartCost();
   var sale = {
@@ -10040,6 +10063,7 @@ function finalizeSale(method, customer, extra){
     createdAt: new Date().toISOString()
   };
   if(extra) Object.assign(sale, extra);
+  saleStamp(sale, items);
   loyaltyStamp(sale, customer);
   if(POS.open && POS.user){ sale.viaPos = true; sale.posUserId = POS.user.id; }
   var saleAddP = refs.sales.add(sale);
@@ -10074,9 +10098,9 @@ function finalizeSale(method, customer, extra){
 }
 
 function offerSaleReceipt(sale, customer){
-  var number = 'INV-' + String(State.settings.invoiceNextNumber||1).padStart(4,'0');
+  var number = sale.receiptNo || docNumberNext('INV', true);
   var draft = {
-    number: number,
+    number: number, saleReceipt: !!sale.receiptNo, taxSnap: sale.tax || null,
     servedBy: servedByName({}),
     billToName: customer ? customer.name : 'Customer',
     billToContact: customer ? [customer.phone, customer.email].filter(Boolean).join('\n') : '',
@@ -10089,7 +10113,7 @@ function offerSaleReceipt(sale, customer){
     walletProvider: sale.walletProvider || '',
     cashBack: sale.cashBack || 0,
     received: sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : sale.total),
-    items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice }; })
+    items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice, cat: it.taxCategory, productId: it.productId }; })
   };
   if(sale.__fiscal) sale.__fiscal.then(function(r){ if(r && r.record) draft.fiscalKey = r.record.id; });
   var sendKind = sale.paymentMethod === 'credit' ? 'invoice' : 'receipt';
@@ -10841,7 +10865,7 @@ function openProductSheet(product, prefillBarcode){
       '<div class="field"><label>'+tr('Expiry date (optional)')+'</label><input id="pfExpiry" type="date" value="'+esc(product&&product.expiryDate||'')+'"></div>' +
       '<div class="field"><label>'+tr('Usual supplier (optional)')+'</label><select id="pfSup"><option value="">'+tr('None')+'</option>'+State.suppliers.map(function(sp){ return '<option value="'+esc(sp.id)+'"'+(product&&product.supplierId===sp.id?' selected':'')+'>'+esc(sp.name)+'</option>'; }).join('')+'</select></div>' +
     '</div>' +
-    ((Fiscal.on() || isVatVendor()) ? '<div class="field"><label>'+tr('Tax category')+'</label><select id="pfTax">'+[['STANDARD',tr('Standard rate')+' ('+Fiscal.vatRate()+'%)'],['ZERO_RATED',tr('Zero rated (0%)')],['EXEMPT',tr('Exempt')]].map(function(o){ return '<option value="'+o[0]+'"'+(((product&&product.taxCategory)||'STANDARD')===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select></div>' : '') +
+    ((Fiscal.on() || isVatVendor()) ? '<div class="field"><label>'+tr('Tax category')+'</label><select id="pfTax">'+[['STANDARD',tr('Standard rate')+' ('+Fiscal.vatRate()+'%)'],['ZERO_RATED',tr('Zero rated (0%)')],['EXEMPT',tr('Exempt')],['NON_VAT',tr('Not a VAT item')]].map(function(o){ return '<option value="'+o[0]+'"'+(((product&&product.taxCategory)||'STANDARD')===o[0]?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select></div>' : '') +
     '<div class="field"><label>Barcode (optional)</label><div style="display:flex;gap:8px;"><input id="pfBarcode" placeholder="Scan or type a barcode" value="'+esc(product?product.barcode||'':(prefillBarcode||''))+'" style="flex:1;"><button class="btn btn-ghost" id="pfScanBtn" type="button" style="flex:0 0 auto;padding:0 14px;">'+ICONS.search+'</button></div></div>' +
     '<div class="actions">' +
       (isEdit ? '<button class="btn btn-danger" id="pfDelete">'+tr('Delete')+'</button>' : '') +
@@ -12735,9 +12759,12 @@ function purchaseOrderSendCtx(po){
  * document in the Invoices archive at that same moment. kind is 'invoice'
  * or 'receipt' (a post-sale receipt consumes a number just like an invoice). */
 function commitInvoiceNumber(draft, kind, customerId){
-  var nextNum = (State.settings.invoiceNextNumber||1) + 1;
-  State.settings = Object.assign({}, State.settings, { invoiceNextNumber: nextNum });
-  refs.settings.set(State.settings);
+  if(!(draft && draft.saleReceipt)){
+    var nextNum = (State.settings.invoiceNextNumber||1) + 1;
+    State.settings = Object.assign({}, State.settings, { invoiceNextNumber: nextNum });
+    refs.settings.set(State.settings);
+    try{ var mm = String(draft && draft.number || '').match(/-(\d+)$/); if(mm) localStorage.setItem(docSeqKey('INV'), String(parseInt(mm[1], 10))); }catch(e){}
+  }
   if(draft) saveInvoiceRecord(draft, kind || 'invoice', customerId);
 }
 /* ============================== INVOICE ARCHIVE ==============================
@@ -13237,20 +13264,11 @@ function invUpdateTotal(){
 }
 
 /** A business with a VAT registration number on its company profile is a VAT vendor, so its invoices are Tax invoices. */
-function isVatVendor(){ return !!(State.company && String(State.company.vatNumber || '').trim()); }
 /** Splits invoice lines into the tax figures a Namibian tax invoice shows. Prices include VAT, so VAT is taken out of the standard rated lines.
  *  Net = standard rated value without VAT. Net + VAT + Zero rated + Exempt = Gross, so the four lines always add up to the total due. */
-function invoiceTaxBreakdown(items){
-  var rate = Fiscal.vatRate(), std = 0, zero = 0, ex = 0, r2 = function(x){ return Math.round(x * 100) / 100; };
-  (items || []).forEach(function(it){
-    var amt = (Number(it.qty) || 0) * (Number(it.unitPrice) || 0), p = null;
-    if(it.productId) p = State.products.find(function(x){ return x.id === it.productId; });
-    if(!p){ var nm = String(it.desc || '').trim().toLowerCase(); if(nm) p = State.products.find(function(x){ return String(x.name || '').toLowerCase() === nm; }); }
-    var cat = (p && p.taxCategory) || 'STANDARD';
-    if(cat === 'ZERO_RATED') zero += amt; else if(cat === 'EXEMPT') ex += amt; else std += amt;
-  });
-  var vat = rate > 0 ? r2(std * rate / (100 + rate)) : 0;
-  return { rate:rate, net:r2(std - vat), vat:vat, zero:r2(zero), exempt:r2(ex), gross:r2(std + zero + ex) };
+function invoiceTaxBreakdown(items, dateKey){
+  var d = taxFromItems(items, dateKey);
+  return { rate:d.rate, v:d.v, net:mF(d.stdNet), vat:mF(d.vat), zero:mF(d.zero), exempt:mF(d.exempt), non:mF(d.non), gross:mF(d.total) };
 }
 /** The employee who handled the sale or wrote the document, shown on receipts and invoices. */
 function servedByName(d){
@@ -13273,7 +13291,9 @@ function buildInvoicePdf(draft){
   if(draft.payMethod === 'credit') status = 'On credit';
   else if(draft.received != null && draft.received !== '' && !isNaN(Number(draft.received))) status = Number(draft.received) >= subtotal ? 'Paid' : 'Balance due';
   else if(draft.payMethod) status = 'Paid';
-  var vend = isVatVendor(), tb = vend ? invoiceTaxBreakdown(items) : null;
+  var docDay = taxDayOf(draft.dateStr || draft.at);
+  var taxProblems = taxInvoiceProblems(draft);
+  var vend = taxRegisteredOn(docDay) && !taxProblems.some(function(p){ return /VAT registration number|business name/.test(p); }), tb = vend ? invoiceTaxBreakdown(items, docDay) : null;
   var ty = y; y = pdTitle(doc, pal, m, y, tr(vend ? 'Tax invoice' : 'Invoice'));
   if(status) pdPill(doc, pal, m + W, ty + 1.5, status);
 
@@ -13336,7 +13356,7 @@ function buildReceiptPdf(draft){
   var items = draft.items || [];
   var subtotal = items.reduce(function(s,it){ return s + (Number(it.qty)||0)*(Number(it.unitPrice)||0); }, 0);
   var vatNo = State.company && State.company.vatNumber ? State.company.vatNumber : '';
-  var vatRate = (State.settings.vatRate != null) ? Number(State.settings.vatRate) || 0 : 15;
+  var rcptDay = taxDayOf(draft.at || draft.dateStr), rcptTax = (draft.taxSnap && draft.taxSnap.v != null) ? draft.taxSnap : taxSnap(taxFromItems(items, rcptDay));
   var shopName = State.settings.shopName || (State.company && (State.company.tradingName || State.company.companyName)) || 'My Shop';
   var fz = Fiscal.pdfInfo(draft);   // tax record rows, or null when tax records are off for this receipt
 
@@ -13418,7 +13438,14 @@ function buildReceiptPdf(draft){
     }
     sum('Items', String(items.reduce(function(a,it){ return a + (Number(it.qty)||0); }, 0)));
     if(fz) fz.pools.forEach(function(q){ sum(q.label, fmtMoney(q.amount)); });
-    else if(vatNo && vatRate > 0) sum('VAT ('+vatRate+'%) included', fmtMoney(subtotal*vatRate/(100+vatRate)));
+    else if(vatNo && rcptTax.registered && rcptTax.stdGross !== 0){
+      sum('VAT ('+rcptTax.rate+'%) included', fmtMoney(rcptTax.vat));
+      if(rcptTax.zero) sum('Zero rated items', fmtMoney(rcptTax.zero));
+      if(rcptTax.exempt) sum('VAT exempt items', fmtMoney(rcptTax.exempt));
+    } else if(vatNo && rcptTax.registered && (rcptTax.zero || rcptTax.exempt)){
+      if(rcptTax.zero) sum('Zero rated items', fmtMoney(rcptTax.zero));
+      if(rcptTax.exempt) sum('VAT exempt items', fmtMoney(rcptTax.exempt));
+    }
     y += 0.6;
     doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 5, 0.8, 0.8, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(255,255,255);
@@ -13472,7 +13499,7 @@ function openInvoiceSheet(prefill){
   } else {
     invAddItem('', 1, 0);
   }
-  var number = 'INV-' + String(State.settings.invoiceNextNumber||1).padStart(4,'0');
+  var number = docNumberNext('INV', true);
   var html =
     '<div class="sheet-head"><h2>'+tr('New invoice')+'</h2></div>' +
     '<div class="banner">'+(isVatVendor() ? tr('Tax invoice') : 'Invoice')+' '+number+'</div>' +
@@ -13654,13 +13681,13 @@ function computeReportFigures(start, end, opts){
 
   var salesIn = State.sales.filter(function(s){ var d=new Date(s.createdAt); return d>=start && d<end && inScope(s); });
   var expensesIn = State.expenses.filter(function(e){ var d=new Date(e.createdAt); return d>=start && d<end && inScope(e); });
-  var revenue = salesIn.reduce(function(s,x){return s+x.total;},0);
-  var cogs = salesIn.reduce(function(s,x){return s+(x.cost||0);},0);
-  var grossProfit = revenue-cogs;
+  var revenue = mSum(salesIn, function(x){ return x.total; });
+  var cogs = mSum(salesIn, function(x){ return x.cost || 0; });
+  var grossProfit = mRound2(revenue-cogs);
   var expByCat = {};
-  expensesIn.forEach(function(e){ expByCat[e.category]=(expByCat[e.category]||0)+e.amount; });
-  var expensesTotal = expensesIn.reduce(function(s,e){return s+e.amount;},0);
-  var netProfit = grossProfit-expensesTotal;
+  expensesIn.forEach(function(e){ expByCat[e.category]=mRound2((expByCat[e.category]||0)+e.amount); });
+  var expensesTotal = mSum(expensesIn, function(e){ return e.amount; });
+  var netProfit = mRound2(grossProfit-expensesTotal);
   var totalOwed = State.customers.reduce(function(s,c){return s+(c.balance||0);},0);
 
   var byProduct = {};
@@ -13694,13 +13721,14 @@ function computeReportFigures(start, end, opts){
   }
 
   var PRODUCT_CAP = 300, STOCK_CAP = 200;
-  fig.salesCount = salesIn.length;
+  fig.salesCount = salesIn.filter(function(s){ return s.type !== 'refund' && s.type !== 'void'; }).length;
+  fig.refundCount = salesIn.length - fig.salesCount;
   var pay = { cash:0, card:0, wallet:0, credit:0 };
-  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; pay[m] = (pay[m]||0) + s.total; });
+  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; pay[m] = mRound2((pay[m]||0) + s.total); });
   fig.payments = pay;
-  var rate = (State.settings.vatRate != null) ? Number(State.settings.vatRate) || 0 : 15;
-  fig.vat = { rate:rate, output: revenue*rate/(100+rate), input: expensesTotal*rate/(100+rate) };
-  fig.vat.net = fig.vat.output - fig.vat.input;
+  var taxP = taxPeriod(salesIn), rateNow = taxRateAt(todayKey());
+  fig.vat = { rate:rateNow.rate, version:rateNow.v, output: taxP.vat, input: taxInputVat(expensesIn), zero:taxP.zero, exempt:taxP.exempt, nonVat:taxP.non, registered:taxRegisteredOn(todayKey()) };
+  fig.vat.net = mRound2(fig.vat.output - fig.vat.input);
   fig.productsOmitted = Math.max(0, productRows.length - PRODUCT_CAP);
   fig.productRows = productRows.slice(0, PRODUCT_CAP);
   if(scope === 'all'){
@@ -14994,7 +15022,7 @@ function renderDashboard(){
 }
 
 function exportData(){
-  gatherLedgers().then(function(l){ var p = backupPayload(); p.ledgers = l; doExportData(p); });
+  gatherLedgers().then(function(l){ var p = backupPayload(); p.ledgers = l; return backupSeal(p); }).then(function(p){ doExportData(p); });
 }
 function doExportData(payload){
   var json = JSON.stringify(payload, null, 2);
@@ -15483,6 +15511,10 @@ function openSettingsSheet(){
     '</div>' +
     '<input type="file" id="stImportInput" accept="application/json" style="display:none;">' +
 '', false) +
+    (isOwner() ? stGrp('Privacy, tax and data controls','Privacy, VAT settings, integrity checks and recovery',
+      '<div class="banner" style="display:block;">'+tr('Designed to support privacy and applicable legal requirements. The business owner remains responsible for lawful use of customer and employee information.')+'</div>' +
+      '<div class="actions"><button class="btn btn-ghost" id="stPrivX" type="button">'+tr('Privacy and data controls')+'</button><button class="btn btn-ghost" id="stTaxX" type="button">'+tr('Tax settings')+'</button></div>' +
+      '<div class="actions"><button class="btn btn-ghost" id="stIntX" type="button">'+tr('Accounting integrity report')+'</button><button class="btn btn-ghost" id="stRecX" type="button">'+tr('Backup and recovery')+'</button></div>', false) : '') +
     stGrp('Share Pesa','Send the app link to other people',
 ''+
     shareAppHtml() +
@@ -15576,6 +15608,7 @@ function openSettingsSheet(){
   wireEmailServiceSettings(ov);
   wireSyncSettings(ov);
   ov.querySelector('#stExportBtn').addEventListener('click', exportData);
+  [['#stPrivX', function(){ openPrivacyControlsSheet(); }],['#stTaxX', function(){ openTaxSettingsSheet(); }],['#stIntX', function(){ openIntegritySheet(); }],['#stRecX', function(){ openRecoverySheet(); }]].forEach(function(x){ var el = ov.querySelector(x[0]); if(el) el.addEventListener('click', x[1]); });
   ov.querySelector('#stImportBtn').addEventListener('click', function(){
     ov.querySelector('#stImportInput').click();
   });
@@ -15598,7 +15631,7 @@ function importDataFromFile(file){
           await restoreBackupData(data);
           toast('Backup restored');
           closeModal();
-        }catch(err){ toast('Restore failed, the backup file may be corrupted'); }
+        }catch(err){ toast(/refused/.test(String(err && err.message)) ? String(err.message) : 'Restore failed, the backup file may be corrupted'); }
       })();
     }, true, true);
   };
@@ -16810,7 +16843,7 @@ var ACCT_CHART = [
   ['1300','Trade receivables (customer credit)','ASSET','RECEIVABLE'], ['1400','VAT input tax (claimable from NamRA)','ASSET','TAX'],
   ['2000','Trade payables (suppliers)','LIABILITY','PAYABLE'], ['2150','VAT output tax (payable to NamRA)','LIABILITY','TAX'],
   ['3000','Owner’s equity and opening balances','EQUITY','EQUITY'],
-  ['4000','Sales, standard rated','REVENUE','SALES'], ['4010','Sales, zero rated (0%)','REVENUE','SALES'], ['4020','Sales, VAT exempt','REVENUE','SALES'],
+  ['4000','Sales, standard rated','REVENUE','SALES'], ['4010','Sales, zero rated (0%)','REVENUE','SALES'], ['4020','Sales, VAT exempt','REVENUE','SALES'], ['4030','Sales, outside VAT (not a VAT item)','REVENUE','SALES'],
   ['5000','Cost of goods sold','EXPENSE','COGS'], ['5050','Stock wastage and shrinkage','EXPENSE','COGS'],
   ['5100','Transport, freight and logistics','EXPENSE','OPEX'], ['5110','Rent','EXPENSE','OPEX'], ['5120','Electricity','EXPENSE','OPEX'],
   ['5125','Water','EXPENSE','OPEX'], ['5130','Wages and salaries','EXPENSE','OPEX'], ['5140','Airtime and data','EXPENSE','OPEX'],
@@ -16844,28 +16877,36 @@ function acctLine(acct, dr, cr){ return { account:acct, dr:dr, cr:cr }; }
 function acctKeep(lines){ return lines.filter(function(l){ return l.dr > 0 || l.cr > 0; }); }
 
 function acctSaleJournal(s, ctx){
-  var T = acctC(s.total), cb = acctC(s.cashBack), cost = acctC(s.cost), flags = [], method = s.paymentMethod || 'cash', w = [0, 0, 0];
+  var isRef = s.type === 'refund', dk = ctx.dateKey(s.createdAt), snap = (s.tax && s.tax.v != null) ? s.tax : null;
+  var vend = snap ? !!snap.registered : taxRegisteredOn(dk), bp = snap ? Math.round(Number(snap.rate) * 100) : taxRateAt(dk).bp;
+  var T = Math.abs(acctC(s.total)), cb = Math.abs(acctC(s.cashBack)), cost = Math.abs(acctC(s.cost)), flags = [], method = s.paymentMethod || 'cash', w = [0, 0, 0, 0];
   (s.items || []).forEach(function(it){
-    var g = acctC(it.lineTotal != null ? it.lineTotal : (Number(it.qty) || 0) * (Number(it.unitPrice) || 0));
-    w[it.taxCategory === 'ZERO_RATED' ? 1 : it.taxCategory === 'EXEMPT' ? 2 : 0] += g;
+    var g = Math.abs(acctC(it.lineTotal != null ? it.lineTotal : (Number(it.qty) || 0) * (Number(it.unitPrice) || 0)));
+    w[it.taxCategory === 'ZERO_RATED' ? 1 : it.taxCategory === 'EXEMPT' ? 2 : it.taxCategory === 'NON_VAT' ? 3 : 0] += g;
   });
-  if(!ctx.vatVendor){ w[0] += w[1] + w[2]; w[1] = 0; w[2] = 0; }
-  var sumItems = w[0] + w[1] + w[2];
-  if(sumItems !== T) flags.push('ITEMS_DIFFER_FROM_TOTAL');
-  var al = acctAllocate(T, sumItems > 0 ? w : [T, 0, 0]), std = al[0], zero = al[1], ex = al[2];
-  var vat = ctx.vatVendor ? acctVatInside(std, Math.round(ctx.vatRatePct * 100)) : 0;
+  if(!vend){ w[0] += w[1] + w[2] + w[3]; w[1] = 0; w[2] = 0; w[3] = 0; }
+  var sumItems = w[0] + w[1] + w[2] + w[3], std, zero, ex, non, vat;
+  var fromSnap = snap && (Math.abs(acctC(snap.stdGross)) + Math.abs(acctC(snap.zero)) + Math.abs(acctC(snap.exempt)) + Math.abs(acctC(snap.non)) === T);
+  if(fromSnap){
+    std = Math.abs(acctC(snap.stdGross)); zero = Math.abs(acctC(snap.zero)); ex = Math.abs(acctC(snap.exempt)); non = Math.abs(acctC(snap.non)); vat = vend ? Math.abs(acctC(snap.vat)) : 0;
+  } else {
+    if(sumItems !== T) flags.push('ITEMS_DIFFER_FROM_TOTAL');
+    var al = acctAllocate(T, sumItems > 0 ? w : [T, 0, 0, 0]); std = al[0]; zero = al[1]; ex = al[2]; non = al[3];
+    vat = vend ? acctVatInside(std, bp) : 0;
+  }
   var debit = method === 'card' ? '1030' : method === 'wallet' ? '1010' : method === 'credit' ? '1300' : '1000';
   var lines = acctKeep([
     acctLine(debit, T + (method === 'card' ? cb : 0), 0),
-    acctLine('4000', 0, std - vat), acctLine('4010', 0, zero), acctLine('4020', 0, ex), acctLine('2150', 0, vat),
+    acctLine('4000', 0, std - vat), acctLine('4010', 0, zero), acctLine('4020', 0, ex), acctLine('4030', 0, non), acctLine('2150', 0, vat),
     acctLine('1000', 0, method === 'card' ? cb : 0),
     acctLine('5000', cost, 0), acctLine('1200', 0, cost)
   ]);
-  if(cost === 0 && T > 0) flags.push('NO_COST_RECORDED');
-  return { id:'SALE-' + s.id, date:ctx.dateKey(s.createdAt), kind:'SALE', ref:s.id, memo:'Sale ' + s.id + ' (' + method + ')', lines:lines, flags:flags };
+  if(isRef) lines = lines.map(function(l){ return { account:l.account, dr:l.cr, cr:l.dr }; });
+  if(cost === 0 && T > 0 && !isRef) flags.push('NO_COST_RECORDED');
+  return { id:(isRef ? 'REF-' : 'SALE-') + s.id, date:dk, kind:isRef ? 'REFUND' : 'SALE', ref:s.id, memo:(isRef ? 'Refund ' : 'Sale ') + s.id + ' (' + method + ')', lines:lines, flags:flags };
 }
 function acctExpenseJournal(e, ctx){
-  var A = acctC(e.amount), flags = [], V = ctx.vatVendor ? acctC(e.vat) : 0;
+  var A = acctC(e.amount), flags = [], V = taxRegisteredOn(ctx.dateKey(e.createdAt)) ? acctC(e.vat) : 0;
   if(V < 0 || V > A){ V = 0; flags.push('VAT_IGNORED'); }
   var acct = ACCT_EXP[e.category || ''] || '5190';
   if(!ACCT_EXP[e.category || '']) flags.push('CATEGORY_UNKNOWN');
@@ -16873,7 +16914,7 @@ function acctExpenseJournal(e, ctx){
     lines:acctKeep([acctLine(acct, A - V, 0), acctLine('1400', V, 0), acctLine(acctSrc(e.paidFrom), 0, A)]), flags:flags };
 }
 function acctSupInvJournal(i, ctx){
-  var A = acctC(i.amount), flags = [], V = ctx.vatVendor ? acctC(i.vat) : 0;
+  var A = acctC(i.amount), flags = [], V = taxRegisteredOn(i.date) ? acctC(i.vat) : 0;
   if(V < 0 || V > A){ V = 0; flags.push('VAT_IGNORED'); }
   return { id:'SINV-' + i.id, date:i.date, kind:'SUPINV', ref:i.number || i.id, memo:'Supplier invoice ' + (i.number || '') + (i.supplierName ? ' from ' + i.supplierName : ''),
     lines:acctKeep([acctLine('1200', A - V, 0), acctLine('1400', V, 0), acctLine('2000', 0, A)]), flags:flags };
@@ -16992,12 +17033,12 @@ function acctView(G, B, from, to){
   function cr(c){ var m = mv[c]; return m ? m.cr - m.dr : 0; }
   function dr(c){ return -cr(c); }
   var tb = acctTrialBalance(B, from, to);
-  var sStd = cr('4000'), sZero = cr('4010'), sEx = cr('4020'), revenue = sStd + sZero + sEx;
+  var sStd = cr('4000'), sZero = cr('4010'), sEx = cr('4020'), sNon = cr('4030'), revenue = sStd + sZero + sEx + sNon;
   var cogs = dr('5000'), waste = dr('5050'), gross = revenue - cogs - waste;
   var exp = ACCT_CHART.filter(function(a){ return a.group === 'OPEX'; }).map(function(a){ return { code:a.code, name:a.name, amount:dr(a.code) }; }).filter(function(r){ return r.amount !== 0; });
   var opex = exp.reduce(function(s, r){ return s + r.amount; }, 0);
-  var pl = { salesStandard:sStd, salesZero:sZero, salesExempt:sEx, revenue:revenue, cogs:cogs, wastage:waste, grossProfit:gross, expenses:exp, opex:opex, net:gross - opex };
-  var vat = { standardNet:sStd, zeroRated:sZero, exempt:sEx, outputVat:cr('2150'), inputVat:-cr('1400') };
+  var pl = { salesStandard:sStd, salesZero:sZero, salesExempt:sEx, salesNonVat:sNon, revenue:revenue, cogs:cogs, wastage:waste, grossProfit:gross, expenses:exp, opex:opex, net:gross - opex };
+  var vat = { standardNet:sStd, zeroRated:sZero, exempt:sEx, nonVat:sNon, outputVat:cr('2150'), inputVat:-cr('1400') };
   vat.standardGross = vat.standardNet + vat.outputVat; vat.netPayable = vat.outputVat - vat.inputVat;
   var close = {}; tb.rows.forEach(function(r){ close[r.code] = r.close; });
   var broughtFwd = -tb.rows.filter(function(r){ return r.type === 'REVENUE' || r.type === 'EXPENSE'; }).reduce(function(s, r){ return s + r.open; }, 0);
@@ -17750,29 +17791,31 @@ function openAcctOpeningSheet(){
 
 /* ============================== NAMRA VAT SUMMARY ============================== */
 function openVatSummarySheet(){
-  var rate = (State.settings.vatRate!=null) ? State.settings.vatRate : 15;
+  var rate = taxRateAt(todayKey()).rate;
   var now = new Date();
   var defFrom = todayKey(new Date(now.getFullYear(), now.getMonth(), 1));
   var defTo = todayKey(now);
   var html = '<div class="sheet-head"><h2>NamRA VAT summary</h2></div>' +
-    '<div class="banner">Uses your company’s VAT number (from Company details) and the VAT rate below, applied to sales and expenses as VAT-inclusive amounts.</div>' +
-    '<div class="field"><label>VAT rate (%)</label><input id="vatRate" type="number" inputmode="decimal" step="0.1" value="'+rate+'"></div>' +
+    '<div class="banner" style="display:block;">'+tr('Pesa-generated working figures. Output VAT follows each sale’s own tax rule (category and the rate in force that day). Input VAT is only what you entered from supplier tax invoices.')+'<br><span style="font-size:11.5px;color:var(--text-muted);">'+esc(tr(TAX_DISCLAIMER))+'</span></div>' +
+    (taxRegisteredOn(todayKey()) ? '' : '<div class="banner">'+ICONS.warn+'<span>'+tr('This business is not set as VAT registered, so no VAT is charged or reported. Change this in Settings, Tax settings.')+'</span></div>') +
+    '<div class="field"><label>'+tr('Standard VAT rate today (%), change it in Tax settings')+'</label><input id="vatRate" type="number" value="'+rate+'" readonly></div>' +
     '<div class="field-row"><div class="field"><label>From</label><input id="vatFrom" type="date" value="'+defFrom+'"></div><div class="field"><label>To</label><input id="vatTo" type="date" value="'+defTo+'"></div></div>' +
     '<div id="vatResult"></div>' +
     '<div class="actions"><button class="btn btn-accent btn-block" id="vatDownloadBtn">Download VAT summary</button></div>';
   var ov = openSheet(html);
   function compute(){
-    var r = parseFloat(ov.querySelector('#vatRate').value) || 0;
+    var r = rate;
     var from = ov.querySelector('#vatFrom').value, to = ov.querySelector('#vatTo').value;
     var fromD = from ? new Date(from+'T00:00:00') : new Date(0);
     var toD = to ? new Date(to+'T23:59:59') : new Date();
     var sales = State.sales.filter(function(s){ var d=new Date(s.createdAt); return d>=fromD && d<=toD; });
     var expenses = State.expenses.filter(function(e){ var d=new Date(e.createdAt); return d>=fromD && d<=toD; });
-    var salesTotal = sales.reduce(function(s,x){ return s+x.total; },0);
-    var expTotal = expenses.reduce(function(s,x){ return s+x.amount; },0);
-    var outputVat = salesTotal * r / (100+r);
-    var inputVat = expTotal * r / (100+r);
-    var net = outputVat - inputVat;
+    var salesTotal = mSum(sales, function(x){ return x.total; });
+    var expTotal = mSum(expenses, function(x){ return x.amount; });
+    var tp = taxPeriod(sales);
+    var outputVat = tp.vat;
+    var inputVat = taxInputVat(expenses);
+    var net = mRound2(outputVat - inputVat);
     return { r:r, from:from, to:to, salesTotal:salesTotal, expTotal:expTotal, outputVat:outputVat, inputVat:inputVat, net:net };
   }
   function renderResult(){
@@ -17792,8 +17835,6 @@ function openVatSummarySheet(){
   ov.querySelector('#vatTo').addEventListener('change', renderResult);
   ov.querySelector('#vatDownloadBtn').addEventListener('click', async function(){
     var c = compute();
-    State.settings = Object.assign({}, State.settings, { vatRate: c.r });
-    refs.settings.set(State.settings);
     var btn = ov.querySelector('#vatDownloadBtn');
     btn.disabled = true; var old = btn.textContent; btn.textContent = 'Preparing…';
     var ready = await ensureJsPDF();
@@ -20132,7 +20173,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.85';
+var APP_VERSION = '2026.10.86';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -20198,6 +20239,11 @@ function gatherLedgers(){
   })).then(function(){ return out; });
 }
 async function restoreBackupData(data){
+  var chk = backupCheck(data);
+  if(!chk.ok) throw new Error('Backup refused: ' + chk.problems.join(' '));
+  if((await backupSealOk(data)) === false) throw new Error('Backup refused: the file was changed or cut off after it was saved.');
+  try{ await Backups.make('before restore'); }catch(e){}
+  delete data.integrity; if(data.shop){ delete data.shop.syncServiceKey; }
   if(data.shop){ State.settings = Object.assign({}, State.settings, data.shop); refs.settings.set(State.settings); }
   var put = async function(colRef, rows){
     if(!Array.isArray(rows)) return;
@@ -20242,10 +20288,11 @@ var Backups = (function(){
     try{
       var data = backupPayload(); data.ledgers = await gatherLedgers();
       var json = JSON.stringify(data), at = Date.now();
-      var snap = { key: WS.id+'|'+at, ws: WS.id, at: at, reason: reason||'auto', json: json, size: json.length,
+      var snap = { key: WS.id+'|'+at, ws: WS.id, at: at, reason: reason||'auto', json: json, size: json.length, sha: await sha256Hex(json), app: APP_VERSION,
         counts: { products:State.products.length, customers:State.customers.length, sales:State.sales.length } };
       await tx('readwrite', function(st){ return st.put(snap); });
       try{ BackupFolder.writeJson(json, at); }catch(e){}
+      try{ snap.verified = await backupVerifyKey(snap.key); }catch(e){}
       var all = await list();
       for(var i=KEEP;i<all.length;i++){ await tx('readwrite', function(st){ return st.delete(all[i].key); }); }
       try{ localStorage.setItem(lastKey(), String(at)); }catch(e){}
@@ -20359,6 +20406,13 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.86', items:[
+    'Security: tamper evident activity log, role checks on every sensitive action, password again for high risk actions, sign in lockouts, session expiry, safer uploads and no secret keys accepted in the sync forms',
+    'Tax: VAT is worked out in whole cents with a dated rate history, zero rated, exempt and non VAT items, and VAT on refunds. Pesa provides business and tax recording tools and does not claim NamRA approval',
+    'Sales: refunds and voids keep the original sale, need a reason and approval, and cannot go above what was sold. Receipt numbers are unique per device',
+    'New: Accounting integrity report, Backup and recovery page, and Privacy and data controls (customer data export and anonymise)',
+    'Backups now carry a fingerprint, are read back and verified, and damaged files are refused before any data is restored'
+  ]},
   { v:'2026.10.85', items:[
     'Faster: Pesa opens instantly on repeat visits, the app file is about 20 percent smaller, and the pictures inside it are compressed with no visible change',
     'New: A Student signing line on every training certificate and statement of results, next to the owner signature'
@@ -21584,6 +21638,710 @@ function generateAboutPdf(){
 document.getElementById('settingsBtn').addEventListener('click', openSettingsSheet);
 document.getElementById('menuBtn').addEventListener('click', openDashboardDrawer);
 
+/*HARDEN2:START (generated by tools/embed_block.py from tools/harden_tax.js, edit that file instead)*/
+/* ============================== MONEY AND TAX CORE ==============================
+ * Money is added up as whole cents so totals never drift. VAT rates are configuration with an effective date, and
+ * every sale keeps a snapshot of the rule it was made under, so changing the rate later never rewrites history.
+ * Pesa records and calculates tax for the owner. It is not connected to NamRA and does not claim approval. */
+var TAX_DISCLAIMER = 'Pesa provides business and tax-recording tools. It does not replace professional tax advice and does not claim NamRA approval unless expressly confirmed by NamRA.';
+var ERECORD_NOTE = 'Electronic records and signatures are subject to applicable Namibian law and the specific requirements of the transaction.';
+var TAX_CATS = ['STANDARD', 'ZERO_RATED', 'EXEMPT', 'NON_VAT'];
+var TAX_CAT_LABEL = { STANDARD:'Standard rated', ZERO_RATED:'Zero rated (0%)', EXEMPT:'VAT exempt', NON_VAT:'Not a VAT item' };
+
+/* ---- whole cent money ---- */
+function mC(x){ var v = Number(x); if(!isFinite(v)) return 0; return Math.round(Math.abs(v) * 100 + 1e-7) * (v < 0 ? -1 : 1); }
+function mF(c){ return c / 100; }
+function mSum(list, fn){ var t = 0; (list || []).forEach(function(x){ t += mC(fn ? fn(x) : x); }); return t / 100; }
+function mMul(price, qty){ return mC(Number(price) * Number(qty)); }
+function mDivRound(n, d){ var a = Math.abs(n), q = Math.floor(a / d), r = a - q * d; if(r * 2 >= d) q++; return n < 0 ? -q : q; }
+function mRound2(x){ return mC(x) / 100; }
+
+/** A YYYY-MM-DD day from either a date key or an ISO time (local day). */
+function taxDayOf(v){ v = String(v || ''); return v.indexOf('T') > -1 ? (acctDK(v) || todayKey()) : (v.slice(0, 10) || todayKey()); }
+
+/* ---- configuration with versions ---- */
+function taxConfig(){
+  var c = State.settings && State.settings.taxConfig;
+  if(c && Array.isArray(c.versions) && c.versions.length) return c;
+  var legacy = State.settings && State.settings.vatRate != null ? Number(State.settings.vatRate) : 15;
+  return { versions:[{ v:1, effective:'2000-01-01', vatRate:isFinite(legacy) ? legacy : 15, reason:'Namibian standard VAT rate', by:'', at:'' }], vatRegistered:undefined, registeredFrom:'' };
+}
+function taxVersions(){ return taxConfig().versions.slice().sort(function(a, b){ return String(a.effective).localeCompare(String(b.effective)) || a.v - b.v; }); }
+/** The rate, its version number and its start date that apply to a given day (YYYY-MM-DD). */
+function taxRateAt(dateKey){
+  var vs = taxVersions(), pick = vs[0], dk = String(dateKey || todayKey()).slice(0, 10);
+  vs.forEach(function(v){ if(String(v.effective) <= dk) pick = v; });
+  var rate = Number(pick.vatRate); if(!isFinite(rate) || rate < 0) rate = 0;
+  return { rate:rate, bp:Math.round(rate * 100), v:pick.v, effective:pick.effective };
+}
+function taxRegisteredOn(dateKey){
+  var c = taxConfig(), reg = typeof c.vatRegistered === 'boolean' ? c.vatRegistered : !!(State.company && String(State.company.vatNumber || '').trim());
+  if(!reg) return false;
+  if(c.registeredFrom && dateKey && String(dateKey).slice(0, 10) < c.registeredFrom) return false;
+  return true;
+}
+/** Adds a new rate. The old versions stay, so earlier sales and filed months keep the rate they were made under. */
+function taxAddVersion(rate, effective, reason){
+  var c = JSON.parse(JSON.stringify(taxConfig())), vs = taxVersions(), last = vs[vs.length - 1];
+  rate = Number(rate);
+  if(!isFinite(rate) || rate < 0 || rate > 30) throw new Error('RATE_RANGE');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(effective))) throw new Error('DATE');
+  if(String(effective) <= String(last.effective) && last.effective !== '2000-01-01') throw new Error('DATE_ORDER');
+  var filed = taxLastFiledDate();
+  if(filed && String(effective) <= filed) throw new Error('PERIOD_FILED');
+  var nv = { v:(last ? last.v : 0) + 1, effective:String(effective), vatRate:rate, reason:String(reason || '').slice(0, 200), by:State.session ? State.session.name : '', at:new Date().toISOString() };
+  c.versions.push(nv);
+  btSave(nv.effective <= todayKey() ? { taxConfig:c, vatRate:rate } : { taxConfig:c });
+  logAudit('update', 'tax', null, 'VAT rate version ' + nv.v + ': ' + rate + '% from ' + nv.effective + (nv.reason ? ' (' + nv.reason + ')' : ''));
+  return nv;
+}
+function taxLastFiledDate(){
+  var last = '';
+  (State.accountingPeriods || []).forEach(function(p){ if(p && p.to && String(p.to) > last) last = String(p.to); });
+  return last;
+}
+function taxSetRegistration(registered, from){
+  var c = JSON.parse(JSON.stringify(taxConfig()));
+  c.vatRegistered = !!registered; c.registeredFrom = registered ? String(from || '').slice(0, 10) : '';
+  btSave({ taxConfig:c });
+  logAudit('update', 'tax', null, 'VAT registration set to ' + (registered ? 'registered' + (c.registeredFrom ? ' from ' + c.registeredFrom : '') : 'not registered'));
+}
+function isVatVendor(){ return taxRegisteredOn(todayKey()); }
+
+/* ---- the calculation ----
+   lines: [{ gross (VAT included, a refund line is negative), cat }]   opt: { dateKey, discount, rate:{bp,v,effective}, registered }
+   A negative line or a discount is taken off the positive lines in proportion (largest remainder, to the cent). */
+function taxDoc(lines, opt){
+  opt = opt || {};
+  var dk = String(opt.dateKey || todayKey()).slice(0, 10), rt = opt.rate || taxRateAt(dk), reg = opt.registered != null ? !!opt.registered : taxRegisteredOn(dk);
+  var cats = TAX_CATS, pool = [0, 0, 0, 0], disc = mC(opt.discount || 0);
+  (lines || []).forEach(function(l){
+    var g = mC(l.gross), ci = cats.indexOf(l.cat); if(ci < 0) ci = 0;
+    if(!reg) ci = 3;
+    if(g < 0) disc += -g; else pool[ci] += g;
+  });
+  var tot = pool[0] + pool[1] + pool[2] + pool[3];
+  if(disc > tot) disc = tot;
+  if(disc > 0 && tot > 0){ var cut = acctAllocate(disc, pool); pool = pool.map(function(p, i){ return p - cut[i]; }); }
+  var vat = reg ? acctVatInside(pool[0], rt.bp) : 0;
+  var out = { v:rt.v, rate:rt.bp / 100, rateBp:rt.bp, effective:rt.effective, registered:reg,
+    stdGross:pool[0], stdNet:pool[0] - vat, vat:vat, zero:pool[1], exempt:pool[2], non:pool[3], discount:disc, total:pool[0] + pool[1] + pool[2] + pool[3] };
+  return out;
+}
+/** The same figures in dollars, for storing on a sale or invoice. */
+function taxSnap(d){
+  return { v:d.v, rate:d.rate, effective:d.effective, registered:d.registered, stdGross:mF(d.stdGross), stdNet:mF(d.stdNet), vat:mF(d.vat), zero:mF(d.zero), exempt:mF(d.exempt), non:mF(d.non), discount:mF(d.discount), total:mF(d.total) };
+}
+function taxNegate(sn){
+  var o = JSON.parse(JSON.stringify(sn));
+  ['stdGross', 'stdNet', 'vat', 'zero', 'exempt', 'non', 'discount', 'total'].forEach(function(k){ o[k] = o[k] ? -o[k] : 0; });
+  return o;
+}
+function taxItemCat(it){
+  var c = it && (it.cat || it.taxCategory);
+  if(c && TAX_CATS.indexOf(c) > -1) return c;
+  var p = null;
+  if(it && it.productId) p = State.products.find(function(x){ return x.id === it.productId; });
+  if(!p && it){ var nm = String(it.desc || it.name || '').trim().toLowerCase(); if(nm) p = State.products.find(function(x){ return String(x.name || '').toLowerCase() === nm; }); }
+  return (p && p.taxCategory && TAX_CATS.indexOf(p.taxCategory) > -1) ? p.taxCategory : 'STANDARD';
+}
+function taxFromItems(items, dateKey, opt){
+  var lines = (items || []).map(function(it){
+    var g = it.lineTotal != null ? it.lineTotal : mMul(it.unitPrice, it.qty) / 100;
+    return { gross:g, cat:taxItemCat(it) };
+  });
+  return taxDoc(lines, Object.assign({ dateKey:dateKey }, opt || {}));
+}
+/** The tax figures of a recorded sale: the snapshot made at the time, or (older sales) worked out under the rule of that day. */
+function taxOfSale(s){
+  if(s && s.tax && s.tax.v != null) return s.tax;
+  var dk = s && s.createdAt ? acctDK(s.createdAt) : todayKey();
+  var d = taxFromItems(s && s.items, dk);
+  var sn = taxSnap(d);
+  if(s && s.type === 'refund') sn = taxNegate(sn);
+  return sn;
+}
+function taxPeriod(sales){
+  var t = { stdGross:0, stdNet:0, vat:0, zero:0, exempt:0, non:0, total:0 }, c = { stdGross:0, stdNet:0, vat:0, zero:0, exempt:0, non:0, total:0 };
+  (sales || []).forEach(function(s){ var x = taxOfSale(s); Object.keys(c).forEach(function(k){ c[k] += mC(x[k]); }); });
+  Object.keys(c).forEach(function(k){ t[k] = mF(c[k]); });
+  return t;
+}
+/** Input VAT is only what the supplier invoice showed (entered on the expense). Pesa never assumes an expense carries VAT. */
+function taxInputVat(expenses, fromKey, toKey){
+  var c = 0;
+  (expenses || []).forEach(function(e){
+    var dk = acctDK(e.createdAt);
+    if(!taxRegisteredOn(dk)) return;
+    var v = mC(e.vat || 0); if(v > 0 && v <= mC(e.amount)) c += v;
+  });
+  return mF(c);
+}
+/** What a "Tax invoice" must show. The title falls back to "Invoice" when the supplier details are missing. */
+function taxInvoiceProblems(draft){
+  var p = [], co = State.company || {}, S = State.settings || {};
+  if(!taxRegisteredOn(taxDayOf(draft && (draft.dateStr || draft.at)))) return p;
+  if(!String(co.vatNumber || '').trim()) p.push('Your VAT registration number');
+  if(!String(co.tradingName || co.companyName || '').trim()) p.push('Your business name');
+  if(!String(S.businessContact || '').trim() && !String(co.address || co.physicalAddress || '').trim()) p.push('Your business address');
+  if(!String(draft && draft.number || '').trim()) p.push('An invoice number');
+  if(!(draft && draft.items && draft.items.length)) p.push('At least one line');
+  if(!String(draft && draft.billToName || '').trim() || /^customer$/i.test(String(draft.billToName).trim())) p.push('The customer name');
+  return p;
+}
+
+/* ---- future official integration ----
+   Pesa's own tax record (PesaEfd) is internal and never submitted anywhere unless an official, supported NamRA
+   connection exists and the owner turns it on. New providers register here without changing the till. */
+var TaxIntegration = (function(){
+  var providers = [
+    { id:'pesa-internal', name:'Pesa internal tax record', official:false, enabled:true, note:'Kept on your own devices. Not sent to NamRA.' },
+    { id:'namra-einvoicing', name:'NamRA e-invoicing', official:true, enabled:false, available:false, note:'No official NamRA interface has been published to Pesa. Nothing is submitted.' }
+  ];
+  function get(id){ return providers.filter(function(p){ return p.id === id; })[0]; }
+  return {
+    providers:function(){ return providers.slice(); },
+    register:function(p){ if(p && p.id && !get(p.id)) providers.push(p); },
+    canSubmit:function(id){ var p = get(id); return !!(p && p.official && p.enabled && p.available !== false); },
+    submit:function(id, record){
+      var p = get(id);
+      if(!p || !p.official || !p.enabled || p.available === false) return Promise.reject(new Error('NO_OFFICIAL_INTEGRATION'));
+      if(typeof p.send !== 'function') return Promise.reject(new Error('NO_OFFICIAL_INTEGRATION'));
+      logAudit('other', 'tax', null, 'Tax record sent to ' + p.name);
+      return p.send(record);
+    },
+    status:function(){ return 'No official NamRA integration is connected. Pesa does not submit anything to NamRA.'; }
+  };
+})();
+
+/* ---- built in checks (also run by the integrity report and the tests) ---- */
+function taxSelfTest(){
+  var r = [], eq = function(n, a, b){ r.push({ name:n, ok:a === b, got:a, want:b }); };
+  var rate15 = { bp:1500, v:1, effective:'2000-01-01' };
+  var d = taxDoc([{ gross:115, cat:'STANDARD' }], { dateKey:'2026-01-01', rate:rate15, registered:true });
+  eq('N$115 standard: VAT 15.00', d.vat, 1500); eq('N$115 standard: net 100.00', d.stdNet, 10000);
+  d = taxDoc([{ gross:10, cat:'ZERO_RATED' }, { gross:20, cat:'EXEMPT' }, { gross:5, cat:'NON_VAT' }], { rate:rate15, registered:true });
+  eq('zero rated, exempt and non VAT carry no VAT', d.vat, 0); eq('they still add up to the total', d.total, 3500);
+  d = taxDoc([{ gross:115, cat:'STANDARD' }], { rate:rate15, registered:false });
+  eq('a business that is not VAT registered charges no VAT', d.vat, 0); eq('and keeps the full amount', d.non, 11500);
+  d = taxDoc([{ gross:100, cat:'STANDARD' }, { gross:100, cat:'ZERO_RATED' }], { rate:rate15, registered:true, discount:20 });
+  eq('a discount is shared across the pools', d.total, 18000); eq('standard pool after discount', d.stdGross, 9000); eq('VAT after discount', d.vat, 1174);
+  d = taxDoc([{ gross:0.35, cat:'STANDARD' }], { rate:rate15, registered:true });
+  eq('rounding: VAT on N$0.35 is 5c', d.vat, 5);
+  d = taxDoc([{ gross:0.30, cat:'STANDARD' }], { rate:rate15, registered:true });
+  eq('rounding: VAT on N$0.30 is 4c', d.vat, 4);
+  var a = 0; for(var i = 0; i < 10; i++) a += mC(0.1); eq('ten times 10c is exactly N$1.00', a, 100);
+  eq('10.005 rounds half up to 10.01', mC(10.005), 1001); eq('-10.005 rounds away from zero', mC(-10.005), -1001);
+  eq('19.99 x 3 is 59.97', mMul(19.99, 3), 5997);
+  var s1 = taxDoc([{ gross:230, cat:'STANDARD' }], { rate:rate15, registered:true }), sn = taxSnap(s1);
+  var ref = taxNegate(sn); eq('a refund reverses the VAT exactly', mC(sn.vat) + mC(ref.vat), 0);
+  var r16 = taxRateAt('2026-06-30'); eq('the rate on a day uses the version in force that day', typeof r16.rate, 'number');
+  return r;
+}
+
+/* ---- tax settings ---- */
+function openTaxSettingsSheet(){
+  if(!secAllow('owner', 'opening tax settings')) return;
+  var c = taxConfig(), vs = taxVersions(), now = taxRateAt(todayKey()), reg = taxRegisteredOn(todayKey()), co = State.company || {};
+  var html = '<div class="sheet-head"><h2>' + tr('Tax settings') + '</h2></div>' +
+    '<div class="banner" style="display:block;">' + esc(tr(TAX_DISCLAIMER)) + '</div>' +
+    '<div class="section-title">' + tr('VAT registration') + '</div>' +
+    '<div class="field"><label><input type="checkbox" id="txReg"' + (reg ? ' checked' : '') + ' style="width:auto;margin-right:8px;">' + tr('This business is registered for VAT') + '</label></div>' +
+    '<div class="field"><label>' + tr('Registered from (optional)') + '</label><input id="txFrom" type="date" value="' + esc(c.registeredFrom || '') + '"></div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">' + tr('VAT registration number') + ': <b>' + esc(co.vatNumber || tr('not entered, add it under Company details')) + '</b>. ' + tr('When this is off, Pesa charges and shows no VAT, and documents are plain invoices and receipts.') + '</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="txSaveReg" type="button">' + tr('Save registration') + '</button></div>' +
+    '<div class="section-title">' + tr('VAT rate') + '</div>' +
+    '<div class="tillcard"><div class="tillrow"><span class="l">' + tr('Standard rate today') + '</span><span class="v num">' + now.rate + '%</span></div><div class="tillrow"><span class="l">' + tr('Configuration version') + '</span><span class="v num">' + now.v + '</span></div></div>' +
+    '<div class="rowlist" style="margin-top:8px;">' + vs.slice().reverse().map(function(v){ return '<div class="row" style="cursor:default;"><div class="main"><div class="title">' + v.vatRate + '% ' + tr('from') + ' ' + esc(v.effective === '2000-01-01' ? tr('the start') : v.effective) + '</div><div class="sub">' + tr('Version') + ' ' + v.v + (v.reason ? ' · ' + esc(v.reason) : '') + (v.by ? ' · ' + esc(v.by) : '') + '</div></div></div>'; }).join('') + '</div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin:8px 0;">' + tr('Sales made earlier keep the rate that applied on their day. A new rate only applies from its start date.') + '</div>' +
+    '<div class="field-row"><div class="field"><label>' + tr('New rate (%)') + '</label><input id="txRate" type="number" inputmode="decimal" step="0.1" placeholder="15"></div><div class="field"><label>' + tr('Starts on') + '</label><input id="txEff" type="date" value="' + todayKey() + '"></div></div>' +
+    '<div class="field"><label>' + tr('Reason (for example the law that changed it)') + '</label><input id="txWhy" maxlength="120"></div>' +
+    '<div id="txErr"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="txAdd" type="button">' + tr('Add new rate') + '</button></div>' +
+    '<div class="section-title">' + tr('Tax categories') + '</div>' +
+    '<div style="font-size:12.5px;line-height:1.55;">' + TAX_CATS.map(function(k){ return '<b>' + esc(tr(TAX_CAT_LABEL[k])) + '</b>: ' + esc(tr({ STANDARD:'VAT is included in the price and shown on documents.', ZERO_RATED:'VAT registered business, 0% VAT, still recorded as a taxable supply.', EXEMPT:'Exempt supply, no VAT charged and no input VAT claimed on it.', NON_VAT:'Outside VAT, for example sales by a business that is not registered.' }[k])); }).join('<br>') + '</div>' +
+    '<div class="section-title">' + tr('Submission to NamRA') + '</div>' +
+    '<div class="banner" style="display:block;">' + esc(tr(TaxIntegration.status())) + '<br>' + esc(tr('Reports made by Pesa are labelled Pesa-generated unless the authority has officially accepted them.')) + '</div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="txBack" type="button">' + tr('Close') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#txBack').addEventListener('click', closeModal);
+  ov.querySelector('#txSaveReg').addEventListener('click', function(){
+    var on = ov.querySelector('#txReg').checked, from = ov.querySelector('#txFrom').value;
+    secReauth(tr('Confirm with your password to change VAT registration'), function(){ taxSetRegistration(on, from); toast(tr('Saved')); closeModal(); openTaxSettingsSheet(); });
+  });
+  ov.querySelector('#txAdd').addEventListener('click', function(){
+    var err = ov.querySelector('#txErr'), rate = ov.querySelector('#txRate').value, eff = ov.querySelector('#txEff').value, why = ov.querySelector('#txWhy').value;
+    function bad(m){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(m) + '</span></div>'; }
+    if(rate === '' || !isFinite(Number(rate)) || Number(rate) < 0 || Number(rate) > 30) return bad(tr('Enter a rate between 0 and 30.'));
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(eff)) return bad(tr('Choose the day the new rate starts.'));
+    if(!String(why).trim()) return bad(tr('Write the reason, for example the law or notice.'));
+    confirmSheet(tr('Add VAT rate') + ' ' + Number(rate) + '%?', tr('From') + ' ' + eff + '. ' + tr('Earlier sales keep the old rate. This is recorded in the activity log.'), tr('Add rate'), function(){
+      secReauth(tr('Confirm with your password to change the VAT rate'), function(){
+        try{ taxAddVersion(Number(rate), eff, why); toast(tr('New VAT rate saved')); closeModal(); openTaxSettingsSheet(); }
+        catch(e){ var m = { RATE_RANGE:'Enter a rate between 0 and 30.', DATE:'Choose the day the new rate starts.', DATE_ORDER:'The new rate must start after the last one.', PERIOD_FILED:'That day is inside a month that was already filed. Choose a later day.' }[e.message]; toast(tr(m || 'Could not save the rate.')); }
+      });
+    }, false);
+  });
+}
+/*HARDEN2:END*/
+/*HARDEN3:START (generated by tools/embed_block.py from tools/harden_fin.js, edit that file instead)*/
+/* ============================== FINANCIAL CONTROLS ==============================
+ * Receipt numbers that cannot repeat, one tap one sale, refunds and voids that add a reversing record (the original
+ * sale is never edited or removed), manager approval with a reason, and a reviewed cash up. */
+
+/* ---- one tap, one action ---- */
+var _onceBusy = {};
+/** Returns false when the same action is already running. Releases itself after ms or when done() is called. */
+function uiOnce(key, ms){
+  if(_onceBusy[key]) return false;
+  _onceBusy[key] = true;
+  setTimeout(function(){ delete _onceBusy[key]; }, ms || 1500);
+  return true;
+}
+function uiDone(key){ delete _onceBusy[key]; }
+function uiBusyBtn(btn, ms){
+  if(!btn) return true;
+  if(btn.getAttribute('data-busy') === '1') return false;
+  btn.setAttribute('data-busy', '1'); btn.disabled = true;
+  setTimeout(function(){ try{ btn.removeAttribute('data-busy'); btn.disabled = false; }catch(e){} }, ms || 1500);
+  return true;
+}
+
+/* ---- numbering ---- */
+function docDevices(){
+  var seen = {};
+  (State.sales || []).forEach(function(s){ if(s.deviceId) seen[s.deviceId] = 1; });
+  (State.invoices || []).forEach(function(s){ if(s.deviceId) seen[s.deviceId] = 1; });
+  seen[Dev.id()] = 1;
+  return Object.keys(seen);
+}
+function docDeviceCode(){ return Dev.id().slice(2, 7).toUpperCase(); }
+function docUsedNumbers(){
+  var used = {};
+  (State.sales || []).forEach(function(s){ if(s.receiptNo) used[s.receiptNo] = 1; });
+  (State.invoices || []).forEach(function(r){ if(r.number) used[r.number] = 1; });
+  return used;
+}
+function docSeqKey(kind){ return 'pesa_seq_' + kind + '_' + WS.id + '_' + Dev.id(); }
+/** Next unique number for a series (RC receipts, INV invoices). Sequential on this device and never already used. */
+function docNumberNext(kind, peek){
+  var multi = docDevices().length > 1, used = docUsedNumbers(), n = 0;
+  try{ n = parseInt(localStorage.getItem(docSeqKey(kind)) || '0', 10) || 0; }catch(e){}
+  if(kind === 'INV'){ var s = Number(State.settings && State.settings.invoiceNextNumber) || 1; if(!multi && s - 1 > n) n = s - 1; }
+  var pad = kind === 'INV' ? 4 : 6, num;
+  do { n++; num = kind + '-' + (multi ? docDeviceCode() + '-' : '') + String(n).padStart(pad, '0'); } while(used[num] && n < 10000000);
+  if(!peek){ try{ localStorage.setItem(docSeqKey(kind), String(n)); }catch(e){} }
+  return num;
+}
+
+/* ---- what a completed sale records (set once, never edited) ---- */
+function saleStamp(sale, items){
+  var dk = todayKey();
+  sale.receiptNo = docNumberNext('RC');
+  sale.deviceId = Dev.id();
+  sale.cashierId = State.session ? State.session.userId : null;
+  sale.syncStatus = 'pending';
+  sale.tax = taxSnap(taxFromItems(items, dk));
+  return sale;
+}
+
+/* ---- refunds and voids ----
+   A refund is a new record with negative amounts that points at the original sale. The original stays exactly as it was. */
+function saleRefunds(saleId){ return (State.sales || []).filter(function(s){ return s.refundOf === saleId; }); }
+function saleRefundedQty(saleId){
+  var m = {};
+  saleRefunds(saleId).forEach(function(r){ (r.items || []).forEach(function(it){ var k = it.productId || it.name; m[k] = (m[k] || 0) + Math.abs(Number(it.qty) || 0); }); });
+  return m;
+}
+function saleRefundable(sale){
+  if(!sale || sale.type === 'refund' || sale.type === 'void') return [];
+  var done = saleRefundedQty(sale.id);
+  return (sale.items || []).map(function(it, i){
+    var k = it.productId || it.name, left = Math.max(0, (Number(it.qty) || 0) - (done[k] || 0));
+    return { idx:i, item:it, left:left };
+  }).filter(function(x){ return x.left > 0 && !(Number(x.item.unitPrice) < 0); });
+}
+function refundBuild(sale, picks, reason, kind, approver){
+  var items = [], cost = 0, lines = [];
+  picks.forEach(function(p){
+    var it = p.item, q = p.qty; if(!(q > 0)) return;
+    var gross = mMul(it.unitPrice, q);
+    items.push({ productId:it.productId, name:it.name, qty:-q, unitPrice:it.unitPrice, cost:it.cost || 0, lineTotal:-gross / 100, taxCategory:it.taxCategory || taxItemCat(it), restock:p.restock !== false });
+    cost += mMul(it.cost || 0, q);
+    lines.push({ gross:gross / 100, cat:it.taxCategory || taxItemCat(it) });
+  });
+  var total = 0; items.forEach(function(i){ total += mC(i.lineTotal); });
+  var orig = sale.tax && sale.tax.v != null ? sale.tax : null;
+  var rt = orig ? { bp:Math.round(Number(orig.rate) * 100), v:orig.v, effective:orig.effective } : taxRateAt(taxDayOf(sale.createdAt));
+  var reg = orig ? !!orig.registered : taxRegisteredOn(taxDayOf(sale.createdAt));
+  var tx = taxDoc(lines, { dateKey:taxDayOf(sale.createdAt), rate:rt, registered:reg });
+  var rec = {
+    type:kind === 'void' ? 'void' : 'refund', refundOf:sale.id, refundOfReceipt:sale.receiptNo || '',
+    items:items, total:total / 100, cost:-cost / 100, profit:0,
+    paymentMethod:sale.paymentMethod, customerId:sale.customerId || null, customerName:sale.customerName || null,
+    tillId:State.till && State.till.current ? State.till.current.id : (sale.tillId || null),
+    cashierName:State.session ? State.session.name : null, cashierId:State.session ? State.session.userId : null,
+    branchId:sale.branchId || null, reason:String(reason || '').slice(0, 300),
+    approvedBy:approver ? approver.name : '', approvedById:approver ? approver.id : '', approvedAt:new Date().toISOString(),
+    tax:taxNegate(taxSnap(tx)), createdAt:new Date().toISOString(), deviceId:Dev.id(), syncStatus:'pending'
+  };
+  rec.profit = mF(total + cost);   // negative total plus positive cost: the profit that is taken back
+  return rec;
+}
+function refundSale(sale, picks, reason, kind, approver){
+  var rec = refundBuild(sale, picks, reason, kind, approver);
+  if(!rec.items.length) throw new Error('NOTHING_TO_REFUND');
+  rec.receiptNo = docNumberNext('RC');
+  var ref = refs.sales.doc();
+  ref.set(rec);
+  rec.items.forEach(function(it){
+    if(it.restock === false) return;
+    var p = State.products.find(function(x){ return x.id === it.productId; });
+    if(p && p.stockQty != null) refs.products.doc(p.id).update({ stockQty:mRound2(Number(p.stockQty) + Math.abs(it.qty)) });
+  });
+  if(sale.paymentMethod === 'credit' && sale.customerId){
+    var c = State.customers.find(function(x){ return x.id === sale.customerId; });
+    if(c){
+      var back = Math.abs(rec.total), nb = mRound2((Number(c.balance) || 0) - back);
+      refs.customers.doc(c.id).update({ balance:nb });
+      refs.customers.doc(c.id).collection('ledger').add({ type:'refund', amount:back, note:(kind === 'void' ? 'Void of ' : 'Refund of ') + (sale.receiptNo || 'sale'), createdAt:new Date().toISOString(), balanceAfter:nb });
+    }
+  }
+  logAudit('create', 'refund', ref.id, (kind === 'void' ? 'Void' : 'Refund') + ' ' + fmtMoney(Math.abs(rec.total)) + ' of ' + (sale.receiptNo || 'a sale') + ': ' + rec.reason + ' (approved by ' + (approver ? approver.name : 'nobody') + ')');
+  return { id:ref.id, rec:rec };
+}
+/** A manager or the owner types their own password or PIN to approve. A cashier can never approve their own refund. */
+function askApprovalSheet(title, onApproved){
+  var bosses = State.users.filter(function(u){ return (u.role === 'manager' || u.role === 'owner') && u.active !== false && !u.pending; });
+  var me = State.session ? State.session.userId : '';
+  var html = '<div class="sheet-head"><h2>' + esc(title) + '</h2></div>' +
+    '<div class="banner" style="display:block;">' + tr('A manager or the owner must approve this. Ask them to type their own password.') + '</div>' +
+    '<div class="field"><label>' + tr('Approved by') + '</label><select id="apvWho">' + bosses.map(function(u){ return '<option value="' + esc(u.id) + '"' + (u.id === me ? ' selected' : '') + '>' + esc(u.name) + ' (' + esc(tr(ROLE_LABELS[u.role] || u.role)) + ')</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>' + tr('Their password') + '</label><input id="apvPass" type="password" autocomplete="off"></div><div id="apvErr"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="apvOk" type="button">' + tr('Approve') + '</button><button class="btn btn-ghost btn-block" id="apvNo" type="button" style="margin-top:8px;">' + tr('Cancel') + '</button></div>';
+  var ov = openSheet(html), pass = ov.querySelector('#apvPass'), err = ov.querySelector('#apvErr');
+  pass.focus();
+  ov.querySelector('#apvNo').addEventListener('click', closeModal);
+  function go(){
+    var u = bosses.find(function(x){ return x.id === ov.querySelector('#apvWho').value; }); if(!u || !pass.value) return;
+    var key = 'approve:' + u.id, lt = authLockText(key);
+    if(lt){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(lt) + '</span></div>'; pass.value = ''; return; }
+    pwCheck(pass.value, u.passHash).then(function(ok){
+      if(ok){ authOk(key); closeModal(); onApproved({ id:u.id, name:u.name }); }
+      else { var f = authFailed(key, u.name); pass.value = ''; err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(f.locked ? authLockText(key) : tr('Incorrect password.')) + '</span></div>'; }
+    });
+  }
+  ov.querySelector('#apvOk').addEventListener('click', go);
+  pass.addEventListener('keydown', function(e){ if(e.key === 'Enter') go(); });
+}
+var REFUND_REASONS = ['Customer returned the item', 'Wrong item or wrong price', 'Faulty or damaged item', 'Sale entered by mistake', 'Customer changed their mind', 'Other (write it below)'];
+function openRefundSheet(saleId, kind){
+  var sale = State.sales.find(function(x){ return x.id === saleId; });
+  if(!sale || !secAllow('staff', 'refunding a sale')) return;
+  kind = kind === 'void' ? 'void' : 'refund';
+  var rows = saleRefundable(sale);
+  if(!rows.length){ toast(tr('Nothing left to refund on this sale.')); return; }
+  var isVoid = kind === 'void';
+  var html = '<div class="sheet-head"><h2>' + (isVoid ? tr('Void this sale') : tr('Refund items')) + '</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + esc(sale.receiptNo || tr('Sale')) + ' · ' + esc(fmtDateTime(sale.createdAt)) + ' · ' + fmtMoney(sale.total) + '</div>' +
+    '<div class="banner" style="display:block;">' + (isVoid ? tr('A void cancels the whole sale with a reversing record. The original sale stays in the history.') : tr('A refund adds a reversing record. The original sale stays in the history and is never edited.')) + '</div>' +
+    '<div class="rowlist">' + rows.map(function(r){ return '<div class="row" style="cursor:default;"><div class="main"><div class="title">' + esc(r.item.name) + '</div><div class="sub">' + fmtMoney(r.item.unitPrice) + ' · ' + tr('left to refund') + ': ' + r.left + '</div></div><div class="trail"><input type="number" data-rq="' + r.idx + '" min="0" max="' + r.left + '" step="any" value="' + (isVoid ? r.left : 0) + '" ' + (isVoid ? 'readonly' : '') + ' style="width:70px;text-align:right;"></div></div>'; }).join('') + '</div>' +
+    '<div class="field" style="margin-top:8px;"><label><input type="checkbox" id="rfRestock" checked style="width:auto;margin-right:8px;">' + tr('Put the items back in stock') + '</label></div>' +
+    '<div class="field"><label>' + tr('Reason (required)') + '</label><select id="rfWhy">' + REFUND_REASONS.map(function(x){ return '<option>' + esc(tr(x)) + '</option>'; }).join('') + '</select></div>' +
+    '<div class="field"><label>' + tr('Note') + '</label><input id="rfNote" maxlength="200" placeholder="' + esc(tr('Optional detail')) + '"></div>' +
+    '<div id="rfSum"></div><div id="rfErr"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="rfGo" type="button">' + (isVoid ? tr('Void sale') : tr('Refund')) + '</button><button class="btn btn-ghost btn-block" id="rfNo" type="button" style="margin-top:8px;">' + tr('Cancel') + '</button></div>';
+  var ov = openSheet(html);
+  function picks(){
+    return rows.map(function(r){ var el = ov.querySelector('[data-rq="' + r.idx + '"]'), q = Math.min(r.left, Math.max(0, parseFloat(el.value) || 0)); return { item:r.item, qty:q, restock:ov.querySelector('#rfRestock').checked }; }).filter(function(p){ return p.qty > 0; });
+  }
+  function sum(){
+    var p = picks(), box = ov.querySelector('#rfSum');
+    if(!p.length){ box.innerHTML = ''; return; }
+    var rec = refundBuild(sale, p, '', kind, null);
+    box.innerHTML = '<div class="tillcard"><div class="tillrow"><span class="l">' + tr('Money back to the customer') + '</span><span class="v num">' + fmtMoney(Math.abs(rec.total)) + '</span></div>' +
+      (rec.tax && rec.tax.registered && rec.tax.vat ? '<div class="tillrow"><span class="l">' + tr('VAT reversed') + '</span><span class="v num">' + fmtMoney(Math.abs(rec.tax.vat)) + '</span></div>' : '') +
+      '<div class="tillrow"><span class="l">' + tr('Paid back by') + '</span><span class="v">' + esc(tr({ cash:'Cash', card:'Card', wallet:'Wallet', credit:'Reduces what they owe' }[sale.paymentMethod] || sale.paymentMethod)) + '</span></div></div>';
+  }
+  ov.querySelectorAll('[data-rq]').forEach(function(e){ e.addEventListener('input', sum); }); sum();
+  ov.querySelector('#rfNo').addEventListener('click', closeModal);
+  ov.querySelector('#rfGo').addEventListener('click', function(){
+    var err = ov.querySelector('#rfErr'), p = picks();
+    function bad(m){ err.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + esc(m) + '</span></div>'; }
+    if(!p.length) return bad(tr('Enter how many to refund.'));
+    var why = ov.querySelector('#rfWhy').value, note = ov.querySelector('#rfNote').value.trim();
+    if(/Other/.test(why) && !note) return bad(tr('Write the reason in the note.'));
+    var reason = why + (note ? ': ' + note : '');
+    var total = refundBuild(sale, p, reason, kind, null).total;
+    if(isVoid && !secVoidAllowed(sale)) return bad(tr('A sale can only be voided on the day it was made and before its till is closed. Use Refund instead.'));
+    confirmSheet((isVoid ? tr('Void') : tr('Refund')) + ' ' + fmtMoney(Math.abs(total)) + '?', tr('This adds a reversing record and cannot be undone. A manager or the owner must approve it.'), isVoid ? tr('Void sale') : tr('Refund'), function(){
+      askApprovalSheet(isVoid ? tr('Approve void') : tr('Approve refund'), function(approver){
+        if(!uiOnce('refund:' + saleId, 3000)) return;
+        try{
+          var res = refundSale(sale, p, reason, kind, approver);
+          toast((isVoid ? tr('Sale voided') : tr('Refund recorded')) + ', ' + fmtMoney(Math.abs(res.rec.total)));
+          closeModal(); render();
+        }catch(e){ toast(tr('Could not record that. Check the amounts and try again.')); }
+      });
+    }, true);
+  });
+}
+function secVoidAllowed(sale){
+  if(taxDayOf(sale.createdAt) !== todayKey()) return false;
+  if(sale.tillId){ var t = State.tillSessions.find(function(x){ return x.id === sale.tillId; }); if(t && t.status === 'closed') return false; }
+  return saleRefunds(sale.id).length === 0;
+}
+function openSaleDetailSheet(saleId){
+  var s = State.sales.find(function(x){ return x.id === saleId; }); if(!s) return;
+  var isRef = s.type === 'refund' || s.type === 'void', tx = taxOfSale(s), refs_ = saleRefunds(s.id), left = saleRefundable(s);
+  var html = '<div class="sheet-head"><h2>' + esc(isRef ? (s.type === 'void' ? tr('Void') : tr('Refund')) : tr('Sale')) + ' ' + esc(s.receiptNo || '') + '</h2></div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + esc(fmtDateTime(s.createdAt)) + ' · ' + esc(s.cashierName || '') + ' · ' + esc(tr(({ cash:'Cash', card:'Card', wallet:'Wallet', credit:'Credit' })[s.paymentMethod] || s.paymentMethod || '')) + '</div>' +
+    (isRef ? '<div class="banner" style="display:block;">' + tr('Reason') + ': ' + esc(s.reason || '') + '<br>' + tr('Approved by') + ' ' + esc(s.approvedBy || '') + ' · ' + tr('Reverses') + ' ' + esc(s.refundOfReceipt || '') + '</div>' : '') +
+    '<div class="rowlist">' + (s.items || []).map(function(it){ return '<div class="row" style="cursor:default;"><div class="main"><div class="title">' + esc(it.name) + '</div><div class="sub">' + esc(String(it.qty)) + ' × ' + fmtMoney(it.unitPrice) + '</div></div><div class="trail"><div class="amt num">' + fmtMoney(it.lineTotal != null ? it.lineTotal : it.qty * it.unitPrice) + '</div></div></div>'; }).join('') + '</div>' +
+    '<div class="tillcard" style="margin-top:8px;"><div class="tillrow grand"><span class="l">' + tr('Total') + '</span><span class="v num">' + fmtMoney(s.total) + '</span></div>' +
+    (tx && tx.registered && (tx.vat || tx.stdGross) ? '<div class="tillrow"><span class="l">VAT (' + tx.rate + '%) · ' + tr('rule version') + ' ' + tx.v + '</span><span class="v num">' + fmtMoney(tx.vat) + '</span></div>' : '') + '</div>' +
+    (refs_.length ? '<div class="section-title">' + tr('Refunds on this sale') + '</div><div class="rowlist">' + refs_.map(function(r){ return '<div class="row" style="cursor:default;"><div class="main"><div class="title">' + esc(r.receiptNo || '') + ' · ' + esc(r.reason || '') + '</div><div class="sub">' + esc(fmtDateTime(r.createdAt)) + ' · ' + tr('approved by') + ' ' + esc(r.approvedBy || '') + '</div></div><div class="trail"><div class="amt num">' + fmtMoney(r.total) + '</div></div></div>'; }).join('') + '</div>' : '') +
+    '<div class="actions" style="margin-top:12px;">' + (left.length ? '<button class="btn btn-ghost btn-block" id="sdRefund" type="button">' + tr('Refund items') + '</button>' + (secVoidAllowed(s) ? '<button class="btn btn-ghost btn-block" id="sdVoid" type="button" style="margin-top:8px;">' + tr('Void whole sale') + '</button>' : '') : '') + '<button class="btn btn-ghost btn-block" id="sdDoc" type="button" style="margin-top:8px;">' + tr('View or print the receipt') + '</button><button class="btn btn-ghost btn-block" id="sdX" type="button" style="margin-top:8px;">' + tr('Close') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#sdDoc').addEventListener('click', function(){
+    var d = saleReceiptDraft(s);
+    openRecordDocSheet(tr(s.paymentMethod === 'credit' ? 'Credit sale' : 'Receipt') + ' ' + d.number, fmtDateTime(s.createdAt) + ' · ' + fmtMoney(s.total), function(){ return s.paymentMethod === 'credit' ? buildInvoicePdf(d) : buildReceiptPdf(d); }, 'receipt-' + d.number + '.pdf');
+  });
+  var a = ov.querySelector('#sdRefund'); if(a) a.addEventListener('click', function(){ closeModal(); openRefundSheet(s.id, 'refund'); });
+  var b = ov.querySelector('#sdVoid'); if(b) b.addEventListener('click', function(){ closeModal(); openRefundSheet(s.id, 'void'); });
+  ov.querySelector('#sdX').addEventListener('click', closeModal);
+}
+var SALES_LEDGER = { q:'', days:14 };
+function openSalesLedgerSheet(){
+  if(!secAllow('staff', 'opening sales')) return;
+  var mine = isRestricted() ? State.session.name : '';
+  var html = '<div class="sheet-head"><h2>' + tr('Sales and refunds') + '</h2></div>' +
+    '<div class="field"><input id="slQ" placeholder="' + esc(tr('Search receipt number, customer or cashier')) + '" value="' + esc(SALES_LEDGER.q) + '"></div>' +
+    '<div class="segbtns" style="margin-bottom:8px;">' + [1, 7, 14, 60].map(function(d){ return '<button type="button" class="segbtn' + (SALES_LEDGER.days === d ? ' active' : '') + '" data-sld="' + d + '">' + (d === 1 ? tr('Today') : d + ' ' + tr('days')) + '</button>'; }).join('') + '</div>' +
+    '<div id="slList"></div><div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="slX" type="button">' + tr('Close') + '</button></div>';
+  var ov = openSheet(html);
+  function paint(){
+    var since = Date.now() - SALES_LEDGER.days * 86400000, q = SALES_LEDGER.q.toLowerCase();
+    var list = State.sales.filter(function(s){
+      if(new Date(s.createdAt).getTime() < since) return false;
+      if(mine && s.cashierName !== mine) return false;
+      if(!q) return true;
+      return [s.receiptNo, s.customerName, s.cashierName, s.reason].join(' ').toLowerCase().indexOf(q) > -1;
+    }).sort(function(a, b){ return String(b.createdAt).localeCompare(String(a.createdAt)); }).slice(0, 150);
+    ov.querySelector('#slList').innerHTML = list.length ? '<div class="rowlist">' + list.map(function(s){
+      var isRef = s.type === 'refund' || s.type === 'void', n = saleRefunds(s.id).length;
+      return '<button type="button" class="row" data-sl="' + s.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(s.receiptNo || tr('Sale')) + (isRef ? ' · ' + esc(s.type === 'void' ? tr('Void') : tr('Refund')) : '') + (n ? ' · ' + tr('refunded') : '') + '</div><div class="sub">' + esc(fmtDateTime(s.createdAt)) + ' · ' + esc(s.cashierName || '') + (s.customerName ? ' · ' + esc(s.customerName) : '') + '</div></div><div class="trail"><div class="amt num" style="color:' + (s.total < 0 ? 'var(--danger)' : 'inherit') + ';">' + fmtMoney(s.total) + '</div></div></button>';
+    }).join('') + '</div>' : '<div class="empty" style="padding:12px 0;">' + tr('No sales found.') + '</div>';
+    ov.querySelectorAll('[data-sl]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); openSaleDetailSheet(b.getAttribute('data-sl')); }); });
+  }
+  paint();
+  ov.querySelector('#slQ').addEventListener('input', function(e){ SALES_LEDGER.q = e.target.value; paint(); });
+  ov.querySelectorAll('[data-sld]').forEach(function(b){ b.addEventListener('click', function(){ SALES_LEDGER.days = parseInt(b.getAttribute('data-sld'), 10); closeModal(); openSalesLedgerSheet(); }); });
+  ov.querySelector('#slX').addEventListener('click', closeModal);
+}
+
+/* ---- cash up review ---- */
+var TILL_VARIANCE_LIMIT = 20;
+function tillVarianceLimit(){ var v = Number(State.settings && State.settings.tillVarianceLimit); return v > 0 ? v : TILL_VARIANCE_LIMIT; }
+/*HARDEN3:END*/
+/*HARDEN4:START (generated by tools/embed_block.py from tools/harden_ops.js, edit that file instead)*/
+/* ===== Pesa hardening part 4: backup checks, recovery page, integrity report, privacy controls ===== */
+var BACKUP_ARRAYS = ['products','customers','sales','expenses','invoices','reports','suppliers','purchaseOrders','branches','wastage','tillSessions','posDevices','posBatches','messages','workReports','stockTakes','stockMoves','supplierInvoices','supplierPayments','supplierStatements','quotes','recurring','loyaltyLog','accountingPeriods','payRuns','courseProgress','deletedRecords','clockLogs','tips','calEvents'];
+/** Checks a backup before anything is restored from it. Returns { ok, problems, counts }. */
+function backupCheck(data){
+  var problems = [], counts = {};
+  if(!data || typeof data !== 'object' || Array.isArray(data)) return { ok:false, problems:['This is not a Pesa backup file.'], counts:counts };
+  if(!data.exportedAt && !data.shop && !data.sales) problems.push('The file has no Pesa data in it.');
+  BACKUP_ARRAYS.forEach(function(k){
+    var rows = data[k];
+    if(rows === undefined || rows === null) return;
+    if(!Array.isArray(rows)){ problems.push(k + ' is damaged (not a list).'); return; }
+    counts[k] = rows.length;
+    var seen = {}, bad = 0;
+    rows.forEach(function(r){
+      if(!r || typeof r !== 'object' || Array.isArray(r) || !r.id || typeof r.id !== 'string' || r.id.indexOf('/') >= 0 || r.id === '__proto__' || r.id === 'constructor'){ bad++; return; }
+      if(seen[r.id]) bad++; seen[r.id] = 1;
+    });
+    if(bad) problems.push(k + ': ' + bad + ' record(s) are damaged or duplicated.');
+  });
+  ['sales','expenses'].forEach(function(k){
+    (Array.isArray(data[k]) ? data[k] : []).forEach(function(r){
+      if(r && typeof r === 'object' && r.total !== undefined && r.total !== null && !isFinite(Number(r.total))) problems.push(k + ' ' + r.id + ' has an amount that is not a number.');
+    });
+  });
+  if(data.shop && (typeof data.shop !== 'object' || Array.isArray(data.shop))) problems.push('Shop settings are damaged.');
+  if(data.shop && data.shop.syncServiceKey) problems.push('Settings contain a secret key and will not be restored.');
+  if(data.ledgers && typeof data.ledgers !== 'object') problems.push('Customer ledgers are damaged.');
+  return { ok: problems.length === 0, problems: problems.slice(0, 8), counts: counts };
+}
+function backupBody(p){ var c = Object.assign({}, p); delete c.integrity; return JSON.stringify(c); }
+/** Adds a SHA-256 fingerprint so a changed or cut off file is noticed on restore. */
+async function backupSeal(p){
+  var chk = backupCheck(p), body = backupBody(p), sha = await sha256Hex(body);
+  p.integrity = { algo:'SHA-256', sha:sha, bytes:body.length, app:APP_VERSION, records:Object.keys(chk.counts).reduce(function(s, k){ return s + chk.counts[k]; }, 0) };
+  return p;
+}
+/** null when there is no fingerprint (an older file), true when it matches, false when it does not. */
+async function backupSealOk(p){
+  if(!p || !p.integrity || !p.integrity.sha) return null;
+  try{ return (await sha256Hex(backupBody(p))) === p.integrity.sha; }catch(e){ return false; }
+}
+function backupVerKey(){ return 'pesa_backup_verified_' + WS.id; }
+function backupVerifiedAt(){ try{ return parseInt(localStorage.getItem(backupVerKey()) || '0', 10) || 0; }catch(e){ return 0; } }
+/** Reads a saved snapshot back and checks it is whole. Only a snapshot that passes counts as verified. */
+async function backupVerifyKey(key){
+  try{
+    var r = await Backups.get(key);
+    if(!r || !r.json) return false;
+    if(r.sha && (await sha256Hex(r.json)) !== r.sha) return false;
+    var d = JSON.parse(r.json), chk = backupCheck(d);
+    if(!chk.ok) return false;
+    try{ localStorage.setItem(backupVerKey(), String(r.at)); }catch(e){}
+    return true;
+  }catch(e){ return false; }
+}
+async function recoveryStatus(){
+  var out = { last:Backups.lastAt(), verified:backupVerifiedAt(), points:0, unsynced:0, syncState:'off', used:0, quota:0, persisted:null, online:navigator.onLine };
+  try{ out.points = (await Backups.list()).length; }catch(e){ out.points = -1; }
+  try{ out.unsynced = Sync.pendingCount(); out.syncState = Sync.status().state; }catch(e){}
+  try{
+    if(navigator.storage && navigator.storage.estimate){ var e = await navigator.storage.estimate(); out.used = e.usage || 0; out.quota = e.quota || 0; }
+    if(navigator.storage && navigator.storage.persisted) out.persisted = await navigator.storage.persisted();
+  }catch(e){}
+  var now = Date.now();
+  out.health = !out.last ? 'none' : (out.verified && out.verified >= out.last - 60000 && now - out.verified < 3*DAY_MS) ? 'good' : (now - out.last < 3*DAY_MS ? 'unverified' : 'old');
+  return out;
+}
+function openRecoverySheet(){
+  if(!secAllow('manager', 'the recovery page')) return;
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Backup and recovery')+'</h2></div><div id="rcBody"><div class="empty"><div class="t">'+tr('Checking')+'</div></div></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="rcNow" type="button">'+tr('Back up and verify now')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="rcList" type="button">'+tr('Recovery points and restore')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="rcFull" type="button">'+tr('Download a full copy')+'</button></div>' +
+    '<div class="banner" style="display:block;margin-top:10px;">'+tr('A backup only counts once it has been read back and checked. Copies kept only on this device are lost if the device is lost or its browser data is cleared, so download a copy and keep it somewhere else. Pesa cannot promise that data is permanently safe.')+'</div>');
+  async function paint(){
+    var s = await recoveryStatus(), pct = s.quota ? Math.round(s.used/s.quota*100) : null;
+    var hl = { good:['Verified','ok'], unverified:['Saved, not yet verified','warn'], old:['Out of date','bad'], none:['No backup yet','bad'] }[s.health];
+    function row(t, v, lvl){ return '<div class="row"><div class="main"><div class="title">'+tr(t)+'</div></div><div class="trail" style="text-align:right;'+(lvl==='bad'?'color:#c0392b;':lvl==='warn'?'color:#b9770e;':'')+'">'+v+'</div></div>'; }
+    ov.querySelector('#rcBody').innerHTML = '<div class="rowlist">' +
+      row('Last successful backup', s.last ? esc(fmtDateTime(new Date(s.last).toISOString())) : tr('Never'), s.last?'':'bad') +
+      row('Backup health', tr(hl[0]), hl[1]) +
+      row('Unsynced records', s.syncState === 'off' ? tr('Cloud connection is off') : String(s.unsynced), s.unsynced > 0 ? 'warn' : '') +
+      row('Recovery points', s.points < 0 ? tr('Not available here') : String(s.points), s.points === 0 ? 'bad' : '') +
+      row('Storage available', s.quota ? esc(fmtBytes(Math.max(0, s.quota - s.used))) + ' ('+(100-pct)+'% '+tr('free')+')' : tr('Unknown'), pct !== null && pct > 85 ? 'bad' : '') +
+      (s.persisted === false ? row('Protected from clean up', tr('No'), 'warn') : '') + '</div>';
+  }
+  ov.querySelector('#rcNow').addEventListener('click', async function(){
+    var b = ov.querySelector('#rcNow'); b.disabled = true;
+    var snap = await Backups.make('manual'); var ok = snap ? await backupVerifyKey(snap.key) : false;
+    b.disabled = false; toast(snap ? (ok ? tr('Backup saved and verified') : tr('Backup saved but could not be verified')) : tr('Could not save a backup')); paint();
+  });
+  ov.querySelector('#rcList').addEventListener('click', function(){ openBackupsSheet(); });
+  ov.querySelector('#rcFull').addEventListener('click', function(){ if(secAllow('owner', 'downloading a full copy')) secReauth('Download a full copy of the business data', exportData); });
+  paint();
+}
+
+/* ---------------- Accounting Integrity Report ---------------- */
+async function integrityChecks(){
+  var r = [];
+  function add(group, name, ok, detail, level){ r.push({ group:group, name:name, ok:!!ok, detail:detail || '', level:level || (ok ? 'ok' : 'fail') }); }
+  try{ taxSelfTest().forEach(function(t){ add('VAT and rounding', t.name, t.ok, t.ok ? '' : 'got ' + t.got + ', expected ' + t.want); }); }catch(e){ add('VAT and rounding', 'Tax self test', false, String(e && e.message || e)); }
+  try{ var av = auditVerify(); add('Audit trail', 'Audit log chain is unbroken (' + av.checked + ' entries checked)', av.ok, av.ok ? (av.legacy ? av.legacy + ' older entries have no fingerprint.' : '') : av.problems.slice(0, 3).join(' ')); }catch(e){ add('Audit trail', 'Audit chain check', false, String(e && e.message || e)); }
+  try{
+    var G = await acctGather(), B = acctBuild(G), v = acctView(G, B, B.start || todayKey(), todayKey());
+    acctChecks(G, B, v).forEach(function(c){ add('Books', c.text, c.level !== 'fail', '', c.level === 'fail' ? 'fail' : (c.level === 'warn' ? 'warn' : 'ok')); });
+    var bad = 0; B.journals.forEach(function(j){ var d = 0, c = 0; j.lines.forEach(function(l){ d += l.dr; c += l.cr; }); if(d !== c) bad++; });
+    add('Books', B.journals.length + ' journals checked, each must balance to the cent', bad === 0, bad ? bad + ' do not balance.' : '');
+  }catch(e){ add('Books', 'Books could not be built', false, String(e && e.message || e)); }
+  try{
+    var over = 0, noRef = 0, dupNo = {}, dups = 0, tot = 0;
+    State.sales.forEach(function(s){
+      if(s.refundOf || s.isRefund) return;
+      try{ if(saleRefunds(s).reduce(function(a, x){ return a + Math.abs(Number(x.total) || 0); }, 0) > (Number(s.total) || 0) + 0.005) over++; }catch(e){}
+    });
+    State.invoices.forEach(function(i){ var n = i.number || i.invoiceNumber; if(!n) return; if(dupNo[n]) dups++; dupNo[n] = 1; tot++; });
+    add('Documents', 'No sale is refunded for more than it was sold for', over === 0, over ? over + ' sale(s) have refunds above the sale total.' : '');
+    add('Documents', 'Invoice numbers are unique (' + tot + ' checked)', dups === 0, dups ? dups + ' duplicate number(s). Check the invoice list.' : '');
+  }catch(e){}
+  try{
+    var neg = State.products.filter(function(p){ return !p.isMock && p.stock !== undefined && p.stock !== null && Number(p.stock) < 0; }).length;
+    add('Stock', 'No product has negative stock', neg === 0, neg ? neg + ' product(s) are below zero. Do a stock take or record the missing purchase.' : '', neg ? 'warn' : 'ok');
+    var nocost = State.products.filter(function(p){ return !p.isMock && !(Number(p.cost) > 0); }).length;
+    add('Stock', 'Every product has a cost price', nocost === 0, nocost ? nocost + ' product(s) have none, so profit on them is not reliable.' : '', nocost ? 'warn' : 'ok');
+  }catch(e){}
+  try{
+    var m = State.sales.filter(function(s){ var t = Number(s.total); return !isFinite(t) || t < 0 && !(s.refundOf || s.isRefund); }).length;
+    add('Sales', 'Every sale has a valid amount', m === 0, m ? m + ' sale(s) have a missing or negative amount.' : '');
+  }catch(e){}
+  return r;
+}
+async function openIntegritySheet(){
+  if(!secAllow('manager', 'the integrity report')) return;
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Accounting integrity report')+'</h2></div><div id="igBody"><div class="empty"><div class="t">'+tr('Running checks')+'</div></div></div>' +
+    '<div class="banner" style="display:block;margin-top:10px;">'+tr(TAX_DISCLAIMER)+'</div>');
+  var rows = await integrityChecks(), pass = rows.filter(function(x){ return x.level === 'ok'; }).length, fail = rows.filter(function(x){ return x.level === 'fail'; }).length, warn = rows.filter(function(x){ return x.level === 'warn'; }).length;
+  var groups = {}; rows.forEach(function(x){ (groups[x.group] = groups[x.group] || []).push(x); });
+  var html = '<div class="banner" style="display:block;"><b>'+pass+'</b> '+tr('passed')+' · <b>'+fail+'</b> '+tr('failed')+' · <b>'+warn+'</b> '+tr('to review')+' · '+esc(fmtDateTime(new Date().toISOString()))+'</div>';
+  Object.keys(groups).forEach(function(g){
+    html += '<div style="font-weight:700;margin:12px 0 4px;">'+tr(g)+'</div><div class="rowlist">' + groups[g].map(function(x){
+      var mark = x.level === 'ok' ? '✔' : (x.level === 'warn' ? '!' : '✖'), col = x.level === 'ok' ? '#1e8449' : (x.level === 'warn' ? '#b9770e' : '#c0392b');
+      return '<div class="row"><div class="main"><div class="title">'+esc(x.name)+'</div>'+(x.detail?'<div class="sub">'+esc(x.detail)+'</div>':'')+'</div><div class="trail" style="color:'+col+';font-weight:700;">'+mark+'</div></div>';
+    }).join('') + '</div>';
+  });
+  ov.querySelector('#igBody').innerHTML = html;
+  logAudit('other', 'integrity', null, 'Integrity report run: ' + pass + ' passed, ' + fail + ' failed, ' + warn + ' to review');
+}
+
+/* ---------------- Privacy and data controls ---------------- */
+var PRIVACY_NOTE = 'Designed to support privacy and applicable legal requirements. The business owner remains responsible for lawful use of customer and employee information.';
+function privacyServices(){
+  var out = [{ n:'This device', d:'All records are stored in this browser by default.', on:true }];
+  try{ var c = Sync.cfg(); out.push({ n:'Cloud connection (Supabase)', d:'Business records are uploaded to the server you set up' + (E2E.ok() ? ', encrypted on the device first.' : ', not end to end encrypted.'), on:!!c.on }); }catch(e){}
+  try{ if(State.settings.fiscal && State.settings.fiscal.enabled) out.push({ n:'Tax record module', d:'Records are kept in a local outbox and are only sent if a tax endpoint is configured.', on:true }); }catch(e){}
+  out.push({ n:'Receipts and messages you send', d:'Anything you share by WhatsApp, email or print leaves Pesa and goes to that service.', on:true });
+  return out;
+}
+function privacyCustomerExport(c){
+  return gatherLedgers().then(function(l){
+    return { exportedAt:new Date().toISOString(), customer:c, ledger:l[c.id] || [], sales:State.sales.filter(function(s){ return s.customerId === c.id; }) };
+  });
+}
+function privacyAnonymise(c){
+  return refs.customers.doc(c.id).update({ name:'Anonymised customer', phone:'', email:'', address:'', idNumber:'', notes:'', anonymisedAt:new Date().toISOString() });
+}
+function openPrivacyControlsSheet(){
+  if(!secAllow('owner', 'privacy and data controls')) return;
+  var cust = State.customers.slice().sort(function(a, b){ return String(a.name || '').localeCompare(String(b.name || '')); });
+  var ov = openSheet('<div class="sheet-head"><h2>'+tr('Privacy and data controls')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr(PRIVACY_NOTE)+'</div>' +
+    '<div style="font-weight:700;margin:12px 0 4px;">'+tr('Where your data goes')+'</div><div class="rowlist">' + privacyServices().map(function(s){ return '<div class="row"><div class="main"><div class="title">'+tr(s.n)+'</div><div class="sub">'+tr(s.d)+'</div></div><div class="trail">'+(s.on?tr('On'):tr('Off'))+'</div></div>'; }).join('') + '</div>' +
+    '<div style="font-weight:700;margin:12px 0 4px;">'+tr('One customer')+'</div>' +
+    '<select class="input" id="pcCust"><option value="">'+tr('Choose a customer')+'</option>' + cust.map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.name || '')+'</option>'; }).join('') + '</select>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pcExp" type="button">'+tr('Download this customer’s data')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="pcAnon" type="button">'+tr('Anonymise this customer')+'</button></div>' +
+    '<div class="banner" style="display:block;margin-top:6px;">'+tr('Anonymising removes the name, phone, email, address, ID number and notes. Sales and totals stay so your books and tax records still add up. It cannot be undone.')+'</div>' +
+    '<div style="font-weight:700;margin:12px 0 4px;">'+tr('Keeping records')+'</div>' +
+    '<div class="banner" style="display:block;">'+tr('Tax and accounting records are usually kept for a set number of years. Check the period that applies to you with your accountant before deleting anything. Pesa never deletes sales or invoices on its own.')+'</div>' +
+    '<div style="font-weight:700;margin:12px 0 4px;">'+tr('Tax and records notices')+'</div>' +
+    '<div class="banner" style="display:block;">'+tr(TAX_DISCLAIMER)+'</div><div class="banner" style="display:block;margin-top:6px;">'+tr(ERECORD_NOTE)+'</div>' +
+    '<div class="banner" style="display:block;margin-top:6px;">'+tr('Every export, anonymise and delete is written to the audit log with who did it and when.')+'</div>');
+  function pick(){ var id = ov.querySelector('#pcCust').value; var c = cust.find(function(x){ return x.id === id; }); if(!c) toast(tr('Choose a customer first')); return c; }
+  ov.querySelector('#pcExp').addEventListener('click', function(){
+    var c = pick(); if(!c) return;
+    secReauth('Download personal data of ' + (c.name || 'a customer'), function(){
+      privacyCustomerExport(c).then(function(p){ logAudit('other', 'privacy', c.id, 'Customer data exported'); downloadTextFile('pesa-customer-'+todayKey()+'.json', JSON.stringify(p, null, 2)); });
+    });
+  });
+  ov.querySelector('#pcAnon').addEventListener('click', function(){
+    var c = pick(); if(!c) return;
+    confirmSheet(tr('Anonymise this customer?'), tr('Their personal details are removed for good. Sales and balances stay.'), tr('Anonymise'), function(){
+      secReauth('Anonymise ' + (c.name || 'a customer'), function(){
+        privacyAnonymise(c).then(function(){ logAudit('update', 'privacy', c.id, 'Customer anonymised'); toast(tr('Customer anonymised')); closeModal(); });
+      });
+    }, true, true);
+  });
+}
+/*HARDEN4:END*/
 /*COURSES:START (generated by tools/embed_courses.py, edit tools/courses.js instead)*/
 /* Course content for Pesa Training (Theory and practical). Edit this file, then run: python3 tools/embed_courses.py
    Wording rule for the whole app: no dashes. Use full stops, commas and the word "to". */
@@ -22049,7 +22807,7 @@ var PesaIntro = (function(){
   function normCategory(c) {
     c = String(c || 'STANDARD').toUpperCase().replace(/[\s-]+/g, '_');
     if (c === 'ZERO' || c === 'ZERO_RATED' || c === '0') return TAX.ZERO;
-    if (c === 'EXEMPT') return TAX.EXEMPT;
+    if (c === 'EXEMPT' || c === 'NON_VAT') return TAX.EXEMPT;
     return TAX.STANDARD;
   }
   function rateBpOf(category, cfg) {
@@ -22408,7 +23166,7 @@ var Fiscal = (function(){
   function saveDev(p){ var all = rj(); all[WS.id] = Object.assign({}, all[WS.id], p); try{ localStorage.setItem(DEV_KEY, JSON.stringify(all)); }catch(e){} }
   function shared(){ return (State.settings && State.settings.fiscal) || {}; }
   function cfg(){ var f = shared(), d = dev(); return { on:!!f.on, tin:String(f.tin||''), branchCode:String(f.branchCode||''), terminalId:String(d.terminalId||''), endpoint:String(d.endpoint||''), token:String(d.token||'') }; }
-  function vatRate(){ var r = State.settings && State.settings.vatRate; return r != null ? (Number(r) || 0) : 15; }
+  function vatRate(){ return taxRateAt(todayKey()).rate; }
   function rateBp(){ return Math.round(vatRate() * 100); }
   function cryptoOk(){ return !!(window.crypto && crypto.subtle && window.TextEncoder); }
   function ready(){ var c = cfg(); return !!(window.PesaEfd && c.on && c.tin && c.branchCode && c.terminalId && rateBp() > 0 && Store.mode() === 'local' && cryptoOk()); }

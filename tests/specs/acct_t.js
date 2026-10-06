@@ -79,7 +79,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   const C=await p.evaluate(async()=>{
     const T=window.__t; const G0=await T.acctGather(), B0=T.acctBuild(G0); const aug=T.acctPeriods()[0];
     const before=await T.acctFingerprint(B0,aug.from,aug.to);
-    await T.refs.sales.doc('s2').update({total:35});
+    { const raw=T.Store.raw.read(); const k=Object.keys(raw).find(x=>/(^|_)sales$/.test(x)); raw[k].s2.total=35; T.Store.raw.write(raw,[[k,'s2']]); T.Store.raw.notify(k); await new Promise(r=>setTimeout(r,200)); } // the app itself now refuses edits to a finished sale, so this simulates a change made outside it
     const G=await T.acctGather(), B=T.acctBuild(G); const after=await T.acctFingerprint(B,aug.from,aug.to);
     const stillOk=await T.acctVerify(aug);
     const cur=T.State.accountingPeriods.find(r=>r.periodKey==='2026-08');
