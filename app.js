@@ -19633,7 +19633,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.147';
+var APP_VERSION = '2026.10.148';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19885,6 +19885,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.148', items:[
+    'The Pesa AI Assistant now shows a short thinking animation and then its answer fades in, so it feels like a live conversation. The promotion video shows it asking and answering in real motion'
+  ]},
   { v:'2026.10.147', items:[
     'The promotion video now shows the Pesa AI Assistant page, with real recorded motion of it answering questions and recording an expense'
   ]},
@@ -23116,7 +23119,7 @@ document.getElementById('authScreen').innerHTML = '<div class="authcard"><div cl
  *    never create the same note twice.
  * Notes are signs worth checking, not proof that anyone did anything wrong. */
 var AGENT_ID = 'pesa-ai', AGENT_NAME = 'Pesa AI Assistant';
-var _agent = { busy:false, nudge:0, last:0, lastRun:{}, started:false };
+var _agent = { say:0, busy:false, nudge:0, last:0, lastRun:{}, started:false };
 
 function agentOn(){ var s = State.settings || {}; return s.agentOff !== true; }
 function agentCanRun(){
@@ -23447,6 +23450,8 @@ var AGENT_CSS = '<style>' +
   '.ag-mic{flex:0 0 auto;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:#CFF5E4;cursor:pointer;}' +
   '.ag-out{margin:12px 0 4px;}.ag-msg{border-radius:18px;padding:12px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(124,240,196,.26);color:#F6FFFA;margin-bottom:8px;}' +
   '.ag-msg.me{background:rgba(43,212,160,.16);border-color:rgba(43,212,160,.4);margin-left:28px;font-weight:600;}.ag-msg .ln{font-size:13px;line-height:1.5;margin-top:5px;color:#E8FBF2;}' +
+  '@keyframes agin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}@keyframes agdot{0%,80%,100%{opacity:.25;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}.ag-msg{animation:agin .35s ease both;}' +
+  '.ag-think{display:inline-flex;gap:6px;padding:14px 16px;}.ag-think i{width:8px;height:8px;border-radius:50%;background:#7CF0C4;animation:agdot 1s infinite;}.ag-think i:nth-child(2){animation-delay:.15s;}.ag-think i:nth-child(3){animation-delay:.3s;}' +
   '.ag-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}' +
   '.ag-h{font-size:17px;font-weight:800;color:#fff;margin:16px 0 8px;}' +
   '.ag-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}' +
@@ -23496,10 +23501,15 @@ function openAgentSheet(){
   var inp = ov.querySelector('#agQ'), out = ov.querySelector('#agOut');
   function go(r){ closeModal(); if(r.page) handleDrawerAction(r.page); else if(r.go === 'alerts') openSmartSection('alerts'); else if(r.go) openSmartSection(r.go); }
   function show(q, r){
-    var h = '<div class="ag-msg me">' + esc(q) + '</div><div class="ag-msg"><div style="font-weight:700;">' + esc(r.text) + '</div>' +
+    var h = '<div class="ag-msg me" style="animation:none">' + esc(q) + '</div><div class="ag-msg"><div style="font-weight:700;">' + esc(r.text) + '</div>' +
       (r.lines ? r.lines.map(function(l){ return '<div class="ln">' + esc(l) + '</div>'; }).join('') : '') + '<div class="ag-btns">' +
       (r.confirm ? '<button class="btn btn-primary" id="agYes" type="button">' + tr('Confirm') + '</button><button class="btn btn-ghost" id="agNo" type="button">' + tr('Cancel') + '</button>' : '') +
       ((r.go || r.page) && !r.open ? '<button class="btn btn-ghost" id="agOpen" type="button">' + tr(r.label || 'Open') + '</button>' : '') + '</div></div>';
+    out.innerHTML = '<div class="ag-msg me ag-in">' + esc(q) + '</div><div class="ag-msg ag-think" aria-label="' + esc(tr('Thinking')) + '"><i></i><i></i><i></i></div>';
+    var token = ++_agent.say;
+    setTimeout(function(){ if(token !== _agent.say) return; paint(h, r); }, 750);
+  }
+  function paint(h, r){
     out.innerHTML = h;
     var y = out.querySelector('#agYes'), n = out.querySelector('#agNo'), o = out.querySelector('#agOpen');
     if(y) y.addEventListener('click', function(){
