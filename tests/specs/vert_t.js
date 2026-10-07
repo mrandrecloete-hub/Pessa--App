@@ -27,7 +27,10 @@ const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p
    console.log(t); ck('three business types, retail preselected', t.n===3 && t.def==='retail' && /Barbershop/.test(t.txt[0]) && /Retail/.test(t.txt[1]) && /Hospitality/.test(t.txt[2])); await ctx.close(); }
  // ---------- retail keeps the full dashboard
  { const p=await signup(b,'retail','Shop One'); const r=await p.evaluate(()=>({ type:window.__t.bizType(), hero:!!document.querySelector('.hero-card'), vq:!!document.querySelector('[data-vq="appts"]') }));
-   ck('retail gets the full Pesa dashboard', r.type==='retail' && r.hero && !r.vq); ck('retail: no page errors', p.__errs.length===0); }
+   ck('retail gets the full Pesa dashboard', r.type==='retail' && r.hero && !r.vq); const rm = await p.evaluate(()=>{ window.__t.openBizHub(); const biz=document.body.innerText; window.__t.closeModal(); return { menu:window.__t.menuRowsHtml(), tabs:window.__t.roleTabs('owner'), biz }; });
+   ck('retail keeps everything: POS, invoices, purchase orders, stock take, wastage, branches', ['Point of sale','Invoices','Purchase orders','Stock take','Wastage','Branches'].every(x=>rm.menu.indexOf(x)>-1) && rm.tabs.indexOf('invoices')>-1);
+   ck('retail business tools keep barcode labels and quotes', /barcode labels/i.test(rm.biz) && /quotes and recurring/i.test(rm.biz));
+   ck('retail: no page errors', p.__errs.length===0); }
  // ---------- barbershop and salon
  { const p=await signup(b,'beauty','Fade Masters'); 
    let r=await p.evaluate(()=>({ type:window.__t.bizType(), vq:!!document.querySelector('[data-vq="appts"]'), txt:document.body.innerText }));
@@ -61,6 +64,14 @@ const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p
    // the owner runs the business from this dashboard: team, expenses and the rest are right there, and employees can be added
    const own = await p.evaluate(()=>{ window.__t.render(); const t=document.body.innerText.toLowerCase(); return { team:!!document.querySelector('[data-vq="team"]'), add:!!document.querySelector('[data-vq="addstaff"]'), exp:!!document.querySelector('[data-vq="expenses"]'), acc:!!document.querySelector('[data-vq="accountant"]'), get:t.indexOf('get started')>-1 }; });
    console.log(own); ck('owner dashboard has Team, Add employee, Expenses and Accountant right on it', own.team && own.add && own.exp && own.acc);
+   await p.evaluate(()=>window.__t.closeModal());
+   const sm = await p.evaluate(()=>{ const t=window.__t; t.logout&&0; return { menu:t.menuRowsHtml(), tabs:t.roleTabs('owner') }; });
+   ck('salon menu has no POS, invoices, purchase orders, stock take, wastage or branches', ['Point of sale','Invoices','Purchase orders','Stock take','Wastage','Branches'].every(x=>sm.menu.indexOf(x)<0) && sm.tabs.indexOf('invoices')<0);
+   ck('salon menu keeps what it needs', ['Appointments','Messages','Sell','Stock','Reports','Expenses','Till','Employee tracking','Accountant','Suppliers','Settings'].every(x=>sm.menu.indexOf(x)>-1));
+   await p.evaluate(()=>window.__t.openBizHub()); const sb = await p.evaluate(()=>document.body.innerText); await p.evaluate(()=>window.__t.closeModal());
+   ck('salon business tools: no barcode labels, quotes or currency, but payroll, tips and attendance stay', !/barcode labels/i.test(sb) && !/quotes and recurring/i.test(sb) && !/currency and converter/i.test(sb) && /payroll/i.test(sb) && /staff tips/i.test(sb) && /attendance/i.test(sb));
+   await p.evaluate(()=>window.__t.openStaffSheet(null)); await p.waitForSelector('#sfRole'); ck('salon staff form has no stock clerk option', await p.evaluate(()=>![...document.querySelectorAll('#sfRole option')].some(o=>o.value==='stockclerk'))); await p.evaluate(()=>window.__t.closeModal());
+   ck('salon dashboard has no link back to the retail dashboard', await p.evaluate(()=>{ window.__t.render(); return !document.querySelector('[data-vq="retail"]'); }));
    await p.evaluate(()=>window.__t.closeModal()); await p.click('[data-vq="addstaff"]'); await p.waitForSelector('#sfName');
    const roleTxt = await p.evaluate(()=>[...document.querySelectorAll('#sfRole option')].map(o=>o.textContent).join('|')); ck('staff form uses salon job names', /Barber, Stylist or Receptionist/.test(roleTxt)); await p.evaluate(()=>window.__t.closeModal());
    await addStaff(p,'Thandi Braider','Braider');
@@ -105,6 +116,8 @@ const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p
    ck('dashboard shows room fees and the levy estimate', /room fees this month/i.test(await p.evaluate(()=>document.body.innerText)) && /1,?700/.test(await p.evaluate(()=>document.body.innerText)));
    const own = await p.evaluate(()=>{ window.__t.render(); return { team:!!document.querySelector('[data-vq="team"]'), add:!!document.querySelector('[data-vq="addstaff"]'), sup:!!document.querySelector('[data-vq="suppliers"]'), stock:!!document.querySelector('[data-vq="stock"]') }; });
    ck('owner dashboard has Team, Add employee, Suppliers and Menu and stock', own.team && own.add && own.sup && own.stock);
+   const hm = await p.evaluate(()=>({ menu:window.__t.menuRowsHtml() }));
+   ck('hospitality keeps POS, purchase orders, stock take and wastage but has no branches', ['Point of sale','Purchase orders','Stock take','Wastage'].every(x=>hm.menu.indexOf(x)>-1) && hm.menu.indexOf('Branches')<0);
    await p.evaluate(()=>window.__t.closeModal()); await p.click('[data-vq="addstaff"]'); await p.waitForSelector('#sfName');
    ck('staff form uses hospitality job names', /Front desk, Waiter or Bar staff/.test(await p.evaluate(()=>[...document.querySelectorAll('#sfRole option')].map(o=>o.textContent).join('|')))); await p.evaluate(()=>window.__t.closeModal());
    await addStaff(p,'Selma Waiter','Waiter'); await asEmployee(p,'Selma');

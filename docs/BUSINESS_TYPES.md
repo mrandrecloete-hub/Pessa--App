@@ -12,6 +12,33 @@ The owner can change the type later from the menu (Business type). Nothing is re
 
 Everything sits on top of the existing app. Services, menu items and drinks are products, so selling, receipts, the till, VAT, reports, accounting and staff all keep working. A booking, a room stay or a tab is charged through the normal Charge sheet and ends as an ordinary sale (with `appointmentId`, `stylistId`, `bookingId` or `tabIds` added). Code: `tools/verticals.js`, embedded as the VERT block with `python3 tools/embed_block.py VERT verticals.js '...'`. Tests: `tests/specs/vert_t.js`.
 
+## What each business type shows and hides
+
+Retail hides nothing. For the other two, the items below are taken out of the menu, the business tools and the Smart Tools list (they are still in the app and come back if the owner changes the business type). The table is `VERT_HIDE` in `tools/verticals.js`.
+
+| Feature | Retail | Barbershop or Salon | Hospitality |
+|---|---|---|---|
+| Dashboard | Full Pesa dashboard | Salon dashboard | Hospitality dashboard |
+| Sell, Till, Expenses, Reports, Messages, Settings | yes | yes | yes |
+| Stock (products) | yes | yes, as Products and stock | yes, as Menu and stock |
+| Credit (who owes me) | yes | yes | yes |
+| Invoices | yes | hidden (salons are paid at the chair) | yes (groups, events, company stays) |
+| Point of sale (full screen) | yes | hidden (Sell does the job) | yes (bars and restaurants) |
+| Purchase orders | yes | hidden | yes |
+| Stock take and variances | yes | hidden | yes (bar and kitchen counts) |
+| Wastage and shrinkage | yes | hidden | yes (food waste) |
+| Branches | yes | hidden | hidden |
+| Suppliers, Reconciliation, VAT, Accountant | yes | yes | yes |
+| Employee tracking, payroll, tips, attendance | yes | yes | yes |
+| Barcode labels | yes | hidden | hidden |
+| Import cost calculator | yes | hidden | hidden |
+| Currency and converter | yes | hidden | yes (visitors pay in rand or other currency) |
+| Quotes and recurring invoices | yes | hidden | yes |
+| Reorder list in Smart Tools | yes | hidden | yes |
+| Stock clerk job | yes | not offered | yes (housekeeping or stock) |
+| Appointments, walk in queue, clients, services, stylist earnings | not shown | yes | not shown |
+| Rooms, bookings, tables and tabs, guests, licences and levy | not shown | not shown | yes |
+
 ## Research notes (Namibia)
 
 What was found, and how it shaped the design. These are working notes, not legal advice. Anything about tax, levies or licences is to be confirmed with the relevant legal bodies, authorities and entities of Namibia.

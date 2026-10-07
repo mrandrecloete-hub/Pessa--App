@@ -69,6 +69,20 @@ var VERT_PAGES = {
   beauty: [['v-appts', 'Appointments', 'clock'], ['v-queue', 'Walk in queue', 'people'], ['v-clients', 'Clients', 'people'], ['v-services', 'Services and prices', 'clipboard', 1], ['v-earn', 'Stylist earnings', 'chartbar', 1]],
   hospitality: [['v-bookings', 'Room bookings', 'clock'], ['v-rooms', 'Rooms', 'box'], ['v-tabs', 'Tables and tabs', 'receipt'], ['v-guests', 'Guests', 'people'], ['v-comply', 'Licences and levy', 'clipboard', 1]]
 };
+/* What each business type does NOT need. Retail hides nothing. Everything hidden is still in the app and comes back if the business type is changed.
+   Salon: no full screen point of sale (Sell does the job), no purchase orders, stock takes, wastage, branches or invoices, no barcode labels, import cost calculator, currency or quotes.
+   Hospitality: keeps the point of sale (bars and restaurants use it), purchase orders, stock takes and wastage, but no branches, barcode labels or import cost calculator. */
+var VERT_HIDE = {
+  beauty:      { menu:['tab-invoices', 'terminal', 'stocktake', 'pos', 'wastage', 'branches'], biz:['labels', 'landed', 'currency', 'quotes'], smart:['reorder'], tabs:['invoices'] },
+  hospitality: { menu:['branches'], biz:['labels', 'landed'], smart:[], tabs:[] }
+};
+function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]) return tiles; return tiles.filter(function(t){ return h[kind].indexOf(t[0]) < 0; }); }
+function vertFilterRows(html){
+  var h = VERT_HIDE[bizType()]; if(!h) return html;
+  h.menu.forEach(function(k){ html = html.replace(new RegExp('<button class="drawer-row"[^>]*data-drawer-row="' + k + '"[\\s\\S]*?</button>', 'g'), ''); });
+  return html;
+}
+(function(){ try{ var _mrh = menuRowsHtml; menuRowsHtml = function(){ return vertFilterRows(_mrh()); }; var _rt = roleTabs; roleTabs = function(role){ var a = _rt(role), h = VERT_HIDE[bizType()]; return h ? a.filter(function(x){ return h.tabs.indexOf(x) < 0; }) : a; }; }catch(e){} })();
 var VERT_MGR = { 'v-services':1, 'v-earn':1, 'v-comply':1, 'v-type':1 };
 /* the job names people see for the cashier and stock clerk roles change with the business type (the permissions underneath stay the same) */
 var VERT_ROLE_BASE = null;
@@ -88,7 +102,8 @@ function vertStaffTweaks(){
   try{
     var t = bizType(); if(t === 'retail') return;
     var job = document.getElementById('sfJob'); if(job){ job.setAttribute('list', 'sfJobList'); job.setAttribute('placeholder', 'e.g. ' + VERT_JOBS[t][0]); if(!document.getElementById('sfJobList')) job.insertAdjacentHTML('afterend', '<datalist id="sfJobList">' + VERT_JOBS[t].map(function(j){ return '<option value="' + j + '">'; }).join('') + '</datalist>'); }
-    var role = document.getElementById('sfRole'); if(role) [].slice.call(role.options).forEach(function(o){ if(o.value === 'cashier') o.textContent = ROLE_LABELS.cashier; else if(o.value === 'stockclerk') o.textContent = ROLE_LABELS.stockclerk; });
+    var role = document.getElementById('sfRole'); if(role && t === 'beauty') [].slice.call(role.options).forEach(function(o){ if(o.value === 'stockclerk') o.remove(); });
+    if(role) [].slice.call(role.options).forEach(function(o){ if(o.value === 'cashier') o.textContent = ROLE_LABELS.cashier; else if(o.value === 'stockclerk') o.textContent = ROLE_LABELS.stockclerk; });
   }catch(e){}
 }
 (function(){ try{ var _oss = openStaffSheet; openStaffSheet = function(u){ vertLabels(); var r = _oss(u); vertStaffTweaks(); return r; }; }catch(e){} })();
@@ -140,7 +155,6 @@ function vertDashboardHtml(){
   vertLabels();
   html += (bizType() === 'beauty' ? vBeautyDash() : vHospDash());
   html += vSetupCard() + vManageTiles();
-  html += '<div style="text-align:center;margin:14px 0 4px;"><button class="btn btn-ghost" type="button" data-vq="retail">' + tr('Show the full Pesa dashboard') + '</button></div>';
   return dashWrap(html);
 }
 var _vInit = false;
@@ -159,8 +173,8 @@ function vManageTiles(){
   if(!isManagerOrOwner()) return '';
   var t = bizType();
   return '<div class="section-title">' + tr('Run your business') + '</div><div class="qa-row">' + vTile('team', 'people', 'Team') + vTile('addstaff', 'plus', 'Add employee') + vTile('expenses', 'receipt', 'Expenses') + vTile('stock', 'box', t === 'beauty' ? 'Products and stock' : 'Menu and stock') + '</div>' +
-    '<div class="qa-row">' + vTile('suppliers', 'truck', 'Suppliers') + vTile('accountant', 'book', 'Accountant') + vTile('invoices', 'invoice', 'Invoices') + vTile('till', 'till', 'Till') + '</div>' +
-    '<div class="qa-row">' + vTile('msgs', 'bolt', 'Messages') + vTile('smart', 'bolt', 'Smart tools') + vTile('assistant', 'agent', 'AI Assistant') + vTile('settings', 'info', 'Settings') + '</div>';
+    '<div class="qa-row">' + vTile('suppliers', 'truck', 'Suppliers') + vTile('accountant', 'book', 'Accountant') + (t === 'beauty' ? vTile('vat', 'percent', 'VAT') : vTile('invoices', 'invoice', 'Invoices')) + vTile('till', 'till', 'Till') + '</div>' +
+    '<div class="qa-row">' + vTile('msgs', 'bolt', 'Messages') + vTile('tools', 'stack', 'Staff and pay') + vTile('assistant', 'agent', 'AI Assistant') + vTile('settings', 'info', 'Settings') + '</div>';
 }
 /* an employee's own page: their jobs for today */
 function vertMeHtml(){
@@ -186,7 +200,7 @@ function vertInit(){
     var go = { sell:function(){ setTab('sell'); }, stock:function(){ setTab('stock'); }, expenses:function(){ setTab('expenses'); }, reports:function(){ setTab('reports'); },
       appts:function(){ openApptSheet(todayKey()); }, queue:openQueueSheet, clients:openClientsSheet, services:openServicesSheet, earn:openEarningsSheet, newbook:function(){ openApptForm(null, todayKey()); },
       bookings:openBookingsSheet, rooms:openRoomsSheet, tabs:openTabsSheet, guests:openGuestsSheet, comply:openComplySheet, newstay:function(){ openStayForm(null); },
-      team:openTeamSheet, addstaff:function(){ openStaffSheet(null); }, suppliers:function(){ handleDrawerAction('suppliers'); }, accountant:function(){ handleDrawerAction('accountant'); }, msgs:openInboxSheet, till:function(){ setTab('till'); }, settings:openSettingsSheet, smart:openSmartToolsSheet, assistant:openAgentSheet, vat:function(){ handleDrawerAction('vat'); }, invoices:function(){ setTab('invoices'); },
+      team:openTeamSheet, addstaff:function(){ openStaffSheet(null); }, suppliers:function(){ handleDrawerAction('suppliers'); }, accountant:function(){ handleDrawerAction('accountant'); }, msgs:openInboxSheet, tools:openBizHub, till:function(){ setTab('till'); }, settings:openSettingsSheet, smart:openSmartToolsSheet, assistant:openAgentSheet, vat:function(){ handleDrawerAction('vat'); }, invoices:function(){ setTab('invoices'); },
       retail:function(){ State.showRetailDash = true; render(); }, vert:function(){ State.showRetailDash = false; render(); },
       appt:function(){ var a2 = vList('appointments').find(function(x){ return x.id === id; }); if(a2) openApptSheet(a2.date); }, stay:function(){ var b = vList('hosBookings').find(function(x){ return x.id === id; }); if(b) openStayView(b); } }[a];
     if(go){ e.preventDefault(); go(); }
