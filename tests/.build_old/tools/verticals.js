@@ -60,7 +60,7 @@ function regTypeHtml(){
     '.rt-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:rgba(8,120,90,.14);color:#0B7A5C;}' +
     '.rt-t b{display:block;font-size:15.5px;color:#0B3B2C;}.rt-t small{display:block;font-size:12.5px;line-height:1.4;color:#3F5F54;margin-top:2px;}' +
     '.rt-card input:checked + .rt-in{border-color:#D99A1E;background:linear-gradient(135deg,rgba(43,212,160,.22),rgba(242,194,90,.22));box-shadow:0 0 0 2px rgba(217,154,30,.35);}.rt-card input:checked + .rt-in .rt-n{background:#0B7A5C;color:#fff;}' +
-    '.rt-card input:focus-visible + .rt-in{outline:2px solid #0B7A5C;outline-offset:2px;}</style>';
+    '.rt-card input:focus-visible + .rt-in{outline:2px solid #0B7A5C;outline-offset:2px;}@media (min-width:860px){.rt-grid{grid-template-columns:repeat(3,minmax(0,1fr));}.rt-in{height:100%;}}</style>';
 }
 function regPickedType(root){ var r = root.querySelector('input[name="rcBizType"]:checked'); return r ? r.value : 'retail'; }
 

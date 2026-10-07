@@ -1070,6 +1070,55 @@
   .authscreen .cn-scroll, .authscreen .consent-box, .authscreen #cnText{ background:rgba(0,0,0,.18); color:#EAFBF3; border-color:rgba(124,240,196,.28); }
   .authscreen .rolebadge{ color:#EAFBF3; }
   .authscreen a{ color:#7CF0C4; }
+  /* ---------- register page: the same dark emerald glass as every other page ---------- */
+  .authscreen .regpage{
+    --bg:#03261D; --surface:rgba(255,255,255,.08); --surface-2:rgba(255,255,255,.13); --surface-3:rgba(43,212,160,.2);
+    --text:#F6FFFA; --text-muted:#CDEFE0; --primary:#2BD4A0; --primary-dim:#2BD4A0; --primary-contrast:#04251C; --accent:#F2C25A; --border:rgba(124,240,196,.3); --danger:#FF8A7A; --danger-bg:rgba(255,138,122,.14);
+    color-scheme:dark; color:#F6FFFA;
+  }
+  .authscreen .regpage .reg-bg{ background:radial-gradient(120% 55% at 90% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 45% at 0% 100%,rgba(217,154,30,.18) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%); }
+  .authscreen .regpage .reg-wm{ opacity:.1; filter:saturate(1.2); }
+  .authscreen .regpage .reg-wm::after{ display:none; }
+  .authscreen .regpage .reg-hero{ background:none; overflow:visible; padding-bottom:30px; }
+  .authscreen .regpage .reg-swoosh, .authscreen .regpage .reg-wave{ display:none; }
+  .authscreen .regpage .reg-logo{ filter:drop-shadow(0 8px 14px rgba(0,0,0,.45)); }
+  .authscreen .regpage .reg-pesa{ text-shadow:none; }
+  .authscreen .regpage .reg-nam{ color:#CFF5E4; text-shadow:none; }
+  .authscreen .regpage .reg-slogan{ color:#F2C25A; text-shadow:none; }
+  .authscreen .regpage .reg-map{ filter:drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
+  .authscreen .regpage .reg-steps{ margin-top:-4px; background:rgba(255,255,255,.08); border:1px solid rgba(124,240,196,.3); box-shadow:none; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .authscreen .regpage .reg-step .n{ color:#CFF5E4; background:rgba(43,212,160,.18); }
+  .authscreen .regpage .reg-step .l{ color:#CDEFE0; }
+  .authscreen .regpage .reg-step.on .n, .authscreen .regpage .reg-step.done .n{ color:#04251C; background:linear-gradient(135deg,#2BD4A0,#14996F); box-shadow:none; }
+  .authscreen .regpage .reg-step.on .l, .authscreen .regpage .reg-step.done .l{ color:#fff; }
+  .authscreen .regpage .reg-steps .line{ background:rgba(124,240,196,.3); }
+  .authscreen .regpage .reg-already{ background:rgba(255,255,255,.08); border-color:rgba(124,240,196,.3); box-shadow:none; }
+  .authscreen .regpage .reg-already-ic{ color:#7CF0C4; background:rgba(43,212,160,.18); }
+  .authscreen .regpage .reg-already-t b{ color:#fff; } .authscreen .regpage .reg-already-t span{ color:#CDEFE0; }
+  .authscreen .regpage .reg-biz{ color:#F6FFFA; background:rgba(255,255,255,.09); border-color:rgba(124,240,196,.35); box-shadow:none; }
+  .authscreen .regpage .reg-bt i{ color:#CDEFE0; } .authscreen .regpage .reg-biz svg{ color:#7CF0C4; }
+  .authscreen .regpage .reg-sec{ color:#fff; } .authscreen .regpage .reg-sec .si{ color:#7CF0C4; filter:none; }
+  .authscreen .regpage .reg-sec::after{ background:linear-gradient(90deg,#F2C25A,rgba(242,194,90,0)); }
+  .authscreen .regpage .banner{ color:#EAFBF3; background:rgba(255,255,255,.08); border:1px solid rgba(124,240,196,.3); box-shadow:none; }
+  .authscreen .regpage .banner .bi{ color:#7CF0C4; background:rgba(43,212,160,.18); border-color:rgba(124,240,196,.4); }
+  .authscreen .regpage #rcError .banner{ background:rgba(255,138,122,.14); border-color:rgba(255,138,122,.5); color:#FFD3CB; }
+  .authscreen .regpage .field label{ color:#fff; } .authscreen .regpage .field label .opt{ color:#CDEFE0; } .authscreen .regpage .field label .req{ color:#F2C25A; }
+  .authscreen .regpage .ficon, .authscreen .regpage .fchev, .authscreen .regpage .pwwrap .pweye{ color:#7CF0C4; }
+  .authscreen .regpage .field input, .authscreen .regpage .field select{ color:#F6FFFA; background:rgba(255,255,255,.09); border:1px solid rgba(124,240,196,.38); box-shadow:none; color-scheme:dark; }
+  .authscreen .regpage .field input:focus, .authscreen .regpage .field select:focus{ border-color:#F2C25A; box-shadow:0 0 0 3px rgba(242,194,90,.25); }
+  .authscreen .regpage .field input::placeholder{ color:#B9E3D2; }
+  .authscreen .regpage .field select option{ background:#06281E; color:#F6FFFA; }
+  .authscreen .regpage .compliance-note{ color:#F5E3B0; background:rgba(242,194,90,.12); border:1px solid rgba(242,194,90,.4); }
+  .authscreen .regpage .btn-primary.reg-go{ color:#04251C; text-shadow:none; background:linear-gradient(135deg,#2BD4A0,#14996F); box-shadow:0 14px 26px -12px rgba(43,212,160,.7), inset 0 1px 0 rgba(255,255,255,.4); }
+  .authscreen .regpage .btn-ghost{ color:#EAFBF3; background:rgba(255,255,255,.1); border:1px solid rgba(124,240,196,.35); }
+  .authscreen .regpage .btn-ghost[data-forgot]{ background:transparent; border-color:transparent; color:#CDEFE0; }
+  .authscreen .regpage .section-title{ color:#CDEFE0; }
+  .authscreen .regpage .rt-in{ background:rgba(255,255,255,.08); border:1px solid rgba(124,240,196,.32); }
+  .authscreen .regpage .rt-n{ background:rgba(43,212,160,.2); color:#7CF0C4; }
+  .authscreen .regpage .rt-t b{ color:#fff; } .authscreen .regpage .rt-t small{ color:#CDEFE0; }
+  .authscreen .regpage .rt-card input:checked + .rt-in{ border-color:#F2C25A; background:linear-gradient(135deg,rgba(43,212,160,.22),rgba(242,194,90,.16)); box-shadow:0 0 0 2px rgba(242,194,90,.3); }
+  .authscreen .regpage .rt-card input:checked + .rt-in .rt-n{ background:linear-gradient(135deg,#2BD4A0,#14996F); color:#04251C; }
+  .authscreen .regpage .rt-card input:focus-visible + .rt-in{ outline:2px solid #F2C25A; }
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
     .app .topbar{ padding:5px 14px; gap:8px; }
@@ -1865,4 +1914,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.151"></script>
+<script src="app.js?v=2026.10.152"></script>
