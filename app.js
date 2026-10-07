@@ -19660,7 +19660,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.155';
+var APP_VERSION = '2026.10.157';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19938,6 +19938,12 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.157', items:[
+    'The header is now see through on big screens too, with no bar, gold line or shadow, so it matches the phone look everywhere. The first run setup guide for a new Barbershop and Salon or Hospitality account now lists steps for that business (services, rooms, bookings) instead of shop steps'
+  ]},
+  { v:'2026.10.156', items:[
+    'The Business type row now sits next to Settings at the bottom of the menu instead of near the top'
+  ]},
   { v:'2026.10.155', items:[
     'Barbershop and Salon and Hospitality businesses now only see the features they need. The menu, business tools and Smart Tools no longer list things like the full screen point of sale, purchase orders, stock takes, wastage, branches, barcode labels or the import cost calculator where they do not apply. Retail shops keep everything'
   ]},
@@ -23696,11 +23702,34 @@ var VERT_HIDE = {
 };
 function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]) return tiles; return tiles.filter(function(t){ return h[kind].indexOf(t[0]) < 0; }); }
 function vertFilterRows(html){
+  // the owner's Business type row sits with Settings, at the bottom of the menu
+  if(State.session && isOwner()){ var sr = /<button class="drawer-row"[^>]*data-drawer-row="settings"/; if(sr.test(html)) html = html.replace(sr, function(m){ return drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type') + m; }); }
   var h = VERT_HIDE[bizType()]; if(!h) return html;
   h.menu.forEach(function(k){ html = html.replace(new RegExp('<button class="drawer-row"[^>]*data-drawer-row="' + k + '"[\\s\\S]*?</button>', 'g'), ''); });
   return html;
 }
 (function(){ try{ var _mrh = menuRowsHtml; menuRowsHtml = function(){ return vertFilterRows(_mrh()); }; var _rt = roleTabs; roleTabs = function(role){ var a = _rt(role), h = VERT_HIDE[bizType()]; return h ? a.filter(function(x){ return h.tabs.indexOf(x) < 0; }) : a; }; }catch(e){} })();
+/* the first run setup guide speaks the language of the business type */
+(function(){
+  try{
+    var _steps = btSetupSteps, _go = btSetupGo;
+    btSetupSteps = function(){
+      var list = _steps(), t = bizType(); if(t === 'retail') return list;
+      var rep = {
+        beauty:{ pro:{ t:'Add your services and prices', d:'Cuts, braids, nails and more, with prices and minutes.', done:vServices().length > 0, go:'v-services' },
+                 cus:{ t:'Add your clients', d:'They are also added whenever you book someone.', done:(State.customers || []).length > 0, go:'v-clients' },
+                 team:{ t:'Add your barbers and stylists', d:'Give each person their own login.' },
+                 sale:{ t:'Take your first booking', d:'Book a client, then charge when they are done.', done:vList('appointments').length > 0, go:'v-appts' } },
+        hospitality:{ pro:{ t:'Add your rooms and rates', d:'Each room with its type and price per night.', done:vRooms().length > 0, go:'v-rooms' },
+                 team:{ t:'Add your front desk, waiters and housekeeping', d:'Give each person their own login.' },
+                 sale:{ t:'Take your first room booking', d:'Book a guest, check them in, then check them out.', done:vList('hosBookings').length > 0, go:'v-bookings' } }
+      }[t], drop = t === 'beauty' ? ['sup'] : ['cus'];
+      return list.filter(function(x){ return drop.indexOf(x.k) < 0; }).map(function(x){ return rep[x.k] ? Object.assign({}, x, rep[x.k]) : x; });
+    };
+    btSetupGo = function(k){ if(String(k).indexOf('v-') === 0){ vertDrawerAction(k); return; } return _go(k); };
+  }catch(e){}
+})();
+/* header and footer: see through at every screen size, no bar, no gold line */
 var VERT_MGR = { 'v-services':1, 'v-earn':1, 'v-comply':1, 'v-type':1 };
 /* the job names people see for the cashier and stock clerk roles change with the business type (the permissions underneath stay the same) */
 var VERT_ROLE_BASE = null;
@@ -23732,7 +23761,6 @@ function vertMenuRows(){
     rows += '<div class="drawer-sub">' + (t === 'beauty' ? 'Barbershop and Salon' : 'Hospitality') + '</div>';
     VERT_PAGES[t].forEach(function(p){ if(p[3] && !isManagerOrOwner()) return; rows += drawerRowHtml(p[0], ICONS[p[2]] || ICONS.clipboard, p[1]); });
   }
-  if(State.session && isOwner()) rows += drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type');
   return rows;
 }
 function vertDrawerAction(key){

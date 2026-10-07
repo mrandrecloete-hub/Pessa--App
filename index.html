@@ -1078,6 +1078,11 @@
   .authscreen .newhere .nh-b{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
   .authscreen .newhere .btn{ flex:1 1 150px; font-size:13.5px; padding:10px 12px; }
   .authscreen .lg-forgot{ background:transparent !important; border-color:transparent !important; color:#CDEFE0 !important; text-decoration:underline; font-weight:600; }
+  /* ---------- big screens: the header is see through too, no bar, no gold line, no shadow ---------- */
+  @media (min-width:1024px){
+    .app.pg-bg .topbar, .app.inv-bg .topbar, .app.dash-bg .topbar{ background:linear-gradient(180deg,rgba(3,34,26,.82) 0%,rgba(3,34,26,0) 100%); box-shadow:none; border:0; overflow:visible; -webkit-backdrop-filter:none; backdrop-filter:none; }
+    .app.pg-bg .topbar:after, .app.inv-bg .topbar:after, .app.dash-bg .topbar:after{ display:none; }
+  }
   /* ---------- register page: the same dark emerald glass as every other page ---------- */
   .authscreen .regpage{
     --bg:#03261D; --surface:rgba(255,255,255,.08); --surface-2:rgba(255,255,255,.13); --surface-3:rgba(43,212,160,.2);
@@ -1922,4 +1927,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.155"></script>
+<script src="app.js?v=2026.10.157"></script>
