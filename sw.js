@@ -5,8 +5,8 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v191';
-var APPJS = './app.js?v=2026.10.158';
+var CACHE = 'pesa-shell-v192';
+var APPJS = './app.js?v=2026.10.159';
 var SHELL = ['./index.html', APPJS, './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './icon-512-maskable.png', './jspdf.umd.min.js', './lang_af.js', './lang_de.js',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];

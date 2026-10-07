@@ -11015,6 +11015,7 @@ function openSendSheet(ctx){
     '<div class="actions" style="margin-top:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       (emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
       '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>' +
+      '<button class="btn btn-ghost" type="button" data-channel="gmail">'+tr('Gmail')+'</button>' +
       (waReady() ? '<button class="btn btn-primary" type="button" data-channel="wanow">'+tr('Send now by WhatsApp')+'</button>' : '') +
       '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+(waReady() ? tr('WhatsApp app') : tr('WhatsApp'))+'</button>' +
       '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>' +
@@ -11130,6 +11131,22 @@ function openSendSheet(ctx){
       showResult(tr('Opening your email app…'), url, body);
     }
   }
+  /* Gmail: the share menu on a computer does not list Gmail, so open a Gmail message in the browser with the address, subject and text filled in.
+     A web link cannot attach a file, so the PDF is saved to Downloads first and the person drags it in or taps the paperclip. */
+  async function sendGmail(){
+    var to = emailIn.value.trim();
+    if(to && !to.split(/[;,]/).every(function(a){ a = a.trim(); return !a || looksLikeEmail(a); })){ toast(tr('Enter a valid email address')); emailIn.focus(); return; }
+    var name = recipientName(), file = null;
+    if(ctx.buildFile){ file = (readyFile !== undefined) ? readyFile : await filePromise; }
+    var body = ctx.emailBody(name, !!file);
+    var url = 'https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=' + encodeURIComponent(to.replace(/;/g, ',').replace(/\s+/g, '')) + '&su=' + encodeURIComponent(ctx.subject || '') + '&body=' + encodeURIComponent(body || '');
+    openExternalUrl(url);
+    var saved = false;
+    if(file) saved = await saveBlobFile(file.name, file);
+    logSend('email', saved ? 'Gmail opened, PDF downloaded' : 'Gmail opened');
+    toast(saved ? tr('PDF saved. Add it to the Gmail message with the paperclip, then tap Send.') : tr('Opening Gmail…'));
+    showResult(saved ? tr('Gmail is opening with the message ready. The PDF was saved to your Downloads: add it with the paperclip or drag it into the message, then tap Send.') : tr('Gmail is opening with the message ready.'), url, body);
+  }
   async function sendNow(btn){
     var list = emailIn.value.split(/[;,]/).map(function(a){ return a.trim(); }).filter(Boolean);
     if(!list.length || !list.every(looksLikeEmail)){ toast(tr('Enter a valid email address')); emailIn.focus(); return; }
@@ -11175,7 +11192,7 @@ function openSendSheet(ctx){
   overlay.querySelectorAll('[data-channel]').forEach(function(b){
     b.addEventListener('click', function(){
       var ch = b.getAttribute('data-channel');
-      if(ch === 'wanow') sendWaNow(b); else if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else sendText(ch);
+      if(ch === 'wanow') sendWaNow(b); else if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else if(ch === 'gmail') sendGmail(); else sendText(ch);
     });
   });
   return overlay;
@@ -19679,7 +19696,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.158';
+var APP_VERSION = '2026.10.159';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19957,6 +19974,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.159', items:[
+    'Send invoice, receipt and report sheet: a new Gmail button opens a Gmail message with the address, subject and text filled in, and saves the PDF so you can attach it with the paperclip'
+  ]},
   { v:'2026.10.158', items:[
     'Test products: you can now load up to 100,000 made up products, and load them straight from the Stock page (a Test products box at the top, for owners and managers). They are never saved, never synced and cannot be sold'
   ]},
