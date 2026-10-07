@@ -20,9 +20,10 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  // current business on the sign-in page
  await p.fill('#rcCompanyName','Beta Shop'); await p.fill('#rcOwnerName','Ben'); await p.fill('#rcOwnerPassword','beta1234'); await p.fill('#rcOwnerPassword2','beta1234'); await p.click('#rcSubmit');
  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} }); await p.waitForTimeout(800);
- await p.evaluate(()=>{ window.__t.signedOutPending=true; window.__t.clearSessionLocal(); }); await p.reload(); await p.waitForSelector('[data-curdel]',{timeout:15000}).catch(()=>{});
- ck('current business has a delete button on sign in', await p.isVisible('[data-curdel]'));
- if(await p.isVisible('[data-curdel]')){ await p.click('[data-curdel]'); await p.waitForSelector('#dbPass'); await p.fill('#dbPass','beta1234'); await p.click('#dbGo'); await p.waitForLoadState('load'); await p.waitForSelector('#rcCompanyName',{timeout:15000}); await p.waitForTimeout(800);
+ await p.evaluate(()=>window.__t.openSettingsSheet()); await p.waitForSelector('#stDelBiz',{timeout:15000}).catch(()=>{});
+ ck('the owner finds Delete this business in Settings', await p.isVisible('#stDelBiz'));
+ await p.evaluate(()=>window.__t.signedOutPending=false);
+ if(await p.isVisible('#stDelBiz')){ await p.click('#stDelBiz'); await p.waitForSelector('#dbPass'); await p.fill('#dbPass','beta1234'); await p.click('#dbGo'); await p.waitForLoadState('load'); await p.waitForSelector('#rcCompanyName',{timeout:15000}); await p.waitForTimeout(800);
   const gone=await p.evaluate(()=>window.__t.WS.list().filter(x=>x.name).length); ck('current business deleted, back to register', gone===0, gone); }
  ck('no page errors', errs.length===0, errs);
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);

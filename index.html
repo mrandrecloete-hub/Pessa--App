@@ -1070,6 +1070,14 @@
   .authscreen .cn-scroll, .authscreen .consent-box, .authscreen #cnText{ background:rgba(0,0,0,.18); color:#EAFBF3; border-color:rgba(124,240,196,.28); }
   .authscreen .rolebadge{ color:#EAFBF3; }
   .authscreen a{ color:#7CF0C4; }
+  /* ---------- sign in screen: simple and quiet ---------- */
+  .authscreen .stafftile .n{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .authscreen .stafftile .main{ min-width:0; }
+  .authscreen .newhere{ margin:18px 0 6px; text-align:center; }
+  .authscreen .newhere .nh-t{ font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; color:#CDEFE0; margin-bottom:8px; }
+  .authscreen .newhere .nh-b{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .authscreen .newhere .btn{ flex:1 1 150px; font-size:13.5px; padding:10px 12px; }
+  .authscreen .lg-forgot{ background:transparent !important; border-color:transparent !important; color:#CDEFE0 !important; text-decoration:underline; font-weight:600; }
   /* ---------- register page: the same dark emerald glass as every other page ---------- */
   .authscreen .regpage{
     --bg:#03261D; --surface:rgba(255,255,255,.08); --surface-2:rgba(255,255,255,.13); --surface-3:rgba(43,212,160,.2);
@@ -1914,4 +1922,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.153"></script>
+<script src="app.js?v=2026.10.154"></script>

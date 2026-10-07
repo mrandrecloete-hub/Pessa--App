@@ -5795,7 +5795,7 @@ function isManagerOrOwner(){ var r = secRoleNow(); return r === 'owner' || r ===
 function isOwner(){ return secRoleNow() === 'owner'; }
 function isRestricted(){ return !!State.session && !isManagerOrOwner(); }
 function isCashier(){ return secRoleNow() === 'cashier'; }
-function saveSessionLocal(userId){ try{ var n = Date.now(); localStorage.setItem(SESSION_KEY, JSON.stringify({userId:userId, at:n, last:n})); }catch(e){} }
+function saveSessionLocal(userId){ try{ var n = Date.now(); localStorage.setItem(SESSION_KEY, JSON.stringify({userId:userId, at:n, last:n})); localStorage.setItem('pesa_last_user_' + WS.id, userId); }catch(e){} }
 function clearSessionLocal(){ try{ localStorage.removeItem(SESSION_KEY); }catch(e){} }
 
 var signedOutPending = false;
@@ -5927,16 +5927,12 @@ function renderSignedOutHtml(){
     '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
-      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soEmpBtn">'+tr('New employee sign up')+'</button></div>' +
-      '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="soRegisterBtn" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
-      '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
-      '<div style="text-align:center;margin-top:6px;"><button class="btn btn-ghost" type="button" data-curdel="1">'+ICONS.trash+' '+tr('Delete this business')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
-    '</div>' +
+    '</div>' + newHereHtml() +
   '</div>';
 }
 function wireSignedOut(root){
-  var se = root.querySelector('#soEmpBtn'); if(se) se.addEventListener('click', function(){ showAuthScreen('employee'); });
+  var se = root.querySelector('#empSignupBtn'); if(se) se.addEventListener('click', function(){ showAuthScreen('employee'); });
   root.querySelector('#soLoginBtn').addEventListener('click', function(){
     signedOutPending = false;
     showAuthScreen('login');
@@ -7442,11 +7438,14 @@ function renderLoginHtml(){
   var company = State.company || {};
   var staff = State.users.filter(function(u){ return u.active !== false && !u.pending; })
     .sort(function(a,b){ var order={owner:0,manager:1,cashier:2,stockclerk:3}; return (order[a.role]-order[b.role]) || a.name.localeCompare(b.name); });
+  try{ vertLabels(); }catch(e){}
   var tiles = staff.map(function(u){
-    return '<button type="button" class="stafftile" data-staff="'+u.id+'">' +
+    var parts = String(u.name||'').trim().split(/\s+/), shown = parts.length > 2 ? parts[0]+' '+parts[parts.length-1] : u.name;
+    var job = u.jobTitle || ((u.role === 'cashier' || u.role === 'stockclerk') ? ROLE_LABELS[u.role] : ROLE_LABELS[u.role]) || u.role;
+    return '<button type="button" class="stafftile" data-staff="'+u.id+'" title="'+esc(u.name)+'">' +
       '<div class="avatar">'+userAvatarInner(u)+'</div>' +
-      '<div class="main"><div class="n">'+esc(u.name)+'</div><div class="r">'+esc(tr(ROLE_LABELS[u.role]||u.role))+'</div></div>' +
-      '<span class="rolebadge '+u.role+'">'+esc(u.role)+'</span>' +
+      '<div class="main"><div class="n">'+esc(shown)+'</div><div class="r">'+esc(tr(job))+'</div></div>' +
+      ((u.role === 'owner' || u.role === 'manager') ? '<span class="rolebadge '+u.role+'">'+esc(u.role)+'</span>' : '') +
     '</button>';
   }).join('');
   return '<div class="authcard">' +
@@ -7455,15 +7454,18 @@ function renderLoginHtml(){
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
       '<div id="loginUnlockBox"></div>' +
-      '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
-      '<div style="text-align:center;margin-top:6px;"><button class="btn btn-ghost" type="button" data-curdel="1">'+ICONS.trash+' '+tr('Delete this business')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
-    '</div>' +
-    '<div style="text-align:center;margin-top:14px;"><button class="btn btn-ghost" id="empSignupBtn" type="button">'+tr('New employee sign up')+'</button></div>' +
-    '<div style="text-align:center;margin-top:4px;"><button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Sign up / register as new user')+'</button></div>' +
+    '</div>' + newHereHtml() +
   '</div>';
 }
 
+/* one quiet row for people who are new: join as an employee, or register a business */
+function newHereHtml(){
+  return '<div class="newhere"><div class="nh-t">'+tr('New here?')+'</div><div class="nh-b">' +
+    '<button class="btn btn-ghost" id="empSignupBtn" type="button">'+tr('I have an invite code')+'</button>' +
+    '<button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Register a new business')+'</button></div></div>';
+}
+function lastUserKey(){ return 'pesa_last_user_' + WS.id; }
 function wireLoginView(root){
   var selectedId = null;
   var es = root.querySelector('#empSignupBtn'); if(es) es.addEventListener('click', function(){ showAuthScreen('employee'); });
@@ -7479,7 +7481,9 @@ function wireLoginView(root){
       box.innerHTML =
         '<div class="field"><label>'+(isCash?tr('4-digit PIN'):tr('Password'))+'</label><input id="loginPass" type="password" inputmode="'+(isCash?'numeric':'text')+'" '+(isCash?'maxlength="4"':'')+' placeholder="'+(isCash?'••••':tr('Your password'))+'"></div>' +
         '<div id="loginError"></div>' +
-        '<div class="actions"><button class="btn btn-primary btn-block" id="loginUnlockBtn">'+tr('Unlock')+'</button></div>';
+        '<div class="actions"><button class="btn btn-primary btn-block" id="loginUnlockBtn">'+tr('Sign in')+'</button></div>' +
+        '<div style="text-align:center;margin-top:6px;"><button class="btn btn-ghost lg-forgot" type="button" data-forgot="1">'+(isCash?tr('Forgot PIN?'):tr('Forgot password?'))+'</button></div>';
+      box.querySelectorAll('[data-forgot]').forEach(function(f){ f.addEventListener('click', function(){ showAuthScreen('forgot'); }); });
       if(bioEnrolled(u.id) && bioSupported()){
         var bw = document.createElement('div');
         bw.innerHTML = '<div class="actions" style="margin-bottom:6px;"><button class="btn btn-accent btn-block" id="loginBioBtn" type="button" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">'+BIO_ICON+'<span>'+tr('Use fingerprint or face')+'</span></button></div><div style="text-align:center;font-size:12px;color:var(--text-muted);margin:2px 0 8px;">'+(isCash?tr('or use your PIN'):tr('or use your password'))+'</div><div id="loginBioMsg"></div>';
@@ -7525,6 +7529,8 @@ function wireLoginView(root){
       passInput.addEventListener('keydown', function(e){ if(e.key==='Enter') attempt(); });
     });
   });
+  // the person who signed in last on this device is already chosen, so most people only type their PIN; tap another name to change
+  try{ var lu = localStorage.getItem(lastUserKey()), lt = lu && root.querySelector('[data-staff="'+lu+'"]'); if(lt) setTimeout(function(){ try{ lt.click(); }catch(e){} }, 0); }catch(e){}
 }
 
 /* ---- company details (post-registration edit, owner/manager) ---- */
@@ -14286,8 +14292,10 @@ function openSettingsSheet(){
 '', false) +
     stGrp('Security, help and about','Activity log, training, support and legal',settingsMoreHtml(), false) +
     '<div class="actions"><button class="btn btn-primary btn-block" id="stSave">'+tr('Save settings')+'</button></div>' +
+    (isOwner() ? '<div style="text-align:center;margin:8px 0 2px;"><button class="btn btn-ghost" id="stDelBiz" type="button">'+ICONS.trash+' '+tr('Delete this business')+'</button></div>' : '') +
     settingsAboutFooterHtml();
   var ov = openSheet(html); wireSettingsMore(ov);
+  var _db = ov.querySelector('#stDelBiz'); if(_db) _db.addEventListener('click', function(){ closeModal(); openDeleteBusinessSheet(WS.id); });
 
   function readCustomTemplate(){
     return {
@@ -19650,7 +19658,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.153';
+var APP_VERSION = '2026.10.154';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19928,6 +19936,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.154', items:[
+    'A simpler sign in screen: pick your name, type your PIN, tap Sign in. The last person who signed in is already chosen. Forgot PIN now sits beside the PIN box, job titles replace the Cashier label, and the two sign up buttons are replaced by one New here row. Delete this business moved into Settings for the owner'
+  ]},
   { v:'2026.10.153', items:[
     'Barbershop and Salon and Hospitality dashboards now let the owner register employees with their own logins right from the dashboard, with job names that fit the business, plus Team, Expenses, Suppliers, Accountant, Invoices, Till, Messages and Settings tiles and a Get started checklist. Each employee gets their own page with their clients or front desk work for the day, and only sees the pages that suit their job'
   ]},
