@@ -5144,6 +5144,23 @@ function mockRemove(){
   mockPill(); try{ renderCartBar(); }catch(e){} render();
 }
 function cartHasMock(){ return State.cart.some(function(i){ return isMockId(i.productId); }); }
+/* test products can be loaded straight from the Stock page (owner and manager), up to 100,000. They are never saved and cannot be sold. */
+var MOCK_SIZES = [1000, 5000, 10000, 25000, 50000, 75000, 100000];
+function mockStripHtml(){
+  if(!(State.session && isManagerOrOwner())) return '';
+  return '<details class="card pad" id="mockStrip" style="margin:0 0 12px;"'+(mockLoaded() ? ' open' : '')+'><summary style="font-weight:700;cursor:pointer;">'+tr('Test products')+(mockLoaded() ? ' ('+MockStock.items.length.toLocaleString()+' '+tr('loaded')+')' : '')+'</summary><div style="height:6px;"></div>' +
+    '<div style="font-size:12.5px;color:var(--text-muted);line-height:1.5;margin-bottom:8px;">'+tr('Load made up products to try scrolling, searching and scanning. They are never saved, never synced and cannot be sold.')+'</div>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><select id="mockN" style="flex:1;min-width:120px;">'+MOCK_SIZES.map(function(n){ return '<option value="'+n+'"'+(n === 10000 ? ' selected' : '')+'>'+n.toLocaleString()+'</option>'; }).join('')+'</select>' +
+    '<button class="btn btn-primary" type="button" data-mock="load">'+tr('Load test products')+'</button>' +
+    (mockLoaded() ? '<button class="btn btn-ghost" type="button" data-mock="remove">'+tr('Remove')+' ('+MockStock.items.length.toLocaleString()+')</button>' : '') + '</div></details>';
+}
+document.addEventListener('click', function(e){
+  var b = e.target && e.target.closest ? e.target.closest('[data-mock]') : null; if(!b) return;
+  if(b.getAttribute('data-mock') === 'remove'){ mockRemove(); toast(tr('Test products removed')); return; }
+  var sel = document.getElementById('mockN'), n = sel ? +sel.value : 10000;
+  b.disabled = true; b.textContent = tr('Loading…');
+  setTimeout(function(){ var t0 = performance.now(); mockLoad(n); toast(n.toLocaleString()+' '+tr('test products loaded in')+' '+Math.round(performance.now() - t0)+' ms'); }, 30);
+});
 function mockPill(){
   var el = document.getElementById('mockPill');
   if(!mockLoaded()){ if(el) el.remove(); return; }
@@ -5190,7 +5207,7 @@ async function spRun(arr, label){
 }
 function spGrade(v, fast, ok){ return v <= fast ? 'fast' : (v <= ok ? 'ok' : 'slow'); }
 function openSpeedSheet(){
-  var sizes = [1000, 5000, 10000, 30000, 50000];
+  var sizes = [1000, 5000, 10000, 25000, 50000, 75000, 100000];
   var cores = navigator.hardwareConcurrency ? navigator.hardwareConcurrency + ' ' + tr('cores') : '';
   var html = '<div class="sheet-head"><h2>'+tr('Speed check')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+tr('See how fast Pesa searches, scans barcodes and draws the product list on this computer or device. Nothing is saved or sent anywhere.')+'</div>' +
@@ -9294,10 +9311,12 @@ function renderStock(){
     html += '<div class="banner">'+ICONS.warn+'<span><strong>'+lowCount+'</strong> item'+(lowCount>1?'s':'')+' running low on stock.</span></div>';
   }
   if(State.products.length === 0){
+    html += mockStripHtml();
     html += '<div class="empty">'+ICONS.box+'<div class="t">'+tr('No products yet')+'</div><div class="s">'+tr('Add items one at a time, or all at once.')+'</div>' +
       '<div style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"><button class="btn btn-primary" id="emptyAddOneBtn">'+tr('Add product')+'</button><button class="btn btn-ghost" id="bulkAddBtnEmpty">'+tr('Add in bulk')+'</button></div></div>';
     return html;
   }
+  html += mockStripHtml();
   html += renderSelectToolbar('stock');
   html += '<div style="display:flex;gap:8px;margin-bottom:12px;">' +
     '<button class="btn btn-ghost" id="bulkAddBtn" style="flex:1;">'+ICONS.stack+' '+tr('Add stock in bulk')+'</button>' +
@@ -19660,7 +19679,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.157';
+var APP_VERSION = '2026.10.158';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19938,6 +19957,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.158', items:[
+    'Test products: you can now load up to 100,000 made up products, and load them straight from the Stock page (a Test products box at the top, for owners and managers). They are never saved, never synced and cannot be sold'
+  ]},
   { v:'2026.10.157', items:[
     'The header is now see through on big screens too, with no bar, gold line or shadow, so it matches the phone look everywhere. The first run setup guide for a new Barbershop and Salon or Hospitality account now lists steps for that business (services, rooms, bookings) instead of shop steps'
   ]},
