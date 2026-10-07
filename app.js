@@ -5818,9 +5818,10 @@ function checkAuthAndRoute(){
     try{ saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }catch(e){}
     if(saved && saved.userId && !sessionFresh(saved)){ clearSessionLocal(); logAudit('other','staff',saved.userId,'Saved sign in expired, sign in required'); saved = null; }
     if(saved && !saved.at){ saveSessionLocal(saved.userId); }
+    if(saved && saved.userId && !(State.ready && State.ready.users)) return;   // staff list still loading after a reload: wait, do not flash the sign in page
     if(saved && saved.userId){
       var u = State.users.find(function(x){ return x.id===saved.userId && x.active!==false && !x.pending; });
-      if(u){ State.session = { userId:u.id, name:u.name, role:u.role }; if(bioEnrolled(u.id) && bioLockOn(u.id) && bioSupported()) _bioLockPending = true; }
+      if(u){ State.session = { userId:u.id, name:u.name, role:u.role }; if(bioEnrolled(u.id) && bioLockOn(u.id) && bioSupported() && !pesaAfterUpdateFresh()) _bioLockPending = true; }
     }
   }
   if(!State.session){
@@ -15229,7 +15230,7 @@ function attemptCloudReconnect(){
       toast('Reconnected, your offline sales and changes are now synced to the cloud');
       // Reload so every part of the app re-subscribes cleanly against the
       // now-available cloud database instead of the local fallback.
-      setTimeout(function(){ location.reload(); }, 1200);
+      pesaKeepForReload(); setTimeout(function(){ location.reload(); }, 1200);
     }catch(e){
       _reconnectTried = false; // allow a later retry (e.g. next 'online' event)
     }
@@ -19633,8 +19634,34 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.148';
+var APP_VERSION = '2026.10.149';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
+/* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
+   for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
+function pesaKeepForReload(){
+  try{
+    if(!State.session) return;
+    _sessTouchAt = 0; sessionTouch();
+    sessionStorage.setItem('pesa_after_update', String(Date.now()));
+    if(State.cart && State.cart.length) sessionStorage.setItem('pesa_cart_keep', JSON.stringify(State.cart));
+  }catch(e){}
+}
+function pesaAfterUpdateFresh(){
+  try{ var t = parseInt(sessionStorage.getItem('pesa_after_update') || '0', 10); return !!t && Date.now() - t < 3*60000; }catch(e){ return false; }
+}
+function pesaRestoreKept(){
+  try{
+    var raw = sessionStorage.getItem('pesa_cart_keep'); if(!raw) return;
+    if(!State.session || !(State.ready && State.ready.products)){ if((pesaRestoreKept._n = (pesaRestoreKept._n||0) + 1) < 12) setTimeout(pesaRestoreKept, 1000); return; }
+    sessionStorage.removeItem('pesa_cart_keep');
+    var cart = JSON.parse(raw);
+    if(Array.isArray(cart) && cart.length && !(State.cart && State.cart.length)){
+      State.cart = cart.filter(function(i){ return State.products.some(function(p){ return p.id === i.productId; }); });
+      try{ renderCartBar(); }catch(e){}
+      if(State.cart.length) toast(tr('Pesa updated. Your sale in progress was kept.'));
+    }
+  }catch(e){}
+}
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
   for(var i=0; i<Math.max(x.length, y.length); i++){ var d = (x[i]||0) - (y[i]||0); if(d) return d > 0; }
@@ -19661,7 +19688,7 @@ function pesaShowUpdateBar(v){
   b.querySelector('#pesaUpdGo').addEventListener('click', pesaForceRefresh);
 }
 function pesaForceRefresh(){
-  var go = function(){ try{ location.reload(); }catch(e){} };
+  var go = function(){ pesaKeepForReload(); try{ location.reload(); }catch(e){} };
   // download the newest page first and save it into the app cache, then reload from that saved copy. Nothing is deleted,
   // so a weak mobile connection can never leave Pesa without a copy, and the reload itself needs no network.
   toast(tr('Downloading the update...'));
@@ -19885,6 +19912,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.149', items:[
+    'Updates no longer sign anyone out or interrupt them. A new version waits behind the Update now bar while you are signed in, and when you do update you stay signed in, are not asked for your fingerprint again, and keep the sale you were busy with'
+  ]},
   { v:'2026.10.148', items:[
     'The Pesa AI Assistant now shows a short thinking animation and then its answer fades in, so it feels like a live conversation. The promotion video shows it asking and answering in real motion'
   ]},
@@ -23547,6 +23577,7 @@ Store.ready.then(function(){
   Sync.start();
   try{ Fiscal.ensure(); }catch(e){}
   try{ agentStart(); }catch(e){}
+  setTimeout(pesaRestoreKept, 1500);
   setTimeout(function(){ try{ Backups.auto(); smartTick(); }catch(e){} }, 20000);
   setInterval(function(){ try{ Backups.auto(); smartTick(); licCheck(); }catch(e){} try{ agentTick('loop'); }catch(e){} }, 30*60000);
   updateSyncBadge();
@@ -23598,6 +23629,8 @@ setInterval(updateHeader, 60000);
             if(!hadController || reloaded) return; reloaded = true;
             // an update that lands while the opening animation plays must not restart it: this page already loaded the newest files from the network, so it just carries on and the new copy is used from the next start
             try{ if(window.__introStarted && document.getElementById('introVeil')) return; }catch(e){}
+            // never reload under someone who is signed in (it would lose their place and could look like a sign out): offer the Update now bar instead
+            if(State.session){ try{ pesaCheckVersion(false); }catch(e){} return; }
             try{ window.location.reload(); }catch(e){}
           });
         }).catch(function(){ /* not available in this host, ignore */ });
