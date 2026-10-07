@@ -1046,6 +1046,30 @@
   /* header: one tidy line each, never wrapping */
   .topbar .shopmeta > *, .topbar .shopname, .topbar .shopdate, #syncBadgeSlot, #syncBadgeSlot *{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
+  /* ---------- sign in, register, consent and licence screens: same dark emerald glass as every other page ---------- */
+  .authscreen{
+    --surface:rgba(255,255,255,.08); --surface-2:rgba(255,255,255,.13); --surface-3:rgba(43,212,160,.2); --text:#F6FFFA; --text-muted:#CDEFE0; --border:rgba(124,240,196,.28);
+    --primary:#2BD4A0; --primary-dim:#2BD4A0; --primary-contrast:#04251C; --success:#4BE3A2; --danger:#FF8A7A; --shadow:none; --bg:#03261D; --accent:#F2C25A;
+    color:#F6FFFA; color-scheme:dark;
+    background:radial-gradient(120% 55% at 90% 0%,#0F6B4E 0%,rgba(15,107,78,0) 60%),radial-gradient(90% 45% at 0% 100%,rgba(217,154,30,.18) 0%,rgba(217,154,30,0) 55%),linear-gradient(170deg,#04261D 0%,#021812 55%,#031F17 100%);
+  }
+  .authscreen::before{ content:""; position:fixed; left:50%; top:50%; width:min(86vw,560px); height:min(86vw,560px); transform:translate(-50%,-50%); background:var(--logo-img) center/contain no-repeat; opacity:.09; pointer-events:none; }
+  .authscreen > *{ position:relative; z-index:1; }
+  .authscreen .authbox, .authscreen .regcard, .authscreen .card{ background:rgba(255,255,255,.08); border:1px solid rgba(124,240,196,.28); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .authscreen .authbrand h1, .authscreen h1, .authscreen h2, .authscreen h3{ color:#fff; }
+  .authscreen .authbrand p, .authscreen .section-title, .authscreen label, .authscreen .small{ color:#DDF5EA; }
+  .authscreen .stafftile{ background:rgba(255,255,255,.08); border:1px solid rgba(124,240,196,.3); color:#F6FFFA; }
+  .authscreen .stafftile.active{ border-color:#F2C25A; background:rgba(43,212,160,.2); }
+  .authscreen .stafftile .n{ color:#fff; } .authscreen .stafftile .r{ color:#CDEFE0; }
+  .authscreen .btn-ghost{ background:rgba(255,255,255,.1); color:#EAFBF3; border:1px solid rgba(124,240,196,.35); }
+  .authscreen .btn-primary{ background:linear-gradient(135deg,#2BD4A0,#14996F); color:#04251C; border:0; }
+  .authscreen .btn-primary:disabled{ opacity:.55; }
+  .authscreen input, .authscreen select, .authscreen textarea{ background:rgba(255,255,255,.09); color:#F6FFFA; border:1px solid rgba(124,240,196,.35); color-scheme:dark; }
+  .authscreen input::placeholder, .authscreen textarea::placeholder{ color:#B9E3D2; }
+  .authscreen .banner{ background:rgba(43,212,160,.14); color:#EAFBF3; border:1px solid rgba(124,240,196,.3); }
+  .authscreen .cn-scroll, .authscreen .consent-box, .authscreen #cnText{ background:rgba(0,0,0,.18); color:#EAFBF3; border-color:rgba(124,240,196,.28); }
+  .authscreen .rolebadge{ color:#EAFBF3; }
+  .authscreen a{ color:#7CF0C4; }
   /* ---------- phone turned sideways: a short, wide screen, so the header and footer shrink and the content gets the room ---------- */
   @media (orientation:landscape) and (max-height:520px){
     .app .topbar{ padding:5px 14px; gap:8px; }
@@ -1841,4 +1865,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.149"></script>
+<script src="app.js?v=2026.10.150"></script>

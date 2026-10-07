@@ -19634,7 +19634,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.149';
+var APP_VERSION = '2026.10.150';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19912,6 +19912,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.150', items:[
+    'The sign in, new employee sign up and privacy agreement screens now use the same dark emerald look as the rest of Pesa, with clear bright lettering. The promotion video now shows registering an employee with a login and that employee own dashboard'
+  ]},
   { v:'2026.10.149', items:[
     'Updates no longer sign anyone out or interrupt them. A new version waits behind the Update now bar while you are signed in, and when you do update you stay signed in, are not asked for your fingerprint again, and keep the sale you were busy with'
   ]},
