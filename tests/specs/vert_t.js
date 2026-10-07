@@ -9,6 +9,16 @@ async function signup(b, type, name){
   await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   return p;
 }
+async function addStaff(p, name, job){
+  await p.evaluate(()=>{ window.__t.closeModal(); }); await p.click('[data-vq="addstaff"]'); await p.waitForSelector('#sfName');
+  await p.fill('#sfName',name); await p.fill('#sfJob',job); await p.click('[data-sfmode="direct"]'); await p.fill('#sfPass','4821'); await p.click('#sfSave'); await p.waitForTimeout(800);
+}
+async function asEmployee(p, name){
+  await p.evaluate(()=>{ window.__t.closeModal(); window.__t.logout(); }); await p.waitForTimeout(500);
+  await p.evaluate(()=>{ const b=[...document.querySelectorAll('.sheet button,.overlay button')].find(x=>/^Log out$/.test(x.textContent.trim())); b.click(); }); await p.waitForTimeout(600);
+  await p.click('text=Log in again'); await p.click('[data-staff]:has-text("'+name+'")'); await p.fill('#loginPass','4821'); await p.click('#loginUnlockBtn');
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForTimeout(1200);
+}
 const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p.click('[data-pm="cash"]'); await p.fill('#cashRecv','5000'); await p.click('#confirmChargeBtn'); await p.waitForTimeout(700); };
 (async()=>{ const b=await chromium.launch();
  // ---------- the sign up page offers the three types, retail by default
@@ -21,7 +31,7 @@ const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p
  // ---------- barbershop and salon
  { const p=await signup(b,'beauty','Fade Masters'); 
    let r=await p.evaluate(()=>({ type:window.__t.bizType(), vq:!!document.querySelector('[data-vq="appts"]'), txt:document.body.innerText }));
-   ck('salon gets its own dashboard', r.type==='beauty' && r.vq && /today.s takings/i.test(r.txt) && /set up services/i.test(r.txt));
+   ck('salon gets its own dashboard', r.type==='beauty' && r.vq && /today.s takings/i.test(r.txt) && /add your services/i.test(r.txt) && /get started/i.test(r.txt));
    await p.evaluate(()=>window.__t.openServicesSheet()); await p.click('#svStarter'); await p.waitForTimeout(900);
    const n = await p.evaluate(()=>window.__t.State.products.filter(x=>x.isService).length); ck('starter services added ('+n+')', n>=15);
    await p.evaluate(async()=>{ const t=window.__t; await t.refs.users.add({name:'Sam Barber',role:'cashier',active:true,passHash:'x',createdAt:new Date().toISOString()}); });
@@ -48,6 +58,17 @@ const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p
    await p.evaluate(()=>window.__t.render()); await p.waitForTimeout(300);
    ck('dashboard shows today takings after the sale', await p.evaluate(()=>/N\$/.test(document.querySelector('.hero-val').textContent) && !/N\$0\.00/.test(document.querySelector('.hero-val').textContent)));
    ck('menu has the salon pages', await p.evaluate(()=>/Appointments/.test(window.__t.menuRowsHtml()) && /Stylist earnings/.test(window.__t.menuRowsHtml())));
+   // the owner runs the business from this dashboard: team, expenses and the rest are right there, and employees can be added
+   const own = await p.evaluate(()=>{ window.__t.render(); const t=document.body.innerText.toLowerCase(); return { team:!!document.querySelector('[data-vq="team"]'), add:!!document.querySelector('[data-vq="addstaff"]'), exp:!!document.querySelector('[data-vq="expenses"]'), acc:!!document.querySelector('[data-vq="accountant"]'), get:t.indexOf('get started')>-1 }; });
+   console.log(own); ck('owner dashboard has Team, Add employee, Expenses and Accountant right on it', own.team && own.add && own.exp && own.acc);
+   await p.evaluate(()=>window.__t.closeModal()); await p.click('[data-vq="addstaff"]'); await p.waitForSelector('#sfName');
+   const roleTxt = await p.evaluate(()=>[...document.querySelectorAll('#sfRole option')].map(o=>o.textContent).join('|')); ck('staff form uses salon job names', /Barber, Stylist or Receptionist/.test(roleTxt)); await p.evaluate(()=>window.__t.closeModal());
+   await addStaff(p,'Thandi Braider','Braider');
+   ck('the employee was registered with a PIN login', await p.evaluate(()=>window.__t.State.users.some(u=>u.name==='Thandi Braider' && u.role==='cashier' && u.jobTitle==='Braider' && u.passHash)));
+   await asEmployee(p,'Thandi');
+   const emp = await p.evaluate(()=>({ txt:document.body.innerText, menu:window.__t.menuRowsHtml(), role:window.__t.State.session.role }));
+   ck('employee signs in and sees their own page with My clients today', emp.role==='cashier' && /my clients today/i.test(emp.txt));
+   ck('employee menu has appointments but not earnings or services admin', /Appointments/.test(emp.menu) && !/Stylist earnings/.test(emp.menu) && !/Services and prices/.test(emp.menu) && !/Business type/.test(emp.menu));
    ck('salon: no page errors', p.__errs.length===0); if(p.__errs.length) console.log(p.__errs.slice(0,3)); }
  // ---------- hospitality
  { const p=await signup(b,'hospitality','Oryx Guest House');
@@ -82,6 +103,14 @@ const charge = async p => { await p.waitForSelector('[data-pm="cash"]'); await p
    ck('booking checked out, tab closed, stock taken off', f.b.status==='out' && f.t.status==='closed' && f.stock===48);
    await p.evaluate(()=>window.__t.render());
    ck('dashboard shows room fees and the levy estimate', /room fees this month/i.test(await p.evaluate(()=>document.body.innerText)) && /1,?700/.test(await p.evaluate(()=>document.body.innerText)));
+   const own = await p.evaluate(()=>{ window.__t.render(); return { team:!!document.querySelector('[data-vq="team"]'), add:!!document.querySelector('[data-vq="addstaff"]'), sup:!!document.querySelector('[data-vq="suppliers"]'), stock:!!document.querySelector('[data-vq="stock"]') }; });
+   ck('owner dashboard has Team, Add employee, Suppliers and Menu and stock', own.team && own.add && own.sup && own.stock);
+   await p.evaluate(()=>window.__t.closeModal()); await p.click('[data-vq="addstaff"]'); await p.waitForSelector('#sfName');
+   ck('staff form uses hospitality job names', /Front desk, Waiter or Bar staff/.test(await p.evaluate(()=>[...document.querySelectorAll('#sfRole option')].map(o=>o.textContent).join('|')))); await p.evaluate(()=>window.__t.closeModal());
+   await addStaff(p,'Selma Waiter','Waiter'); await asEmployee(p,'Selma');
+   const emp = await p.evaluate(()=>({ txt:document.body.innerText, menu:window.__t.menuRowsHtml() }));
+   ck('front desk employee sees Front desk today', /front desk today/i.test(emp.txt));
+   ck('their menu has bookings and tabs but not licences', /Room bookings/.test(emp.menu) && /Tables and tabs/.test(emp.menu) && !/Licences and levy/.test(emp.menu));
    ck('hospitality: no page errors', p.__errs.length===0); if(p.__errs.length) console.log(p.__errs.slice(0,3)); }
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();

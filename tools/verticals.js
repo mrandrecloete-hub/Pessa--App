@@ -66,20 +66,45 @@ function regPickedType(root){ var r = root.querySelector('input[name="rcBizType"
 
 /* ---- menu rows and page keys ---- */
 var VERT_PAGES = {
-  beauty: [['v-appts', 'Appointments', 'clock'], ['v-queue', 'Walk in queue', 'people'], ['v-clients', 'Clients', 'people'], ['v-services', 'Services and prices', 'clipboard'], ['v-earn', 'Stylist earnings', 'chartbar']],
-  hospitality: [['v-bookings', 'Room bookings', 'clock'], ['v-rooms', 'Rooms', 'box'], ['v-tabs', 'Tables and tabs', 'receipt'], ['v-guests', 'Guests', 'people'], ['v-comply', 'Licences and levy', 'clipboard']]
+  beauty: [['v-appts', 'Appointments', 'clock'], ['v-queue', 'Walk in queue', 'people'], ['v-clients', 'Clients', 'people'], ['v-services', 'Services and prices', 'clipboard', 1], ['v-earn', 'Stylist earnings', 'chartbar', 1]],
+  hospitality: [['v-bookings', 'Room bookings', 'clock'], ['v-rooms', 'Rooms', 'box'], ['v-tabs', 'Tables and tabs', 'receipt'], ['v-guests', 'Guests', 'people'], ['v-comply', 'Licences and levy', 'clipboard', 1]]
 };
+var VERT_MGR = { 'v-services':1, 'v-earn':1, 'v-comply':1, 'v-type':1 };
+/* the job names people see for the cashier and stock clerk roles change with the business type (the permissions underneath stay the same) */
+var VERT_ROLE_BASE = null;
+var VERT_JOBS = { beauty:['Barber', 'Stylist', 'Braider', 'Nail technician', 'Receptionist', 'Apprentice'], hospitality:['Receptionist', 'Waiter', 'Bartender', 'Cook', 'Housekeeper', 'Cashier'], retail:[] };
+function vertLabels(){
+  try{
+    if(!VERT_ROLE_BASE) VERT_ROLE_BASE = { l:Object.assign({}, ROLE_LABELS), c:Object.assign({}, ROLE_INFO.cashier), k:Object.assign({}, ROLE_INFO.stockclerk) };
+    var t = bizType();
+    ROLE_LABELS.cashier = t === 'beauty' ? 'Barber, Stylist or Receptionist' : t === 'hospitality' ? 'Front desk, Waiter or Bar staff' : VERT_ROLE_BASE.l.cashier;
+    ROLE_LABELS.stockclerk = t === 'hospitality' ? 'Housekeeping or Stock clerk' : VERT_ROLE_BASE.l.stockclerk;
+    if(t === 'beauty') ROLE_INFO.cashier = { desc:'Works with clients: sees the booking list and walk in queue, starts and charges their own jobs, sells products and runs their own till.', can:['See and update appointments and the walk in queue', 'Charge services and sell products', 'Open and close your own till', 'See your own sales and records'], cannot:['Change prices or services', 'See earnings of other people, reports or profit', 'Open the team list or business settings'] };
+    else if(t === 'hospitality') ROLE_INFO.cashier = { desc:'Works the front desk, restaurant or bar: takes room bookings, checks guests in and out, opens and charges tabs and runs their own till.', can:['See and edit room bookings, check in and check out', 'Open tabs and charge them', 'Open and close your own till', 'See your own sales and records'], cannot:['Change room rates or licence details', 'See reports, profit or other staff', 'Open the team list or business settings'] };
+    else ROLE_INFO.cashier = VERT_ROLE_BASE.c;
+  }catch(e){}
+}
+function vertStaffTweaks(){
+  try{
+    var t = bizType(); if(t === 'retail') return;
+    var job = document.getElementById('sfJob'); if(job){ job.setAttribute('list', 'sfJobList'); job.setAttribute('placeholder', 'e.g. ' + VERT_JOBS[t][0]); if(!document.getElementById('sfJobList')) job.insertAdjacentHTML('afterend', '<datalist id="sfJobList">' + VERT_JOBS[t].map(function(j){ return '<option value="' + j + '">'; }).join('') + '</datalist>'); }
+    var role = document.getElementById('sfRole'); if(role) [].slice.call(role.options).forEach(function(o){ if(o.value === 'cashier') o.textContent = ROLE_LABELS.cashier; else if(o.value === 'stockclerk') o.textContent = ROLE_LABELS.stockclerk; });
+  }catch(e){}
+}
+(function(){ try{ var _oss = openStaffSheet; openStaffSheet = function(u){ vertLabels(); var r = _oss(u); vertStaffTweaks(); return r; }; }catch(e){} })();
 function vertMenuRows(){
   var t = bizType(), rows = '';
+  vertLabels();
   if(t !== 'retail'){
     rows += '<div class="drawer-sub">' + (t === 'beauty' ? 'Barbershop and Salon' : 'Hospitality') + '</div>';
-    VERT_PAGES[t].forEach(function(p){ rows += drawerRowHtml(p[0], ICONS[p[2]] || ICONS.clipboard, p[1]); });
+    VERT_PAGES[t].forEach(function(p){ if(p[3] && !isManagerOrOwner()) return; rows += drawerRowHtml(p[0], ICONS[p[2]] || ICONS.clipboard, p[1]); });
   }
   if(State.session && isOwner()) rows += drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type');
   return rows;
 }
 function vertDrawerAction(key){
   if(key.indexOf('v-') !== 0) return false;
+  if(VERT_MGR[key] && !isManagerOrOwner()){ toast(tr('That page is for owners and managers.')); return true; }
   var m = { 'v-appts':function(){ openApptSheet(todayKey()); }, 'v-queue':openQueueSheet, 'v-clients':openClientsSheet, 'v-services':openServicesSheet, 'v-earn':openEarningsSheet,
     'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet }[key];
   if(m) m(); return !!m;
@@ -112,11 +137,47 @@ function vHero(label, val, sub){
 function vertDashboardHtml(){
   var html = '';
   try{ html += pilotHomeNote(); }catch(e){}
+  vertLabels();
   html += (bizType() === 'beauty' ? vBeautyDash() : vHospDash());
+  html += vSetupCard() + vManageTiles();
   html += '<div style="text-align:center;margin:14px 0 4px;"><button class="btn btn-ghost" type="button" data-vq="retail">' + tr('Show the full Pesa dashboard') + '</button></div>';
   return dashWrap(html);
 }
 var _vInit = false;
+/* the get started card: shown to the owner until the three first steps are done */
+function vSetupCard(){
+  if(!isManagerOrOwner()) return '';
+  var t = bizType(), staffN = (State.users || []).filter(function(u){ return u.active !== false && u.role !== 'owner'; }).length;
+  var steps = t === 'beauty' ? [[vServices().length > 0, 'Add your services and prices', 'services'], [staffN > 0, 'Add your barbers and stylists', 'addstaff'], [vList('appointments').length > 0, 'Take your first booking', 'newbook']]
+    : [[vRooms().length > 0, 'Add your rooms and rates', 'rooms'], [staffN > 0, 'Add your front desk, waiters and housekeeping', 'addstaff'], [vList('hosBookings').length > 0, 'Take your first room booking', 'newstay']];
+  if(steps.every(function(x){ return x[0]; })) return '';
+  return '<div class="section-title">' + tr('Get started') + '</div><div class="rowlist">' + steps.map(function(x, i){
+    return '<button class="row" type="button" data-vq="' + x[2] + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + (x[0] ? '&#10003; ' : (i + 1) + '. ') + tr(x[1]) + '</div></div><div class="trail">' + (x[0] ? tr('Done') : tr('Open')) + '</div></button>'; }).join('') + '</div>';
+}
+/* everything else the owner needs, kept right on the dashboard */
+function vManageTiles(){
+  if(!isManagerOrOwner()) return '';
+  var t = bizType();
+  return '<div class="section-title">' + tr('Run your business') + '</div><div class="qa-row">' + vTile('team', 'people', 'Team') + vTile('addstaff', 'plus', 'Add employee') + vTile('expenses', 'receipt', 'Expenses') + vTile('stock', 'box', t === 'beauty' ? 'Products and stock' : 'Menu and stock') + '</div>' +
+    '<div class="qa-row">' + vTile('suppliers', 'truck', 'Suppliers') + vTile('accountant', 'book', 'Accountant') + vTile('invoices', 'invoice', 'Invoices') + vTile('till', 'till', 'Till') + '</div>' +
+    '<div class="qa-row">' + vTile('msgs', 'bolt', 'Messages') + vTile('smart', 'bolt', 'Smart tools') + vTile('assistant', 'agent', 'AI Assistant') + vTile('settings', 'info', 'Settings') + '</div>';
+}
+/* an employee's own page: their jobs for today */
+function vertMeHtml(){
+  var t = bizType(); if(t === 'retail') return '';
+  var me = State.session && State.session.userId, today = todayKey(), h = '';
+  if(t === 'beauty'){
+    var mine = vApptsOn(today).filter(function(a){ return a.stylistId === me && a.status !== 'done' && a.status !== 'noshow'; }).sort(function(a, b){ return String(a.time).localeCompare(String(b.time)); });
+    var queue = vApptsOn(today).filter(function(a){ return a.status === 'waiting'; }).length;
+    h += '<div class="section-title">' + tr('My clients today') + '</div>' + (mine.length ? '<div class="rowlist">' + mine.slice(0, 6).map(function(a){ return '<button class="row" type="button" data-vq="appt" data-id="' + a.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(a.time || '') + ' ' + esc(a.clientName) + '</div><div class="sub">' + esc((a.serviceNames || []).join(', ')) + '</div></div><div class="trail"><span class="rolebadge">' + esc(tr(VS_STATUS[a.status] || a.status)) + '</span></div></button>'; }).join('') + '</div>' : '<div class="banner" style="display:block;">' + tr('No clients booked for you right now.') + '</div>') +
+      '<div class="qa-row">' + vTile('appts', 'clock', 'Appointments') + vTile('queue', 'people', 'Walk in queue', queue ? queue + ' ' + tr('waiting') : '') + vTile('newbook', 'plus', 'New booking') + vTile('clients', 'people', 'Clients') + '</div>';
+  } else {
+    var arr = vList('hosBookings').filter(function(b){ return b.status === 'reserved' && b.checkIn === today; }).length, dep = vList('hosBookings').filter(function(b){ return b.status === 'in' && b.checkOut <= today; }).length, tabs = vList('hosTabs').filter(function(x){ return x.status === 'open'; }).length;
+    h += '<div class="section-title">' + tr('Front desk today') + '</div><div class="stats">' + vStat('Arriving today', arr) + vStat('Leaving today', dep) + vStat('Open tabs', tabs) + '</div>' +
+      '<div class="qa-row">' + vTile('bookings', 'clock', 'Bookings') + vTile('newstay', 'plus', 'New booking') + vTile('tabs', 'receipt', 'Tabs') + vTile('rooms', 'box', 'Rooms') + '</div>';
+  }
+  return h;
+}
 function vertInit(){
   if(_vInit) return; _vInit = true;
   document.addEventListener('click', function(e){
@@ -125,6 +186,7 @@ function vertInit(){
     var go = { sell:function(){ setTab('sell'); }, stock:function(){ setTab('stock'); }, expenses:function(){ setTab('expenses'); }, reports:function(){ setTab('reports'); },
       appts:function(){ openApptSheet(todayKey()); }, queue:openQueueSheet, clients:openClientsSheet, services:openServicesSheet, earn:openEarningsSheet, newbook:function(){ openApptForm(null, todayKey()); },
       bookings:openBookingsSheet, rooms:openRoomsSheet, tabs:openTabsSheet, guests:openGuestsSheet, comply:openComplySheet, newstay:function(){ openStayForm(null); },
+      team:openTeamSheet, addstaff:function(){ openStaffSheet(null); }, suppliers:function(){ handleDrawerAction('suppliers'); }, accountant:function(){ handleDrawerAction('accountant'); }, msgs:openInboxSheet, till:function(){ setTab('till'); }, settings:openSettingsSheet, smart:openSmartToolsSheet, assistant:openAgentSheet, vat:function(){ handleDrawerAction('vat'); }, invoices:function(){ setTab('invoices'); },
       retail:function(){ State.showRetailDash = true; render(); }, vert:function(){ State.showRetailDash = false; render(); },
       appt:function(){ var a2 = vList('appointments').find(function(x){ return x.id === id; }); if(a2) openApptSheet(a2.date); }, stay:function(){ var b = vList('hosBookings').find(function(x){ return x.id === id; }); if(b) openStayView(b); } }[a];
     if(go){ e.preventDefault(); go(); }
@@ -148,8 +210,7 @@ function vBeautyDash(){
     return '<button class="row" type="button" data-vq="appt" data-id="' + a.id + '" style="width:100%;text-align:left;"><div class="main"><div class="title">' + esc(a.time || '') + ' ' + esc(a.clientName || '') + '</div><div class="sub">' + esc((a.serviceNames || []).join(', ')) + (a.stylistName ? ' · ' + esc(a.stylistName) : '') + '</div></div><div class="trail"><span class="rolebadge">' + esc(tr(VS_STATUS[a.status] || a.status)) + '</span></div></button>';
   }).join('') + '</div>' : '<div class="banner" style="display:block;">' + tr('No one is booked yet today. Tap New booking, or Walk in when someone arrives.') + '</div>';
   h += '<div class="section-title">' + tr('Your salon') + '</div><div class="qa-row">' + vTile('appts', 'clock', 'Appointments') + vTile('services', 'clipboard', 'Services') + vTile('earn', 'chartbar', 'Earnings') + vTile('reports', 'chartbar', 'Reports') + '</div>';
-  var low = vServices().length ? '' : '<div class="banner" style="display:block;margin-top:10px;">' + tr('Add your services and prices first, so you can book and charge them.') + ' <button class="btn btn-accent" type="button" data-vq="services" style="margin-top:8px;">' + tr('Set up services') + '</button></div>';
-  return h + low;
+  return h;
 }
 
 var VS_STARTER = [
