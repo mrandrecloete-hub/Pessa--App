@@ -10985,6 +10985,47 @@ function findCustomerByName(name){
  *   audit: { action, entityType, entityId, label },
  *   onHandedOff(channel)            // called once the message is handed to an app
  * } */
+/* ---- Gmail with the PDF attached: a draft is made in the person's own Gmail through the Gmail API, then opened for them to check and send.
+   Needs a Google client ID (free, see docs/provisioning/GMAIL.md). Pesa only asks for permission to create drafts, never to read mail. ---- */
+var GMAIL_CID_KEY = 'pesa_gmail_cid_v1', _gmTok = { v:'', exp:0 };
+function gmailCid(){ try{ return String(localStorage.getItem(GMAIL_CID_KEY) || '').trim(); }catch(e){ return ''; } }
+function gmailSetCid(v){ try{ localStorage.setItem(GMAIL_CID_KEY, String(v || '').trim()); }catch(e){} }
+function gmB64(str){ return btoa(unescape(encodeURIComponent(str))); }
+function gmWrap(b64){ return (b64.match(/.{1,76}/g) || []).join('\r\n') + '\r\n'; }
+function gmBytesB64(buf){ var u = new Uint8Array(buf), s = '', i, step = 0x8000; for(i = 0; i < u.length; i += step) s += String.fromCharCode.apply(null, u.subarray(i, i + step)); return btoa(s); }
+async function gmailMime(to, subject, body, file){
+  var nm = String((file && file.name) || 'document.pdf').replace(/[^A-Za-z0-9._ -]/g, '_'), bd = 'pesa_' + Date.now().toString(36);
+  var head = (to ? 'To: ' + to.replace(/;/g, ',') + '\r\n' : '') + 'Subject: =?UTF-8?B?' + gmB64(subject || '') + '?=\r\nMIME-Version: 1.0\r\n';
+  if(!file) return head + 'Content-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n' + gmWrap(gmB64(body || ''));
+  var pdf = gmBytesB64(await file.arrayBuffer());
+  return head + 'Content-Type: multipart/mixed; boundary="' + bd + '"\r\n\r\n--' + bd + '\r\nContent-Type: text/plain; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n' + gmWrap(gmB64(body || '')) +
+    '--' + bd + '\r\nContent-Type: application/pdf; name="' + nm + '"\r\nContent-Disposition: attachment; filename="' + nm + '"\r\nContent-Transfer-Encoding: base64\r\n\r\n' + gmWrap(pdf) + '--' + bd + '--';
+}
+function gmailLoadGis(){
+  return new Promise(function(res, rej){
+    if(window.google && window.google.accounts && window.google.accounts.oauth2) return res();
+    var sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true;
+    sc.onload = function(){ res(); }; sc.onerror = function(){ rej(new Error('gis')); }; document.head.appendChild(sc);
+  });
+}
+function gmailToken(cid){
+  if(_gmTok.v && Date.now() < _gmTok.exp - 60000) return Promise.resolve(_gmTok.v);
+  return gmailLoadGis().then(function(){ return new Promise(function(res, rej){
+    var tc = google.accounts.oauth2.initTokenClient({ client_id:cid, scope:'https://www.googleapis.com/auth/gmail.compose',
+      callback:function(r){ if(r && r.access_token){ _gmTok = { v:r.access_token, exp:Date.now() + (Number(r.expires_in) || 3600) * 1000 }; res(_gmTok.v); } else rej(new Error((r && r.error) || 'denied')); },
+      error_callback:function(e){ rej(new Error((e && e.type) || 'popup')); } });
+    tc.requestAccessToken({ prompt: '' });
+  }); });
+}
+async function gmailDraft(cid, to, subject, body, file){
+  var tok = await gmailToken(cid), raw = await gmailMime(to, subject, body, file);
+  var rawUrl = btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  var r = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts', { method:'POST', headers:{ 'Authorization':'Bearer ' + tok, 'Content-Type':'application/json' }, body:JSON.stringify({ message:{ raw:rawUrl } }) });
+  if(r.status === 401){ _gmTok = { v:'', exp:0 }; }
+  if(!r.ok) throw new Error('draft ' + r.status);
+  var j = await r.json();
+  return (j && j.message && j.message.id) || (j && j.id) || '';
+}
 function openSendSheet(ctx){
   var allowC = ctx.allowCustomers !== false, allowS = ctx.allowSuppliers !== false;
   var opts = '';
@@ -11138,14 +11179,41 @@ function openSendSheet(ctx){
     if(to && !to.split(/[;,]/).every(function(a){ a = a.trim(); return !a || looksLikeEmail(a); })){ toast(tr('Enter a valid email address')); emailIn.focus(); return; }
     var name = recipientName(), file = null;
     if(ctx.buildFile){ file = (readyFile !== undefined) ? readyFile : await filePromise; }
-    var body = ctx.emailBody(name, !!file);
+    var body = ctx.emailBody(name, !!file), cid = gmailCid(), why = '';
+    // best way: a Gmail draft with the PDF already attached
+    if(cid && file){
+      showResult(tr('Preparing your Gmail draft…'), null, null);
+      try{
+        var mid = await gmailDraft(cid, to, ctx.subject, body, file);
+        var durl = 'https://mail.google.com/mail/u/0/#drafts' + (mid ? '?compose=' + encodeURIComponent(mid) : '');
+        openExternalUrl(durl);
+        logSend('email', 'Gmail draft created with the PDF attached');
+        toast(tr('Gmail draft ready with the PDF attached'));
+        showResult(tr('Your Gmail draft is ready with the PDF attached. Check it in Gmail and tap Send.'), durl, null);
+        return;
+      }catch(e){ why = String((e && e.message) || ''); }
+    }
+    // otherwise: a Gmail message with the details filled in, and the PDF saved (and draggable) so it can be added
     var url = 'https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=' + encodeURIComponent(to.replace(/;/g, ',').replace(/\s+/g, '')) + '&su=' + encodeURIComponent(ctx.subject || '') + '&body=' + encodeURIComponent(body || '');
     openExternalUrl(url);
     var saved = false;
     if(file) saved = await saveBlobFile(file.name, file);
     logSend('email', saved ? 'Gmail opened, PDF downloaded' : 'Gmail opened');
     toast(saved ? tr('PDF saved. Add it to the Gmail message with the paperclip, then tap Send.') : tr('Opening Gmail…'));
-    showResult(saved ? tr('Gmail is opening with the message ready. The PDF was saved to your Downloads: add it with the paperclip or drag it into the message, then tap Send.') : tr('Gmail is opening with the message ready.'), url, body);
+    showResult((why ? tr('The automatic Gmail attachment did not work, so the message was opened instead.') + ' ' : '') + (saved ? tr('Gmail is opening with the message ready. The PDF was saved to your Downloads: add it with the paperclip or drag the file below into the message, then tap Send.') : tr('Gmail is opening with the message ready.')), url, body);
+    if(file){
+      var chip = document.createElement('div'); chip.id = 'sdDrag'; chip.draggable = true; chip.textContent = '\uD83D\uDCCE ' + file.name;
+      chip.style.cssText = 'margin-top:8px;padding:10px 12px;border-radius:12px;border:1px dashed var(--border);cursor:grab;font-weight:700;';
+      var burl = URL.createObjectURL(file);
+      chip.addEventListener('dragstart', function(ev){ try{ ev.dataTransfer.setData('DownloadURL', 'application/pdf:' + file.name + ':' + burl); ev.dataTransfer.effectAllowed = 'copy'; }catch(e){} });
+      result.appendChild(chip);
+    }
+    if(!cid){
+      var setup = document.createElement('div'); setup.className = 'banner'; setup.style.cssText = 'display:block;margin-top:8px;';
+      setup.innerHTML = '<div style="font-weight:700;margin-bottom:4px;">'+esc(tr('Want the PDF attached automatically?'))+'</div><div style="font-size:12.5px;line-height:1.5;margin-bottom:6px;">'+esc(tr('Paste a free Google client ID once (see docs/provisioning/GMAIL.md). Pesa will then make a Gmail draft with the PDF already attached. It can only create drafts, never read your mail.'))+'</div><div style="display:flex;gap:8px;"><input id="gmCid" placeholder="123456789-abc.apps.googleusercontent.com" style="flex:1;min-width:0;"><button class="btn btn-primary" type="button" id="gmSave">'+esc(tr('Save'))+'</button></div>';
+      result.appendChild(setup);
+      setup.querySelector('#gmSave').addEventListener('click', function(){ var v = setup.querySelector('#gmCid').value.trim(); if(!/\.apps\.googleusercontent\.com$/.test(v)){ toast(tr('That does not look like a Google client ID')); return; } gmailSetCid(v); toast(tr('Saved. Tap Gmail again.')); });
+    }
   }
   async function sendNow(btn){
     var list = emailIn.value.split(/[;,]/).map(function(a){ return a.trim(); }).filter(Boolean);
@@ -19696,7 +19764,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.159';
+var APP_VERSION = '2026.10.160';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19974,6 +20042,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.160', items:[
+    'Gmail with the PDF attached: add a free Google client ID once and the Gmail button makes a Gmail draft with the PDF already attached and opens it. Without it, the PDF is saved and a draggable file appears that you can drop into the Gmail message'
+  ]},
   { v:'2026.10.159', items:[
     'Send invoice, receipt and report sheet: a new Gmail button opens a Gmail message with the address, subject and text filled in, and saves the PDF so you can attach it with the paperclip'
   ]},

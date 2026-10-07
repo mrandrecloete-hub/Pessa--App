@@ -15,6 +15,19 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  ck('address, subject and text are filled in', /to=someone%40gmail\.com%2Cother%40example\.com/.test(u) && /su=Invoice%20INV-1/.test(u) && /body=Hello/.test(u));
  ck('the PDF is saved so it can be attached', !!d && /invoice-INV-1\.pdf/.test(d.suggestedFilename()));
  ck('it tells the person how to attach it', /paperclip/i.test(await p.evaluate(()=>document.querySelector('#sdResult').innerText)));
+ ck('without a client ID it offers a draggable PDF and the setup box', await p.evaluate(()=>!!document.getElementById('sdDrag') && !!document.getElementById('gmCid')));
+ // with a Google client ID: a draft with the PDF attached is created through the Gmail API
+ let posted=null; await ctx.route('https://gmail.googleapis.com/**', r=>{ posted={ url:r.request().url(), auth:r.request().headers()['authorization'], body:r.request().postData() }; r.fulfill({ status:200, contentType:'application/json', body:JSON.stringify({ id:'d1', message:{ id:'m1' } }) }); });
+ await p.evaluate(()=>{ window.__t.gmailSetCid('123-abc.apps.googleusercontent.com'); window.google={ accounts:{ oauth2:{ initTokenClient:function(c){ return { requestAccessToken:function(){ setTimeout(function(){ c.callback({ access_token:'tok123', expires_in:3600 }); },10); } }; } } } }; window.__opened.length=0; });
+ await p.fill('#sdEmail','someone@gmail.com'); await p.click('[data-channel="gmail"]'); await p.waitForTimeout(900);
+ const o = await p.evaluate(()=>window.__opened.slice(-1)[0]||'');
+ console.log(o, posted && posted.url);
+ ck('the draft is created through the Gmail API with the access token', !!posted && /\/gmail\/v1\/users\/me\/drafts$/.test(posted.url) && posted.auth==='Bearer tok123');
+ const raw = posted ? Buffer.from(JSON.parse(posted.body).message.raw.replace(/-/g,'+').replace(/_/g,'/'),'base64').toString('latin1') : '';
+ ck('the message is addressed and carries the PDF as an attachment', /To: someone@gmail\.com/.test(raw) && /Content-Disposition: attachment; filename="invoice-INV-1\.pdf"/.test(raw) && /application\/pdf/.test(raw));
+ const att = (raw.split('Content-Transfer-Encoding: base64\r\n\r\n')[2]||'').split('\r\n--')[0].replace(/\r\n/g,'');
+ ck('the attachment is the exact PDF bytes', Buffer.from(att,'base64').toString()==='%PDF-1.4 test');
+ ck('the draft is opened in Gmail', /^https:\/\/mail\.google\.com\/mail\/u\/0\/#drafts\?compose=m1/.test(o));
  await p.fill('#sdEmail','not an email'); await p.click('[data-channel="gmail"]'); await p.waitForTimeout(300);
  ck('a bad address is refused', await p.evaluate(()=>window.__opened.length===1));
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));

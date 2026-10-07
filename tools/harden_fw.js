@@ -7,7 +7,7 @@
    This is one layer, not a promise that the app cannot be attacked. A real server firewall needs a service such as Cloudflare in front of the website. */
 (function(){ try{
   var w = window, d = document, LOG = 'pesa_fw_log', MODE = 'pesa_fw_mode', loc = w.location;
-  var BUILT = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com', 'api.emailjs.com'];
+  var BUILT = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com', 'api.emailjs.com', 'accounts.google.com', 'gmail.googleapis.com', 'mail.google.com'];
   var BUILT_SUFFIX = ['.supabase.co', '.supabase.in'];
   var seen = {}, extra = null, extraAt = 0;
   function ls(k, v){ try{ if(v === undefined) return w.localStorage.getItem(k); w.localStorage.setItem(k, v); }catch(e){} return null; }

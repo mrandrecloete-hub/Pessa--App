@@ -7,7 +7,7 @@
 (function(){ try{
   if(window.top !== window.self || !/^https?:$/.test(location.protocol)) return;
   var m = document.createElement('meta'); m.httpEquiv = 'Content-Security-Policy';
-  m.content = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+  m.content = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https: wss:; frame-src 'self' blob: https://accounts.google.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
   document.head.appendChild(m);
 }catch(e){} })();
 </script>
@@ -22,7 +22,7 @@
    This is one layer, not a promise that the app cannot be attacked. A real server firewall needs a service such as Cloudflare in front of the website. */
 (function(){ try{
   var w = window, d = document, LOG = 'pesa_fw_log', MODE = 'pesa_fw_mode', loc = w.location;
-  var BUILT = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com', 'api.emailjs.com'];
+  var BUILT = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdnjs.cloudflare.com', 'api.emailjs.com', 'accounts.google.com', 'gmail.googleapis.com', 'mail.google.com'];
   var BUILT_SUFFIX = ['.supabase.co', '.supabase.in'];
   var seen = {}, extra = null, extraAt = 0;
   function ls(k, v){ try{ if(v === undefined) return w.localStorage.getItem(k); w.localStorage.setItem(k, v); }catch(e){} return null; }
@@ -1927,4 +1927,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.159"></script>
+<script src="app.js?v=2026.10.160"></script>

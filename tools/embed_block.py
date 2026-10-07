@@ -6,7 +6,7 @@ import os, re, sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 name, fn = sys.argv[1], sys.argv[2]
 anchor = sys.argv[3] if len(sys.argv) > 3 else None
-idx = os.path.join(ROOT, 'app.js')
+idx = os.path.join(ROOT, 'index.html' if name == 'HARDEN5' else 'app.js')   # the firewall must run first, so it lives in the page itself
 src = open(idx, encoding='utf-8').read()
 js = open(os.path.join(ROOT, 'tools', fn), encoding='utf-8').read()
 if '</script' in js.lower(): sys.exit('source contains </script')
