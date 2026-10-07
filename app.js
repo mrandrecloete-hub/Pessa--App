@@ -19633,7 +19633,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.146';
+var APP_VERSION = '2026.10.147';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 function pesaVerNewer(a, b){
   var x = String(a||'').split('.').map(Number), y = String(b||'').split('.').map(Number);
@@ -19885,6 +19885,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.147', items:[
+    'The promotion video now shows the Pesa AI Assistant page, with real recorded motion of it answering questions and recording an expense'
+  ]},
   { v:'2026.10.146', items:[
     'The Pesa AI Assistant icon now uses the real Pesa P with the gold arrow, with the assistant robot as a small badge'
   ]},
