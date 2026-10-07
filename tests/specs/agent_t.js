@@ -28,6 +28,8 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  ck('running again adds no duplicates', again[0]===again[1] && again[2]===again[3]);
  await p.evaluate(()=>window.__t.openAgentSheet()); await p.waitForTimeout(300);
  ck('assistant page opens', (await p.evaluate(()=>document.body.innerText)).indexOf('Pesa AI Assistant')>-1);
+ await p.evaluate(()=>window.__t.closeModal()); await p.evaluate(()=>document.getElementById('menuBtn').click()); await p.waitForTimeout(300);
+ ck('menu has its own Pesa AI Assistant row', await p.evaluate(()=>!!document.querySelector('[data-drawer-row="agent"] img')));
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();

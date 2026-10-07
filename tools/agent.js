@@ -185,7 +185,7 @@ function agentAlerts(){
 function openAgentSheet(){
   var notes = agentNotesList().slice(0, 40), on = agentOn();
   var col = { high:'var(--danger)', med:'var(--warn, #d98e2b)', info:'var(--text-muted)' };
-  var html = '<div class="sheet-head"><h2>' + tr('Pesa AI Assistant') + '</h2></div>' +
+  var html = '<div class="sheet-head" style="display:flex;align-items:center;gap:10px;"><span style="display:inline-flex;width:38px;height:38px;border-radius:12px;align-items:center;justify-content:center;background:rgba(43,212,160,.16);color:#2BD4A0;">' + ICONS.agent.replace('width="18" height="18"', 'width="24" height="24"') + '</span><h2 style="margin:0;">' + tr('Pesa AI Assistant') + '</h2></div>' +
     '<div class="banner" style="display:block;">' + tr('Works quietly in the background from your own shop records on this device. It prepares a daily reorder draft, watches for signs worth checking, and files finished months in Accountant. These are signs worth checking, not proof that anyone did anything wrong. Anything it does while offline sends when the connection returns.') + '</div>' +
     '<div class="row"><div class="main"><div class="title">' + tr('Assistant is') + ' ' + tr(on ? 'on' : 'off') + '</div><div class="sub">' + tr(agentOnline() ? 'Connection is available' : 'Offline, using records on this device') + '</div></div>' +
     '<div class="trail"><button class="btn btn-ghost" id="agToggle" type="button">' + tr(on ? 'Turn off' : 'Turn on') + '</button></div></div>' +
@@ -194,8 +194,9 @@ function openAgentSheet(){
       return '<div class="row"><div class="main"><div class="title" style="color:' + (col[n.level] || col.info) + ';">' + esc(n.title) + '</div><div class="sub">' + esc(n.body) + '</div><div class="sub">' + esc(fmtDateTime(n.createdAt)) + '</div></div>' +
         '<div class="trail">' + (n.status !== 'dismissed' && n.status !== 'done' ? '<button class="btn btn-ghost" data-ag-x="' + i + '" type="button">' + tr('Done') + '</button>' : '') + '</div></div>';
     }).join('') + '</div>' : '<div class="empty"><div class="t">' + tr('No notes yet') + '</div><div class="s">' + tr('The assistant will leave notes here and in the Alert centre.') + '</div></div>') +
-    smartBackBtn();
-  var ov = openSheet(html); wireSmartBack(ov);
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="agClose" type="button">' + tr('Close') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#agClose').addEventListener('click', closeModal);
   ov.querySelector('#agToggle').addEventListener('click', function(){ btSave({ agentOff: on }); closeModal(); openAgentSheet(); });
   ov.querySelector('#agRun').addEventListener('click', function(){ _agent.last = 0; agentTick('manual'); toast(tr('Checked')); closeModal(); openAgentSheet(); });
   ov.querySelectorAll('[data-ag-x]').forEach(function(b){ b.addEventListener('click', function(){
