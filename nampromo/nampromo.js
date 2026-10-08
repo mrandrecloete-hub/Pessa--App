@@ -74,11 +74,11 @@ function addOperatorShop(o){
   if(!shopById[sh.id]){ SHOPS.push(sh); shopById[sh.id] = sh; }
 }
 var KEY = 'nampromo_v1';
-var S = { town:'Windhoek', tab:'deals', list:[], watch:[], mine:[], perKm:4, pos:null, allTowns:false, cat:'All', q:'', sort:'saving', cq:'', lastAlerts:{}, me:null, ops:[], outbox:[], dcat:'All', dshop:'' };
-try{ var saved = JSON.parse(localStorage.getItem(KEY) || '{}'); ['town', 'list', 'watch', 'mine', 'perKm', 'pos', 'me', 'ops', 'outbox'].forEach(function(k){ if(saved[k] != null) S[k] = saved[k]; }); }catch(e){}
+var S = { town:'Windhoek', tab:'home', list:[], watch:[], mine:[], perKm:4, pos:null, allTowns:false, cat:'All', q:'', sort:'saving', cq:'', lastAlerts:{}, saved:[], slide:0, me:null, ops:[], outbox:[], dcat:'All', dshop:'' };
+try{ var saved = JSON.parse(localStorage.getItem(KEY) || '{}'); ['town', 'list', 'watch', 'mine', 'perKm', 'pos', 'me', 'ops', 'outbox', 'saved'].forEach(function(k){ if(saved[k] != null) S[k] = saved[k]; }); }catch(e){}
 if(!TOWNS[S.town]) S.town = 'Windhoek';
 S.ops.forEach(addOperatorShop);
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ town:S.town, list:S.list, watch:S.watch, mine:S.mine, perKm:S.perKm, pos:S.pos, me:S.me, ops:S.ops, outbox:S.outbox })); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ town:S.town, list:S.list, watch:S.watch, mine:S.mine, perKm:S.perKm, pos:S.pos, me:S.me, ops:S.ops, outbox:S.outbox, saved:S.saved })); }catch(e){} }
 
 /* ---- helpers ---- */
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
@@ -167,6 +167,8 @@ function runAlerts(){
 
 /* ---- screens ---- */
 var ICON = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>',
+  saved:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 10c0 6-8 11-8 11z"/></svg>',
   deals:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9h8v8l-9 9z"/><circle cx="16" cy="8" r="1.5"/></svg>',
   compare:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/></svg>',
   plan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>',
@@ -174,13 +176,14 @@ var ICON = {
   shops:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l2-5h14l2 5M3 9h18M5 9v11h14V9M10 20v-6h4v6"/></svg>',
   me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'
 };
-var TABS = [['deals', 'Deals'], ['shops', 'Shops'], ['compare', 'Compare'], ['plan', 'Plan'], ['alerts', 'Alerts'], ['me', 'Me']];
+var TABS = [['home', 'Home'], ['saved', 'Saved'], ['plan', 'Shopping List'], ['shops', 'Shops'], ['me', 'Profile']];
+var NAVOF = { deals:'home', compare:'home', alerts:'saved', add:'me', shopreg:'me' };
 var DEMO = '<div class="demo"><b>Sample data.</b> The shops and prices here are made up to show how NamPromo works. They are not real specials. Real prices need to be confirmed with each shop.</div>';
 
 function offerCard(o){
   var s = shopById[o.shop], pr = prodById[o.product], off = pct(o), up = unitText(o);
   return '<div class="card"><div class="row"><div class="grow"><div style="font-weight:650">' + esc(nameOf(o)) + '</div>' +
-    '<div class="muted">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away' + '</div></div>' + (off ? '<span class="badge">' + off + '% off</span>' : '') + '</div>' +
+    '<div class="muted">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away' + '</div></div>' + (off ? '<span class="badge">' + off + '% off</span>' : '') + '<button class="x" style="position:static;color:' + (isSaved(o.id) ? '#E5484D' : 'var(--muted)') + '" data-heart="' + esc(o.id) + '" aria-label="Save this deal">' + (isSaved(o.id) ? '♥' : '♡') + '</button></div>' +
     '<div style="margin:6px 0 2px"><span class="price">' + money(o.price) + '</span>' + (off ? '<span class="was">' + money(o.regular) + '</span>' : '') + '</div>' +
     '<div class="muted">' + [up, endsText(o), o.mine ? o.source : ''].filter(Boolean).map(esc).join(' · ') + '</div>' +
     '<div class="row" style="margin-top:10px;flex-wrap:wrap"><a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(s) + '">Navigate</a>' +
@@ -193,7 +196,7 @@ function viewDeals(){
   else if(S.sort === 'ends') list.sort(function(a, b){ return (a.ends ? a.ends.getTime() : 9e15) - (b.ends ? b.ends.getTime() : 9e15); });
   else list.sort(function(a, b){ return dist(shopById[a.shop]) - dist(shopById[b.shop]); });
   var chips = ['All'].concat(CATS).map(function(c){ return '<button class="chip' + (S.cat === c ? ' on' : '') + '" data-cat="' + c + '">' + c + '</button>'; }).join('');
-  return DEMO + '<h2>Specials near you</h2><p class="sub">' + (S.allTowns ? 'All towns' : esc(S.town)) + ', ' + list.length + ' specials</p>' +
+  return DEMO + '<button class="btn alt small" data-tab="home">Back</button><h2 style="margin-top:12px">All specials</h2><p class="sub">' + (S.allTowns ? 'All towns' : esc(S.town)) + ', ' + list.length + ' specials</p>' +
     '<input id="q" type="search" placeholder="Search a product or shop" value="' + esc(S.q) + '" aria-label="Search">' +
     '<div class="chips" style="margin-top:10px">' + chips + '</div>' +
     '<div class="row" style="margin-bottom:12px"><select id="sort" aria-label="Sort" class="grow"><option value="saving"' + (S.sort === 'saving' ? ' selected' : '') + '>Biggest saving</option><option value="price"' + (S.sort === 'price' ? ' selected' : '') + '>Lowest price</option><option value="ends"' + (S.sort === 'ends' ? ' selected' : '') + '>Ending soon</option><option value="near"' + (S.sort === 'near' ? ' selected' : '') + '>Nearest shop</option></select>' +
@@ -242,10 +245,11 @@ function alertBody(w){
   var st = alertStatus(w);
   return st.low ? '<div style="margin-top:8px">' + (st.hit ? '<span class="badge good">Reached</span> ' : '') + 'Lowest now: <b>' + money(st.low.price) + '</b> at ' + esc(shopById[st.low.shop].name) + '</div><div class="row" style="margin-top:8px"><a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(shopById[st.low.shop]) + '">Navigate</a></div>' : '<div class="muted" style="margin-top:8px">No price found.</div>';
 }
-function viewAlerts(){
+function viewAlerts(){ return alertsHtml('<h2>Price alerts</h2><p class="sub">Watch a product and set the price you want. NamPromo tells you when a shop reaches it.</p>'); }
+function alertsHtml(head){
   var perm = 'Notification' in window ? Notification.permission : 'unsupported';
-  var html = DEMO + '<h2>Price alerts</h2><p class="sub">Watch a product and set the price you want. NamPromo tells you when a shop reaches it.</p>';
-  if(!S.watch.length) html += '<div class="empty">No alerts yet. Open Compare or Deals and tap Watch price.</div>';
+  var html = head;
+  if(!S.watch.length) html += '<div class="empty">No alerts yet. Open a special and tap Watch price.</div>';
   html += S.watch.map(function(w, n){
     var p = prodById[w.product], st = alertStatus(w); if(!p) return '';
     return '<div class="card' + (st.hit ? ' alert-hit' : '') + '"><div class="row"><div class="grow"><b>' + esc(p.name) + '</b><div class="muted">' + esc(w.town || S.town) + '</div></div><button class="x" data-wdel="' + n + '" aria-label="Remove alert">×</button></div>' +
@@ -329,11 +333,69 @@ function viewAdd(){
 }
 
 /* ---- drawing and events ---- */
-var VIEWS = { deals:viewDeals, shops:viewShops, compare:viewCompare, plan:viewPlan, alerts:viewAlerts, add:viewAdd, me:viewMe, shopreg:viewShopReg };
+/* ---- home dashboard ---- */
+var CATLOOK = {
+  'Food and groceries':['🛒', '#DDF3E4', '#0F6B3A', 'Groceries'], 'Home and household':['🧺', '#FDEBD3', '#9A5B0B', 'Home'], 'Clothing and shoes':['👕', '#DCEBFF', '#1E5FB4', 'Clothing'], 'Electronics':['🎧', '#FFE9D6', '#B1561A', 'Electronics'],
+  'Building and hardware':['🧱', '#F2E3D6', '#8B4A22', 'Building'], 'Health and beauty':['🧴', '#F3E1F5', '#8A2F94', 'Health'], 'Restaurants and takeaways':['🍔', '#FFE0DE', '#B3261E', 'Restaurants'],
+  'Farming and agri':['🌾', '#F2F0C9', '#6B6A0B', 'Farming'], 'Vehicles and parts':['🚗', '#E3E7EE', '#3A4A66', 'Vehicles'], 'Other':['🏷️', '#E7EAE8', '#4A5A53', 'Other']
+};
+function look(c){ return CATLOOK[c] || CATLOOK.Other; }
+function dateText(d){ try{ return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }catch(e){ return ''; } }
+function findOffer(id){ return allOffers().filter(function(o){ return o.id === id; })[0]; }
+function isSaved(id){ return S.saved.indexOf(id) >= 0; }
+function gridCard(o){
+  var s = shopById[o.shop], off = pct(o), c = catOf(o), L = look(c);
+  return '<div class="gcard" data-deal="' + esc(o.id) + '"><div class="gtile" style="background:' + L[1] + '"><span>' + L[0] + '</span>' + (off ? '<b class="save">SAVE ' + off + '%</b>' : '') +
+    '<button class="heart' + (isSaved(o.id) ? ' on' : '') + '" data-heart="' + esc(o.id) + '" aria-label="Save this deal">' + (isSaved(o.id) ? '♥' : '♡') + '</button></div>' +
+    '<div class="gbody"><div class="gname">' + esc(nameOf(o)) + '</div><div class="muted">' + esc(s.name) + '</div>' +
+    '<div class="price sm">' + money(o.price) + (off ? '<span class="was">' + money(o.regular) + '</span>' : '') + '</div>' +
+    (o.ends ? '<div class="muted">Expires ' + esc(dateText(o.ends)) + '</div>' : '') + '<span class="cchip" style="background:' + L[1] + ';color:' + L[2] + '">' + esc(L[3]) + '</span>' +
+    '<div class="muted">📍 ' + esc(s.town) + ' (' + esc(s.name) + ')</div></div></div>';
+}
+function townSpecials(){ return allOffers().filter(function(o){ return shopById[o.shop].town === S.town && pct(o) > 0; }).sort(function(a, b){ return pct(b) - pct(a); }); }
+function viewHome(){
+  var sp = townSpecials(), slides = sp.slice(0, 3), n = slides.length, k = n ? S.slide % n : 0, h = slides[k];
+  var cats = ['Food and groceries', 'Clothing and shoes', 'Electronics', 'Building and hardware', 'Health and beauty', 'Restaurants and takeaways', 'Home and household'];
+  var catRow = '<div class="cats">' + cats.map(function(c){ var L = look(c); return '<button class="cat" data-cat2="' + esc(c) + '"><i style="background:' + L[1] + '">' + L[0] + '</i>' + esc(L[3]) + '</button>'; }).join('') + '<button class="cat" data-cat2="All"><i style="background:var(--chip)">▦</i>All deals</button></div>';
+  var hero = h ? '<div class="hero"><span class="badge">THIS WEEK IN ' + esc(S.town.toUpperCase()) + '</span><h3>Save up to ' + pct(h) + '% on ' + esc(nameOf(h)) + '</h3><p>' + esc(shopById[h.shop].name) + ' · ' + money(h.price) + '</p><button class="cta" data-deal="' + esc(h.id) + '">See this deal →</button><span class="big">' + look(catOf(h))[0] + '</span></div>' +
+    '<div class="dots">' + slides.map(function(x, i){ return '<button class="' + (i === k ? 'on' : '') + '" data-slide="' + i + '" aria-label="Slide ' + (i + 1) + '"></button>'; }).join('') + '</div>' : '';
+  var pop = sp.slice(0, 6);
+  var want = S.me && S.me.cats && S.me.cats.length ? S.me.cats : null;
+  var rec = (want ? sp.filter(function(o){ return want.indexOf(catOf(o)) >= 0; }) : sp.slice(6))[0] || sp[0];
+  var main = '<div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="hq" type="search" placeholder="Search for deals, shops, products" aria-label="Search"></div>' + catRow + hero +
+    '<div class="sec"><h2>Popular deals near you</h2><button data-tab="deals">View all →</button></div>' + (pop.length ? '<div class="grid">' + pop.map(gridCard).join('') + '</div>' : '<div class="empty">No specials in ' + esc(S.town) + ' yet.</div>');
+  var side = '<div class="nam"><svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="300" cy="40" r="20" fill="#FFE9A8"/><path d="M0 95l60-35 40 22 70-45 80 52 60-30 90 40v51H0z" fill="#B5532A" opacity=".85"/><path d="M0 120c60-30 110-20 170 0s140 25 230-15v45H0z" fill="#C8642F"/><path d="M0 138c80-25 150-10 220 5s120 0 180-12v19H0z" fill="#8F3E1D"/></svg><div><b>Namibia</b>Great deals. All in one place.</div></div>' +
+    '<div class="card quick">' + [['shops', '📍', '#DDF3E4', 'Find shops near you', 'See what is on offer nearby'], ['compare', '🏷️', '#DCEBFF', 'Price comparison', 'Get the best value'], ['saved', '♥', '#FFE9D6', 'Saved deals and alerts', 'Your favourite offers'], ['plan', '📝', '#EADCF7', 'Shopping list', 'Plan your next shop']].map(function(q){ return '<button class="qrow" data-tab="' + q[0] + '"><i style="background:' + q[2] + '">' + q[1] + '</i><div><b>' + q[3] + '</b><span class="s">' + q[4] + '</span></div><em>›</em></button>'; }).join('') + '</div>' +
+    (rec ? '<div class="recs"><h2>✦ Recommended for you</h2><div class="grid" style="grid-template-columns:1fr">' + gridCard(rec) + '</div></div>' : '') +
+    '<div class="own"><h3>Own a shop?</h3><p>Promote your specials and reach more customers.</p><button data-tab="shopreg">Register your shop →</button></div>';
+  return DEMO + '<div class="home"><div>' + main + '</div><aside>' + side + '</aside></div>';
+}
+function viewSaved(){
+  var offers = S.saved.map(findOffer).filter(Boolean);
+  var html = DEMO + '<h2>Saved deals</h2><p class="sub">Tap the heart on any deal to keep it here.</p>' + (offers.length ? '<div class="grid">' + offers.map(gridCard).join('') + '</div>' : '<div class="empty">Nothing saved yet. Tap the heart on a deal you like.</div>');
+  return html + '<div style="height:14px"></div>' + alertsHtml('<h2>Price alerts</h2><p class="sub">Watch a product and set the price you want. NamPromo tells you when a shop reaches it.</p>');
+}
+function openDeal(id){
+  var o = findOffer(id); if(!o) return; var s = shopById[o.shop], off = pct(o), L = look(catOf(o)), pr = prodById[o.product];
+  var ov = document.createElement('div'); ov.className = 'sheet'; ov.id = 'dsheet';
+  ov.innerHTML = '<div role="dialog" aria-label="Deal details"><div class="row"><div style="font-size:44px">' + L[0] + '</div><div class="grow"><b style="font-size:18px">' + esc(nameOf(o)) + '</b><div class="muted">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away</div></div><button class="x" data-closesheet aria-label="Close">×</button></div>' +
+    '<div style="margin:10px 0 4px"><span class="price">' + money(o.price) + '</span>' + (off ? '<span class="was">' + money(o.regular) + '</span> <span class="badge good">SAVE ' + off + '%</span>' : '') + '</div>' +
+    '<div class="muted">' + esc([unitText(o), o.ends ? 'Expires ' + dateText(o.ends) : '', o.mine ? o.source : 'Sample data'].filter(Boolean).join(' · ')) + '</div>' +
+    '<p class="muted" style="margin:10px 0">Confirm the price and stock with the shop before you go.</p>' +
+    '<div class="row" style="flex-wrap:wrap"><a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(s) + '">Navigate</a>' +
+    '<button class="btn small alt" data-heart="' + esc(o.id) + '" data-keep>' + (isSaved(o.id) ? '♥ Saved' : '♡ Save') + '</button>' +
+    (pr ? '<button class="btn small alt" data-cmp="' + o.product + '">Compare shops</button><button class="btn small alt" data-addlist="' + o.product + '">Add to list</button><button class="btn small alt" data-watch="' + o.product + '">Watch price</button>' : '') + '</div></div>';
+  document.body.appendChild(ov);
+}
+function closeDeal(){ var d = document.getElementById('dsheet'); if(d) d.remove(); }
+
+var VIEWS = { home:viewHome, saved:viewSaved, deals:viewDeals, shops:viewShops, compare:viewCompare, plan:viewPlan, alerts:viewSaved, add:viewAdd, me:viewMe, shopreg:viewShopReg };
 function render(){
   var app = document.getElementById('app'), keep = document.activeElement && document.activeElement.id === 'q';
   app.innerHTML = VIEWS[S.tab]();
-  document.getElementById('nav').innerHTML = TABS.map(function(t){ return '<button data-tab="' + t[0] + '" class="' + (S.tab === t[0] || (t[0] === 'me' && (S.tab === 'add' || S.tab === 'shopreg')) ? 'on' : '') + '" aria-label="' + t[1] + '">' + ICON[t[0]] + '<span>' + t[1] + '</span></button>'; }).join('');
+  var cur = NAVOF[S.tab] || S.tab;
+  document.getElementById('nav').innerHTML = TABS.map(function(t){ return '<button data-tab="' + t[0] + '" class="' + (cur === t[0] ? 'on' : '') + '" aria-label="' + t[1] + '">' + ICON[t[0]] + '<span>' + t[1] + '</span></button>'; }).join('');
+  var hits = S.watch.filter(function(w){ return alertStatus(w).hit; }).length, bn = document.getElementById('belln'); bn.hidden = !hits; bn.textContent = hits;
   if(keep){ var q = document.getElementById('q'); if(q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
 }
 function go(tab){ S.tab = tab; S.dshop = ''; render(); window.scrollTo(0, 0); }
@@ -347,11 +409,22 @@ function watchProduct(id){
   if(!S.watch.some(function(w){ return w.product === id && (w.town || S.town) === S.town; })){
     var t = offers[0] ? Math.floor(offers[0].price * 0.9 * 2) / 2 : 10; S.watch.push({ product:id, target:t, town:S.town }); save();
   }
-  toast('Watching this price. Set your target on the Alerts tab.'); go('alerts');
+  toast('Watching this price. Set your target price under Saved.'); go('saved');
 }
 document.addEventListener('click', function(e){
-  var t = e.target.closest('[data-dcat],[data-dshop],[data-icat],#dback,#mesave,#meout,#medigest,#opsave,[data-tab],[data-cat],[data-cmp],[data-addlist],[data-watch],[data-del],[data-wdel],[data-mdel],#pladd,#geo,#notif,#fadd');
+  var t = e.target.closest('[data-heart],[data-deal],[data-closesheet],[data-cat2],[data-slide],#bell,.sheet,[data-dcat],[data-dshop],[data-icat],#dback,#mesave,#meout,#medigest,#opsave,[data-tab],[data-cat],[data-cmp],[data-addlist],[data-watch],[data-del],[data-wdel],[data-mdel],#pladd,#geo,#notif,#fadd');
   if(!t) return;
+  if(t.dataset.heart){
+    var hid = t.dataset.heart, hx = S.saved.indexOf(hid); if(hx >= 0) S.saved.splice(hx, 1); else S.saved.push(hid); save();
+    if(t.hasAttribute('data-keep')){ t.textContent = isSaved(hid) ? '♥ Saved' : '♡ Save'; return; }
+    var sy = window.scrollY; render(); window.scrollTo(0, sy); return;
+  }
+  if(t.dataset.closesheet !== undefined || (t.classList.contains('sheet') && e.target === t)) return closeDeal();
+  if(t.classList.contains('sheet')) return;
+  if(t.dataset.deal){ return openDeal(t.dataset.deal); }
+  if(t.dataset.cat2){ S.cat = t.dataset.cat2; S.q = ''; return go('deals'); }
+  if(t.dataset.slide){ S.slide = +t.dataset.slide; return render(); }
+  if(t.id === 'bell') return go('saved');
   if(t.dataset.dcat){ S.dcat = t.dataset.dcat; S.dshop = ''; return render(); }
   if(t.dataset.dshop){ S.dshop = t.dataset.dshop; render(); return window.scrollTo(0, 0); }
   if(t.id === 'dback'){ S.dshop = ''; return render(); }
@@ -381,11 +454,11 @@ document.addEventListener('click', function(e){
     var op = { id:'o' + Date.now(), name:h('on'), cat:h('oc'), town:h('ot'), address:h('oa'), contact:h('ocn'), email:h('oe'), phone:oph, reg:h('or'), at:new Date().toISOString() };
     S.ops.push(op); addOperatorShop(op); save(); toast('Shop listed. It shows as not yet checked.'); S.tab = 'add'; return render();
   }
-  if(t.dataset.tab) return go(t.dataset.tab);
+  if(t.dataset.tab){ closeDeal(); return go(t.dataset.tab); }
   if(t.dataset.cat){ S.cat = t.dataset.cat; return render(); }
-  if(t.dataset.cmp){ S.cq = t.dataset.cmp; return go('compare'); }
-  if(t.dataset.addlist) return addList(t.dataset.addlist);
-  if(t.dataset.watch) return watchProduct(t.dataset.watch);
+  if(t.dataset.cmp){ closeDeal(); S.cq = t.dataset.cmp; return go('compare'); }
+  if(t.dataset.addlist){ closeDeal(); return addList(t.dataset.addlist); }
+  if(t.dataset.watch){ closeDeal(); return watchProduct(t.dataset.watch); }
   if(t.dataset.del){ S.list.splice(+t.dataset.del, 1); save(); return render(); }
   if(t.dataset.wdel){ S.watch.splice(+t.dataset.wdel, 1); save(); return render(); }
   if(t.dataset.mdel){ S.mine.splice(+t.dataset.mdel, 1); save(); return render(); }
@@ -406,6 +479,7 @@ document.addEventListener('click', function(e){
     S.mine.push({ id:'mine' + Date.now(), shopId:v('fs'), product:v('fp'), title:v('fp') ? '' : v('ft').trim(), cat:v('fp') ? '' : v('fc'), price:price, regular:regular, ends:v('fe') }); save(); toast('Special posted. It shows as not checked.'); S.tab = 'deals'; S.cat = 'All'; S.q = ''; render(); window.scrollTo(0, 0);
   }
 });
+document.addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target.id === 'hq'){ S.q = e.target.value; S.cat = 'All'; go('deals'); } });
 document.addEventListener('input', function(e){
   var t = e.target;
   if(t.id === 'q'){ S.q = t.value; render(); }
@@ -423,7 +497,7 @@ document.addEventListener('change', function(e){
 var sel = document.getElementById('town');
 sel.innerHTML = Object.keys(TOWNS).map(function(t){ return '<option' + (t === S.town ? ' selected' : '') + '>' + t + '</option>'; }).join('');
 sel.addEventListener('change', function(){ S.town = sel.value; S.pos = null; save(); render(); runAlerts(); });
-window.__nampromo = { S:S, plan:plan, allOffers:allOffers, alertStatus:alertStatus, SHOPS:SHOPS, PRODUCTS:PRODUCTS, km:km, render:render };
+window.__nampromo = { go:go, S:S, plan:plan, allOffers:allOffers, alertStatus:alertStatus, SHOPS:SHOPS, PRODUCTS:PRODUCTS, km:km, render:render };
 render(); runAlerts();
 if('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 })();
