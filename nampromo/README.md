@@ -24,3 +24,8 @@ Find specials, compare shop prices and plan where to shop in Namibia. Plain HTML
 2. Real price sources with permission; expiry automation; duplicate handling.
 3. Push notifications; branch opening hours; shopper accounts.
 4. Package with Capacitor for Android once the web version is tested with shoppers.
+
+## Server and tests
+- The server (Supabase database and Edge Functions) is in `server/`, with its own README. It is written and tested but **not deployed**.
+- To connect the app, add `<script>window.NAMPROMO_CONFIG = { url: 'https://<project>.supabase.co', anonKey: '<anon key>' };</script>` before `nampromo.js` in `index.html`. The app then reads real shops and specials from the server, the sample banner goes away, and sign up sends a confirmation code to the person's phone. Posting shops and specials online still needs Supabase sign in in the app and is not connected yet.
+- UI checks: `tests/ui_test.js` and `tests/live_test.js` (Playwright, serve this folder on port 8944 first). Server checks: `cd server && npm install && npm test`.

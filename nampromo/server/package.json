@@ -1,0 +1,3 @@
+{ "name": "nampromo-server", "private": true, "type": "module",
+  "scripts": { "test": "node test/sql_test.mjs && node test/flow_test.mjs" },
+  "devDependencies": { "postgres": "^3.4.4" } }

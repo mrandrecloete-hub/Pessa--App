@@ -68,6 +68,29 @@ SHOPS.forEach(function(shop){
 var shopById = {}, prodById = {};
 SHOPS.forEach(function(s){ shopById[s.id] = s; }); PRODUCTS.forEach(function(p){ prodById[p.id] = p; });
 
+/* ---- live data from the NamPromo server, when it is connected (window.NAMPROMO_CONFIG = { url, anonKey }) ---- */
+var CFG = window.NAMPROMO_CONFIG || {}, LIVE = !!(CFG.url && CFG.anonKey), LIVE_DATA = false;
+function api(path, opt){
+  opt = opt || {};
+  return fetch(CFG.url.replace(/\/$/, '') + path, { method:opt.body ? 'POST' : 'GET', headers:{ apikey:CFG.anonKey, authorization:'Bearer ' + CFG.anonKey, 'content-type':'application/json' }, body:opt.body ? JSON.stringify(opt.body) : undefined })
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { status:r.status, body:j }; }); });
+}
+function loadLive(){
+  if(!LIVE) return Promise.resolve();
+  return Promise.all([api('/rest/v1/public_shops?select=*'), api('/rest/v1/public_promotions?select=*')]).then(function(res){
+    if(res[0].status !== 200 || !Array.isArray(res[0].body) || !Array.isArray(res[1].body)) return;
+    SHOPS.length = 0; OFFERS.length = 0; Object.keys(shopById).forEach(function(k){ delete shopById[k]; });
+    res[0].body.forEach(function(r){
+      var c = TOWNS[r.town] || TOWNS.Windhoek, sh = { id:r.id, name:r.name, town:r.town, lat:r.lat != null ? r.lat : c[0] + (hash(r.id + 'a') - 0.5) * 0.04, lng:r.lng != null ? r.lng : c[1] + (hash(r.id + 'b') - 0.5) * 0.04, sells:[r.category], address:r.address, custom:!r.verified, live:true };
+      SHOPS.push(sh); shopById[sh.id] = sh;
+    });
+    res[1].body.forEach(function(r){
+      if(!shopById[r.shop_id]) return;
+      OFFERS.push({ live:true, id:r.id, shop:r.shop_id, product:prodById[r.product_key] ? r.product_key : '', title:prodById[r.product_key] ? '' : r.title, cat:r.category, price:Number(r.sale_price), regular:Number(r.regular_price), ends:new Date(r.expires_at), source:r.shop_verified ? 'Verified shop' : 'Posted by the shop, not checked' });
+    });
+    LIVE_DATA = true; render();
+  }).catch(function(){});
+}
 /* ---- saved on this device ---- */
 function addOperatorShop(o){
   var c = TOWNS[o.town] || TOWNS.Windhoek, sh = { id:'op|' + o.id, name:o.name, town:o.town, lat:c[0] + (hash(o.id + 'a') - 0.5) * 0.04, lng:c[1] + (hash(o.id + 'b') - 0.5) * 0.04, sells:[o.cat], address:o.address || o.town, custom:true };
@@ -178,7 +201,8 @@ var ICON = {
 };
 var TABS = [['home', 'Home'], ['saved', 'Saved'], ['plan', 'Shopping List'], ['shops', 'Shops'], ['me', 'Profile']];
 var NAVOF = { deals:'home', compare:'home', alerts:'saved', add:'me', shopreg:'me' };
-var DEMO = '<div class="demo"><b>Sample data.</b> The shops and prices here are made up to show how NamPromo works. They are not real specials. Real prices need to be confirmed with each shop.</div>';
+var DEMO_HTML = '<div class="demo"><b>Sample data.</b> The shops and prices here are made up to show how NamPromo works. They are not real specials. Real prices need to be confirmed with each shop.</div>';
+function demo(){ return LIVE_DATA ? '' : DEMO_HTML; }
 
 function offerCard(o){
   var s = shopById[o.shop], pr = prodById[o.product], off = pct(o), up = unitText(o);
@@ -196,7 +220,7 @@ function viewDeals(){
   else if(S.sort === 'ends') list.sort(function(a, b){ return (a.ends ? a.ends.getTime() : 9e15) - (b.ends ? b.ends.getTime() : 9e15); });
   else list.sort(function(a, b){ return dist(shopById[a.shop]) - dist(shopById[b.shop]); });
   var chips = ['All'].concat(CATS).map(function(c){ return '<button class="chip' + (S.cat === c ? ' on' : '') + '" data-cat="' + c + '">' + c + '</button>'; }).join('');
-  return DEMO + '<button class="btn alt small" data-tab="home">Back</button><h2 style="margin-top:12px">All specials</h2><p class="sub">' + (S.allTowns ? 'All towns' : esc(S.town)) + ', ' + list.length + ' specials</p>' +
+  return demo() + '<button class="btn alt small" data-tab="home">Back</button><h2 style="margin-top:12px">All specials</h2><p class="sub">' + (S.allTowns ? 'All towns' : esc(S.town)) + ', ' + list.length + ' specials</p>' +
     '<input id="q" type="search" placeholder="Search a product or shop" value="' + esc(S.q) + '" aria-label="Search">' +
     '<div class="chips" style="margin-top:10px">' + chips + '</div>' +
     '<div class="row" style="margin-bottom:12px"><select id="sort" aria-label="Sort" class="grow"><option value="saving"' + (S.sort === 'saving' ? ' selected' : '') + '>Biggest saving</option><option value="price"' + (S.sort === 'price' ? ' selected' : '') + '>Lowest price</option><option value="ends"' + (S.sort === 'ends' ? ' selected' : '') + '>Ending soon</option><option value="near"' + (S.sort === 'near' ? ' selected' : '') + '>Nearest shop</option></select>' +
@@ -217,11 +241,11 @@ function viewCompare(){
         '<div class="row"><button class="btn alt grow" data-addlist="' + S.cq + '">Add to my list</button><button class="btn alt grow" data-watch="' + S.cq + '">Watch this price</button></div>';
     } else body = '<div class="empty">No shop in ' + esc(S.town) + ' has this product in the sample data.</div>';
   }
-  return DEMO + '<h2>Compare prices</h2><p class="sub">Same product, every shop in ' + esc(S.town) + '.</p><select id="cq" aria-label="Product"><option value="">Choose a product</option>' + opts + '</select><div style="height:12px"></div>' + body;
+  return demo() + '<h2>Compare prices</h2><p class="sub">Same product, every shop in ' + esc(S.town) + '.</p><select id="cq" aria-label="Product"><option value="">Choose a product</option>' + opts + '</select><div style="height:12px"></div>' + body;
 }
 function viewPlan(){
   var opts = PRODUCTS.map(function(p){ return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('');
-  var html = DEMO + '<h2>Where to shop</h2><p class="sub">Add what you need. NamPromo finds the best way to buy it in ' + esc(S.town) + '.</p>' +
+  var html = demo() + '<h2>Where to shop</h2><p class="sub">Add what you need. NamPromo finds the best way to buy it in ' + esc(S.town) + '.</p>' +
     '<div class="card"><div class="row"><select id="pl" class="grow" aria-label="Product">' + opts + '</select><input id="pq" type="number" min="1" value="1" style="width:76px" aria-label="Quantity"><button class="btn" id="pladd">Add</button></div>' +
     (S.list.length ? '<div style="margin-top:8px">' + S.list.map(function(i, n){ var p = prodById[i.product]; return p ? '<div class="li"><div class="grow">' + esc(p.name) + '</div><span class="muted">x ' + i.qty + '</span><button class="x" data-del="' + n + '" aria-label="Remove">×</button></div>' : ''; }).join('') + '</div>' : '<div class="muted" style="margin-top:8px">Your list is empty.</div>') + '</div>';
   var r = plan();
@@ -265,20 +289,21 @@ function viewShops(){
   var chips = ['All'].concat(CATS).map(function(c){ return '<button class="chip' + (S.dcat === c ? ' on' : '') + '" data-dcat="' + esc(c) + '">' + esc(c) + '</button>'; }).join('');
   if(S.dshop && shopById[S.dshop]){
     var sh = shopById[S.dshop], os = shopOffers(sh.id);
-    return DEMO + '<button class="btn alt small" id="dback">Back to shops</button><h2 style="margin-top:12px">' + esc(sh.name) + '</h2><p class="sub">' + esc(sh.sells.join(', ')) + ' · ' + esc(sh.town) + ' · ' + dist(sh).toFixed(1) + ' km away' + (sh.custom ? ' · Registered, not yet checked' : ' · Sample shop') + '</p>' +
+    return demo() + '<button class="btn alt small" id="dback">Back to shops</button><h2 style="margin-top:12px">' + esc(sh.name) + '</h2><p class="sub">' + esc(sh.sells.join(', ')) + ' · ' + esc(sh.town) + ' · ' + dist(sh).toFixed(1) + ' km away' + (sh.custom ? ' · Not yet checked' : sh.live ? ' · Verified' : ' · Sample shop') + '</p>' +
       '<a class="btn block" style="text-decoration:none;display:block;text-align:center;margin-bottom:12px" target="_blank" rel="noopener" href="' + navUrl(sh) + '">Navigate to this shop</a>' +
       (os.length ? os.map(offerCard).join('') : '<div class="empty">This shop has not listed any prices or specials yet.</div>');
   }
   var shops = SHOPS.filter(function(x){ return x.town === S.town && (S.dcat === 'All' || x.sells.indexOf(S.dcat) >= 0); }).sort(function(a, b){ return dist(a) - dist(b); });
-  return DEMO + '<h2>Shops in ' + esc(S.town) + '</h2><p class="sub">Every kind of shop, from food to clothing to building. Shops that register list their own specials here.</p><div class="chips">' + chips + '</div>' +
+  return demo() + '<h2>Shops in ' + esc(S.town) + '</h2><p class="sub">Every kind of shop, from food to clothing to building. Shops that register list their own specials here.</p><div class="chips">' + chips + '</div>' +
     (shops.length ? shops.map(function(x){ var n = shopOffers(x.id).filter(function(o){ return pct(o) > 0; }).length; return '<div class="card"><div class="row"><div class="grow"><b>' + esc(x.name) + '</b><div class="muted">' + dist(x).toFixed(1) + ' km away</div></div>' + (n ? '<span class="badge">' + n + ' special' + (n > 1 ? 's' : '') + '</span>' : '') + '</div>' +
-      '<div style="margin:6px 0">' + x.sells.map(function(c){ return '<span class="tag">' + esc(c) + '</span> '; }).join('') + (x.custom ? '<span class="tag">Registered, not yet checked</span>' : '') + '</div>' +
+      '<div style="margin:6px 0">' + x.sells.map(function(c){ return '<span class="tag">' + esc(c) + '</span> '; }).join('') + (x.custom ? '<span class="tag">Not yet checked</span>' : x.live ? '<span class="tag">Verified</span>' : '') + '</div>' +
       '<div class="row"><button class="btn small" data-dshop="' + esc(x.id) + '">See prices and specials</button><a class="btn small alt" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(x) + '">Navigate</a></div></div>'; }).join('') : '<div class="empty">No shops listed in this category in ' + esc(S.town) + ' yet. Shop owners can list their shop under Me.</div>') +
     '<div class="card" style="background:var(--chip)"><b>Own a shop?</b><p class="muted" style="margin:4px 0 8px">Any operator in Namibia can list their shop and post specials.</p><button class="btn" data-tab="shopreg">List my shop</button></div>';
 }
 var PRIVACY = 'In this test version your details are saved on this device only. How personal information will be handled and protected is to be confirmed with the relevant legal bodies, authorities and entities of Namibia before launch.';
 function viewMe(){
-  var m = S.me, html = DEMO + '<h2>' + (m ? 'Hello, ' + esc(m.name.split(' ')[0]) : 'Join NamPromo') + '</h2>';
+  var m = S.me, html = demo() + '<h2>' + (m ? 'Hello, ' + esc(m.name.split(' ')[0]) : 'Join NamPromo') + '</h2>';
+  if(!m && S.pending) return demo() + '<h2>Enter your code</h2><p class="sub">We sent a 6 digit code to ' + esc(S.pending.phone) + '. It works for 10 minutes.</p><div class="card"><label for="mcode" style="margin-top:0">Code</label><input id="mcode" inputmode="numeric" maxlength="6" autocomplete="one-time-code"><div style="height:12px"></div><button class="btn block" id="mecode">Confirm</button><div class="muted" id="mcerr" style="color:var(--bad);margin-top:6px"></div><button class="btn alt small" id="mecancel" style="margin-top:10px">Back</button></div>';
   if(!m){
     return html + '<p class="sub">Sign up to get deals and price alerts on WhatsApp or SMS.</p><div class="card">' +
       '<label for="mn" style="margin-top:0">Full name</label><input id="mn" autocomplete="name">' +
@@ -294,7 +319,7 @@ function viewMe(){
   html += '<p class="sub">' + esc(m.email) + ' · ' + esc(m.phone) + '</p><div class="card"><b>How should we reach you?</b>' +
     [['wa', 'WhatsApp'], ['sms', 'SMS'], ['mail', 'Email']].map(function(c){ return '<label style="display:flex;gap:8px;align-items:center;margin:8px 0 0;color:var(--ink)"><input type="checkbox" data-pref="' + c[0] + '" style="width:auto"' + (m[c[0]] ? ' checked' : '') + '> ' + c[1] + '</label>'; }).join('') +
     '<label style="margin-top:14px">Deals I want to hear about</label><div class="chips" style="flex-wrap:wrap;overflow:visible">' + CATS.map(function(c){ return '<button class="chip' + ((m.cats || []).indexOf(c) >= 0 ? ' on' : '') + '" data-icat="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div></div>' +
-    '<div class="card"><b>Message previews</b><p class="muted" style="margin:4px 0 8px"><b>Nothing is sent yet.</b> WhatsApp and SMS messages start once NamPromo\'s server and message providers are connected. These show what you would receive.</p>' +
+    '<div class="card"><b>Message previews</b><p class="muted" style="margin:4px 0 8px">' + (LIVE ? 'Your messages come from the NamPromo server. These show what a message looks like.' : '<b>Nothing is sent yet.</b> WhatsApp and SMS messages start once NamPromo\'s server and message providers are connected. These show what you would receive.') + '</p>' +
     '<button class="btn alt small" id="medigest">Preview my specials message</button>' +
     (S.outbox.length ? S.outbox.slice(0, 6).map(function(x){ return '<div class="li" style="display:block"><div class="muted">' + esc(x.ch) + ' to ' + esc(x.to) + '</div><div>' + esc(x.text) + '</div></div>'; }).join('') : '<div class="muted" style="margin-top:8px">No previews yet.</div>') + '</div>' +
     '<div class="card"><b>Shop owner</b>' + (S.ops.length ? S.ops.map(function(o){ return '<div class="li"><div class="grow">' + esc(o.name) + '<div class="muted">' + esc(o.cat) + ' · ' + esc(o.town) + ' · not yet checked</div></div></div>'; }).join('') : '<p class="muted" style="margin:4px 0">You have not listed a shop.</p>') +
@@ -303,7 +328,7 @@ function viewMe(){
   return html;
 }
 function viewShopReg(){
-  return DEMO + '<button class="btn alt small" data-tab="me">Back</button><h2 style="margin-top:12px">List your shop</h2><p class="sub">For shop owners and operators anywhere in Namibia, from food and clothing to building and farming.</p><div class="card">' +
+  return demo() + '<button class="btn alt small" data-tab="me">Back</button><h2 style="margin-top:12px">List your shop</h2><p class="sub">For shop owners and operators anywhere in Namibia, from food and clothing to building and farming.</p><div class="card">' +
     '<label for="on" style="margin-top:0">Shop or business name</label><input id="on">' +
     '<label for="oc">Category</label><select id="oc">' + CATS.map(function(c){ return '<option>' + esc(c) + '</option>'; }).join('') + '</select>' +
     '<label for="ot">Town</label><select id="ot">' + Object.keys(TOWNS).map(function(t){ return '<option' + (t === S.town ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select>' +
@@ -319,7 +344,7 @@ function viewAdd(){
   var own = S.ops.map(function(o){ return shopById['op|' + o.id]; }).filter(Boolean);
   var townShops = SHOPS.filter(function(s){ return s.town === S.town && !s.custom; });
   var d = new Date(today().getTime() + 7 * DAY).toISOString().slice(0, 10);
-  var html = DEMO + '<button class="btn alt small" data-tab="me">Back</button><h2 style="margin-top:12px">Post a special</h2><p class="sub">Shop owners can post their own specials. Anyone else can add one they saw. It shows as "not checked" until the shop is confirmed. Specials are saved on this device only for now.</p><div class="card">' +
+  var html = demo() + '<button class="btn alt small" data-tab="me">Back</button><h2 style="margin-top:12px">Post a special</h2><p class="sub">Shop owners can post their own specials. Anyone else can add one they saw. It shows as "not checked" until the shop is confirmed. Specials are saved on this device only for now.</p><div class="card">' +
     '<label for="fs" style="margin-top:0">Shop</label><select id="fs">' + (own.length ? '<optgroup label="Your shops">' + own.map(function(s){ return '<option value="' + esc(s.id) + '">' + esc(s.name) + ', ' + esc(s.town) + '</option>'; }).join('') + '</optgroup>' : '') +
     '<optgroup label="Shops in ' + esc(S.town) + '">' + townShops.map(function(s){ return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>'; }).join('') + '</optgroup></select>' +
     '<label for="fp">Product</label><select id="fp"><option value="">Something else (type it below)</option>' + PRODUCTS.map(function(p){ return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') + '</select>' +
@@ -368,11 +393,11 @@ function viewHome(){
     '<div class="card quick">' + [['shops', '📍', '#DDF3E4', 'Find shops near you', 'See what is on offer nearby'], ['compare', '🏷️', '#DCEBFF', 'Price comparison', 'Get the best value'], ['saved', '♥', '#FFE9D6', 'Saved deals and alerts', 'Your favourite offers'], ['plan', '📝', '#EADCF7', 'Shopping list', 'Plan your next shop']].map(function(q){ return '<button class="qrow" data-tab="' + q[0] + '"><i style="background:' + q[2] + '">' + q[1] + '</i><div><b>' + q[3] + '</b><span class="s">' + q[4] + '</span></div><em>›</em></button>'; }).join('') + '</div>' +
     (rec ? '<div class="recs"><h2>✦ Recommended for you</h2><div class="grid" style="grid-template-columns:1fr">' + gridCard(rec) + '</div></div>' : '') +
     '<div class="own"><h3>Own a shop?</h3><p>Promote your specials and reach more customers.</p><button data-tab="shopreg">Register your shop →</button></div>';
-  return DEMO + '<div class="home"><div>' + main + '</div><aside>' + side + '</aside></div>';
+  return demo() + '<div class="home"><div>' + main + '</div><aside>' + side + '</aside></div>';
 }
 function viewSaved(){
   var offers = S.saved.map(findOffer).filter(Boolean);
-  var html = DEMO + '<h2>Saved deals</h2><p class="sub">Tap the heart on any deal to keep it here.</p>' + (offers.length ? '<div class="grid">' + offers.map(gridCard).join('') + '</div>' : '<div class="empty">Nothing saved yet. Tap the heart on a deal you like.</div>');
+  var html = demo() + '<h2>Saved deals</h2><p class="sub">Tap the heart on any deal to keep it here.</p>' + (offers.length ? '<div class="grid">' + offers.map(gridCard).join('') + '</div>' : '<div class="empty">Nothing saved yet. Tap the heart on a deal you like.</div>');
   return html + '<div style="height:14px"></div>' + alertsHtml('<h2>Price alerts</h2><p class="sub">Watch a product and set the price you want. NamPromo tells you when a shop reaches it.</p>');
 }
 function openDeal(id){
@@ -380,7 +405,7 @@ function openDeal(id){
   var ov = document.createElement('div'); ov.className = 'sheet'; ov.id = 'dsheet';
   ov.innerHTML = '<div role="dialog" aria-label="Deal details"><div class="row"><div style="font-size:44px">' + L[0] + '</div><div class="grow"><b style="font-size:18px">' + esc(nameOf(o)) + '</b><div class="muted">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away</div></div><button class="x" data-closesheet aria-label="Close">×</button></div>' +
     '<div style="margin:10px 0 4px"><span class="price">' + money(o.price) + '</span>' + (off ? '<span class="was">' + money(o.regular) + '</span> <span class="badge good">SAVE ' + off + '%</span>' : '') + '</div>' +
-    '<div class="muted">' + esc([unitText(o), o.ends ? 'Expires ' + dateText(o.ends) : '', o.mine ? o.source : 'Sample data'].filter(Boolean).join(' · ')) + '</div>' +
+    '<div class="muted">' + esc([unitText(o), o.ends ? 'Expires ' + dateText(o.ends) : '', o.mine || o.live ? o.source : 'Sample data'].filter(Boolean).join(' · ')) + '</div>' +
     '<p class="muted" style="margin:10px 0">Confirm the price and stock with the shop before you go.</p>' +
     '<div class="row" style="flex-wrap:wrap"><a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(s) + '">Navigate</a>' +
     '<button class="btn small alt" data-heart="' + esc(o.id) + '" data-keep>' + (isSaved(o.id) ? '♥ Saved' : '♡ Save') + '</button>' +
@@ -412,7 +437,7 @@ function watchProduct(id){
   toast('Watching this price. Set your target price under Saved.'); go('saved');
 }
 document.addEventListener('click', function(e){
-  var t = e.target.closest('[data-heart],[data-deal],[data-closesheet],[data-cat2],[data-slide],#bell,.sheet,[data-dcat],[data-dshop],[data-icat],#dback,#mesave,#meout,#medigest,#opsave,[data-tab],[data-cat],[data-cmp],[data-addlist],[data-watch],[data-del],[data-wdel],[data-mdel],#pladd,#geo,#notif,#fadd');
+  var t = e.target.closest('#mecode,#mecancel,[data-heart],[data-deal],[data-closesheet],[data-cat2],[data-slide],#bell,.sheet,[data-dcat],[data-dshop],[data-icat],#dback,#mesave,#meout,#medigest,#opsave,[data-tab],[data-cat],[data-cmp],[data-addlist],[data-watch],[data-del],[data-wdel],[data-mdel],#pladd,#geo,#notif,#fadd');
   if(!t) return;
   if(t.dataset.heart){
     var hid = t.dataset.heart, hx = S.saved.indexOf(hid); if(hx >= 0) S.saved.splice(hx, 1); else S.saved.push(hid); save();
@@ -435,8 +460,27 @@ document.addEventListener('click', function(e){
     if(!okEmail(em)){ er.textContent = 'Enter a valid email address.'; return; }
     if(!ph){ er.textContent = 'Enter a Namibian cellphone number, for example 081 123 4567.'; return; }
     if((g('mwa').checked || g('msms').checked || g('mmail').checked) && !g('mok').checked){ er.textContent = 'Tick the box to agree to receive messages, or untick the ways to reach you.'; return; }
-    S.me = { name:nm, email:em, phone:ph, wa:g('mwa').checked, sms:g('msms').checked, mail:g('mmail').checked, cats:[], at:new Date().toISOString() }; save(); toast('Welcome to NamPromo'); return render();
+    var me = { name:nm, email:em, phone:ph, wa:g('mwa').checked, sms:g('msms').checked, mail:g('mmail').checked, cats:[], at:new Date().toISOString() };
+    if(!LIVE){ S.me = me; save(); toast('Welcome to NamPromo'); return render(); }
+    t.disabled = true; er.textContent = '';
+    api('/functions/v1/np-subscribe', { body:{ fullName:nm, email:em, cellphone:ph, whatsapp:me.wa, sms:me.sms, email_opt_in:me.mail, consent:g('mok').checked, town:S.town, categories:[] } }).then(function(r){
+      t.disabled = false;
+      if(r.status === 200 && r.body.sent){ S.pending = me; render(); return; }
+      if(r.status === 200){ er.textContent = r.body.message || 'This number may already be signed up.'; return; }
+      er.textContent = r.status === 429 ? 'Too many codes for this number. Try again in an hour.' : r.body && r.body.fields ? Object.keys(r.body.fields).map(function(k){ return r.body.fields[k]; }).join(' ') : 'We could not sign you up right now. Please try again.';
+    }).catch(function(){ t.disabled = false; er.textContent = 'No connection. Please try again.'; });
+    return;
   }
+  if(t.id === 'mecode'){
+    var cd = document.getElementById('mcode').value.trim(), ce = document.getElementById('mcerr'); t.disabled = true;
+    api('/functions/v1/np-verify', { body:{ cellphone:S.pending.phone, code:cd } }).then(function(r){
+      t.disabled = false;
+      if(r.status === 200){ S.me = S.pending; S.pending = null; save(); toast('Your number is confirmed'); render(); return; }
+      ce.textContent = r.body.error === 'expired' ? 'That code has expired. Go back and sign up again.' : r.status === 429 ? 'Too many tries. Sign up again to get a new code.' : 'That code is not right.';
+    }).catch(function(){ t.disabled = false; ce.textContent = 'No connection. Please try again.'; });
+    return;
+  }
+  if(t.id === 'mecancel'){ S.pending = null; return render(); }
   if(t.id === 'meout'){ if(confirm('Delete your details from this device?')){ S.me = null; S.outbox = []; save(); render(); } return; }
   if(t.id === 'medigest'){
     var want = S.me.cats && S.me.cats.length ? S.me.cats : CATS, top = allOffers().filter(function(o){ return shopById[o.shop].town === S.town && pct(o) > 0 && want.indexOf(catOf(o)) >= 0; }).sort(function(a, b){ return pct(b) - pct(a); }).slice(0, 3);
@@ -498,6 +542,6 @@ var sel = document.getElementById('town');
 sel.innerHTML = Object.keys(TOWNS).map(function(t){ return '<option' + (t === S.town ? ' selected' : '') + '>' + t + '</option>'; }).join('');
 sel.addEventListener('change', function(){ S.town = sel.value; S.pos = null; save(); render(); runAlerts(); });
 window.__nampromo = { go:go, S:S, plan:plan, allOffers:allOffers, alertStatus:alertStatus, SHOPS:SHOPS, PRODUCTS:PRODUCTS, km:km, render:render };
-render(); runAlerts();
+render(); runAlerts(); loadLive();
 if('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 })();
