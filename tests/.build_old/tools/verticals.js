@@ -77,9 +77,30 @@ var VERT_HIDE = {
   hospitality: { menu:['branches'], biz:['labels', 'landed'], smart:[], tabs:[] }
 };
 function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]) return tiles; return tiles.filter(function(t){ return h[kind].indexOf(t[0]) < 0; }); }
+/* Simple view: for retail owners and managers. A short menu (Sell, Stock, Credit, Expenses, Reports, Messages) with every other feature one tap away.
+   New retail shops start in it; shops that already exist are left as they are until the owner switches it on. */
+var VSIMPLE_KEEP = ['inbox', 'tab-dashboard', 'tab-sell', 'tab-stock', 'tab-credit', 'tab-expenses', 'tab-reports', 'settings', 'v-type', 'v-simple'];
+function vSimpleCan(){ return !!State.session && bizType() === 'retail' && isManagerOrOwner(); }
+function vSimpleOn(){ return vSimpleCan() && !!(State.settings && State.settings.simpleMode === true); }
+function vSimpleToggle(){
+  var on = !vSimpleOn();
+  try{ btSave({ simpleMode:on }); }catch(e){}
+  try{ logAudit('update', 'settings', null, 'Simple view ' + (on ? 'on' : 'off')); }catch(e){}
+  toast(tr(on ? 'Simple view on. Other features are under Show all features.' : 'All features shown'));
+  render();
+}
 function vertFilterRows(html){
   // the owner's Business type row sits with Settings, at the bottom of the menu
   if(State.session && isOwner()){ var sr = /<button class="drawer-row"[^>]*data-drawer-row="settings"/; if(sr.test(html)) html = html.replace(sr, function(m){ return drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type') + m; }); }
+  if(vSimpleCan()){
+    if(vSimpleOn()){
+      // simple view: only the everyday pages, the rest sits behind one row
+      html = html.replace(/<div class="drawer-sub">[\s\S]*?<\/div>/g, '');
+      html = html.replace(/<button class="drawer-row"[^>]*data-drawer-row="([^"]+)"[\s\S]*?<\/button>/g, function(m, k){ return VSIMPLE_KEEP.indexOf(k) >= 0 ? m : ''; });
+    }
+    var sr2 = /<button class="drawer-row"[^>]*data-drawer-row="settings"/;
+    if(sr2.test(html)) html = html.replace(sr2, function(m){ return drawerRowHtml('v-simple', ICONS.dashboard, vSimpleOn() ? 'Show all features' : 'Simple view') + m; });
+  }
   var h = VERT_HIDE[bizType()]; if(!h) return html;
   h.menu.forEach(function(k){ html = html.replace(new RegExp('<button class="drawer-row"[^>]*data-drawer-row="' + k + '"[\\s\\S]*?</button>', 'g'), ''); });
   return html;
@@ -143,7 +164,7 @@ function vertDrawerAction(key){
   if(key.indexOf('v-') !== 0) return false;
   if(VERT_MGR[key] && !isManagerOrOwner()){ toast(tr('That page is for owners and managers.')); return true; }
   var m = { 'v-appts':function(){ openApptSheet(todayKey()); }, 'v-queue':openQueueSheet, 'v-clients':openClientsSheet, 'v-services':openServicesSheet, 'v-earn':openEarningsSheet,
-    'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet }[key];
+    'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet, 'v-simple':vSimpleToggle }[key];
   if(m) m(); return !!m;
 }
 (function(){ try{ [['Appointments', 'v-appts'], ['Walk in queue', 'v-queue'], ['Clients', 'v-clients'], ['Services and prices', 'v-services'], ['Room bookings', 'v-bookings'], ['Rooms', 'v-rooms'], ['Tables and tabs', 'v-tabs']].forEach(function(p){ AGENT_PAGES.unshift([new RegExp(p[0].toLowerCase().replace(/ and /g, '.*')), p[1], p[0]]); }); }catch(e){} })();

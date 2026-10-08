@@ -6,7 +6,7 @@ async function signup(b, type, name){
   if(type!=='retail') await p.click('.rt-card:has(input[value="'+type+'"])');
   await p.fill('#rcCompanyName',name); await p.fill('#rcOwnerName','Owner'); await p.fill('#rcOwnerEmail','o@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
   await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.dkd, .hero-card');
-  await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+  await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   return p;
 }
 async function addStaff(p, name, job){

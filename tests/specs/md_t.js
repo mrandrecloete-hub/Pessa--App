@@ -3,7 +3,7 @@ const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
 (async()=>{ const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'})).newPage(); const e=[]; p.on('pageerror',x=>e.push(x.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
  await p.fill('#rcCompanyName','D'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
- await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
  await p.evaluate(async()=>{const T=window.__t; await T.refs.users.doc().set({name:'Sam',role:'cashier',passHash:'x',active:true});});
  await p.waitForTimeout(300);
  await p.evaluate(async()=>{const T=window.__t,o=T.State.users.find(x=>x.role==='owner'),s=T.State.users.find(x=>x.name==='Sam');T.State.session={userId:o.id,name:o.name,role:'owner'};

@@ -7,7 +7,7 @@ const VPS=[[800,600,1],[1024,600,1],[1024,768,1],[1280,720,1],[1366,768,1],[1536
     await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
     await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
     await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
-    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+    await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
     await p.evaluate(async()=>{ const r=window.__t.refs; for(let i=0;i<12;i++) await r.products.doc().set({name:'Product number '+i+' with a long name',sellPrice:30+i,costPrice:20,stockQty:50,createdAt:new Date().toISOString()}); });
     const check = async(label)=>{
       const r = await p.evaluate(()=>{ const iw=window.innerWidth, over=document.documentElement.scrollWidth-iw; const off=[]; document.querySelectorAll('body *').forEach(el=>{ const cs=getComputedStyle(el); if(cs.display==='none'||cs.visibility==='hidden') return; const r=el.getBoundingClientRect(); if(r.width>0&&r.height>0&&r.right>iw+2&&r.left<iw){ // skip if inside a horizontal scroller

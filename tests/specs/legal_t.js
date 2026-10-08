@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
   await p.screenshot({path:'consent.png'});
   await p.click('#cnTerms'); await p.waitForSelector('#cnTermsOk'); console.log('terms in consent', (await p.innerText('.sheet')).slice(0,80).replace(/\n/g,' '));
   await p.click('#cnTermsOk'); await p.waitForTimeout(200);
-  await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+  await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   await p.evaluate(()=>window.__t.openLegalSheet()); await p.waitForSelector('[data-legal]'); await p.screenshot({path:'legal_sheet.png'});
   for(const k of ['terms','privacy','refunds','support']){ await p.click('[data-legal="'+k+'"]'); await p.waitForSelector('#lgBack'); const t=await p.innerText('.sheet'); console.log(k, t.length, t.slice(0,40).replace(/\n/g,' ')); if(k==='terms') await p.screenshot({path:'legal_terms.png'}); await p.click('#lgBack'); await p.waitForSelector('[data-legal]'); }
   console.log('settings has legal row', await p.evaluate(()=>{ window.__t.openSettingsSheet(); const r=!!document.querySelector('[data-more="legal"]'); window.__t.closeModal(); return r; }));

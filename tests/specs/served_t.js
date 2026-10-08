@@ -4,7 +4,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
  await p.fill('#rcCompanyName','Shop'); await p.fill('#rcOwnerName','Andre Cloete'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
- await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
  await p.evaluate(()=>window.__t.ensureJsPDF()).catch(()=>{}); await p.waitForTimeout(500);
  const out=await p.evaluate(()=>{ const T=window.__t; const sale={id:'abc123',createdAt:new Date().toISOString(),total:60,paymentMethod:'cash',cashierName:'Maria Shikongo',cashReceived:100,items:[{name:'Bread',qty:2,unitPrice:30}]};
    const rd=T.saleReceiptDraft(sale); const rdoc=T.buildReceiptPdf(rd); const idoc=T.buildInvoicePdf(Object.assign({},rd,{number:'INV-1',dueDateStr:'2026-11-01'}));
