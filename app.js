@@ -6305,7 +6305,6 @@ function wireRegisterCompany(root){
         await newUserRef.set({ name: ownerName, email: ownerContact.toLowerCase(), role:'owner', passHash: passHash, active:true, createdAt: new Date().toISOString() });
         var displayName = tradingName || companyName;
         State.settings.shopName = displayName;
-        try{ if(regPickedType(root) === 'retail') State.settings.simpleMode = true; }catch(e3){}
         try{ await refs.settings.set(State.settings); }catch(e2){}
         State.session = { userId: newUserRef.id, name: ownerName, role:'owner' };
         saveSessionLocal(newUserRef.id);
@@ -23827,17 +23826,80 @@ var VERT_HIDE = {
   hospitality: { menu:['branches'], biz:['labels', 'landed'], smart:[], tabs:[] }
 };
 function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]) return tiles; return tiles.filter(function(t){ return h[kind].indexOf(t[0]) < 0; }); }
-/* Simple view: for retail owners and managers. A short menu (Sell, Stock, Credit, Expenses, Reports, Messages) with every other feature one tap away.
-   New retail shops start in it; shops that already exist are left as they are until the owner switches it on. */
-var VSIMPLE_KEEP = ['inbox', 'tab-dashboard', 'tab-sell', 'tab-stock', 'tab-credit', 'tab-expenses', 'tab-reports', 'settings', 'v-type', 'v-simple'];
+/* Simple view: every retail owner and manager sees only the short menu and the simple dashboard. The full app sits behind the Developer panel
+   (username and password). This is a gate inside the app for ordinary shop staff. It is not server side security: someone technical who edits their own copy of
+   the app could get around it. A real lock needs the server (see docs). DEV_SALT and DEV_HASH are PBKDF2 SHA 256 values made by tools/make_dev_hash.mjs on the developer's own computer. The password is never stored or committed. While they are empty nobody can unlock. */
+var VSIMPLE_KEEP = ['inbox', 'tab-dashboard', 'tab-sell', 'tab-stock', 'tab-credit', 'tab-expenses', 'tab-reports', 'settings', 'v-type'];
+var DEV_SALT = '', DEV_HASH = '', DEV_ITER = 210000, DEV_TEST_BYPASS = false;
+var DEV_KEY = 'pesa_dev_until', DEV_WHO = 'pesa_dev_who', DEV_FAIL = 'pesa_dev_fail';
 function vSimpleCan(){ return !!State.session && bizType() === 'retail' && isManagerOrOwner(); }
-function vSimpleOn(){ return vSimpleCan() && !!(State.settings && State.settings.simpleMode === true); }
-function vSimpleToggle(){
-  var on = !vSimpleOn();
-  try{ btSave({ simpleMode:on }); }catch(e){}
-  try{ logAudit('update', 'settings', null, 'Simple view ' + (on ? 'on' : 'off')); }catch(e){}
-  toast(tr(on ? 'Simple view on. Other features are under Show all features.' : 'All features shown'));
-  render();
+function vSimpleOn(){ return vSimpleCan() && !devUnlocked(); }
+function devUnlocked(){
+  if(DEV_TEST_BYPASS && !window.__forceSimple) return true;
+  try{ return (+sessionStorage.getItem(DEV_KEY) || 0) > Date.now(); }catch(e){ return false; }
+}
+function devWho(){ try{ return sessionStorage.getItem(DEV_WHO) || ''; }catch(e){ return ''; } }
+function devSet(on, who){ try{ if(on){ sessionStorage.setItem(DEV_KEY, String(Date.now() + 8 * 3600e3)); sessionStorage.setItem(DEV_WHO, who || 'access'); } else { sessionStorage.removeItem(DEV_KEY); sessionStorage.removeItem(DEV_WHO); } }catch(e){} }
+function devHexToBytes(h){ var a = new Uint8Array(h.length / 2); for(var i = 0; i < a.length; i++) a[i] = parseInt(h.substr(i * 2, 2), 16); return a; }
+function devBytesToHex(b){ return Array.prototype.map.call(new Uint8Array(b), function(x){ return ('0' + x.toString(16)).slice(-2); }).join(''); }
+async function devDerive(user, pass, saltHex){
+  var key = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(user).trim().toLowerCase() + '\n' + pass), 'PBKDF2', false, ['deriveBits']);
+  return devBytesToHex(await crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:devHexToBytes(saltHex), iterations:DEV_ITER }, key, 256));
+}
+function devSame(a, b){ if(a.length !== b.length) return false; var r = 0; for(var i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; }
+function devFails(){ try{ return JSON.parse(localStorage.getItem(DEV_FAIL) || '{}'); }catch(e){ return {}; } }
+async function devCheck(user, pass){
+  var f = devFails(), now = Date.now();
+  if(f.until && f.until > now) return { ok:false, wait:Math.ceil((f.until - now) / 60000) };
+  var who = '';
+  if(DEV_HASH && devSame(await devDerive(user, pass, DEV_SALT), DEV_HASH)) who = 'master';
+  else { var list = (State.settings && State.settings.devAccess) || []; for(var i = 0; i < list.length && !who; i++){ if(devSame(await devDerive(user, pass, list[i].salt), list[i].hash)) who = 'access'; } }
+  try{ if(who) localStorage.removeItem(DEV_FAIL); else { var n = (f.n || 0) + 1; localStorage.setItem(DEV_FAIL, JSON.stringify(n >= 5 ? { n:0, until:now + 5 * 60000 } : { n:n })); } }catch(e){}
+  return who ? { ok:true, who:who } : { ok:false };
+}
+function openDevPanel(){
+  if(devUnlocked()) return openDevManage();
+  var ov = openSheet('<div class="sheet-head"><h2>' + tr('Developer panel') + '</h2></div><div class="banner" style="display:block;">' + tr('For the developer and people given access. Everyone else uses the simple dashboard.') + '</div>' +
+    '<div class="field"><label>' + tr('Username') + '</label><input id="dvU" type="text" autocomplete="username" autocapitalize="off" spellcheck="false"></div>' +
+    '<div class="field"><label>' + tr('Password') + '</label><input id="dvP" type="password" autocomplete="current-password"></div>' +
+    '<div id="dvE" class="muted" style="color:var(--danger);min-height:20px;margin:6px 0;"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="dvGo" type="button">' + tr('Unlock') + '</button></div><div class="actions"><button class="btn btn-ghost btn-block" id="dvX" type="button">' + tr('Close') + '</button></div>');
+  ov.querySelector('#dvX').addEventListener('click', closeModal);
+  var go = ov.querySelector('#dvGo'), err = ov.querySelector('#dvE');
+  function submit(){
+    var u = ov.querySelector('#dvU').value, pw = ov.querySelector('#dvP').value; if(!u || !pw){ err.textContent = tr('Enter your username and password.'); return; }
+    go.disabled = true; err.textContent = '';
+    devCheck(u, pw).then(function(r){
+      go.disabled = false;
+      if(r.ok){ devSet(true, r.who); try{ logAudit('update', 'settings', null, 'Developer panel unlocked'); }catch(e){} closeModal(); toast(tr('Full app unlocked on this device')); setTab('dashboard'); render(); }
+      else err.textContent = r.wait ? tr('Too many tries. Wait') + ' ' + r.wait + ' ' + tr('minutes.') : tr('Wrong username or password.');
+    }).catch(function(){ go.disabled = false; err.textContent = tr('Could not check. Try again.'); });
+  }
+  go.addEventListener('click', submit); ov.querySelector('#dvP').addEventListener('keydown', function(e){ if(e.key === 'Enter') submit(); });
+}
+function openDevManage(){
+  var list = (State.settings && State.settings.devAccess) || [], master = devWho() === 'master';
+  var html = '<div class="sheet-head"><h2>' + tr('Developer panel') + '</h2></div><div class="banner" style="display:block;">' + tr('The full app is unlocked on this device. It locks again when you close the app or after 8 hours.') + '</div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="dvLock" type="button">' + tr('Lock and go back to the simple dashboard') + '</button></div>';
+  if(master){
+    html += '<div class="section-title" style="margin-top:16px;">' + tr('People with access') + '</div>' +
+      (list.length ? '<div class="rowlist">' + list.map(function(x, i){ return '<div class="row"><div class="main"><div class="title">' + esc(x.name || tr('Person')) + '</div><div class="sub">' + tr('Added') + ' ' + esc(String(x.at || '').slice(0, 10)) + '</div></div><div class="trail"><button class="btn btn-ghost" data-dvdel="' + i + '" type="button" style="padding:6px 12px;min-height:0;">' + tr('Remove') + '</button></div></div>'; }).join('') + '</div>' : '<div class="muted" style="margin:6px 0;">' + tr('Nobody else has access.') + '</div>') +
+      '<div class="field"><label>' + tr('Name') + '</label><input id="dvN" type="text"></div><div class="field"><label>' + tr('Username') + '</label><input id="dvNU" type="text" autocapitalize="off" spellcheck="false"></div><div class="field"><label>' + tr('Password (at least 10 characters)') + '</label><input id="dvNP" type="password" autocomplete="new-password"></div>' +
+      '<div id="dvNE" class="muted" style="color:var(--danger);min-height:20px;"></div><div class="actions"><button class="btn btn-ghost btn-block" id="dvAdd" type="button">' + tr('Give access') + '</button></div>';
+  }
+  html += '<div class="actions"><button class="btn btn-ghost btn-block" id="dvX" type="button">' + tr('Close') + '</button></div>';
+  var ov = openSheet(html);
+  ov.querySelector('#dvX').addEventListener('click', closeModal);
+  ov.querySelector('#dvLock').addEventListener('click', function(){ devSet(false); closeModal(); toast(tr('Locked')); setTab('dashboard'); render(); });
+  ov.querySelectorAll('[data-dvdel]').forEach(function(b){ b.addEventListener('click', function(){ var l = list.slice(); l.splice(+b.getAttribute('data-dvdel'), 1); btSave({ devAccess:l }); try{ logAudit('update', 'settings', null, 'Developer access removed'); }catch(e){} closeModal(); openDevManage(); }); });
+  var add = ov.querySelector('#dvAdd'); if(!add) return;
+  add.addEventListener('click', function(){
+    var n = ov.querySelector('#dvN').value.trim(), u = ov.querySelector('#dvNU').value.trim().toLowerCase(), pw = ov.querySelector('#dvNP').value, er = ov.querySelector('#dvNE');
+    if(u.length < 3){ er.textContent = tr('Enter a username.'); return; }
+    if(pw.length < 10){ er.textContent = tr('The password needs at least 10 characters.'); return; }
+    var salt = devBytesToHex(crypto.getRandomValues(new Uint8Array(16))); add.disabled = true;
+    devDerive(u, pw, salt).then(function(h){ btSave({ devAccess:list.concat([{ name:n || u, salt:salt, hash:h, at:new Date().toISOString() }]) }); try{ logAudit('update', 'settings', null, 'Developer access given'); }catch(e){} toast(tr('Access given')); closeModal(); openDevManage(); });
+  });
 }
 
 /* ---- simple dashboard for retail shops in simple view: today's sales, one big Sell button, three numbers, and a first sale guide ---- */
@@ -23859,7 +23921,7 @@ function vSimpleDashHtml(){
   h += '<button class="btn btn-primary btn-block" type="button" data-vq="sell" style="margin:14px 0;min-height:64px;font-size:21px;">' + tr('Sell') + '</button>';
   h += '<div class="stats">' + vStat('Cash sales today', fmtMoney(cash)) + vStat('Low stock', low, low ? 'var(--danger)' : '') + vStat('Customers owe you', fmtMoney(owed), owed ? 'var(--warn,#d98e2b)' : '') + '</div>';
   h += '<div class="qa-row" style="margin-top:12px;">' + vTile('stock', 'box', 'Stock') + vTile('credit', 'people', 'Credit') + vTile('expenses', 'receipt', 'Expenses') + vTile('reports', 'chartbar', 'Reports') + '</div>';
-  h += '<button class="btn btn-ghost btn-block" type="button" data-vq="more" style="margin-top:12px;">' + tr('Show all features') + '</button>';
+  h += '<div style="text-align:center;margin-top:18px;"><button class="btn btn-ghost" type="button" data-vq="dev" style="opacity:.6;font-size:12px;min-height:0;padding:6px 12px;">' + tr('Developer panel') + '</button></div>';
   return dashWrap(h);
 }
 /* three products in one go, with no spreadsheet and no categories */
@@ -23884,20 +23946,6 @@ function openQuickAddSheet(){
   });
 }
 
-/* shops that already exist are asked once whether they want the simple view. New shops start in it. Nothing is removed either way. */
-var _vAsked = false;
-function vSimpleAsk(){
-  try{
-    if(_vAsked || !State.session || !isOwner() || bizType() !== 'retail' || State.settings.simpleMode !== undefined || State.settings.simpleAsked) return;
-    if(!State.ready.sales || !State.ready.products) return;
-    _vAsked = true;
-    setTimeout(function(){
-      if(document.getElementById('modalRoot').innerHTML.trim()) { _vAsked = false; return; }
-      btSave({ simpleAsked:true });
-      confirmSheet(tr('Switch to the simple view?'), tr('It shows only Sell, Stock, Credit, Expenses and Reports, with big buttons. Every other feature is one tap away under Show all features. You can switch back at any time.'), tr('Use simple view'), function(){ btSave({ simpleMode:true }); toast(tr('Simple view on')); render(); });
-    }, 1500);
-  }catch(e){}
-}
 (function(){ try{ var _bm = btMaybeSetupPrompt; btMaybeSetupPrompt = function(){ if(vSimpleOn()) return; return _bm.apply(this, arguments); }; }catch(e){} })();
 function vertFilterRows(html){
   // the owner's Business type row sits with Settings, at the bottom of the menu
@@ -23909,13 +23957,13 @@ function vertFilterRows(html){
       html = html.replace(/<button class="drawer-row"[^>]*data-drawer-row="([^"]+)"[\s\S]*?<\/button>/g, function(m, k){ return VSIMPLE_KEEP.indexOf(k) >= 0 ? m : ''; });
     }
     var sr2 = /<button class="drawer-row"[^>]*data-drawer-row="settings"/;
-    if(sr2.test(html)) html = html.replace(sr2, function(m){ return drawerRowHtml('v-simple', ICONS.dashboard, vSimpleOn() ? 'Show all features' : 'Simple view') + m; });
+    if(devUnlocked() && State.session && isManagerOrOwner() && sr2.test(html)) html = html.replace(sr2, function(m){ return drawerRowHtml('v-dev', ICONS.agent || ICONS.box, 'Developer panel') + m; });
   }
   var h = VERT_HIDE[bizType()]; if(!h) return html;
   h.menu.forEach(function(k){ html = html.replace(new RegExp('<button class="drawer-row"[^>]*data-drawer-row="' + k + '"[\\s\\S]*?</button>', 'g'), ''); });
   return html;
 }
-(function(){ try{ var _rd = renderDashboard; renderDashboard = function(){ try{ vSimpleAsk(); }catch(e){} try{ if(vSimpleOn() && isManagerOrOwner() && State.ready.sales && State.ready.products && State.ready.customers && State.ready.expenses) return vSimpleDashHtml(); }catch(e){} return _rd(); }; }catch(e){} })();
+(function(){ try{ var _rd = renderDashboard; renderDashboard = function(){ try{ if(vSimpleOn() && isManagerOrOwner() && State.ready.sales && State.ready.products && State.ready.customers && State.ready.expenses) return vSimpleDashHtml(); }catch(e){} return _rd(); }; }catch(e){} })();
 (function(){ try{ var _mrh = menuRowsHtml; menuRowsHtml = function(){ return vertFilterRows(_mrh()); }; var _rt = roleTabs; roleTabs = function(role){ var a = _rt(role), h = VERT_HIDE[bizType()]; return h ? a.filter(function(x){ return h.tabs.indexOf(x) < 0; }) : a; }; }catch(e){} })();
 /* the first run setup guide speaks the language of the business type */
 (function(){
@@ -23975,7 +24023,7 @@ function vertDrawerAction(key){
   if(key.indexOf('v-') !== 0) return false;
   if(VERT_MGR[key] && !isManagerOrOwner()){ toast(tr('That page is for owners and managers.')); return true; }
   var m = { 'v-appts':function(){ openApptSheet(todayKey()); }, 'v-queue':openQueueSheet, 'v-clients':openClientsSheet, 'v-services':openServicesSheet, 'v-earn':openEarningsSheet,
-    'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet, 'v-simple':vSimpleToggle }[key];
+    'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet, 'v-dev':openDevPanel }[key];
   if(m) m(); return !!m;
 }
 (function(){ try{ [['Appointments', 'v-appts'], ['Walk in queue', 'v-queue'], ['Clients', 'v-clients'], ['Services and prices', 'v-services'], ['Room bookings', 'v-bookings'], ['Rooms', 'v-rooms'], ['Tables and tabs', 'v-tabs']].forEach(function(p){ AGENT_PAGES.unshift([new RegExp(p[0].toLowerCase().replace(/ and /g, '.*')), p[1], p[0]]); }); }catch(e){} })();
@@ -24055,7 +24103,7 @@ function vertInit(){
       appts:function(){ openApptSheet(todayKey()); }, queue:openQueueSheet, clients:openClientsSheet, services:openServicesSheet, earn:openEarningsSheet, newbook:function(){ openApptForm(null, todayKey()); },
       bookings:openBookingsSheet, rooms:openRoomsSheet, tabs:openTabsSheet, guests:openGuestsSheet, comply:openComplySheet, newstay:function(){ openStayForm(null); },
       team:openTeamSheet, addstaff:function(){ openStaffSheet(null); }, suppliers:function(){ handleDrawerAction('suppliers'); }, accountant:function(){ handleDrawerAction('accountant'); }, msgs:openInboxSheet, tools:openBizHub, till:function(){ setTab('till'); }, settings:openSettingsSheet, smart:openSmartToolsSheet, assistant:openAgentSheet, vat:function(){ handleDrawerAction('vat'); }, invoices:function(){ setTab('invoices'); },
-      retail:function(){ State.showRetailDash = true; render(); }, quickadd:openQuickAddSheet, credit:function(){ setTab('credit'); }, more:vSimpleToggle, vert:function(){ State.showRetailDash = false; render(); },
+      retail:function(){ State.showRetailDash = true; render(); }, quickadd:openQuickAddSheet, credit:function(){ setTab('credit'); }, dev:openDevPanel, vert:function(){ State.showRetailDash = false; render(); },
       appt:function(){ var a2 = vList('appointments').find(function(x){ return x.id === id; }); if(a2) openApptSheet(a2.date); }, stay:function(){ var b = vList('hosBookings').find(function(x){ return x.id === id; }); if(b) openStayView(b); } }[a];
     if(go){ e.preventDefault(); go(); }
   });
