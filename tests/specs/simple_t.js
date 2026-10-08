@@ -17,7 +17,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  await p.click('[data-vq="dev"]'); await p.waitForSelector('#dvGo');
  ck('the panel is titled Developer panel and asks for username and password', await p.evaluate(()=>/Developer panel/.test(document.querySelector('.sheet').innerText) && !!document.getElementById('dvU') && document.getElementById('dvP').type==='password'));
  await p.fill('#dvU','dev@example.com'); await p.fill('#dvP','whatever-12345'); await p.click('#dvGo'); await p.waitForFunction(()=>document.getElementById('dvE').textContent.length>0);
- ck('with no master login set, nobody can get in', await p.evaluate(()=>/Wrong username or password/.test(document.getElementById('dvE').textContent) && r === undefined || true) && await p.evaluate(()=>!window.__t.devUnlocked()));
+ ck('with no master login set, nobody can get in', await p.evaluate(()=>/Wrong username or password/.test(document.getElementById('dvE').textContent) && !window.__t.devUnlocked()));
  await p.evaluate(async()=>{ const salt='00112233445566778899aabbccddeeff'; window.__t.setDev({ salt:salt, hash:await window.__t.devDerive('Dev@Example.com','correct-horse-9','' + salt) }); });
  await p.fill('#dvP','wrong-password'); await p.click('#dvGo'); await p.waitForFunction(()=>/Wrong/.test(document.getElementById('dvE').textContent));
  ck('a wrong password is refused', await p.evaluate(()=>!window.__t.devUnlocked()));
