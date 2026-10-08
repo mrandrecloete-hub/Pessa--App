@@ -19765,7 +19765,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.161';
+var APP_VERSION = '2026.10.162';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20043,6 +20043,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.162', items:[
+    'Simple view: new retail shops start with a short menu (Sell, Stock, Credit, Expenses, Reports). Tap Show all features to see everything. Existing shops are not changed.'
+  ] },
   { v:'2026.10.161', items:[
     'The gold Pesa seal now appears on the About Pesa page, with the Pesa logo in gold. It is our own emblem, not a certificate or approval.'
   ] },
