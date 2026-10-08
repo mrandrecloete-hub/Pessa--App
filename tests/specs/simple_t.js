@@ -12,7 +12,8 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  const dash = await p.evaluate(()=>document.body.innerText);
  ck('the simple dashboard shows today, a big Sell button and three numbers', /today.s sales/i.test(dash) && await p.evaluate(()=>!!document.querySelector('[data-vq="sell"].btn-primary')) && /cash sales today/i.test(dash) && /low stock/i.test(dash) && /customers owe you/i.test(dash));
  ck('it does not show the long list of retail tiles', await p.evaluate(()=>!/Pesa Smart Tools|Business tools/.test(document.body.innerText)));
- ck('a small Developer panel link is on the dashboard', await p.evaluate(()=>!!document.querySelector('[data-vq="dev"]')));
+ ck('the Developer panel is also a row in the menu', (await rows()).indexOf('v-dev')>-1);
+ ck('a Developer panel link is on the dashboard', await p.evaluate(()=>!!document.querySelector('[data-vq="dev"]')));
  // developer panel with a throw away test login (the real login is made with tools/make_dev_hash.mjs and is never in the repo)
  await p.click('[data-vq="dev"]'); await p.waitForSelector('#dvGo');
  ck('the panel is titled Developer panel and asks for username and password', await p.evaluate(()=>/Developer panel/.test(document.querySelector('.sheet').innerText) && !!document.getElementById('dvU') && document.getElementById('dvP').type==='password'));

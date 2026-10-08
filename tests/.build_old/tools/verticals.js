@@ -80,7 +80,7 @@ function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]
 /* Simple view: every retail owner and manager sees only the short menu and the simple dashboard. The full app sits behind the Developer panel
    (username and password). This is a gate inside the app for ordinary shop staff. It is not server side security: someone technical who edits their own copy of
    the app could get around it. A real lock needs the server (see docs). DEV_SALT and DEV_HASH are PBKDF2 SHA 256 values made by tools/make_dev_hash.mjs on the developer's own computer. The password is never stored or committed. While they are empty nobody can unlock. */
-var VSIMPLE_KEEP = ['inbox', 'tab-dashboard', 'tab-sell', 'tab-stock', 'tab-credit', 'tab-expenses', 'tab-reports', 'settings', 'v-type'];
+var VSIMPLE_KEEP = ['inbox', 'tab-dashboard', 'tab-sell', 'tab-stock', 'tab-credit', 'tab-expenses', 'tab-reports', 'settings', 'v-type', 'v-dev'];
 var DEV_SALT = '', DEV_HASH = '', DEV_ITER = 210000, DEV_TEST_BYPASS = false;
 /* Server mode (preferred): set DEV_SERVER to your pesa-dev function address and DEV_PUBLIC_JWK to the public key from pesa-server/tools/make_keys.mjs. The password is then checked on your server and never sits in the app. */
 var DEV_SERVER = '', DEV_PUBLIC_JWK = null;
@@ -195,6 +195,7 @@ function openDevManage(){
 }
 
 /* ---- simple dashboard for retail shops in simple view: today's sales, one big Sell button, three numbers, and a first sale guide ---- */
+function devLinkHtml(){ return isManagerOrOwner() ? '<div style="text-align:center;margin:18px 0 6px;"><button class="btn btn-ghost" type="button" data-vq="dev" style="opacity:.85;font-size:14px;min-height:0;padding:8px 16px;">' + tr('Developer panel') + '</button></div>' : ''; }
 function vSimpleStepsDone(){ var nProd = (State.products || []).filter(function(p){ return !p.isService; }).length; return { prods:nProd >= 3, sale:(State.sales || []).length > 0 }; }
 function vSimpleDashHtml(){
   var sales = vSalesToday(), total = vSum(sales, function(s){ return s.total; });
@@ -213,7 +214,7 @@ function vSimpleDashHtml(){
   h += '<button class="btn btn-primary btn-block" type="button" data-vq="sell" style="margin:14px 0;min-height:64px;font-size:21px;">' + tr('Sell') + '</button>';
   h += '<div class="stats">' + vStat('Cash sales today', fmtMoney(cash)) + vStat('Low stock', low, low ? 'var(--danger)' : '') + vStat('Customers owe you', fmtMoney(owed), owed ? 'var(--warn,#d98e2b)' : '') + '</div>';
   h += '<div class="qa-row" style="margin-top:12px;">' + vTile('stock', 'box', 'Stock') + vTile('credit', 'people', 'Credit') + vTile('expenses', 'receipt', 'Expenses') + vTile('reports', 'chartbar', 'Reports') + '</div>';
-  h += '<div style="text-align:center;margin-top:18px;"><button class="btn btn-ghost" type="button" data-vq="dev" style="opacity:.6;font-size:12px;min-height:0;padding:6px 12px;">' + tr('Developer panel') + '</button></div>';
+  h += devLinkHtml();
   return dashWrap(h);
 }
 /* three products in one go, with no spreadsheet and no categories */
@@ -243,8 +244,8 @@ function openQuickAddSheet(){
    their own pages plus the few things every business needs (messages, reports, expenses, team, accounts, settings). The developer, unlocked in the
    Developer panel, still sees the wider menu below (VERT_HIDE). */
 var VERT_KEEP = {
-  beauty:      ['inbox', 'tab-dashboard', 'tab-stock', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings'],
-  hospitality: ['inbox', 'tab-dashboard', 'tab-stock', 'tab-invoices', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings']
+  beauty:      ['inbox', 'tab-dashboard', 'tab-stock', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'v-dev', 'settings'],
+  hospitality: ['inbox', 'tab-dashboard', 'tab-stock', 'tab-invoices', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'v-dev', 'settings']
 };
 function vStrictRows(html){
   var t = bizType(), keep = VERT_KEEP[t].concat(['tab-me', 'tab-records']); if(!isManagerOrOwner()) keep.push('tab-till');
@@ -253,7 +254,8 @@ function vStrictRows(html){
   return html;
 }
 function vertFilterRows(html){
-  // the owner's Business type row sits with Settings, at the bottom of the menu
+  // the Developer panel row (owners and managers) and the owner's Business type row sit with Settings, at the bottom of the menu
+  if(State.session && isManagerOrOwner()){ var sd = /<button class="drawer-row"[^>]*data-drawer-row="settings"/; if(sd.test(html)) html = html.replace(sd, function(m){ return drawerRowHtml('v-dev', ICONS.agent || ICONS.box, 'Developer panel') + m; }); }
   if(State.session && isOwner()){ var sr = /<button class="drawer-row"[^>]*data-drawer-row="settings"/; if(sr.test(html)) html = html.replace(sr, function(m){ return drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type') + m; }); }
   if(vSimpleCan()){
     if(vSimpleOn()){
@@ -261,8 +263,6 @@ function vertFilterRows(html){
       html = html.replace(/<div class="drawer-sub">[\s\S]*?<\/div>/g, '');
       html = html.replace(/<button class="drawer-row"[^>]*data-drawer-row="([^"]+)"[\s\S]*?<\/button>/g, function(m, k){ return VSIMPLE_KEEP.indexOf(k) >= 0 ? m : ''; });
     }
-    var sr2 = /<button class="drawer-row"[^>]*data-drawer-row="settings"/;
-    if(devUnlocked() && State.session && isManagerOrOwner() && sr2.test(html)) html = html.replace(sr2, function(m){ return drawerRowHtml('v-dev', ICONS.agent || ICONS.box, 'Developer panel') + m; });
   }
   if(bizType() !== 'retail' && !devUnlocked() && VERT_KEEP[bizType()])return vStrictRows(html);
   var h = VERT_HIDE[bizType()]; if(!h) return html;
@@ -362,7 +362,7 @@ function vertDashboardHtml(){
   try{ html += pilotHomeNote(); }catch(e){}
   vertLabels();
   html += (bizType() === 'beauty' ? vBeautyDash() : vHospDash());
-  html += vSetupCard() + vManageTiles();
+  html += vSetupCard() + vManageTiles() + devLinkHtml();
   return dashWrap(html);
 }
 var _vInit = false;
