@@ -1,17 +1,17 @@
-const {chromium}=require('playwright');
+const {chromium}=require('/opt/node-tools/node_modules/playwright');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c) fail++; };
 (async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
-await p.goto('http://localhost:8944/index.html');await p.waitForSelector('.gcard');
+await p.goto('http://localhost:8944/index.html');await p.waitForSelector('.dcard');
 await p.screenshot({path:'/tmp/claude-0/exp/np1.png'});
-ck('deals show with sample data banner', await p.evaluate(()=>/Sample data/.test(document.body.innerText) && document.querySelectorAll('.gcard').length>=3));
-ck('every special has a real discount', await p.evaluate(()=>[...document.querySelectorAll('.save')].length>=3));
-ck('home has search, category row, hero and own-shop call', await p.evaluate(()=>!!document.getElementById('hq') && document.querySelectorAll('.cat').length>=7 && !!document.querySelector('.hero') && /Own a shop/.test(document.body.innerText)));
-await p.click('.gcard .heart'); ck('heart saves a deal', await p.evaluate(()=>window.__nampromo.S.saved.length===1));
-await p.click('.gcard'); await p.waitForSelector('#dsheet'); await p.screenshot({path:'/tmp/claude-0/exp/np8.png'});
+ck('deals show with sample data banner', await p.evaluate(()=>/Sample prices/.test(document.body.innerText) && document.querySelectorAll('.dcard').length>=3));
+ck('every special has a real discount', await p.evaluate(()=>[...document.querySelectorAll('.dsave')].length>=3));
+ck('home has search, categories and best specials', await p.evaluate(()=>!!document.getElementById('hq') && document.querySelectorAll('.cat').length>=7 && /Choose a category/.test(document.body.innerText) && /Best specials today/.test(document.body.innerText)));
+await p.click('.dcard .heart'); ck('heart saves a deal', await p.evaluate(()=>window.__nampromo.S.saved.length===1));
+await p.click('.dcard .dname'); await p.waitForSelector('#dsheet'); await p.screenshot({path:'/tmp/claude-0/exp/np8.png'});
 ck('tapping a deal opens its details with Navigate', await p.evaluate(()=>!!document.querySelector('#dsheet a[href*="maps/dir"]')));
 await p.click('[data-closesheet]'); ck('details close', await p.evaluate(()=>!document.getElementById('dsheet')));
 await p.click('[data-cat2="Building and hardware"]'); ck('category icon filters the deals', await p.evaluate(()=>window.__nampromo.S.cat==='Building and hardware' && /All specials/.test(document.body.innerText)));
-await p.click('[data-tab=saved]'); ck('saved page lists the saved deal', await p.evaluate(()=>document.querySelectorAll('.gcard').length===1));
+await p.click('[data-tab=saved]'); ck('saved page lists the saved deal', await p.evaluate(()=>document.querySelectorAll('.dcard').length===1));
 await p.click('[data-tab=home]');
 // compare
 await p.evaluate(()=>window.__nampromo.go('compare')); await p.selectOption('#cq','maize'); await p.screenshot({path:'/tmp/claude-0/exp/np2.png'});
@@ -33,7 +33,7 @@ ck('alert reached when target is high', await p.evaluate(()=>/Reached/.test(docu
 // shops directory by category
 await p.click('[data-tab=shops]'); await p.screenshot({path:'/tmp/claude-0/exp/np6.png'});
 const cats = await p.evaluate(()=>[...document.querySelectorAll('[data-dcat]')].map(b=>b.textContent));
-ck('shops listed under categories from food to building', cats.indexOf('Food and groceries')>-1 && cats.indexOf('Clothing and shoes')>-1 && cats.indexOf('Building and hardware')>-1);
+ck('shops listed under categories from food to building', cats.some(c=>/Food and groceries/.test(c)) && cats.some(c=>/Clothing and shoes/.test(c)) && cats.some(c=>/Building and hardware/.test(c)));
 await p.click('[data-dcat="Building and hardware"]');
 ck('building category lists a hardware shop', await p.evaluate(()=>/Example Hardware/.test(document.body.innerText) && !/Example Fashion House/.test(document.body.innerText)));
 await p.click('[data-dshop]'); ck('shop page shows its prices', await p.evaluate(()=>/Cement/.test(document.body.innerText)));
@@ -46,7 +46,7 @@ await p.fill('#mp','081 123 4567'); await p.click('#mesave'); ck('consent requir
 await p.check('#mok'); await p.click('#mesave'); await p.waitForSelector('[data-pref]');
 ck('signed up with phone saved in +264 form', await p.evaluate(()=>window.__nampromo.S.me.phone==='+264811234567' && window.__nampromo.S.me.wa && window.__nampromo.S.me.sms));
 await p.screenshot({path:'/tmp/claude-0/exp/np7.png'});
-await p.click('#medigest'); ck('digest preview queued for WhatsApp and SMS and says nothing is sent', await p.evaluate(()=>window.__nampromo.S.outbox.length===2 && /Nothing is sent yet/.test(document.body.innerText)));
+await p.click('details summary'); await p.click('#medigest'); ck('digest preview queued for WhatsApp and SMS and says nothing is sent', await p.evaluate(()=>window.__nampromo.S.outbox.length===2 && /Nothing is sent yet/.test(document.body.innerText)));
 // alert preview
 await p.evaluate(()=>window.__nampromo.go('compare')); await p.selectOption('#cq','sugar'); await p.click('[data-watch=sugar]'); await p.waitForSelector('[data-wt]');
 const before = await p.evaluate(()=>window.__nampromo.S.outbox.length);

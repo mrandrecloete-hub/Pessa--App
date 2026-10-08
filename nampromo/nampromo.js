@@ -199,33 +199,22 @@ var ICON = {
   shops:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l2-5h14l2 5M3 9h18M5 9v11h14V9M10 20v-6h4v6"/></svg>',
   me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>'
 };
-var TABS = [['home', 'Home'], ['saved', 'Saved'], ['plan', 'Shopping List'], ['shops', 'Shops'], ['me', 'Profile']];
+var TABS = [['home', 'Home'], ['shops', 'Shops'], ['plan', 'My List'], ['saved', 'Saved'], ['me', 'Profile']];
 var NAVOF = { deals:'home', compare:'home', alerts:'saved', add:'me', shopreg:'me' };
-var DEMO_HTML = '<div class="demo"><b>Sample data.</b> The shops and prices here are made up to show how NamPromo works. They are not real specials. Real prices need to be confirmed with each shop.</div>';
+var DEMO_HTML = '<div class="demo"><b>Sample prices.</b> These shops and prices are made up for demonstration. Confirm real prices with the shop.</div>';
 function demo(){ return LIVE_DATA ? '' : DEMO_HTML; }
 
-function offerCard(o){
-  var s = shopById[o.shop], pr = prodById[o.product], off = pct(o), up = unitText(o);
-  return '<div class="card"><div class="row"><div class="grow"><div style="font-weight:650">' + esc(nameOf(o)) + '</div>' +
-    '<div class="muted">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away' + '</div></div>' + (off ? '<span class="badge">' + off + '% off</span>' : '') + '<button class="x" style="position:static;color:' + (isSaved(o.id) ? '#E5484D' : 'var(--muted)') + '" data-heart="' + esc(o.id) + '" aria-label="Save this deal">' + (isSaved(o.id) ? '♥' : '♡') + '</button></div>' +
-    '<div style="margin:6px 0 2px"><span class="price">' + money(o.price) + '</span>' + (off ? '<span class="was">' + money(o.regular) + '</span>' : '') + '</div>' +
-    '<div class="muted">' + [up, endsText(o), o.mine ? o.source : ''].filter(Boolean).map(esc).join(' · ') + '</div>' +
-    '<div class="row" style="margin-top:10px;flex-wrap:wrap"><a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(s) + '">Navigate</a>' +
-    (pr ? '<button class="btn small alt" data-cmp="' + o.product + '">Compare shops</button><button class="btn small alt" data-addlist="' + o.product + '">Add to list</button><button class="btn small alt" data-watch="' + o.product + '">Watch price</button>' : '') + '</div></div>';
-}
+function offerCard(o){ return dealCard(o); }
 function viewDeals(){
-  var list = allOffers().filter(function(o){ var s = shopById[o.shop]; return (S.allTowns || s.town === S.town) && pct(o) > 0 && (S.cat === 'All' || catOf(o) === S.cat) && (!S.q || (nameOf(o) + ' ' + s.name).toLowerCase().indexOf(S.q.toLowerCase()) >= 0); });
-  if(S.sort === 'saving') list.sort(function(a, b){ return pct(b) - pct(a); });
-  else if(S.sort === 'price') list.sort(function(a, b){ return a.price - b.price; });
-  else if(S.sort === 'ends') list.sort(function(a, b){ return (a.ends ? a.ends.getTime() : 9e15) - (b.ends ? b.ends.getTime() : 9e15); });
-  else list.sort(function(a, b){ return dist(shopById[a.shop]) - dist(shopById[b.shop]); });
-  var chips = ['All'].concat(CATS).map(function(c){ return '<button class="chip' + (S.cat === c ? ' on' : '') + '" data-cat="' + c + '">' + c + '</button>'; }).join('');
-  return demo() + '<button class="btn alt small" data-tab="home">Back</button><h2 style="margin-top:12px">All specials</h2><p class="sub">' + (S.allTowns ? 'All towns' : esc(S.town)) + ', ' + list.length + ' specials</p>' +
-    '<input id="q" type="search" placeholder="Search a product or shop" value="' + esc(S.q) + '" aria-label="Search">' +
-    '<div class="chips" style="margin-top:10px">' + chips + '</div>' +
-    '<div class="row" style="margin-bottom:12px"><select id="sort" aria-label="Sort" class="grow"><option value="saving"' + (S.sort === 'saving' ? ' selected' : '') + '>Biggest saving</option><option value="price"' + (S.sort === 'price' ? ' selected' : '') + '>Lowest price</option><option value="ends"' + (S.sort === 'ends' ? ' selected' : '') + '>Ending soon</option><option value="near"' + (S.sort === 'near' ? ' selected' : '') + '>Nearest shop</option></select>' +
-    '<label style="display:flex;gap:6px;align-items:center;margin:0;white-space:nowrap"><input type="checkbox" id="all" style="width:auto"' + (S.allTowns ? ' checked' : '') + '> All towns</label></div>' +
-    (list.length ? list.map(offerCard).join('') : '<div class="empty">No specials match. Try another category or town.</div>');
+  var list = allOffers().filter(function(o){ var s = shopById[o.shop]; return s.town === S.town && pct(o) > 0 && (S.cat === 'All' || catOf(o) === S.cat) && (!S.q || (nameOf(o) + ' ' + s.name).toLowerCase().indexOf(S.q.toLowerCase()) >= 0); });
+  if(S.sort === 'price') list.sort(function(a, b){ return a.price - b.price; });
+  else if(S.sort === 'near') list.sort(function(a, b){ return dist(shopById[a.shop]) - dist(shopById[b.shop]); });
+  else list.sort(function(a, b){ return pct(b) - pct(a); });
+  return demo() + '<button class="btn alt small" data-tab="home">Back</button><h1 style="margin-top:12px">All specials</h1><p class="sub">' + esc(S.town) + ', ' + list.length + ' specials</p>' +
+    '<label for="q" style="margin-top:0">Search</label><input id="q" type="search" placeholder="Product or shop" value="' + esc(S.q) + '">' +
+    '<label for="fcat">Category</label><select id="fcat"><option value="All">All categories</option>' + CATS.map(function(c){ return '<option' + (S.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>' +
+    '<label for="sort">Sort by</label><select id="sort"><option value="saving"' + (S.sort === 'saving' ? ' selected' : '') + '>Biggest saving</option><option value="price"' + (S.sort === 'price' ? ' selected' : '') + '>Lowest price</option><option value="near"' + (S.sort === 'near' ? ' selected' : '') + '>Nearest shop</option></select>' +
+    '<div style="height:16px"></div>' + (list.length ? list.map(dealCard).join('') : '<div class="empty">No specials match. Try another category.</div>');
 }
 function viewCompare(){
   var opts = PRODUCTS.map(function(p){ return '<option value="' + p.id + '"' + (S.cq === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('');
@@ -286,19 +275,22 @@ function alertsHtml(head){
 }
 function shopOffers(id){ return allOffers().filter(function(o){ return o.shop === id; }).sort(function(a, b){ return pct(b) - pct(a); }); }
 function viewShops(){
-  var chips = ['All'].concat(CATS).map(function(c){ return '<button class="chip' + (S.dcat === c ? ' on' : '') + '" data-dcat="' + esc(c) + '">' + esc(c) + '</button>'; }).join('');
   if(S.dshop && shopById[S.dshop]){
     var sh = shopById[S.dshop], os = shopOffers(sh.id);
-    return demo() + '<button class="btn alt small" id="dback">Back to shops</button><h2 style="margin-top:12px">' + esc(sh.name) + '</h2><p class="sub">' + esc(sh.sells.join(', ')) + ' · ' + esc(sh.town) + ' · ' + dist(sh).toFixed(1) + ' km away' + (sh.custom ? ' · Not yet checked' : sh.live ? ' · Verified' : ' · Sample shop') + '</p>' +
-      '<a class="btn block" style="text-decoration:none;display:block;text-align:center;margin-bottom:12px" target="_blank" rel="noopener" href="' + navUrl(sh) + '">Navigate to this shop</a>' +
-      (os.length ? os.map(offerCard).join('') : '<div class="empty">This shop has not listed any prices or specials yet.</div>');
+    return demo() + '<button class="btn alt small" id="dback">Back</button><h1 style="margin-top:12px">' + esc(sh.name) + '</h1><p class="sub">' + esc(sh.town) + ' · ' + dist(sh).toFixed(1) + ' km away · ' + (sh.custom ? 'Not yet checked' : sh.live ? 'Verified' : 'Sample shop') + '</p>' +
+      '<a class="btn block" target="_blank" rel="noopener" href="' + navUrl(sh) + '" style="margin-bottom:16px">Navigate to this shop</a>' +
+      (os.length ? os.map(dealCard).join('') : '<div class="empty">This shop has not listed any prices yet.</div>');
   }
-  var shops = SHOPS.filter(function(x){ return x.town === S.town && (S.dcat === 'All' || x.sells.indexOf(S.dcat) >= 0); }).sort(function(a, b){ return dist(a) - dist(b); });
-  return demo() + '<h2>Shops in ' + esc(S.town) + '</h2><p class="sub">Every kind of shop, from food to clothing to building. Shops that register list their own specials here.</p><div class="chips">' + chips + '</div>' +
-    (shops.length ? shops.map(function(x){ var n = shopOffers(x.id).filter(function(o){ return pct(o) > 0; }).length; return '<div class="card"><div class="row"><div class="grow"><b>' + esc(x.name) + '</b><div class="muted">' + dist(x).toFixed(1) + ' km away</div></div>' + (n ? '<span class="badge">' + n + ' special' + (n > 1 ? 's' : '') + '</span>' : '') + '</div>' +
-      '<div style="margin:6px 0">' + x.sells.map(function(c){ return '<span class="tag">' + esc(c) + '</span> '; }).join('') + (x.custom ? '<span class="tag">Not yet checked</span>' : x.live ? '<span class="tag">Verified</span>' : '') + '</div>' +
-      '<div class="row"><button class="btn small" data-dshop="' + esc(x.id) + '">See prices and specials</button><a class="btn small alt" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(x) + '">Navigate</a></div></div>'; }).join('') : '<div class="empty">No shops listed in this category in ' + esc(S.town) + ' yet. Shop owners can list their shop under Me.</div>') +
-    '<div class="card" style="background:var(--chip)"><b>Own a shop?</b><p class="muted" style="margin:4px 0 8px">Any operator in Namibia can list their shop and post specials.</p><button class="btn" data-tab="shopreg">List my shop</button></div>';
+  if(S.dcat === 'All'){
+    return demo() + '<h1>Shops in ' + esc(S.town) + '</h1><p class="sub">Choose the kind of shop.</p><div class="cats">' + CATS.map(function(c){
+      var n = SHOPS.filter(function(x){ return x.town === S.town && x.sells.indexOf(c) >= 0; }).length, L = look(c);
+      return '<button class="cat" data-dcat="' + esc(c) + '"><i>' + L[0] + '</i>' + esc(c) + '<span class="muted">' + n + ' shop' + (n === 1 ? '' : 's') + '</span></button>'; }).join('') + '</div>' +
+      '<div class="card"><h3>Own a shop?</h3><p class="sub" style="margin-bottom:12px">List your shop and your specials for shoppers.</p><button class="btn block" data-tab="shopreg">List my shop</button></div>';
+  }
+  var shops = SHOPS.filter(function(x){ return x.town === S.town && x.sells.indexOf(S.dcat) >= 0; }).sort(function(a, b){ return dist(a) - dist(b); });
+  return demo() + '<button class="btn alt small" data-dcat="All">Back</button><h1 style="margin-top:12px">' + esc(S.dcat) + '</h1><p class="sub">' + esc(S.town) + ', nearest first</p>' +
+    (shops.length ? shops.map(function(x){ var n = shopOffers(x.id).filter(function(o){ return pct(o) > 0; }).length; return '<div class="card"><h3>' + esc(x.name) + '</h3><div class="muted" style="font-size:17px;margin-bottom:10px">' + dist(x).toFixed(1) + ' km away · ' + (n ? n + ' special' + (n > 1 ? 's' : '') : 'No specials now') + (x.custom ? ' · Not yet checked' : '') + '</div>' +
+      '<div class="stack" style="margin-top:0"><button class="btn" data-dshop="' + esc(x.id) + '">See prices</button><a class="btn alt" target="_blank" rel="noopener" href="' + navUrl(x) + '">Navigate</a></div></div>'; }).join('') : '<div class="empty">No shops listed here yet.</div>');
 }
 var PRIVACY = 'In this test version your details are saved on this device only. How personal information will be handled and protected is to be confirmed with the relevant legal bodies, authorities and entities of Namibia before launch.';
 function viewMe(){
@@ -319,9 +311,9 @@ function viewMe(){
   html += '<p class="sub">' + esc(m.email) + ' · ' + esc(m.phone) + '</p><div class="card"><b>How should we reach you?</b>' +
     [['wa', 'WhatsApp'], ['sms', 'SMS'], ['mail', 'Email']].map(function(c){ return '<label style="display:flex;gap:8px;align-items:center;margin:8px 0 0;color:var(--ink)"><input type="checkbox" data-pref="' + c[0] + '" style="width:auto"' + (m[c[0]] ? ' checked' : '') + '> ' + c[1] + '</label>'; }).join('') +
     '<label style="margin-top:14px">Deals I want to hear about</label><div class="chips" style="flex-wrap:wrap;overflow:visible">' + CATS.map(function(c){ return '<button class="chip' + ((m.cats || []).indexOf(c) >= 0 ? ' on' : '') + '" data-icat="' + esc(c) + '">' + esc(c) + '</button>'; }).join('') + '</div></div>' +
-    '<div class="card"><b>Message previews</b><p class="muted" style="margin:4px 0 8px">' + (LIVE ? 'Your messages come from the NamPromo server. These show what a message looks like.' : '<b>Nothing is sent yet.</b> WhatsApp and SMS messages start once NamPromo\'s server and message providers are connected. These show what you would receive.') + '</p>' +
+    '<details class="card" id="prev"' + (S.prevOpen ? ' open' : '') + '><summary>Message previews</summary><p class="muted" style="margin:4px 0 8px">' + (LIVE ? 'Your messages come from the NamPromo server. These show what a message looks like.' : '<b>Nothing is sent yet.</b> WhatsApp and SMS messages start once NamPromo\'s server and message providers are connected. These show what you would receive.') + '</p>' +
     '<button class="btn alt small" id="medigest">Preview my specials message</button>' +
-    (S.outbox.length ? S.outbox.slice(0, 6).map(function(x){ return '<div class="li" style="display:block"><div class="muted">' + esc(x.ch) + ' to ' + esc(x.to) + '</div><div>' + esc(x.text) + '</div></div>'; }).join('') : '<div class="muted" style="margin-top:8px">No previews yet.</div>') + '</div>' +
+    (S.outbox.length ? S.outbox.slice(0, 6).map(function(x){ return '<div class="li" style="display:block"><div class="muted">' + esc(x.ch) + ' to ' + esc(x.to) + '</div><div>' + esc(x.text) + '</div></div>'; }).join('') : '<div class="muted" style="margin-top:8px">No previews yet.</div>') + '</details>' +
     '<div class="card"><b>Shop owner</b>' + (S.ops.length ? S.ops.map(function(o){ return '<div class="li"><div class="grow">' + esc(o.name) + '<div class="muted">' + esc(o.cat) + ' · ' + esc(o.town) + ' · not yet checked</div></div></div>'; }).join('') : '<p class="muted" style="margin:4px 0">You have not listed a shop.</p>') +
     '<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn small" data-tab="shopreg">List a shop</button><button class="btn small alt" data-tab="add">Post a special</button></div></div>' +
     '<div class="card"><div class="muted">' + esc(PRIVACY) + '</div><button class="btn alt small" id="meout" style="margin-top:8px">Delete my details</button></div>';
@@ -368,48 +360,39 @@ function look(c){ return CATLOOK[c] || CATLOOK.Other; }
 function dateText(d){ try{ return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }catch(e){ return ''; } }
 function findOffer(id){ return allOffers().filter(function(o){ return o.id === id; })[0]; }
 function isSaved(id){ return S.saved.indexOf(id) >= 0; }
-function gridCard(o){
-  var s = shopById[o.shop], off = pct(o), c = catOf(o), L = look(c);
-  return '<div class="gcard" data-deal="' + esc(o.id) + '"><div class="gtile" style="background:' + L[1] + '"><span>' + L[0] + '</span>' + (off ? '<b class="save">SAVE ' + off + '%</b>' : '') +
-    '<button class="heart' + (isSaved(o.id) ? ' on' : '') + '" data-heart="' + esc(o.id) + '" aria-label="Save this deal">' + (isSaved(o.id) ? '♥' : '♡') + '</button></div>' +
-    '<div class="gbody"><div class="gname">' + esc(nameOf(o)) + '</div><div class="muted">' + esc(s.name) + '</div>' +
-    '<div class="price sm">' + money(o.price) + (off ? '<span class="was">' + money(o.regular) + '</span>' : '') + '</div>' +
-    (o.ends ? '<div class="muted">Expires ' + esc(dateText(o.ends)) + '</div>' : '') + '<span class="cchip" style="background:' + L[1] + ';color:' + L[2] + '">' + esc(L[3]) + '</span>' +
-    '<div class="muted">📍 ' + esc(s.town) + ' (' + esc(s.name) + ')</div></div></div>';
+function dealCard(o){
+  var s = shopById[o.shop], off = pct(o), L = look(catOf(o));
+  return '<div class="dcard" data-deal="' + esc(o.id) + '"><div class="dtile" style="background:' + L[1] + '">' + L[0] + '</div><div class="dmain"><div class="dname">' + esc(nameOf(o)) + '</div>' +
+    '<div class="dshop">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km</div>' +
+    '<div class="dprice">' + money(o.price) + (off ? '<span class="was">' + money(o.regular) + '</span>' : '') + '</div>' +
+    (off ? '<span class="dsave">SAVE ' + off + '%</span> ' : '') + (o.ends ? '<span class="muted">' + esc(endsText(o)) + '</span>' : '') + (o.mine ? '<div class="muted">' + esc(o.source) + '</div>' : '') + '</div>' +
+    '<button class="heart' + (isSaved(o.id) ? ' on' : '') + '" data-heart="' + esc(o.id) + '" aria-label="' + (isSaved(o.id) ? 'Remove from saved' : 'Save this deal') + '">' + (isSaved(o.id) ? '♥' : '♡') + '</button></div>';
 }
 function townSpecials(){ return allOffers().filter(function(o){ return shopById[o.shop].town === S.town && pct(o) > 0; }).sort(function(a, b){ return pct(b) - pct(a); }); }
 function viewHome(){
-  var sp = townSpecials(), slides = sp.slice(0, 3), n = slides.length, k = n ? S.slide % n : 0, h = slides[k];
-  var cats = ['Food and groceries', 'Clothing and shoes', 'Electronics', 'Building and hardware', 'Health and beauty', 'Restaurants and takeaways', 'Home and household'];
-  var catRow = '<div class="cats">' + cats.map(function(c){ var L = look(c); return '<button class="cat" data-cat2="' + esc(c) + '"><i style="background:' + L[1] + '">' + L[0] + '</i>' + esc(L[3]) + '</button>'; }).join('') + '<button class="cat" data-cat2="All"><i style="background:var(--chip)">▦</i>All deals</button></div>';
-  var hero = h ? '<div class="hero"><span class="badge">THIS WEEK IN ' + esc(S.town.toUpperCase()) + '</span><h3>Save up to ' + pct(h) + '% on ' + esc(nameOf(h)) + '</h3><p>' + esc(shopById[h.shop].name) + ' · ' + money(h.price) + '</p><button class="cta" data-deal="' + esc(h.id) + '">See this deal →</button><span class="big">' + look(catOf(h))[0] + '</span></div>' +
-    '<div class="dots">' + slides.map(function(x, i){ return '<button class="' + (i === k ? 'on' : '') + '" data-slide="' + i + '" aria-label="Slide ' + (i + 1) + '"></button>'; }).join('') + '</div>' : '';
-  var pop = sp.slice(0, 6);
-  var want = S.me && S.me.cats && S.me.cats.length ? S.me.cats : null;
-  var rec = (want ? sp.filter(function(o){ return want.indexOf(catOf(o)) >= 0; }) : sp.slice(6))[0] || sp[0];
-  var main = '<div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="hq" type="search" placeholder="Search for deals, shops, products" aria-label="Search"></div>' + catRow + hero +
-    '<div class="sec"><h2>Popular deals near you</h2><button data-tab="deals">View all →</button></div>' + (pop.length ? '<div class="grid">' + pop.map(gridCard).join('') + '</div>' : '<div class="empty">No specials in ' + esc(S.town) + ' yet.</div>');
-  var side = '<div class="nam"><svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="300" cy="40" r="20" fill="#FFE9A8"/><path d="M0 95l60-35 40 22 70-45 80 52 60-30 90 40v51H0z" fill="#B5532A" opacity=".85"/><path d="M0 120c60-30 110-20 170 0s140 25 230-15v45H0z" fill="#C8642F"/><path d="M0 138c80-25 150-10 220 5s120 0 180-12v19H0z" fill="#8F3E1D"/></svg><div><b>Namibia</b>Great deals. All in one place.</div></div>' +
-    '<div class="card quick">' + [['shops', '📍', '#DDF3E4', 'Find shops near you', 'See what is on offer nearby'], ['compare', '🏷️', '#DCEBFF', 'Price comparison', 'Get the best value'], ['saved', '♥', '#FFE9D6', 'Saved deals and alerts', 'Your favourite offers'], ['plan', '📝', '#EADCF7', 'Shopping list', 'Plan your next shop']].map(function(q){ return '<button class="qrow" data-tab="' + q[0] + '"><i style="background:' + q[2] + '">' + q[1] + '</i><div><b>' + q[3] + '</b><span class="s">' + q[4] + '</span></div><em>›</em></button>'; }).join('') + '</div>' +
-    (rec ? '<div class="recs"><h2>✦ Recommended for you</h2><div class="grid" style="grid-template-columns:1fr">' + gridCard(rec) + '</div></div>' : '') +
-    '<div class="own"><h3>Own a shop?</h3><p>Promote your specials and reach more customers.</p><button data-tab="shopreg">Register your shop →</button></div>';
-  return demo() + '<div class="home"><div>' + main + '</div><aside>' + side + '</aside></div>';
+  var sp = townSpecials(), cats = ['Food and groceries', 'Clothing and shoes', 'Electronics', 'Building and hardware', 'Health and beauty', 'Restaurants and takeaways', 'Home and household'];
+  var catGrid = '<div class="cats">' + cats.map(function(c){ var L = look(c); return '<button class="cat" data-cat2="' + esc(c) + '"><i>' + L[0] + '</i>' + esc(L[3]) + '</button>'; }).join('') + '<button class="cat" data-cat2="All"><i>▦</i>All specials</button></div>';
+  return demo() + '<h1>Specials in ' + esc(S.town) + '</h1><p class="sub">Find a special, compare shops and save money.</p>' +
+    '<div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="hq" type="search" placeholder="Search a product or shop" aria-label="Search"></div>' +
+    '<h2 class="sec">Choose a category</h2>' + catGrid +
+    '<h2 class="sec">Best specials today</h2>' + (sp.length ? sp.slice(0, 5).map(dealCard).join('') + '<button class="btn block" data-tab="deals">See all ' + sp.length + ' specials</button>' : '<div class="empty">No specials in ' + esc(S.town) + ' yet.</div>');
 }
 function viewSaved(){
   var offers = S.saved.map(findOffer).filter(Boolean);
-  var html = demo() + '<h2>Saved deals</h2><p class="sub">Tap the heart on any deal to keep it here.</p>' + (offers.length ? '<div class="grid">' + offers.map(gridCard).join('') + '</div>' : '<div class="empty">Nothing saved yet. Tap the heart on a deal you like.</div>');
-  return html + '<div style="height:14px"></div>' + alertsHtml('<h2>Price alerts</h2><p class="sub">Watch a product and set the price you want. NamPromo tells you when a shop reaches it.</p>');
+  return demo() + '<h1>Saved</h1><p class="sub">Tap the heart on a special to keep it here.</p>' + (offers.length ? offers.map(dealCard).join('') : '<div class="empty">Nothing saved yet.</div>') +
+    alertsHtml('<h2 class="sec">Price alerts</h2><p class="sub">Choose a product and the price you want. We show when a shop reaches it.</p>');
 }
 function openDeal(id){
   var o = findOffer(id); if(!o) return; var s = shopById[o.shop], off = pct(o), L = look(catOf(o)), pr = prodById[o.product];
   var ov = document.createElement('div'); ov.className = 'sheet'; ov.id = 'dsheet';
-  ov.innerHTML = '<div role="dialog" aria-label="Deal details"><div class="row"><div style="font-size:44px">' + L[0] + '</div><div class="grow"><b style="font-size:18px">' + esc(nameOf(o)) + '</b><div class="muted">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away</div></div><button class="x" data-closesheet aria-label="Close">×</button></div>' +
-    '<div style="margin:10px 0 4px"><span class="price">' + money(o.price) + '</span>' + (off ? '<span class="was">' + money(o.regular) + '</span> <span class="badge good">SAVE ' + off + '%</span>' : '') + '</div>' +
-    '<div class="muted">' + esc([unitText(o), o.ends ? 'Expires ' + dateText(o.ends) : '', o.mine || o.live ? o.source : 'Sample data'].filter(Boolean).join(' · ')) + '</div>' +
-    '<p class="muted" style="margin:10px 0">Confirm the price and stock with the shop before you go.</p>' +
-    '<div class="row" style="flex-wrap:wrap"><a class="btn small" style="text-decoration:none" target="_blank" rel="noopener" href="' + navUrl(s) + '">Navigate</a>' +
-    '<button class="btn small alt" data-heart="' + esc(o.id) + '" data-keep>' + (isSaved(o.id) ? '♥ Saved' : '♡ Save') + '</button>' +
-    (pr ? '<button class="btn small alt" data-cmp="' + o.product + '">Compare shops</button><button class="btn small alt" data-addlist="' + o.product + '">Add to list</button><button class="btn small alt" data-watch="' + o.product + '">Watch price</button>' : '') + '</div></div>';
+  ov.innerHTML = '<div role="dialog" aria-label="Deal details"><div class="row"><div class="grow"><h2 style="margin:0">' + esc(nameOf(o)) + '</h2></div><button class="x" data-closesheet aria-label="Close">×</button></div>' +
+    '<div class="muted" style="font-size:18px">' + esc(s.name) + ', ' + esc(s.town) + ' · ' + dist(s).toFixed(1) + ' km away</div>' +
+    '<div style="margin:10px 0 4px"><span class="price" style="font-size:34px">' + money(o.price) + '</span>' + (off ? '<span class="was">' + money(o.regular) + '</span>' : '') + '</div>' +
+    (off ? '<span class="badge good">SAVE ' + off + '%</span> ' : '') + '<span class="muted">' + esc([unitText(o), endsText(o)].filter(Boolean).join(' · ')) + '</span>' +
+    '<p class="muted" style="margin:10px 0 0">' + esc((o.mine || o.live ? o.source + '. ' : 'Sample price. ') + 'Confirm the price with the shop before you go.') + '</p>' +
+    '<div class="stack"><a class="btn" target="_blank" rel="noopener" href="' + navUrl(s) + '">Navigate to the shop</a>' +
+    '<button class="btn alt" data-heart="' + esc(o.id) + '" data-keep>' + (isSaved(o.id) ? '♥ Saved' : '♡ Save this special') + '</button>' +
+    (pr ? '<button class="btn alt" data-cmp="' + o.product + '">Compare shops</button><button class="btn alt" data-addlist="' + o.product + '">Add to my list</button><button class="btn alt" data-watch="' + o.product + '">Alert me when cheaper</button>' : '') + '</div></div>';
   document.body.appendChild(ov);
 }
 function closeDeal(){ var d = document.getElementById('dsheet'); if(d) d.remove(); }
@@ -423,7 +406,7 @@ function render(){
   var hits = S.watch.filter(function(w){ return alertStatus(w).hit; }).length, bn = document.getElementById('belln'); bn.hidden = !hits; bn.textContent = hits;
   if(keep){ var q = document.getElementById('q'); if(q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
 }
-function go(tab){ S.tab = tab; S.dshop = ''; render(); window.scrollTo(0, 0); }
+function go(tab){ if(tab === 'shops') S.dcat = 'All'; S.tab = tab; S.dshop = ''; render(); window.scrollTo(0, 0); }
 function addList(id){
   var f = S.list.filter(function(i){ return i.product === id; })[0];
   if(f) f.qty++; else S.list.push({ product:id, qty:1 });
@@ -441,7 +424,7 @@ document.addEventListener('click', function(e){
   if(!t) return;
   if(t.dataset.heart){
     var hid = t.dataset.heart, hx = S.saved.indexOf(hid); if(hx >= 0) S.saved.splice(hx, 1); else S.saved.push(hid); save();
-    if(t.hasAttribute('data-keep')){ t.textContent = isSaved(hid) ? '♥ Saved' : '♡ Save'; return; }
+    if(t.hasAttribute('data-keep')){ t.textContent = isSaved(hid) ? '♥ Saved' : '♡ Save this special'; return; }
     var sy = window.scrollY; render(); window.scrollTo(0, sy); return;
   }
   if(t.dataset.closesheet !== undefined || (t.classList.contains('sheet') && e.target === t)) return closeDeal();
@@ -523,6 +506,7 @@ document.addEventListener('click', function(e){
     S.mine.push({ id:'mine' + Date.now(), shopId:v('fs'), product:v('fp'), title:v('fp') ? '' : v('ft').trim(), cat:v('fp') ? '' : v('fc'), price:price, regular:regular, ends:v('fe') }); save(); toast('Special posted. It shows as not checked.'); S.tab = 'deals'; S.cat = 'All'; S.q = ''; render(); window.scrollTo(0, 0);
   }
 });
+document.addEventListener('toggle', function(e){ if(e.target.id === 'prev') S.prevOpen = e.target.open; }, true);
 document.addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target.id === 'hq'){ S.q = e.target.value; S.cat = 'All'; go('deals'); } });
 document.addEventListener('input', function(e){
   var t = e.target;
@@ -534,7 +518,7 @@ document.addEventListener('change', function(e){
   var t = e.target;
   if(t.dataset && t.dataset.pref){ S.me[t.dataset.pref] = t.checked; save(); return; }
   if(t.id === 'sort'){ S.sort = t.value; render(); }
-  else if(t.id === 'all'){ S.allTowns = t.checked; render(); }
+  else if(t.id === 'fcat'){ S.cat = t.value; render(); }
   else if(t.id === 'cq'){ S.cq = t.value; render(); }
   else if(t.dataset && t.dataset.wt != null){ var box = document.querySelector('[data-st="' + t.dataset.wt + '"]'); if(box){ box.innerHTML = alertBody(S.watch[+t.dataset.wt]); box.parentNode.classList.toggle('alert-hit', alertStatus(S.watch[+t.dataset.wt]).hit); } runAlerts(); }
 });

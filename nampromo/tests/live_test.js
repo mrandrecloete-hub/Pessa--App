@@ -11,8 +11,8 @@ await ctx.route('https://proj.supabase.co/**', r=>{ const u=r.request().url(); c
   if(/np-subscribe/.test(u)){ const b=JSON.parse(r.request().postData()); return r.fulfill(b.cellphone==='+264811234567'?j({ok:true,sent:true,via:'whatsapp'}):j({error:'invalid'},400)); }
   if(/np-verify/.test(u)){ const b=JSON.parse(r.request().postData()); return r.fulfill(b.code==='123456'?j({ok:true,channels:['whatsapp','sms']}):j({error:'wrong_code'},400)); }
   r.fulfill(j({},404)); });
-await p.goto('http://localhost:8944/index.html'); await p.waitForSelector('.gcard');
-await p.waitForFunction(()=>/Real Hardware|Cement 50 kg/.test(document.body.innerText),null,{timeout:5000}).catch(()=>{}); ck('server data replaces the sample data and the sample banner goes', await p.evaluate(()=>document.querySelectorAll('.gcard').length>=1 && /Real Hardware/.test(document.body.innerText) && !/Sample data/.test(document.body.innerText)));
+await p.goto('http://localhost:8944/index.html'); await p.waitForSelector('.dcard');
+await p.waitForFunction(()=>/Real Hardware|Cement 50 kg/.test(document.body.innerText),null,{timeout:5000}).catch(()=>{}); ck('server data replaces the sample data and the sample banner goes', await p.evaluate(()=>document.querySelectorAll('.dcard').length>=1 && /Real Hardware/.test(document.body.innerText) && !/Sample data/.test(document.body.innerText)));
 ck('the app only sends its public key', calls.filter(c=>c.key).every(c=>c.key==='anon-key'));
 await p.screenshot({path:'/tmp/claude-0/exp/np_live.png'});
 await p.click('[data-tab=me]'); await p.fill('#mn','Anna Shikongo'); await p.fill('#me','a@example.com'); await p.fill('#mp','081 123 4567'); await p.check('#mok'); await p.click('#mesave');
