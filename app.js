@@ -23839,6 +23839,66 @@ function vSimpleToggle(){
   toast(tr(on ? 'Simple view on. Other features are under Show all features.' : 'All features shown'));
   render();
 }
+
+/* ---- simple dashboard for retail shops in simple view: today's sales, one big Sell button, three numbers, and a first sale guide ---- */
+function vSimpleStepsDone(){ var nProd = (State.products || []).filter(function(p){ return !p.isService; }).length; return { prods:nProd >= 3, sale:(State.sales || []).length > 0 }; }
+function vSimpleDashHtml(){
+  var sales = vSalesToday(), total = vSum(sales, function(s){ return s.total; });
+  var cash = vSum(sales.filter(function(s){ return s.paymentMethod === 'cash'; }), function(s){ return s.total; });
+  var low = (State.products || []).filter(function(p){ return p.stockQty != null && p.stockQty <= (p.lowStock != null ? p.lowStock : State.settings.lowStockDefault); }).length;
+  var owed = vSum(State.customers || [], function(c){ return c.balance > 0 ? c.balance : 0; });
+  var h = '';
+  try{ h += pilotHomeNote(); }catch(e){}
+  var d = vSimpleStepsDone();
+  if(!d.prods || !d.sale){
+    h += '<div class="section-title">' + tr('Get started in two steps') + '</div><div class="rowlist">' +
+      '<button class="row" type="button" data-vq="quickadd" style="width:100%;text-align:left;"><div class="main"><div class="title">' + (d.prods ? '&#10003; ' : '1. ') + tr('Add 3 products') + '</div><div class="sub">' + tr('Name, price and how many you have. It takes a minute.') + '</div></div></button>' +
+      '<button class="row" type="button" data-vq="sell" style="width:100%;text-align:left;"><div class="main"><div class="title">' + (d.sale ? '&#10003; ' : '2. ') + tr('Make your first sale') + '</div><div class="sub">' + tr('Tap a product, then Charge.') + '</div></div></button></div>';
+  }
+  h += vHero('Today’s sales', fmtMoney(total), sales.length + ' ' + tr(sales.length === 1 ? 'sale' : 'sales') + ' ' + tr('today'));
+  h += '<button class="btn btn-primary btn-block" type="button" data-vq="sell" style="margin:14px 0;min-height:64px;font-size:21px;">' + tr('Sell') + '</button>';
+  h += '<div class="stats">' + vStat('Cash sales today', fmtMoney(cash)) + vStat('Low stock', low, low ? 'var(--danger)' : '') + vStat('Customers owe you', fmtMoney(owed), owed ? 'var(--warn,#d98e2b)' : '') + '</div>';
+  h += '<div class="qa-row" style="margin-top:12px;">' + vTile('stock', 'box', 'Stock') + vTile('credit', 'people', 'Credit') + vTile('expenses', 'receipt', 'Expenses') + vTile('reports', 'chartbar', 'Reports') + '</div>';
+  h += '<button class="btn btn-ghost btn-block" type="button" data-vq="more" style="margin-top:12px;">' + tr('Show all features') + '</button>';
+  return dashWrap(h);
+}
+/* three products in one go, with no spreadsheet and no categories */
+function openQuickAddSheet(){
+  var rows = [0, 1, 2].map(function(i){ return '<div class="rowlist" style="margin-bottom:10px;"><div class="field"><label>' + tr('Product') + ' ' + (i + 1) + '</label><input data-qa="n' + i + '" type="text" placeholder="' + tr(['Bread loaf', 'Cooking oil 750ml', 'Cold drink'][i]) + '"></div>' +
+    '<div class="row2"><div class="field"><label>' + tr('Selling price') + '</label><input data-qa="p' + i + '" type="number" inputmode="decimal" min="0" step="0.01" placeholder="13"></div><div class="field"><label>' + tr('How many you have') + '</label><input data-qa="q' + i + '" type="number" inputmode="numeric" min="0" step="1" placeholder="20"></div></div></div>'; }).join('');
+  var ov = openSheet('<div class="sheet-head"><h2>' + tr('Add 3 products') + '</h2></div><div class="banner" style="display:block;">' + tr('Add what you sell most. You can add more later from Stock.') + '</div>' + rows +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="qaSave" type="button">' + tr('Save products') + '</button></div><div class="actions"><button class="btn btn-ghost btn-block" id="qaClose" type="button">' + tr('Close') + '</button></div>');
+  ov.querySelector('#qaClose').addEventListener('click', closeModal);
+  ov.querySelector('#qaSave').addEventListener('click', function(){
+    var q = function(k){ var el = ov.querySelector('[data-qa="' + k + '"]'); return el ? el.value.trim() : ''; }, now = new Date().toISOString(), list = [], bad = false;
+    [0, 1, 2].forEach(function(i){
+      var name = q('n' + i), price = parseFloat(q('p' + i)), qty = q('q' + i) === '' ? 0 : parseInt(q('q' + i), 10);
+      if(!name && !q('p' + i)) return;
+      if(!name || !(price > 0) || !(qty >= 0)){ bad = true; return; }
+      list.push({ id:uid(), data:{ name:name, category:'', unit:'', costPrice:0, sellPrice:price, stockQty:qty, lowStock:null, createdAt:now, updatedAt:now } });
+    });
+    if(bad){ toast(tr('Give each product a name and a selling price.')); return; }
+    if(!list.length){ toast(tr('Add at least one product.')); return; }
+    this.disabled = true;
+    refs.products.setMany(list).then(function(){ closeModal(); toast(list.length + ' ' + tr('added')); render(); }).catch(function(){ toast(tr('Could not save. Try again.')); });
+  });
+}
+
+/* shops that already exist are asked once whether they want the simple view. New shops start in it. Nothing is removed either way. */
+var _vAsked = false;
+function vSimpleAsk(){
+  try{
+    if(_vAsked || !State.session || !isOwner() || bizType() !== 'retail' || State.settings.simpleMode !== undefined || State.settings.simpleAsked) return;
+    if(!State.ready.sales || !State.ready.products) return;
+    _vAsked = true;
+    setTimeout(function(){
+      if(document.getElementById('modalRoot').innerHTML.trim()) { _vAsked = false; return; }
+      btSave({ simpleAsked:true });
+      confirmSheet(tr('Switch to the simple view?'), tr('It shows only Sell, Stock, Credit, Expenses and Reports, with big buttons. Every other feature is one tap away under Show all features. You can switch back at any time.'), tr('Use simple view'), function(){ btSave({ simpleMode:true }); toast(tr('Simple view on')); render(); });
+    }, 1500);
+  }catch(e){}
+}
+(function(){ try{ var _bm = btMaybeSetupPrompt; btMaybeSetupPrompt = function(){ if(vSimpleOn()) return; return _bm.apply(this, arguments); }; }catch(e){} })();
 function vertFilterRows(html){
   // the owner's Business type row sits with Settings, at the bottom of the menu
   if(State.session && isOwner()){ var sr = /<button class="drawer-row"[^>]*data-drawer-row="settings"/; if(sr.test(html)) html = html.replace(sr, function(m){ return drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type') + m; }); }
@@ -23855,6 +23915,7 @@ function vertFilterRows(html){
   h.menu.forEach(function(k){ html = html.replace(new RegExp('<button class="drawer-row"[^>]*data-drawer-row="' + k + '"[\\s\\S]*?</button>', 'g'), ''); });
   return html;
 }
+(function(){ try{ var _rd = renderDashboard; renderDashboard = function(){ try{ vSimpleAsk(); }catch(e){} try{ if(vSimpleOn() && isManagerOrOwner() && State.ready.sales && State.ready.products && State.ready.customers && State.ready.expenses) return vSimpleDashHtml(); }catch(e){} return _rd(); }; }catch(e){} })();
 (function(){ try{ var _mrh = menuRowsHtml; menuRowsHtml = function(){ return vertFilterRows(_mrh()); }; var _rt = roleTabs; roleTabs = function(role){ var a = _rt(role), h = VERT_HIDE[bizType()]; return h ? a.filter(function(x){ return h.tabs.indexOf(x) < 0; }) : a; }; }catch(e){} })();
 /* the first run setup guide speaks the language of the business type */
 (function(){
@@ -23994,7 +24055,7 @@ function vertInit(){
       appts:function(){ openApptSheet(todayKey()); }, queue:openQueueSheet, clients:openClientsSheet, services:openServicesSheet, earn:openEarningsSheet, newbook:function(){ openApptForm(null, todayKey()); },
       bookings:openBookingsSheet, rooms:openRoomsSheet, tabs:openTabsSheet, guests:openGuestsSheet, comply:openComplySheet, newstay:function(){ openStayForm(null); },
       team:openTeamSheet, addstaff:function(){ openStaffSheet(null); }, suppliers:function(){ handleDrawerAction('suppliers'); }, accountant:function(){ handleDrawerAction('accountant'); }, msgs:openInboxSheet, tools:openBizHub, till:function(){ setTab('till'); }, settings:openSettingsSheet, smart:openSmartToolsSheet, assistant:openAgentSheet, vat:function(){ handleDrawerAction('vat'); }, invoices:function(){ setTab('invoices'); },
-      retail:function(){ State.showRetailDash = true; render(); }, vert:function(){ State.showRetailDash = false; render(); },
+      retail:function(){ State.showRetailDash = true; render(); }, quickadd:openQuickAddSheet, credit:function(){ setTab('credit'); }, more:vSimpleToggle, vert:function(){ State.showRetailDash = false; render(); },
       appt:function(){ var a2 = vList('appointments').find(function(x){ return x.id === id; }); if(a2) openApptSheet(a2.date); }, stay:function(){ var b = vList('hosBookings').find(function(x){ return x.id === id; }); if(b) openStayView(b); } }[a];
     if(go){ e.preventDefault(); go(); }
   });

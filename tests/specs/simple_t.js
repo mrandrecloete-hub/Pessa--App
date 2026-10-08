@@ -14,6 +14,34 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  ck('and offers Simple view again', await p.evaluate(()=>/Simple view/.test(window.__t.menuRowsHtml())));
  await p.evaluate(()=>window.__t.btSave({simpleMode:undefined})); r = await rows();
  ck('a shop with no choice saved keeps the full menu', r.indexOf('stocktake')>-1);
+ // simple dashboard and first sale guide
+ await p.evaluate(()=>window.__t.btSave({simpleMode:true})); await p.evaluate(()=>{ window.__t.setTab('dashboard'); window.__t.render(); }); await p.waitForTimeout(300);
+ const dash = await p.evaluate(()=>document.body.innerText);
+ ck('the simple dashboard shows today, a big Sell button and three numbers', /today.s sales/i.test(dash) && await p.evaluate(()=>!!document.querySelector('[data-vq="sell"].btn-primary')) && /cash sales today/i.test(dash) && /low stock/i.test(dash) && /customers owe you/i.test(dash));
+ ck('it does not show the long list of retail tiles', await p.evaluate(()=>!/Pesa Smart Tools|Business tools/.test(document.body.innerText)));
+ // an empty new shop: get started card, quick add of three products
+ const ctx2 = await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p2 = await ctx2.newPage(); const errs2=[]; p2.on('pageerror',e=>errs2.push(e.message));
+ await require('./biz_boot.js')(p2,{simple:true}); await p2.evaluate(()=>{ window.__t.setTab('dashboard'); window.__t.render(); }); await p2.waitForTimeout(400);
+ ck('an empty shop sees Get started with two steps', await p2.evaluate(()=>/get started in two steps/i.test(document.body.innerText) && /Add 3 products/.test(document.body.innerText)));
+ ck('the long setup guide does not pop up by itself', await p2.evaluate(()=>new Promise(r=>setTimeout(()=>r(!/Setup guide/.test(document.body.innerText)),2600))));
+ await p2.click('[data-vq="quickadd"]'); await p2.waitForSelector('#qaSave');
+ await p2.click('#qaSave'); ck('an empty form is refused', await p2.evaluate(()=>window.__t.State.products.length===0));
+ await p2.fill('[data-qa="n0"]','Bread loaf'); await p2.fill('[data-qa="p0"]','13'); await p2.fill('[data-qa="q0"]','20');
+ await p2.fill('[data-qa="n1"]','Cold drink'); await p2.fill('[data-qa="p1"]','12'); await p2.fill('[data-qa="q1"]','0');
+ await p2.fill('[data-qa="n2"]','Airtime'); await p2.fill('[data-qa="p2"]','10');
+ await p2.click('#qaSave'); await p2.waitForFunction(()=>window.__t.State.products.length===3,null,{timeout:5000}).catch(()=>{});
+ ck('three products are saved with price and stock', await p2.evaluate(()=>{ const a=window.__t.State.products; return a.length===3 && a.find(x=>x.name==='Bread loaf').sellPrice===13 && a.find(x=>x.name==='Bread loaf').stockQty===20 && a.find(x=>x.name==='Airtime').stockQty===0; }));
+ await p2.waitForTimeout(300);
+ ck('the first step is ticked', await p2.evaluate(()=>/\u2713 Add 3 products/.test(document.body.innerText)));
+ // an existing shop is asked once
+ await p2.evaluate(()=>window.__t.btSave({ simpleMode:undefined, simpleAsked:false })); await p2.evaluate(()=>{ window.__t.setTab('dashboard'); window.__t.render(); });
+ await p2.waitForFunction(()=>/Switch to the simple view/.test(document.body.innerText),null,{timeout:6000}).catch(()=>{});
+ ck('an existing shop is asked once if it wants the simple view', await p2.evaluate(()=>/Switch to the simple view/.test(document.body.innerText)));
+ await p2.click('#cfOk'); await p2.waitForTimeout(300);
+ ck('saying yes turns it on', await p2.evaluate(()=>window.__t.State.settings.simpleMode===true));
+ await p2.evaluate(()=>window.__t.btSave({ simpleMode:undefined, simpleAsked:true })); await p2.evaluate(()=>{ window.__t.setTab('dashboard'); window.__t.render(); }); await p2.waitForTimeout(2200);
+ ck('it does not ask again', await p2.evaluate(()=>!/Switch to the simple view/.test(document.body.innerText)));
+ ck('no page errors on the second page', errs2.length===0); if(errs2.length) console.log(errs2.slice(0,3));
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();
