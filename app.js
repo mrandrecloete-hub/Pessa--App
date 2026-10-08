@@ -23831,7 +23831,9 @@ function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]
    the app could get around it. A real lock needs the server (see docs). DEV_SALT and DEV_HASH are PBKDF2 SHA 256 values made by tools/make_dev_hash.mjs on the developer's own computer. The password is never stored or committed. While they are empty nobody can unlock. */
 var VSIMPLE_KEEP = ['inbox', 'tab-dashboard', 'tab-sell', 'tab-stock', 'tab-credit', 'tab-expenses', 'tab-reports', 'settings', 'v-type'];
 var DEV_SALT = '', DEV_HASH = '', DEV_ITER = 210000, DEV_TEST_BYPASS = false;
-var DEV_KEY = 'pesa_dev_until', DEV_WHO = 'pesa_dev_who', DEV_FAIL = 'pesa_dev_fail';
+/* Server mode (preferred): set DEV_SERVER to your pesa-dev function address and DEV_PUBLIC_JWK to the public key from pesa-server/tools/make_keys.mjs. The password is then checked on your server and never sits in the app. */
+var DEV_SERVER = '', DEV_PUBLIC_JWK = null;
+var DEV_TOK = 'pesa_dev_tok', DEV_KEY = 'pesa_dev_until', DEV_WHO = 'pesa_dev_who', DEV_FAIL = 'pesa_dev_fail';
 function vSimpleCan(){ return !!State.session && bizType() === 'retail' && isManagerOrOwner(); }
 function vSimpleOn(){ return vSimpleCan() && !devUnlocked(); }
 function devUnlocked(){
@@ -23839,7 +23841,7 @@ function devUnlocked(){
   try{ return (+sessionStorage.getItem(DEV_KEY) || 0) > Date.now(); }catch(e){ return false; }
 }
 function devWho(){ try{ return sessionStorage.getItem(DEV_WHO) || ''; }catch(e){ return ''; } }
-function devSet(on, who){ try{ if(on){ sessionStorage.setItem(DEV_KEY, String(Date.now() + 8 * 3600e3)); sessionStorage.setItem(DEV_WHO, who || 'access'); } else { sessionStorage.removeItem(DEV_KEY); sessionStorage.removeItem(DEV_WHO); } }catch(e){} }
+function devSet(on, who){ try{ if(!on) sessionStorage.removeItem(DEV_TOK); if(on){ sessionStorage.setItem(DEV_KEY, String(Date.now() + 8 * 3600e3)); sessionStorage.setItem(DEV_WHO, who || 'access'); } else { sessionStorage.removeItem(DEV_KEY); sessionStorage.removeItem(DEV_WHO); } }catch(e){} }
 function devHexToBytes(h){ var a = new Uint8Array(h.length / 2); for(var i = 0; i < a.length; i++) a[i] = parseInt(h.substr(i * 2, 2), 16); return a; }
 function devBytesToHex(b){ return Array.prototype.map.call(new Uint8Array(b), function(x){ return ('0' + x.toString(16)).slice(-2); }).join(''); }
 async function devDerive(user, pass, saltHex){
@@ -23848,7 +23850,30 @@ async function devDerive(user, pass, saltHex){
 }
 function devSame(a, b){ if(a.length !== b.length) return false; var r = 0; for(var i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i); return r === 0; }
 function devFails(){ try{ return JSON.parse(localStorage.getItem(DEV_FAIL) || '{}'); }catch(e){ return {}; } }
+function devServerOn(){ return !!(DEV_SERVER && DEV_PUBLIC_JWK); }
+function devB64u(str){ str = String(str).replace(/-/g, '+').replace(/_/g, '/'); while(str.length % 4) str += '='; var b = atob(str), u = new Uint8Array(b.length); for(var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+async function devVerifyToken(token){
+  var p = String(token || '').split('.'); if(p.length !== 3 || p[0] !== 'PDEV1') return null;
+  try{
+    var k = await crypto.subtle.importKey('jwk', DEV_PUBLIC_JWK, { name:'ECDSA', namedCurve:'P-256' }, false, ['verify']);
+    if(!(await crypto.subtle.verify({ name:'ECDSA', hash:'SHA-256' }, k, devB64u(p[2]), devB64u(p[1])))) return null;
+    var pl = JSON.parse(new TextDecoder().decode(devB64u(p[1]))); return pl.exp * 1000 > Date.now() ? pl : null;
+  }catch(e){ return null; }
+}
+function devApi(action, body){
+  return fetch(DEV_SERVER, { method:'POST', headers:{ 'content-type':'application/json' }, body:JSON.stringify(Object.assign({ action:action }, body || {})) })
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { status:r.status, body:j }; }); });
+}
+function devToken(){ try{ return sessionStorage.getItem(DEV_TOK) || ''; }catch(e){ return ''; } }
 async function devCheck(user, pass){
+  if(devServerOn()){
+    var r; try{ r = await devApi('login', { username:user, password:pass }); }catch(e){ return { ok:false, offline:true }; }
+    if(r.status === 429) return { ok:false, wait:r.body.minutes || 5 };
+    if(r.status !== 200 || !r.body.token) return { ok:false };
+    var pl = await devVerifyToken(r.body.token); if(!pl) return { ok:false };   // the answer must be signed by your server's key
+    try{ sessionStorage.setItem(DEV_TOK, r.body.token); }catch(e){}
+    return { ok:true, who:pl.role === 'master' ? 'master' : 'access' };
+  }
   var f = devFails(), now = Date.now();
   if(f.until && f.until > now) return { ok:false, wait:Math.ceil((f.until - now) / 60000) };
   var who = '';
@@ -23872,33 +23897,49 @@ function openDevPanel(){
     devCheck(u, pw).then(function(r){
       go.disabled = false;
       if(r.ok){ devSet(true, r.who); try{ logAudit('update', 'settings', null, 'Developer panel unlocked'); }catch(e){} closeModal(); toast(tr('Full app unlocked on this device')); setTab('dashboard'); render(); }
-      else err.textContent = r.wait ? tr('Too many tries. Wait') + ' ' + r.wait + ' ' + tr('minutes.') : tr('Wrong username or password.');
+      else err.textContent = r.offline ? tr('No connection to the server. Try again when you are online.') : r.wait ? tr('Too many tries. Wait') + ' ' + r.wait + ' ' + tr('minutes.') : tr('Wrong username or password.');
     }).catch(function(){ go.disabled = false; err.textContent = tr('Could not check. Try again.'); });
   }
   go.addEventListener('click', submit); ov.querySelector('#dvP').addEventListener('keydown', function(e){ if(e.key === 'Enter') submit(); });
 }
 function openDevManage(){
-  var list = (State.settings && State.settings.devAccess) || [], master = devWho() === 'master';
+  var server = devServerOn(), master = devWho() === 'master';
   var html = '<div class="sheet-head"><h2>' + tr('Developer panel') + '</h2></div><div class="banner" style="display:block;">' + tr('The full app is unlocked on this device. It locks again when you close the app or after 8 hours.') + '</div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="dvLock" type="button">' + tr('Lock and go back to the simple dashboard') + '</button></div>';
-  if(master){
-    html += '<div class="section-title" style="margin-top:16px;">' + tr('People with access') + '</div>' +
-      (list.length ? '<div class="rowlist">' + list.map(function(x, i){ return '<div class="row"><div class="main"><div class="title">' + esc(x.name || tr('Person')) + '</div><div class="sub">' + tr('Added') + ' ' + esc(String(x.at || '').slice(0, 10)) + '</div></div><div class="trail"><button class="btn btn-ghost" data-dvdel="' + i + '" type="button" style="padding:6px 12px;min-height:0;">' + tr('Remove') + '</button></div></div>'; }).join('') + '</div>' : '<div class="muted" style="margin:6px 0;">' + tr('Nobody else has access.') + '</div>') +
+  if(master) html += '<div class="section-title" style="margin-top:16px;">' + tr('People with access') + '</div><div id="dvList" class="muted">' + tr('Loading') + '</div>' +
       '<div class="field"><label>' + tr('Name') + '</label><input id="dvN" type="text"></div><div class="field"><label>' + tr('Username') + '</label><input id="dvNU" type="text" autocapitalize="off" spellcheck="false"></div><div class="field"><label>' + tr('Password (at least 10 characters)') + '</label><input id="dvNP" type="password" autocomplete="new-password"></div>' +
       '<div id="dvNE" class="muted" style="color:var(--danger);min-height:20px;"></div><div class="actions"><button class="btn btn-ghost btn-block" id="dvAdd" type="button">' + tr('Give access') + '</button></div>';
-  }
   html += '<div class="actions"><button class="btn btn-ghost btn-block" id="dvX" type="button">' + tr('Close') + '</button></div>';
   var ov = openSheet(html);
   ov.querySelector('#dvX').addEventListener('click', closeModal);
   ov.querySelector('#dvLock').addEventListener('click', function(){ devSet(false); closeModal(); toast(tr('Locked')); setTab('dashboard'); render(); });
-  ov.querySelectorAll('[data-dvdel]').forEach(function(b){ b.addEventListener('click', function(){ var l = list.slice(); l.splice(+b.getAttribute('data-dvdel'), 1); btSave({ devAccess:l }); try{ logAudit('update', 'settings', null, 'Developer access removed'); }catch(e){} closeModal(); openDevManage(); }); });
-  var add = ov.querySelector('#dvAdd'); if(!add) return;
+  if(!master) return;
+  var box = ov.querySelector('#dvList'), er = ov.querySelector('#dvNE'), add = ov.querySelector('#dvAdd');
+  function draw(people){
+    box.innerHTML = people.length ? '<div class="rowlist">' + people.map(function(x){ return '<div class="row"><div class="main"><div class="title">' + esc(x.name || x.username || tr('Person')) + '</div><div class="sub">' + esc(x.username || '') + '</div></div><div class="trail"><button class="btn btn-ghost" data-dvdel="' + esc(x.key) + '" type="button" style="padding:6px 12px;min-height:0;">' + tr('Remove') + '</button></div></div>'; }).join('') + '</div>' : tr('Nobody else has access.');
+    box.querySelectorAll('[data-dvdel]').forEach(function(b){ b.addEventListener('click', function(){ removeOne(b.getAttribute('data-dvdel')); }); });
+  }
+  function load(){
+    if(server) devApi('list', { token:devToken() }).then(function(r){ draw(r.status === 200 ? r.body.users.filter(function(u){ return u.role === 'helper' && u.active; }).map(function(u){ return { key:u.username, username:u.username, name:u.name }; }) : []); if(r.status !== 200) box.textContent = tr('Could not load the list.'); }).catch(function(){ box.textContent = tr('No connection to the server.'); });
+    else draw(((State.settings && State.settings.devAccess) || []).map(function(x, i){ return { key:String(i), name:x.name }; }));
+  }
+  function removeOne(key){
+    if(server) devApi('remove', { token:devToken(), username:key }).then(function(){ load(); });
+    else { var l = ((State.settings && State.settings.devAccess) || []).slice(); l.splice(+key, 1); btSave({ devAccess:l }); load(); }
+    try{ logAudit('update', 'settings', null, 'Developer access removed'); }catch(e){}
+  }
+  load();
   add.addEventListener('click', function(){
-    var n = ov.querySelector('#dvN').value.trim(), u = ov.querySelector('#dvNU').value.trim().toLowerCase(), pw = ov.querySelector('#dvNP').value, er = ov.querySelector('#dvNE');
+    var n = ov.querySelector('#dvN').value.trim(), u = ov.querySelector('#dvNU').value.trim().toLowerCase(), pw = ov.querySelector('#dvNP').value;
     if(u.length < 3){ er.textContent = tr('Enter a username.'); return; }
     if(pw.length < 10){ er.textContent = tr('The password needs at least 10 characters.'); return; }
-    var salt = devBytesToHex(crypto.getRandomValues(new Uint8Array(16))); add.disabled = true;
-    devDerive(u, pw, salt).then(function(h){ btSave({ devAccess:list.concat([{ name:n || u, salt:salt, hash:h, at:new Date().toISOString() }]) }); try{ logAudit('update', 'settings', null, 'Developer access given'); }catch(e){} toast(tr('Access given')); closeModal(); openDevManage(); });
+    add.disabled = true; er.textContent = '';
+    if(server){
+      devApi('add', { token:devToken(), username:u, name:n, password:pw }).then(function(r){ add.disabled = false; if(r.status === 200){ toast(tr('Access given')); closeModal(); openDevManage(); } else er.textContent = r.status === 409 ? tr('That username already has access.') : tr('Could not give access.'); }).catch(function(){ add.disabled = false; er.textContent = tr('No connection to the server.'); });
+      return;
+    }
+    var salt = devBytesToHex(crypto.getRandomValues(new Uint8Array(16)));
+    devDerive(u, pw, salt).then(function(h){ btSave({ devAccess:(((State.settings && State.settings.devAccess) || []).concat([{ name:n || u, salt:salt, hash:h, at:new Date().toISOString() }])) }); try{ logAudit('update', 'settings', null, 'Developer access given'); }catch(e){} toast(tr('Access given')); closeModal(); openDevManage(); });
   });
 }
 

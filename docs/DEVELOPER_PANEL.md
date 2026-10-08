@@ -9,6 +9,9 @@ Every retail owner and manager sees the **simple view**: the short menu (Message
 4. **People with access:** in the panel (master login only) give a name, username and password of at least 10 characters. Only a salted hash is stored (in the shop's synced settings). Remove access in the same list. People with access can unlock the full app but cannot manage the list.
 5. Five wrong tries lock the panel on that device for 5 minutes.
 
+## Server mode (recommended)
+Instead of a hash inside the app, run the Pesa platform server (`pesa-server/`). The password is then checked on your server, the app only holds the public key, and helpers are managed on the server. See `pesa-server/README.md`. Set `DEV_SERVER` and `DEV_PUBLIC_JWK` in `tools/verticals.js`. Local mode (the hash made by `make_dev_hash.mjs`) still works when they are empty.
+
 ## What this is, and is not
 This is a gate inside the app for ordinary shop staff. It is **not server side security**. Someone technical can edit their own copy of the app or the browser storage and get past it, and the salted hashes travel with the app and the synced settings so a very weak password could be guessed offline. For a real lock, check the developer's login on a server (for example Supabase Auth) and send the full app features only to that signed in account. Use a long unique password, and change any password that has been shared in a message.
 

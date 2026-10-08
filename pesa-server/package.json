@@ -1,0 +1,3 @@
+{ "name": "pesa-server", "private": true, "type": "module",
+  "scripts": { "test": "node test/dev_test.mjs && node test/send_test.mjs" },
+  "devDependencies": { "postgres": "^3.4.4" } }
