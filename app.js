@@ -23988,6 +23988,19 @@ function openQuickAddSheet(){
 }
 
 (function(){ try{ var _bm = btMaybeSetupPrompt; btMaybeSetupPrompt = function(){ if(vSimpleOn()) return; return _bm.apply(this, arguments); }; }catch(e){} })();
+/* Each business type has its own menu and nothing from another type. Retail has its own simple view above. Barbershop and salon, and hospitality, get only
+   their own pages plus the few things every business needs (messages, reports, expenses, team, accounts, settings). The developer, unlocked in the
+   Developer panel, still sees the wider menu below (VERT_HIDE). */
+var VERT_KEEP = {
+  beauty:      ['inbox', 'tab-dashboard', 'tab-stock', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings'],
+  hospitality: ['inbox', 'tab-dashboard', 'tab-stock', 'tab-invoices', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings']
+};
+function vStrictRows(html){
+  var t = bizType(), keep = VERT_KEEP[t].concat(['tab-me', 'tab-records']); if(!isManagerOrOwner()) keep.push('tab-till');
+  html = html.replace(/<button class="drawer-row"[^>]*data-drawer-row="([^"]+)"[\s\S]*?<\/button>/g, function(m, k){ return (k.indexOf('v-') === 0 || keep.indexOf(k) >= 0) ? m : ''; });
+  for(var i = 0; i < 4; i++) html = html.replace(/<div class="drawer-sub">[^<]*<\/div>\s*(?=<div class="drawer-sub">|$)/g, '');
+  return html;
+}
 function vertFilterRows(html){
   // the owner's Business type row sits with Settings, at the bottom of the menu
   if(State.session && isOwner()){ var sr = /<button class="drawer-row"[^>]*data-drawer-row="settings"/; if(sr.test(html)) html = html.replace(sr, function(m){ return drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type') + m; }); }
@@ -24000,6 +24013,7 @@ function vertFilterRows(html){
     var sr2 = /<button class="drawer-row"[^>]*data-drawer-row="settings"/;
     if(devUnlocked() && State.session && isManagerOrOwner() && sr2.test(html)) html = html.replace(sr2, function(m){ return drawerRowHtml('v-dev', ICONS.agent || ICONS.box, 'Developer panel') + m; });
   }
+  if(bizType() !== 'retail' && !devUnlocked() && VERT_KEEP[bizType()])return vStrictRows(html);
   var h = VERT_HIDE[bizType()]; if(!h) return html;
   h.menu.forEach(function(k){ html = html.replace(new RegExp('<button class="drawer-row"[^>]*data-drawer-row="' + k + '"[\\s\\S]*?</button>', 'g'), ''); });
   return html;
@@ -24116,8 +24130,7 @@ function vManageTiles(){
   if(!isManagerOrOwner()) return '';
   var t = bizType();
   return '<div class="section-title">' + tr('Run your business') + '</div><div class="qa-row">' + vTile('team', 'people', 'Team') + vTile('addstaff', 'plus', 'Add employee') + vTile('expenses', 'receipt', 'Expenses') + vTile('stock', 'box', t === 'beauty' ? 'Products and stock' : 'Menu and stock') + '</div>' +
-    '<div class="qa-row">' + vTile('suppliers', 'truck', 'Suppliers') + vTile('accountant', 'book', 'Accountant') + (t === 'beauty' ? vTile('vat', 'percent', 'VAT') : vTile('invoices', 'invoice', 'Invoices')) + vTile('till', 'till', 'Till') + '</div>' +
-    '<div class="qa-row">' + vTile('msgs', 'bolt', 'Messages') + vTile('tools', 'stack', 'Staff and pay') + vTile('assistant', 'agent', 'AI Assistant') + vTile('settings', 'info', 'Settings') + '</div>';
+    '<div class="qa-row">' + vTile('accountant', 'book', 'Accountant') + (t === 'beauty' ? vTile('vat', 'percent', 'VAT') : vTile('invoices', 'invoice', 'Invoices')) + vTile('msgs', 'bolt', 'Messages') + vTile('settings', 'info', 'Settings') + '</div>';
 }
 /* an employee's own page: their jobs for today */
 function vertMeHtml(){
@@ -24160,7 +24173,7 @@ function vBeautyDash(){
   var waiting = all.filter(function(a){ return a.status === 'waiting'; }).length, done = all.filter(function(a){ return a.status === 'done'; }).length, ns = all.filter(function(a){ return a.status === 'noshow'; }).length;
   var tomorrow = vApptsOn(vAddDays(t, 1)).length;
   var h = vHero('Today’s takings', fmtMoney(total), done + ' ' + tr('done') + ', ' + todo.length + ' ' + tr('still to come'));
-  h += '<div class="qa-row">' + vTile('newbook', 'plus', 'New booking') + vTile('queue', 'people', 'Walk in') + vTile('sell', 'cart', 'Sell') + vTile('clients', 'people', 'Clients') + '</div>';
+  h += '<div class="qa-row">' + vTile('newbook', 'plus', 'New booking') + vTile('queue', 'people', 'Walk in') + vTile('clients', 'people', 'Clients') + '</div>';
   h += '<div class="section-title">' + tr('Today at a glance') + '</div><div class="stats">' + vStat('Bookings today', all.length) + vStat('Walk ins waiting', waiting) + vStat('Done', done, 'var(--success)') + vStat('No shows', ns, ns ? 'var(--danger)' : '') + vStat('Tomorrow', tomorrow + ' ' + tr('booked')) + vStat('Clients', vClientsList().length) + '</div>';
   h += '<div class="section-title">' + tr('Next up') + '</div>';
   h += todo.length ? '<div class="rowlist">' + todo.slice(0, 5).map(function(a){
@@ -24389,7 +24402,7 @@ function vHospDash(){
       arrivals = vList('hosBookings').filter(function(b){ return b.status === 'reserved' && b.checkIn === t; }), departs = inhouse.filter(function(b){ return b.checkOut <= t; }),
       sales = vSalesToday(), total = vSum(sales, function(s){ return s.total; }), occ = rooms.length ? Math.round(inhouse.length * 100 / rooms.length) : 0, tabs = vList('hosTabs').filter(function(x){ return x.status === 'open'; });
   var h = vHero('Today’s takings', fmtMoney(total), occ + '% ' + tr('occupied') + ', ' + inhouse.length + ' ' + tr('of') + ' ' + rooms.length + ' ' + tr('rooms'));
-  h += '<div class="qa-row">' + vTile('newstay', 'plus', 'New booking') + vTile('tabs', 'receipt', 'Tabs', tabs.length ? tabs.length + ' ' + tr('open') : '') + vTile('sell', 'cart', 'Sell') + vTile('rooms', 'box', 'Rooms') + '</div>';
+  h += '<div class="qa-row">' + vTile('newstay', 'plus', 'New booking') + vTile('tabs', 'receipt', 'Tabs', tabs.length ? tabs.length + ' ' + tr('open') : '') + vTile('rooms', 'box', 'Rooms') + '</div>';
   h += '<div class="section-title">' + tr('Today at a glance') + '</div><div class="stats">' + vStat('Arriving today', arrivals.length) + vStat('Leaving today', departs.length, departs.length ? 'var(--warn,#d98e2b)' : '') + vStat('In house', inhouse.length + ' ' + tr('rooms')) + vStat('Open tabs', tabs.length) + vStat('Rooms ready', rooms.filter(function(r){ return (r.status || 'clean') === 'clean' && !inhouse.some(function(b){ return b.roomId === r.id; }); }).length) + vStat('Guests this month', vList('hosBookings').filter(function(b){ return String(b.checkIn).slice(0, 7) === t.slice(0, 7) && b.status !== 'cancelled'; }).length) + '</div>';
   h += '<div class="section-title">' + tr('Arrivals and departures') + '</div>';
   var ad = arrivals.map(function(b){ return [b, 'Arriving']; }).concat(departs.map(function(b){ return [b, 'Leaving']; }));

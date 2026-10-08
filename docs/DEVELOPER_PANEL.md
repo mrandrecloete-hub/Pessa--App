@@ -3,7 +3,8 @@
 Every retail owner and manager sees the **simple view**: the short menu (Messages, Dashboard, Sell, Stock, Credit, Expenses, Reports, Settings) and the simple dashboard. The full app is behind the **Developer panel**, which asks for a username and password. Barbershop, salon and hospitality accounts keep their own dashboards. Cashiers and stock clerks keep their own limited pages.
 
 ## For the developer
-1. On your own computer run `node tools/make_dev_hash.mjs`. Type your username (your email) and a password of at least 12 characters. The password is typed hidden and is not saved. Only a salted PBKDF2 SHA 256 hash is written into `tools/verticals.js` (`DEV_SALT`, `DEV_HASH`).
+0. Easiest: open `tools/dev_hash.html` in a browser on your own computer (it works offline), type your username and password, and send the one line it shows (a hash, not the password) to whoever releases the app.
+1. Or, with Node, on your own computer run `node tools/make_dev_hash.mjs`. Type your username (your email) and a password of at least 12 characters. The password is typed hidden and is not saved. Only a salted PBKDF2 SHA 256 hash is written into `tools/verticals.js` (`DEV_SALT`, `DEV_HASH`).
 2. `python3 tools/embed_block.py VERT verticals.js`, then release as usual. Never put the password in the repository, a chat or a spec.
 3. In the app: Dashboard, small "Developer panel" link at the bottom. After login the full app opens on that device. It locks again when the app is closed, after 8 hours, or when you tap "Lock and go back to the simple dashboard". A menu row "Developer panel" appears while unlocked.
 4. **People with access:** in the panel (master login only) give a name, username and password of at least 10 characters. Only a salted hash is stored (in the shop's synced settings). Remove access in the same list. People with access can unlock the full app but cannot manage the list.
