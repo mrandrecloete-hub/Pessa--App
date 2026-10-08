@@ -7,12 +7,16 @@ Find specials, compare shop prices and plan where to shop in Namibia. Plain HTML
 - **Compare**: one product across every shop in the town, with price per kg, litre or item so pack sizes compare fairly.
 - **Where to shop**: a shopping list is priced at each shop. NamPromo picks the best choice counting the trip (distance times the traveller's own cost per km), either one shop or the cheapest shop for each item, and shows the saving.
 - **Alerts**: watch a product and set a target price. Notifications show when the app is opened and a target has been reached.
-- **Add a deal**: community deals, labelled "not checked", saved on the device only.
+- **Shops**: a directory by category (food and groceries, home, clothing and shoes, electronics, building and hardware, health and beauty, restaurants, farming, vehicles and parts, other). Each shop page shows its prices and specials and a Navigate button.
+- **Me**: sign up with full name, email and cellphone number (checked as a Namibian mobile, saved as +264), tick WhatsApp, SMS or email and the categories wanted, with a consent box. Shows message previews. **Nothing is sent yet.**
+- **List my shop / Post a special**: any operator can list a shop under a category and post specials. They show as "not yet checked" until confirmed. Anyone can also add a special they saw, shown as "not checked".
 
 ## Honest limits
 - All shops and prices are **made up sample data** (the shop names start with "Example"). Nothing is a real special. The app says so on every page.
 - There is no live feed yet. Real data needs retailer sign up, shared catalogues or sources that allow reuse. Do not copy prices from retailer sites or leaflets without their permission.
-- Alerts when the app is closed, shop verification, and sharing community deals between people all need a server (see `docs/backend-schema.sql`, from the DealNam starter, to be reviewed before use).
+- WhatsApp and SMS sending, alerts when the app is closed, shop verification and sharing deals between people all need a server. See `docs/MESSAGING.md`, `docs/backend-schema.sql` (from the DealNam starter) and `docs/backend-additions.sql`. Review them before use.
+- Sign up details are saved on the device only for now. Privacy handling is to be confirmed with the relevant legal bodies, authorities and entities of Namibia.
+- The shop list is not every operator in Namibia. It only holds sample shops and the shops people register.
 - Distances are rough straight line estimates scaled for roads.
 
 ## Next steps
