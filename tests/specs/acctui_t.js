@@ -100,7 +100,9 @@ let fail = 0; const ck = (n, c, extra) => { console.log((c ? '  ok   ' : '  FAIL
   await p.evaluate(async (k) => { await window.__t.refs.expenses.doc('e9').set({ category: 'Rent', amount: 1, paidFrom: 'Cash drawer', createdAt: k.last + '-20T09:00:00' }); }, k);
   const c2 = await p.evaluate((no) => window.__t.acctCheckReport(no), reg.no);
   ck('check report: warns when records changed since', c2.kind === 'warn', c2);
-  await p.evaluate(async () => { await window.__t.refs.expenses.doc('e9').delete(); });
+  // a direct delete from a signed in owner is held for the removal approval sheet, which would pop up over the Accountant page later in this test.
+  // The test only needs the record gone, so it removes it with no signed in person, as a data tool would.
+  await p.evaluate(async () => { const T = window.__t, keep = T.State.session; T.State.session = null; try{ await T.refs.expenses.doc('e9').delete(); } finally { T.State.session = keep; } });
   // the list of reports is tamper evident
   const c3 = await p.evaluate((no) => { const T = window.__t; const list = T.State.settings.acctReports; const keep = list[0].net; list[0].net = 999999; return T.acctCheckReport(no).then(r => { list[0].net = keep; return r; }); }, reg.no);
   ck('check report: a changed line is not trusted', c3.kind === 'bad', c3);
