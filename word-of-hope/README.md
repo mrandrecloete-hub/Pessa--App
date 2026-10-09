@@ -29,3 +29,9 @@ Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artw
 - Free E-Books (`library.js`): public domain Christian classics grouped by app section (Devotions, Prayer, Counseling, Hope, Bible study, Journal), with a "Free books" strip on those pages. Links go to gutenberg.org. Only books whose Gutenberg number is known have direct EPUB/TXT links; the rest open a title search. Links could not be checked from the build environment.
 - 17 new 3D icons (ico/) in the same blue, gold and red style for Journal, E-Books, Guide, Translations, Account, Notifications, Backup, About and the counseling topics.
 - Speed: scripts deferred, shorter splash, service worker answers from the cache first and refreshes in the background.
+
+## Complete offline Bible and daily sync (added)
+- `bible/kjv/1..66.json`: the complete King James Version (31,102 verses, from the MIT licensed `bible-kjv` npm package, KJV text is public domain), read straight from the app with no internet. Fetched files are kept by the service worker.
+- `daily.js` (built by `node tools/build_daily.js`): 366 different daily verses in 25 themes with exact KJV text. The devotion, verse of the day, journal prompt and dashboard all follow the phone's local date, so every phone shows the same day's content and rolls over at midnight, even if the app stays open.
+- YouTube uses a plain embed (no extra script) and listens to the player's own messages for errors. A Watch on YouTube link is always shown under the video.
+- Book covers load from Project Gutenberg or Open Library when online; the drawn cover stays if they cannot load.

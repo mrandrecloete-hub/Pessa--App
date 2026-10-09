@@ -1,0 +1,42 @@
+/* Builds ../daily.js: 375 daily verses (15 for each of 25 themes) with the exact KJV text taken from bible/kjv/*.json.
+   Run: node tools/build_daily.js   (the script stops if any reference cannot be found) */
+var fs = require('fs'), path = require('path'), root = path.join(__dirname, '..');
+var names = ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'];
+var T = {
+anxiety: 'Philippians 4:6-7;1 Peter 5:7;Matthew 6:34;Psalms 94:19;Psalms 55:22;Isaiah 26:3;Matthew 6:25;Psalms 56:3;John 14:27;Proverbs 12:25;Psalms 118:5;Luke 12:25-26;Psalms 139:23-24;Philippians 4:8;Psalms 121:1-2',
+fear: 'Isaiah 41:10;Psalms 23:4;2 Timothy 1:7;Joshua 1:9;Psalms 27:1;Deuteronomy 31:6;Psalms 34:4;Isaiah 43:1-2;Romans 8:15;1 John 4:18;Psalms 56:3-4;Proverbs 3:25-26;Matthew 10:29-31;Psalms 91:4-5;Hebrews 13:6',
+grief: 'Psalms 34:18;Matthew 5:4;Revelation 21:4;John 11:25-26;Psalms 30:5;Psalms 147:3;2 Corinthians 1:3-4;1 Thessalonians 4:13-14;Isaiah 61:3;Psalms 116:15;John 14:1-3;Psalms 56:8;Lamentations 3:22-23;Romans 8:38-39;Ecclesiastes 3:1-4',
+depression: 'Psalms 42:11;Psalms 40:1-2;Isaiah 40:31;2 Corinthians 4:8-9;Psalms 143:7-8;Psalms 34:17;Isaiah 61:1;Psalms 13:5-6;Lamentations 3:21-23;Psalms 38:9;Psalms 18:6;Psalms 31:24;Romans 15:13;1 Kings 19:11-12;Psalms 126:5',
+loneliness: 'Deuteronomy 31:8;Psalms 68:6;Matthew 28:20;Isaiah 49:15-16;Psalms 27:10;John 14:18;Hebrews 13:5;Psalms 139:7-10;Ecclesiastes 4:9-10;Proverbs 18:24;Romans 8:35-39;Psalms 25:16;1 Samuel 12:22;Psalms 10:17;Psalms 73:23',
+anger: 'Ephesians 4:26-27;Proverbs 15:1;James 1:19-20;Proverbs 29:11;Psalms 37:8;Colossians 3:8;Proverbs 14:29;Ecclesiastes 7:9;Proverbs 16:32;Romans 12:19;Ephesians 4:31-32;Proverbs 19:11;Proverbs 22:24-25;Psalms 4:4;James 4:1-2',
+forgiveness: 'Colossians 3:13;Ephesians 4:32;Matthew 6:14-15;1 John 1:9;Psalms 103:12;Luke 6:37;Matthew 18:21-22;Isaiah 1:18;Mark 11:25;Micah 7:18-19;Luke 23:34;Psalms 32:1-2;Proverbs 17:9;Acts 3:19;2 Corinthians 5:17',
+guilt: 'Romans 8:1;Psalms 51:10;Psalms 103:10-11;Isaiah 43:25;Hebrews 10:22;Psalms 32:5;Romans 5:8;1 John 3:20;Psalms 130:3-4;Isaiah 44:22;Lamentations 3:32;Titus 3:5;Hebrews 8:12;Ephesians 1:7;Psalms 25:7',
+marriage: 'Genesis 2:24;Ecclesiastes 4:12;Ephesians 5:25;1 Corinthians 13:4-7;Proverbs 18:22;Colossians 3:18-19;Song of Solomon 8:7;Proverbs 5:18;1 Peter 3:7;Mark 10:9;Proverbs 31:10-11;Hebrews 13:4;Ephesians 5:33;Proverbs 19:14;Genesis 2:18',
+parenting: 'Proverbs 22:6;Deuteronomy 6:6-7;Psalms 127:3;Ephesians 6:4;Colossians 3:21;Proverbs 29:17;Psalms 78:4;Proverbs 13:24;Mark 10:14;Proverbs 20:7;3 John 1:4;Isaiah 54:13;2 Timothy 1:5;Proverbs 17:6;Joshua 24:15',
+finance: 'Philippians 4:19;Matthew 6:33;Proverbs 3:9-10;Hebrews 13:5;Proverbs 22:7;Luke 12:15;1 Timothy 6:6-8;Psalms 37:25;Malachi 3:10;Proverbs 21:5;Matthew 6:19-21;Luke 16:10;Proverbs 11:25;2 Corinthians 9:7-8;Psalms 23:1',
+purpose: 'Jeremiah 29:11;Romans 8:28;Proverbs 19:21;Ephesians 2:10;Psalms 138:8;Proverbs 16:3;Psalms 37:4-5;Ephesians 1:11-12;Isaiah 43:7;Philippians 1:6;1 Corinthians 10:31;Colossians 3:23;Matthew 5:16;Psalms 32:8;Jeremiah 1:5',
+health: 'Psalms 103:2-3;Jeremiah 30:17;3 John 1:2;Proverbs 17:22;Exodus 15:26;Isaiah 53:5;James 5:14-15;Psalms 41:3;Proverbs 3:7-8;Psalms 147:3;1 Corinthians 6:19-20;Isaiah 41:10;Matthew 11:28;Psalms 73:26;2 Corinthians 12:9',
+doubt: 'Mark 9:24;James 1:5-6;John 20:29;Psalms 73:16-17;Hebrews 11:1;Jude 1:22;Matthew 14:31;Proverbs 3:5-6;Luke 1:37;Psalms 94:19;John 20:27-28;Romans 10:17;2 Corinthians 5:7;Matthew 17:20;Isaiah 55:8-9',
+temptation: '1 Corinthians 10:13;James 4:7;Matthew 26:41;Hebrews 4:15-16;Psalms 119:9-11;Galatians 5:16;Proverbs 4:23;2 Timothy 2:22;Romans 6:14;James 1:12;Ephesians 6:11;Romans 13:14;Psalms 141:3-4;1 Peter 5:8-9;Galatians 6:1',
+peace: 'John 14:27;Isaiah 26:3;Philippians 4:7;Colossians 3:15;Psalms 29:11;Romans 5:1;Psalms 4:8;John 16:33;Numbers 6:24-26;Romans 15:13;Psalms 46:10;Isaiah 32:17;Psalms 85:8;2 Thessalonians 3:16;Matthew 5:9',
+hope: 'Romans 15:13;Jeremiah 29:11;Hebrews 6:19;Psalms 71:14;Lamentations 3:24-25;Romans 8:24-25;Psalms 130:5;Isaiah 40:31;Romans 5:3-5;1 Peter 1:3;Psalms 42:5;Proverbs 23:18;Titus 2:13;Psalms 39:7;Colossians 1:27',
+strength: 'Isaiah 40:29-31;Philippians 4:13;Psalms 46:1;2 Corinthians 12:9-10;Nehemiah 8:10;Psalms 28:7;Exodus 15:2;Isaiah 41:13;Ephesians 6:10;Psalms 18:2;Habakkuk 3:19;Joshua 1:9;Psalms 73:26;1 Chronicles 16:11;Deuteronomy 33:25',
+identity: 'Psalms 139:13-14;Genesis 1:27;1 Peter 2:9;Ephesians 2:10;John 1:12;Galatians 2:20;2 Corinthians 5:17;Romans 8:16-17;Isaiah 43:1;1 John 3:1;Jeremiah 1:5;Psalms 8:4-5;Galatians 3:26-27;Colossians 3:3;Zephaniah 3:17',
+gratitude: '1 Thessalonians 5:16-18;Psalms 100:4-5;Psalms 107:1;Colossians 3:15-17;Psalms 103:2;Philippians 4:6;Psalms 136:1;James 1:17;Psalms 118:24;Ephesians 5:20;Psalms 9:1;Colossians 4:2;Psalms 95:2;1 Chronicles 16:34;Psalms 34:1',
+prayer: 'Matthew 6:6;Philippians 4:6-7;Jeremiah 33:3;Matthew 7:7-8;1 John 5:14;James 5:16;Mark 11:24;Luke 18:1;Psalms 145:18;Romans 8:26;1 Thessalonians 5:17;Matthew 6:9-13;Hebrews 4:16;John 15:7;Ephesians 6:18',
+love: 'John 3:16;Romans 5:8;1 John 4:7-8;1 John 4:19;John 13:34-35;1 Corinthians 13:13;Romans 8:38-39;Jeremiah 31:3;Ephesians 3:17-19;Psalms 136:26;Matthew 22:37-39;1 Peter 4:8;Psalms 86:15;Zephaniah 3:17;John 15:12-13',
+patience: 'Psalms 27:14;Isaiah 40:31;Romans 12:12;James 5:7-8;Galatians 6:9;Psalms 37:7;Lamentations 3:25-26;Hebrews 10:36;Ecclesiastes 3:11;Romans 8:25;James 1:2-4;Proverbs 14:29;Habakkuk 2:3;Colossians 1:11;Psalms 40:1',
+conflict: 'Romans 12:18;Matthew 5:9;Proverbs 15:1;Matthew 18:15;Ephesians 4:2-3;Proverbs 17:14;James 3:17-18;Colossians 3:12-14;Romans 12:17-18;Proverbs 20:3;Philippians 2:3-4;Proverbs 26:20;Matthew 5:23-24;Hebrews 12:14;Proverbs 16:7',
+salvation: 'Ephesians 2:8-9;Romans 10:9-10;John 14:6;Acts 4:12;Romans 6:23;John 3:17;Titus 3:5;1 John 5:11-12;Romans 3:23-24;John 5:24;Acts 16:31;2 Corinthians 5:21;Romans 5:1;1 Peter 1:18-19;John 10:27-28'
+};
+var topics = Object.keys(T), cache = {};
+function chapter(b, c){ var i = names.indexOf(b); if(i < 0) throw new Error('book ' + b); cache[i] = cache[i] || JSON.parse(fs.readFileSync(path.join(root, 'bible/kjv/' + (i + 1) + '.json'))); var ch = cache[i][c - 1]; if(!ch) throw new Error('chapter ' + b + ' ' + c); return ch; }
+function text(ref){ var m = /^(.+) (\d+):(\d+)(?:-(\d+))?$/.exec(ref); if(!m) throw new Error('ref ' + ref); var ch = chapter(m[1], +m[2]), a = +m[3], z = +(m[4] || m[3]); if(!ch[z - 1]) throw new Error('verse ' + ref); return ch.slice(a - 1, z).join(' '); }
+var BONUS = 'purpose:Psalms 119:105;peace:Psalms 19:14;hope:Isaiah 9:6;purpose:Micah 6:8;gratitude:Luke 2:10-11;purpose:Matthew 28:19-20;salvation:John 1:1-5;love:John 1:14;identity:Romans 12:1-2;strength:1 Corinthians 15:57-58;peace:Galatians 5:22-23;hope:Hebrews 12:1-2;salvation:Revelation 3:20;gratitude:Psalms 24:1;patience:Psalms 90:12;purpose:James 1:22;peace:Psalms 1:1-3;identity:Psalms 100:3;strength:Psalms 121:7-8;prayer:Psalms 5:3;hope:Psalms 62:5-6;love:1 John 3:18;strength:Isaiah 12:2;peace:Psalms 23:5-6'.split(';');
+var list = [], seen = {};
+function add(tp, ref){ if(seen[ref]) return; seen[ref] = 1; list.push([tp, ref.replace(/^Psalms /, 'Psalm '), text(ref)]); }
+for(var k = 0; k < 15; k++) topics.forEach(function(tp){ var ref = T[tp].split(';')[k]; if(!ref) throw new Error('short ' + tp); add(tp, ref); });
+BONUS.forEach(function(b){ var i = b.indexOf(':'); add(b.slice(0, i), b.slice(i + 1)); });
+list = list.slice(0, 366); if(list.length < 366) throw new Error('only ' + list.length);
+fs.writeFileSync(path.join(root, 'daily.js'), '/* Generated by tools/build_daily.js from the KJV text in bible/kjv. [theme, reference, text] for each day of the year. */\nwindow.DAILY = ' + JSON.stringify(list) + ';\n');
+console.log(list.length + ' daily verses, ' + Object.keys(seen).length + ' distinct references');
