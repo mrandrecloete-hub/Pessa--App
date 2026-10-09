@@ -16,7 +16,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   const out=await handle({method:rq.method(),action:u.searchParams.get('a')||'',query:Object.fromEntries(u.searchParams),headers:rq.headers(),body},deps); route.fulfill({status:out.status,headers:{...CORS,'content-type':'application/json'},body:JSON.stringify(out.body)}); }); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
  await p.fill('#rcCompanyName','Auto Shop'); await p.fill('#rcOwnerName','A'); await p.fill('#rcOwnerEmail','owner@shop.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
- await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
  await p.evaluate(([pub])=>window.__t.setLic({pub,enforce:'',server:'https://lic.test/licence'}),[pub]);
  const ref=await p.evaluate(()=>window.__t.licRef());
  await p.evaluate(()=>window.__t.openPaySheet()); await p.waitForSelector('#payPaid');

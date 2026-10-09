@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c)fail++; };
 (async()=>{ const b=await chromium.launch(); const p=await (await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'})).newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
- await require('./biz_boot.js')(p); await p.evaluate(()=>{ window.__t.btSave({ setupHidden:true, simpleMode:false }); window.__t.pfSave({ remindAt:Date.now() }); }); // the first run setup guide opens by itself after about 2 seconds and would race with the sheets below
+ await require('./biz_boot.js')(p); await p.evaluate(()=>{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }); // the first run setup guide opens by itself after about 2 seconds and would race with the sheets below
  const tab=()=>p.evaluate(()=>window.__t.State.tab), sheet=()=>p.evaluate(()=>!!document.querySelector('#modalRoot .sheet')), hl=()=>p.evaluate(()=>history.length);
  ck('start on dashboard', await tab()==='dashboard');
  ck('no back button on home', await p.evaluate(()=>getComputedStyle(document.getElementById('backBtn')).display==='none'));

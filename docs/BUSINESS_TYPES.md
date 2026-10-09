@@ -60,3 +60,6 @@ Hospitality
 - Kitchen tickets and table maps.
 - Stylist and barber self service diaries.
 - Automatic WhatsApp reminders (the app opens WhatsApp with the message ready).
+
+## Menus are kept apart (2026.10.163)
+Each business type has its own menu and dashboard and nothing from another type. Retail keeps the full Pesa app. Barbershop and salon get Appointments, Walk in queue, Clients, Services and prices, Stylist earnings, plus Messages, Dashboard, Stock (products), Reports, Expenses, Employee tracking, VAT, Accountant, Pay for Pesa, Business type and Settings. Hospitality gets Room bookings, Rooms, Tables and tabs, Guests, Licences and levy, plus the same basics with Invoices. They do not show Sell, Credit, Till, Insights, Business tools, Smart tools, AI Assistant, Reconciliation, Suppliers, Purchase orders, Stock take or Wastage. The lists are `VERT_KEEP` in `tools/verticals.js`. Spec: `vert_t`.

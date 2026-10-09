@@ -2,6 +2,8 @@
 
 Your own Supabase project that powers Pesa from the centre. It is separate from each shop's own sync project and it holds **no shop sales, stock or customer data**.
 
+**Note:** the Pesa app no longer has a Developer panel (it was removed when Pesa was restored to the full app for everyone in 2026.10.163), so `pesa-dev` is not used by the app today. The sending and STOP parts can still be used.
+
 **Status:** written and tested against a real PostgreSQL (`npm test`), with the WhatsApp and SMS providers faked. It is **not deployed**, and it has not been tried against real WhatsApp or SMS accounts. Someone has to create the Supabase project and the provider accounts.
 
 ## What it does
