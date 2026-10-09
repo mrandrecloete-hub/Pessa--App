@@ -9,6 +9,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="ico/home.png" as="image">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -19,11 +20,12 @@
   <div class="main"><main id="view" tabindex="-1"></main></div>
   <nav class="bnav" id="bnav" aria-label="Main"></nav>
 </div>
-<script src="mockData.js"></script>
+<script defer src="mockData.js"></script>
 <script src="theme.js"></script>
-<script src="scenes.js"></script>
-<script src="knowledge.js"></script>
-<script src="assistant.js"></script>
-<script src="app.js"></script>
+<script defer src="scenes.js"></script>
+<script defer src="knowledge.js"></script>
+<script defer src="assistant.js"></script>
+<script defer src="library.js"></script>
+<script defer src="app.js"></script>
 </body>
 </html>

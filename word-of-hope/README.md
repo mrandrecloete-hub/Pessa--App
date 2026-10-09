@@ -23,3 +23,9 @@ Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artw
 - Translations: bible-api.com versions work without a key. A free key from scripture.api.bible adds many more versions and languages (entered in Bible Translations, kept on the phone). Live services were tested here only with mocked responses.
 - Devotion videos: YouTube IFrame API with loading, error messages and retry. YouTube videos cannot be downloaded inside the app; slides (PNG ZIP) and text can. Add `videoUrl` (mp4) to a devotion in mockData.js for a downloadable video.
 - Select any text to copy, share, highlight (saved to Notes) or ask the Guide.
+
+## Journal, e-books, icons (added)
+- My Journal: daily entries with prompt, mood and optional verse of the day; edit, search, copy, share, download one or all as text; included in Backup & Restore.
+- Free E-Books (`library.js`): public domain Christian classics grouped by app section (Devotions, Prayer, Counseling, Hope, Bible study, Journal), with a "Free books" strip on those pages. Links go to gutenberg.org. Only books whose Gutenberg number is known have direct EPUB/TXT links; the rest open a title search. Links could not be checked from the build environment.
+- 17 new 3D icons (ico/) in the same blue, gold and red style for Journal, E-Books, Guide, Translations, Account, Notifications, Backup, About and the counseling topics.
+- Speed: scripts deferred, shorter splash, service worker answers from the cache first and refreshes in the background.

@@ -170,3 +170,28 @@ mark.userhl{background:#ffe08a;color:#2a1a20;border-radius:4px;padding:0 2px}
 .spin{width:22px;height:22px;border:3px solid rgba(255,255,255,.3);border-top-color:#F5B52E;border-radius:50%;animation:sp 1s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .player video{position:absolute;inset:0;width:100%;height:100%;background:#000}
+
+/* Journal, library */
+.chip.on{background:var(--accent);color:var(--on-accent)}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:rgba(27,110,243,.12);color:var(--accent);cursor:pointer}
+.cover{flex:0 0 64px;height:88px;border-radius:6px 10px 10px 6px;background:linear-gradient(135deg,#1B6EF3,#0a1f4d);color:#F5B52E;display:grid;place-items:center;text-align:center;font:700 .62rem/1.15 Georgia,serif;padding:6px;border-left:6px solid #F5B52E;box-shadow:0 4px 10px rgba(10,31,77,.35)}
+.secthead{display:flex;align-items:center;gap:8px;margin-top:6px}.secthead h2{font-size:1.1rem;margin:0}.secthead small{margin-left:auto;color:var(--muted)}
+.bookstrip .list .li{text-decoration:none;color:inherit}
+.jentry .row{align-items:center}
+#jin{width:100%;margin:8px 0}
+
+/* colour and quality polish */
+body{background:radial-gradient(1200px 500px at 85% -10%,rgba(27,110,243,.13),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(245,181,46,.12),transparent 60%),var(--bg);background-attachment:fixed}
+:root[data-theme=dark] body{background:radial-gradient(1100px 500px at 85% -10%,rgba(27,110,243,.22),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(245,181,46,.08),transparent 60%),var(--bg)}
+.card{border-top:3px solid color-mix(in srgb,var(--gold) 70%,transparent)}
+.card:hover{box-shadow:0 12px 32px rgba(16,40,90,.16)}
+.btn:not(.ghost):not(.light){background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 62%,#0a1f4d));box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 38%,transparent)}
+.btn.ghost{border:1.5px solid color-mix(in srgb,var(--accent) 40%,var(--line))}
+.ctile img.i3{width:2.7rem;height:2.7rem}
+.ctile{box-shadow:0 2px 8px rgba(16,40,90,.08);font-weight:600}
+.phead{background:linear-gradient(135deg,#0a1f4d,#10358f 60%,#1B6EF3)}
+h2{letter-spacing:.2px}
+.quote{border-left:4px solid var(--gold);background:color-mix(in srgb,var(--gold) 12%,var(--card))}
+@media(min-width:960px){.hero .g{max-width:64%}}
+@media(min-width:960px) and (max-height:900px){.nav a{padding:8px 14px;margin:1px 0}.side{gap:10px;padding-top:16px}.side .brand img{width:84px!important;height:84px!important}}
+@media(max-width:959px){.gfab{padding:0;width:54px;height:54px;justify-content:center;right:12px;bottom:84px}.gfab span{display:none}.gfab img{width:46px;height:46px}.sheet{padding-bottom:120px}}
