@@ -211,3 +211,5 @@ h2{letter-spacing:.2px}
 .song{padding:12px 0;border-top:1px solid var(--line)}.song:first-of-type{border-top:0}
 .lyric{white-space:pre-wrap;font-style:italic;border-left:4px solid var(--gold);padding:6px 12px;background:color-mix(in srgb,var(--gold) 10%,var(--card));border-radius:8px}
 .musiccard .li{text-decoration:none;color:inherit}
+.ytfind{text-decoration:none;color:#fff;flex-direction:column;gap:8px}.ytfind em{font-style:normal;font-weight:700;background:rgba(0,0,0,.45);padding:6px 12px;border-radius:999px}
+.ytfind{display:flex!important;align-items:center;justify-content:center}
