@@ -249,3 +249,4 @@ body.on-signin #app{display:block}body.on-signin .main{margin-left:0!important;m
 @keyframes ylsweep{from{background-position:140% 0}to{background-position:-50% 0}}
 @keyframes yltwinkle{0%,100%{transform:translate(-50%,-50%) scale(0) rotate(0)}45%,55%{transform:translate(-50%,-50%) scale(1) rotate(45deg)}}
 @media (prefers-reduced-motion:reduce){.yl *{animation:none!important}.yl .blue,.yl .spark{display:none}}
+.songrow .btn.sm{margin:0 0 6px 54px}.song-slot{margin:6px 0}.allsongs .list{margin-top:8px}
