@@ -131,3 +131,14 @@ textarea,input[type=text]{width:100%;background:var(--card);color:var(--ink);bor
 #splash{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#0a1f4d,#10358f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;transition:opacity .5s}
 #splash img{width:150px;height:150px}.sp-t{font:italic 700 2.8rem "Brush Script MT","Segoe Script",cursive;color:var(--gold)}.sp-s{letter-spacing:.3em;font-size:.8rem}
 #splash.out{opacity:0;pointer-events:none}
+
+/* ---- 3D icons ---- */
+img.i3{width:1.9em;height:1.9em;object-fit:contain;flex:none;filter:drop-shadow(0 2px 3px rgba(10,31,77,.28))}
+.nav a img.i3{width:30px;height:30px}.phead img.i3{width:36px;height:36px}.list .li img.i3{width:38px;height:38px}
+.ch .ic{width:2.2rem;height:2.2rem;background:none}.ch .ic img.i3{width:2rem;height:2rem}.ch .ic svg.i{width:1.3rem;height:1.3rem}
+.qa img.i3{width:3rem;height:3rem}
+.bnav img.i3{width:36px;height:36px;transition:transform .15s}.bnav button{gap:0;padding-top:4px}
+.bnav button[aria-current=page] img.i3{transform:scale(1.12)}
+.bnav button[aria-current=page]::after{content:"";width:28px;height:4px;border-radius:4px;background:var(--accent);margin-top:2px;box-shadow:0 0 8px color-mix(in srgb,var(--accent) 60%,transparent)}
+.bnav button:not([aria-current=page])::after{content:"";height:6px}
+.bnav button{font-weight:700;color:var(--ink)}.bnav button[aria-current=page]{color:var(--accent)}

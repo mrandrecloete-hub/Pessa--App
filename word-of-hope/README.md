@@ -9,6 +9,7 @@ A free Bible and devotional app. Plain HTML, CSS and JavaScript, no build step. 
 - **Settings:** Account, Notifications (a daily reminder while the app is open or installed and running), Theme and Appearance, Backup and Restore (save and restore your prayers, notes and favorites), About the App.
 - **Also:** prayer streak, in-app Back button support.
 - **Devotions, Messages of Hope** (swipe carousel), **Counseling Portal** (9 topics with validation, scripture anchors and an action plan, plus a Pray Now button), **My Prayers**, **Notes**.
+- **Icons:** the colourful 3D icons are in `ico/` (footer, More menu, sidebar and page headers).
 - **Theme and Appearance:** dark mode, accent colour (maroon, green, blue, pink), font size. **Settings:** your name and About the Founder.
 - 100 percent free: no payments, subscriptions or locked features.
 
