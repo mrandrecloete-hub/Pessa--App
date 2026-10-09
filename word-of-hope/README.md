@@ -4,6 +4,10 @@ A free Bible and devotional app. Plain HTML, CSS and JavaScript, no build step. 
 
 - **Dashboard:** greeting, Verse of the Day, Daily Devotional with an inline YouTube player (official IFrame Player API, plain embed as fallback), Counseling Portal, Featured Devotional, Theme and Appearance, Messages of Hope, Today's Prayer with Mark as Prayed.
 - **Bible:** all 66 books, chapters, King James Version text (loaded from bible-api.com the first time a chapter is read, then kept on the phone), favorites.
+- **Devotions:** day by day (yesterday, today, tomorrow), mark as read, share, pray it, and an archive of all devotions. **Messages of Hope:** swipe, save favorites, copy and share.
+- **Bible reader:** type a reference such as John 3 or Psalms 23:1 to open it, tap verses to copy, share, highlight or save to Notes, continue reading, and move on across books.
+- **Settings:** Account, Notifications (a daily reminder while the app is open or installed and running), Theme and Appearance, Backup and Restore (save and restore your prayers, notes and favorites), About the App.
+- **Also:** prayer streak, in-app Back button support.
 - **Devotions, Messages of Hope** (swipe carousel), **Counseling Portal** (9 topics with validation, scripture anchors and an action plan, plus a Pray Now button), **My Prayers**, **Notes**.
 - **Theme and Appearance:** dark mode, accent colour (maroon, green, blue, pink), font size. **Settings:** your name and About the Founder.
 - 100 percent free: no payments, subscriptions or locked features.
