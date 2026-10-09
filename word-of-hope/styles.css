@@ -323,3 +323,8 @@ body.on-signin #app{display:block}body.on-signin .main{margin-left:0!important;m
 .vwatch:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.5))}
 .vbtn{position:absolute;z-index:1;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:10px;background:#e62117;color:#fff;font:700 1.05rem system-ui;padding:14px 22px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.45);white-space:nowrap}
 .vbtn i{font-style:normal;width:26px;height:26px;border-radius:50%;background:#fff;color:#e62117;display:grid;place-items:center;font-size:.8rem}
+
+/* founder quote */
+.fquote{margin:12px 0 4px;padding:12px 14px;border-left:4px solid var(--gold);background:rgba(255,255,255,.08);border-radius:10px;text-align:left;font-style:italic;color:#fff}
+.fquote p{margin:0 0 8px;text-align:left;line-height:1.55}.fquote footer{margin-top:4px;color:var(--gold);font-style:normal;font-weight:700;text-align:right}
+.fquote.sm{padding:9px 11px;font-size:.84rem}.fquote.sm p{margin:0 0 6px}
