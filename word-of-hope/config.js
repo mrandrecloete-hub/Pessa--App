@@ -3,6 +3,6 @@
 window.APPCFG = {
   googleClientId: '794802803818-pqcog7358tiqo2a1vb1tiiakdncrgvdk.apps.googleusercontent.com',
   /* the real address of the app; copies running anywhere else show a warning and the Verify check compares with this site */
-  officialUrl: 'https://ashelz-bible-app.netlify.app/',
-  officialHosts: ['ashelz-bible-app.netlify.app', 'ashlez.netlify.app', 'mrandrecloete-hub.github.io']
+  officialUrl: 'https://ashelzbible.github.io/Ashelz-Bible-App/',
+  officialHosts: ['ashelzbible.github.io', 'ashelz-bible-app.netlify.app', 'ashlez.netlify.app']
 };
