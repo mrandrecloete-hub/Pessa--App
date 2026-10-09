@@ -350,3 +350,5 @@ img.i3{filter:saturate(1.2) contrast(1.06) drop-shadow(0 3px 4px rgba(10,31,77,.
 .cellcard .ch .ic{width:2.4rem;height:2.4rem}
 .meetwrap{position:fixed;inset:0;z-index:120;background:#050d26;display:flex;flex-direction:column}.meetwrap iframe{flex:1;width:100%;border:0;background:#000}
 .meetbar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0a1f4d;color:#fff}.meetgap{flex:1}.leavebtn{background:#D8343F!important;color:#fff!important}
+
+.hcrow{padding:20px 16px 24px;display:flex;gap:14px;align-items:center}.hclogo{width:96px;height:96px;border-radius:22px;flex:0 0 auto;box-shadow:0 8px 22px rgba(0,0,0,.45)}
