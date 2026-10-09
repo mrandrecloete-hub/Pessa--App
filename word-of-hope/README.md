@@ -41,3 +41,8 @@ Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artw
 - 30 more versions in 23 languages load from the open bible-data collection (raw.githubusercontent.com, with a jsDelivr fallback) and are saved on the phone once read. The Hebrew and Greek originals are Old Testament only and New Testament only.
 - Copyrighted versions (Afrikaans 1953, NIV, ESV and others) cannot be bundled; the optional free API.Bible key adds many of them.
 - The Reader has a version picker at the top. The app screens themselves are still English.
+
+## Sign in and the living Yeshua logo (added)
+- Sign in page (first launch, also More, Settings, Account): Name, Surname, Email, Password, "Sign in with Google" and "Continue without an account". The account is kept on this phone only; the password is stored as a salted PBKDF2 hash, never as text. There is no server, so signing in on another phone creates a separate account.
+- Google sign in needs your own Google client ID: create an OAuth "Web application" client at console.cloud.google.com (APIs and Services, Credentials), add your app address under Authorized JavaScript origins, and paste the client ID into `config.js`. Until then the Google button says it is not switched on. The Google token is read on the phone only (it is not verified by a server).
+- The logo (`yeshua.png`, with `yeshua-blue.png` and `yeshua-gold.png` masks) is animated with CSS: flowing, shifting blue, light sweeping over the blue and the gold lettering, twinkling sparks and a pulsing glow.

@@ -213,3 +213,39 @@ h2{letter-spacing:.2px}
 .musiccard .li{text-decoration:none;color:inherit}
 .ytfind{text-decoration:none;color:#fff;flex-direction:column;gap:8px}.ytfind em{font-style:normal;font-weight:700;background:rgba(0,0,0,.45);padding:6px 12px;border-radius:999px}
 .ytfind{display:flex!important;align-items:center;justify-content:center}
+
+/* Sign in page and the living Yeshua logo */
+body.on-signin .bnav,body.on-signin .side{display:none!important}
+body.on-signin #app{display:block}body.on-signin .main{margin-left:0!important;max-width:none}
+.signin{min-height:100vh;padding:28px 18px 40px;display:flex;flex-direction:column;align-items:center;gap:12px;color:#fff;background:radial-gradient(900px 500px at 50% 0,#1B6EF3 0,#10358f 38%,#0a1f4d 70%,#050d26 100%)}
+.signin>*{width:min(100%,420px)}.signin .yl{width:min(74vw,330px)}
+.si-t{font-size:2.3rem;font-weight:400;text-align:center;margin:0;color:#F5B52E;text-shadow:0 2px 12px rgba(245,181,46,.45)}
+.si-s{text-align:center;margin:0 0 4px;color:#dbe7fb}
+.si-form{display:flex;flex-direction:column;gap:10px}
+.si-f{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem;color:#cfe0ff}
+.si-f input{width:100%;padding:14px;border-radius:14px;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:1rem}
+.si-f input::placeholder{color:rgba(255,255,255,.5)}
+.si-f input:focus{outline:0;border-color:#F5B52E;box-shadow:0 0 0 3px rgba(245,181,46,.3)}
+.si-pw{position:relative}.si-eye{position:absolute;right:8px;bottom:8px;border:0;background:transparent;color:#F5B52E;font-weight:700;padding:8px 10px}
+.si-msg{margin:0;min-height:1.2em;color:#ffb4b4;font-size:.9rem}
+.si-go{min-height:52px;font-size:1.05rem;background:linear-gradient(135deg,#F5B52E,#d98f0a)!important;color:#2a1a05!important;box-shadow:0 6px 18px rgba(245,181,46,.4)!important}
+.si-or{display:flex;align-items:center;gap:10px;color:#9fb6e6}.si-or:before,.si-or:after{content:"";flex:1;height:1px;background:rgba(255,255,255,.2)}
+.si-google{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;border-radius:14px;border:1px solid #dadce0;background:#fff;color:#3c4043;font:600 1rem system-ui,sans-serif}
+.si-note{font-size:.82rem;color:#9fb6e6;text-align:center;margin:0}.si-skip{border:0;background:transparent;color:#cfe0ff;text-decoration:underline;padding:10px;font:inherit}
+/* the living logo: everything is made of the same picture, so only light and colour move */
+.yl{position:relative;aspect-ratio:1;margin:0 auto;isolation:isolate}
+.yl .flt{position:absolute;inset:0;animation:ylfloat 6s ease-in-out infinite}
+.yl img.base{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 10px 22px rgba(0,0,0,.55))}
+.yl .halo{position:absolute;inset:-14%;z-index:-1;border-radius:50%;background:radial-gradient(circle at 56% 42%,rgba(255,205,90,.7),rgba(27,110,243,.45) 42%,transparent 70%);filter:blur(22px);animation:ylhalo 3.4s ease-in-out infinite alternate}
+.yl .blue,.yl .bsheen,.yl .gsheen{position:absolute;inset:0;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;pointer-events:none}
+.yl .blue{-webkit-mask-image:url(yeshua-blue.png);mask-image:url(yeshua-blue.png)}
+.yl .bw{position:absolute;inset:0;filter:url(#yl-wave)}.yl .blue img{width:100%;height:100%;animation:ylblue 3.6s ease-in-out infinite alternate;will-change:filter}
+.yl .bsheen{-webkit-mask-image:url(yeshua-blue.png);mask-image:url(yeshua-blue.png);background:linear-gradient(105deg,transparent 35%,rgba(120,190,255,.55) 46%,rgba(235,247,255,.95) 50%,rgba(120,190,255,.55) 54%,transparent 65%);background-size:260% 100%;mix-blend-mode:screen;animation:ylsweep 3.8s linear infinite}
+.yl .gsheen{-webkit-mask-image:url(yeshua-gold.png);mask-image:url(yeshua-gold.png);background:linear-gradient(105deg,transparent 38%,rgba(255,240,170,.65) 48%,rgba(255,255,255,.95) 50%,rgba(255,240,170,.65) 52%,transparent 62%);background-size:260% 100%;mix-blend-mode:screen;animation:ylsweep 5s linear infinite;animation-delay:1.6s}
+.yl .spark{position:absolute;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,#fff 0,#ffe9a0 40%,rgba(255,200,60,0) 70%);clip-path:polygon(50% 0,59% 41%,100% 50%,59% 59%,50% 100%,41% 59%,0 50%,41% 41%);animation:yltwinkle 2.8s ease-in-out infinite;pointer-events:none}
+@keyframes ylfloat{0%,100%{transform:translateY(0) rotate(-.6deg)}50%{transform:translateY(-7px) rotate(.6deg)}}
+@keyframes ylhalo{from{opacity:.5;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
+@keyframes ylblue{from{filter:saturate(1.5) brightness(1.05) hue-rotate(-22deg)}to{filter:saturate(1.9) brightness(1.4) hue-rotate(2deg)}}
+@keyframes ylsweep{from{background-position:140% 0}to{background-position:-50% 0}}
+@keyframes yltwinkle{0%,100%{transform:translate(-50%,-50%) scale(0) rotate(0)}45%,55%{transform:translate(-50%,-50%) scale(1) rotate(45deg)}}
+@media (prefers-reduced-motion:reduce){.yl *{animation:none!important}.yl .blue,.yl .spark{display:none}}
