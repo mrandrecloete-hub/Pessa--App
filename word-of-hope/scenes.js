@@ -1,10 +1,10 @@
 /* Scenic artwork drawn in SVG so the app needs no photo files: sunrise over mountains, a cross on a hill, a road through a meadow. */
 window.Scenes = (function(){
   var P = {
-    sunrise: { sky: ['#2c5aa0', '#7fa6d6', '#f6c981'], sun: '#fff1c4', far: '#6b7fa8', mid: '#415a86', near: '#1f3558', ground: '#16263f' },
-    dawn:    { sky: ['#41558f', '#c98fb0', '#ffd3a1'], sun: '#fff0d4', far: '#8a77a6', mid: '#5a4f86', near: '#352f5e', ground: '#251f45' },
-    night:   { sky: ['#0b1736', '#1f3a6d', '#c97b4a'], sun: '#ffd9a0', far: '#2d4678', mid: '#1b2f58', near: '#0f1d3b', ground: '#0a1429' },
-    meadow:  { sky: ['#4f86c6', '#a9cfe8', '#ffe2a8'], sun: '#fff6d8', far: '#7aa07a', mid: '#4e7d4b', near: '#2f5a33', ground: '#cfa94a' }
+    sunrise: { sky: ['#0a1f4d', '#1b6ef3', '#ffc23d'], sun: '#fff0b8', far: '#3b63b5', mid: '#1d3f8f', near: '#0e2a6b', ground: '#08183f' },
+    dawn:    { sky: ['#14307a', '#4d8dff', '#ffd27a'], sun: '#fff3cf', far: '#4a6cc0', mid: '#27499d', near: '#13307a', ground: '#0a1f4d' },
+    night:   { sky: ['#050f2b', '#0f2a6e', '#e9a21f'], sun: '#ffd77a', far: '#1d3a85', mid: '#112a6a', near: '#0a1c4d', ground: '#060f2b' },
+    meadow:  { sky: ['#1b6ef3', '#7fb4ff', '#ffe08a'], sun: '#fff6d8', far: '#4d7bd0', mid: '#2c58ad', near: '#1a3f8a', ground: '#e0a526' }
   };
   function ridge(w, h, base, amp, seed, fill){
     var x = 0, pts = [], r = seed;

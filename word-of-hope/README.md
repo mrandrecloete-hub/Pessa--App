@@ -1,4 +1,4 @@
-# Draw Near
+# Ashelz Bible App
 
 A free Bible and devotional app. Plain HTML, CSS and JavaScript, no build step. Open `index.html` from any web server (for example `python3 -m http.server`) and add it to the phone's home screen. It adapts to phone and desktop (sidebar layout from 960 px wide).
 

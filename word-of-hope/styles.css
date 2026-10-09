@@ -1,6 +1,6 @@
-/* Draw Near. --accent and --on-accent are set by ThemeContext (theme.js). */
-:root{--accent:#1F5FD1;--on-accent:#fff;--bg:#eef2f8;--card:#fff;--ink:#14213a;--muted:#5d6b86;--line:#e3e9f3;--shadow:0 8px 28px rgba(16,40,90,.10);--soft:color-mix(in srgb,var(--accent) 10%,var(--card));--navy:#0b2a52;--navy2:#123f78;--r:20px;--fs:16px}
-:root[data-theme=dark]{--bg:#0e131c;--card:#18202d;--ink:#eef2fa;--muted:#9fadc6;--line:#263146;--shadow:0 8px 28px rgba(0,0,0,.4)}
+/* Ashelz Bible App. --accent and --on-accent are set by ThemeContext (theme.js). */
+:root{--accent:#1B6EF3;--on-accent:#fff;--gold:#F5B52E;--red:#D8232A;--bg:#eef3fc;--card:#fff;--ink:#14213a;--muted:#5d6b86;--line:#e3e9f3;--shadow:0 8px 28px rgba(16,40,90,.10);--soft:color-mix(in srgb,var(--accent) 10%,var(--card));--navy:#0a1f4d;--navy2:#10358f;--r:20px;--fs:16px}
+:root[data-theme=dark]{--bg:#0a1228;--card:#111c3a;--ink:#eef2fa;--muted:#a3b2d6;--line:#22305a;--shadow:0 8px 28px rgba(0,0,0,.4)}
 :root[data-font=small]{--fs:14.5px}:root[data-font=large]{--fs:18.5px}
 *{box-sizing:border-box}
 html{font-size:var(--fs)}
@@ -13,7 +13,7 @@ h1,h2,h3,p{margin:0}button{font:inherit;color:inherit;cursor:pointer}
 svg.i{width:1.3em;height:1.3em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 /* ---- sidebar (desktop) ---- */
 .side{display:none}
-.brand{text-align:center;color:#fff}.brand .t{font:600 2.1rem/1 Georgia,serif;margin-top:4px}.brand .s{font-size:.62rem;letter-spacing:.2em;margin-top:8px;opacity:.9}
+.brand{text-align:center;color:#fff}.brand .t{font:italic 700 2.2rem/1 "Brush Script MT","Segoe Script",cursive;margin-top:4px;color:var(--gold)}.brand img{width:112px;height:112px;display:block;margin:0 auto}.brand .u{font-weight:600;font-size:.95rem;color:#fff;margin-top:2px}.brand .s{font-size:.62rem;letter-spacing:.2em;margin-top:8px;opacity:.9}
 .brand svg{width:78px;height:60px}
 .nav a{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;color:#dbe7fb;text-decoration:none;margin:3px 0;font-weight:500;cursor:pointer;border:0;background:none;width:100%;text-align:left}
 .nav a:hover{background:rgba(255,255,255,.08)}.nav a[aria-current=page]{background:var(--accent);color:var(--on-accent)}
@@ -29,7 +29,7 @@ svg.i{width:1.3em;height:1.3em;fill:none;stroke:currentColor;stroke-width:1.8;st
 .ch a{margin-left:auto;font-size:.82rem;font-weight:500;color:var(--accent);cursor:pointer;background:none;border:0;display:flex;align-items:center;gap:2px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;background:var(--accent);color:var(--on-accent);font-weight:600;min-height:46px;text-decoration:none;transition:transform .15s,filter .15s}
 .btn:hover{filter:brightness(1.08)}.btn:active{transform:scale(.97)}.btn.light{background:#fff;color:var(--ink)}.btn.ghost{background:var(--soft);color:var(--ink)}.btn.block{display:flex;width:100%}
-.art{position:relative;overflow:hidden;color:#fff}.art>svg:first-child{position:absolute;inset:0;width:100%;height:100%}.art>.in{position:relative}
+.art{position:relative;overflow:hidden;color:#fff}.art>svg{position:absolute;inset:0;width:100%;height:100%}.art>.in{position:relative}
 .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,18,44,0) 35%,rgba(6,18,44,.62))}
 .art>.in{z-index:1}
 .hero{border-radius:var(--r);min-height:210px;display:flex;flex-direction:column;justify-content:flex-end;padding:22px}
@@ -45,7 +45,7 @@ svg.i{width:1.3em;height:1.3em;fill:none;stroke:currentColor;stroke-width:1.8;st
 .cgrid.big{grid-template-columns:repeat(2,1fr);gap:14px}
 .ctile{border:0;border-radius:14px;padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:500;font-size:.88rem;background:var(--t);color:var(--ink);transition:transform .15s}
 .ctile:hover{transform:translateY(-2px)}.ctile svg.i{width:2rem;height:2rem;color:var(--c)}
-.ctile[data-k="0"]{--t:#e6efff;--c:#2f6fe0}.ctile[data-k="1"]{--t:#fbe8f2;--c:#c4306f}.ctile[data-k="2"]{--t:#fde9ee;--c:#d23a58}.ctile[data-k="3"]{--t:#e5f4e6;--c:#2f8a3a}.ctile[data-k="4"]{--t:#dff3f4;--c:#1a8b99}.ctile[data-k="5"]{--t:#ece8fb;--c:#6b4fd6}.ctile[data-k="6"]{--t:#fdf0dc;--c:#cc7a12}.ctile[data-k="7"]{--t:#e8edf5;--c:#52627e}.ctile[data-k="8"]{--t:#e8f1e1;--c:#5e8a2a}
+.ctile[data-k="0"]{--t:#e3eeff;--c:#1b6ef3}.ctile[data-k="1"]{--t:#fff1d2;--c:#c98400}.ctile[data-k="2"]{--t:#ffe3e4;--c:#d8232a}.ctile[data-k="3"]{--t:#dff1ff;--c:#1590e8}.ctile[data-k="4"]{--t:#e6e9f7;--c:#10358f}.ctile[data-k="5"]{--t:#fff6dc;--c:#e09a0c}.ctile[data-k="6"]{--t:#ffe9ea;--c:#b5121a}.ctile[data-k="7"]{--t:#e8f2ff;--c:#2a7fdc}.ctile[data-k="8"]{--t:#eef0fa;--c:#2a3d86}
 :root[data-theme=dark] .ctile{--t:color-mix(in srgb,var(--c) 16%,var(--card))}
 .swl{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
 .swb{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:.78rem;color:var(--muted)}
@@ -94,7 +94,7 @@ textarea,input[type=text]{width:100%;background:var(--card);color:var(--ink);bor
 .hide{display:none!important}
 /* ---- desktop ---- */
 @media (min-width:960px){
-  .side{display:flex;flex-direction:column;gap:18px;position:fixed;inset:0 auto 0 0;width:292px;padding:26px 18px 20px;background:linear-gradient(180deg,#0a2347 0%,#0d3166 55%,#0a2347);overflow:auto;z-index:10}
+  .side{display:flex;flex-direction:column;gap:18px;position:fixed;inset:0 auto 0 0;width:292px;padding:26px 18px 20px;background:linear-gradient(180deg,#081a42 0%,#0c2d78 55%,#081a42);overflow:auto;z-index:10}
   .main{margin-left:292px;padding:20px 22px 24px}.bnav{display:none}.mob{display:none!important}.desk{display:block}
   .phead{background:none;color:var(--ink);padding:4px 0 14px;font-size:1.6rem}.phead .back{color:var(--ink)}.sheet{background:none;border-radius:0;padding:0;margin:0!important}
   .dash{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 340px;grid-template-areas:"hero hero top" "verse devo theme" "couns feat msgs" "prayer prayer banner";gap:18px;align-items:stretch}
@@ -113,3 +113,21 @@ textarea,input[type=text]{width:100%;background:var(--card);color:var(--ink);bor
 
 .hero .sm{display:none}.hero .sd{display:block}
 @media (max-width:959px){.hero .sm{display:block}.hero .sd{display:none}.mob .qh{margin:16px 16px 0;font-size:1rem}.mob .qa{margin:12px 14px}}
+
+/* ---- the icon appears on every page: a faint watermark behind the content, and in every page header ---- */
+.wm{position:fixed;inset:0;z-index:0;pointer-events:none;background:url(logo.png) center 60% / min(70vmin,520px) no-repeat;opacity:.055}
+:root[data-theme=dark] .wm{opacity:.08}
+#app{position:relative;z-index:1}
+.phead .plogo{margin-left:auto;width:38px;height:38px;object-fit:contain;flex:none}
+.hero .logo-m img{width:84px;height:84px;display:block;margin:0 auto}.hero .logo-m .t{font:italic 700 2rem "Brush Script MT","Segoe Script",cursive;color:var(--gold)}
+.btn.light{color:var(--navy)}.verse,.ref{text-shadow:0 1px 8px rgba(0,0,0,.35)}
+.ch .ic{background:color-mix(in srgb,var(--gold) 22%,var(--card));color:#b87a00}:root[data-theme=dark] .ch .ic{color:var(--gold)}
+.eyebrow,.part h3 b{color:var(--gold)}
+.nav a[aria-current=page]{background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#fff 0%))}
+.num{background:var(--navy)}.founder .sig,.founder-side .sig{color:var(--gold)}.founder h2,.founder-side h3{color:#fff}
+.founder{border:1px solid color-mix(in srgb,var(--gold) 55%,transparent)}.founder-side{border-color:color-mix(in srgb,var(--gold) 55%,transparent)}
+.player .play span{background:#e62117}
+.bnav button[aria-current=page]{color:var(--accent)}
+#splash{position:fixed;inset:0;z-index:100;background:linear-gradient(160deg,#0a1f4d,#10358f);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#fff;transition:opacity .5s}
+#splash img{width:150px;height:150px}.sp-t{font:italic 700 2.8rem "Brush Script MT","Segoe Script",cursive;color:var(--gold)}.sp-s{letter-spacing:.3em;font-size:.8rem}
+#splash.out{opacity:0;pointer-events:none}

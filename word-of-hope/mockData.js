@@ -2,10 +2,10 @@
    Swap YOUTUBE_ID values for your real devotional videos. 'dQw4w9WgXcQ' is only the sample ID you asked for. */
 window.MOCK = {
   accents: [
-    { name: 'Maroon', value: '#7B1E3A' },
-    { name: 'Green', value: '#4C7A1E' },
-    { name: 'Blue', value: '#1F5FD1' },
-    { name: 'Pink', value: '#FF7BAC' }
+    { name: 'Royal Blue', value: '#1B6EF3' },
+    { name: 'Gold', value: '#F2A91B' },
+    { name: 'Ribbon Red', value: '#D8232A' },
+    { name: 'Sky Blue', value: '#38A3FF' }
   ],
   /* Books of the Bible with chapter counts (King James Version text is loaded per chapter from bible-api.com) */
   books: {
