@@ -1,24 +1,24 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="light" data-font="medium">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Word of Hope</title>
-<meta name="description" content="A free Bible and devotional app: daily scripture, devotion, messages of hope and biblical counseling.">
-<meta name="theme-color" content="#faf8f5">
+<title>Draw Near</title>
+<meta name="description" content="Draw Near: a free Bible and devotional app with daily scripture, devotions, messages of hope and biblical counseling.">
+<meta name="theme-color" content="#0b2a52">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%237B1E3A'/%3E%3Cpath d='M32 14v36M20 26h24' stroke='white' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b2a52'/%3E%3Cpath d='M32 10v26M22 19h20' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M10 40q11-6 22 2 11-8 22-2v10q-11-6-22 2-11-8-22-2z' fill='%237fb2ff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
-  <header class="top"><div class="brand"><span class="logo" aria-hidden="true">✝</span><span>Word of Hope</span></div></header>
-  <main id="view" tabindex="-1"></main>
-  <nav class="tabs" id="tabs" aria-label="Main"></nav>
+  <aside class="side" id="side" aria-label="Main menu"></aside>
+  <div class="main"><main id="view" tabindex="-1"></main></div>
+  <nav class="bnav" id="bnav" aria-label="Main"></nav>
 </div>
-<dialog id="modal" aria-labelledby="modalTitle"></dialog>
 <script src="mockData.js"></script>
 <script src="theme.js"></script>
+<script src="scenes.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

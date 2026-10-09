@@ -1,126 +1,156 @@
-/* Word of Hope: components are small functions that return DOM nodes. Data comes from mockData.js, theme state from ThemeContext (theme.js). */
+/* Draw Near: small component functions return DOM nodes. Content: mockData.js. Theme: ThemeContext (theme.js). Artwork: Scenes (scenes.js). */
 (function(){
 'use strict';
-var D = window.MOCK, Theme = window.ThemeContext;
-var NAME_KEY = 'woh_name_v1';
+var D = window.MOCK, Theme = window.ThemeContext, Scenes = window.Scenes;
 var $ = function(s, r){ return (r || document).querySelector(s); };
-
-/* tiny element helper: h('div', {class:'x', onclick:fn}, child, 'text'). Text is always set as text, never as HTML. */
-function h(tag, props){
+function h(tag, props){ /* h('div', {class:'x', onclick:fn}, child, 'text'): text is always set as text, never as HTML */
   var el = document.createElement(tag), kids = Array.prototype.slice.call(arguments, 2);
-  Object.keys(props || {}).forEach(function(k){
-    var v = props[k];
-    if(k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
-    else if(k === 'class') el.className = v;
-    else if(v === true) el.setAttribute(k, '');
-    else if(v !== false && v != null) el.setAttribute(k, v);
-  });
-  (function add(list){ list.forEach(function(c){ if(c == null) return; if(Array.isArray(c)) return add(c); el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }); })(kids);
+  Object.keys(props || {}).forEach(function(k){ var v = props[k];
+    if(k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v); else if(k === 'class') el.className = v; else if(k === 'html') el.innerHTML = v; else if(v === true) el.setAttribute(k, ''); else if(v !== false && v != null) el.setAttribute(k, v); });
+  (function add(list){ list.forEach(function(c){ if(c == null || c === false) return; if(Array.isArray(c)) return add(c); el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }); })(kids);
   return el;
 }
-function dayOfYear(){ var n = new Date(), s = new Date(n.getFullYear(), 0, 0); return Math.floor((n - s) / 864e5); }
-function today(){ return D.daily[dayOfYear() % D.daily.length]; }
-function getName(){ try { return localStorage.getItem(NAME_KEY) || ''; } catch(e) { return ''; } }
-function greeting(){ var hr = new Date().getHours(); return hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'; }
+/* ---- small storage helpers (all data stays on this phone) ---- */
+function load(k, d){ try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch(e) { return d; } }
+function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+var K = { name: 'woh_name_v1', prayers: 'woh_prayers_v1', notes: 'woh_notes_v1', favs: 'woh_favs_v1', prayed: 'woh_prayed_v1' };
+function getName(){ return load(K.name, ''); }
+function dayKey(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function dayNo(){ var n = new Date(); return Math.floor((n - new Date(n.getFullYear(), 0, 0)) / 864e5); }
+function todayDev(){ return D.daily[dayNo() % D.daily.length]; }
+function todayPrayer(){ return D.prayers[dayNo() % D.prayers.length]; }
+function greeting(){ var hr = new Date().getHours(); return hr < 12 ? 'Good Morning' : hr < 18 ? 'Good Afternoon' : 'Good Evening'; }
+/* ---- icons (simple line icons) ---- */
+var IC = {
+  home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10', book: 'M4 5a2 2 0 012-2h5v17H6a2 2 0 00-2 2zM20 5a2 2 0 00-2-2h-5v17h5a2 2 0 012 2z', cal: 'M5 5h14v15H5zM5 10h14M9 3v4M15 3v4', people: 'M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3 3-5 6-5s6 2 6 5M16 11a3 3 0 100-6M18 15c2 .5 3 2 3 5',
+  heart: 'M12 20s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 9c0 6-8 11-8 11z', pray: 'M12 3c1 3 4 4 4 8 0 3-2 4-4 4s-4-1-4-4c0-4 3-5 4-8zM6 20l6-4 6 4', note: 'M5 4h14v16H5zM9 9h6M9 13h6', gear: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19 12l2-1-1-3-2 .5-1.5-1.5.5-2-3-1-1 2h-2l-1-2-3 1 .5 2L6 8.500 4 8l-1 3 2 1v1l-2 1 1 3 2-.5 1.5 1.5-.5 2 3 1 1-2h2l1 2 3-1-.5-2 1.500-1.500 2 .500 1-3-2-1z',
+  search: 'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-4.500-4.500', bell: 'M6 9a6 6 0 0112 0c0 6 3 7 3 7H3s3-1 3-7M10 20a2 2 0 004 0', play: 'M8 5v14l11-7z', more: 'M4 7h16M4 12h16M4 17h16', brush: 'M4 20c3 0 5-2 5-4M9 16L19 4l1.500 1.500L11 17z',
+  brain: 'M9 4a3 3 0 00-3 3 3 3 0 00-2 5 3 3 0 002 5 3 3 0 006 0V4a3 3 0 00-3 0zM15 4a3 3 0 013 3 3 3 0 012 5 3 3 0 01-2 5 3 3 0 01-6 0', broken: 'M12 20s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 9c0 6-8 11-8 11zM12 7l-2 4 3 2-2 4', rings: 'M8 17a5 5 0 100-10 5 5 0 000 10zM16 17a5 5 0 100-10 5 5 0 000 10z', coins: 'M5 7c0-1.500 3-2.500 7-2.500s7 1 7 2.500-3 2.500-7 2.500-7-1-7-2.500zM5 7v10c0 1.500 3 2.500 7 2.500s7-1 7-2.500V7M5 12c0 1.500 3 2.500 7 2.500s7-1 7-2.500',
+  person: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 4-6 8-6s8 2 8 6', cloud: 'M7 18a4 4 0 010-8 5 5 0 019.500 1A3.500 3.500 0 0116.500 18z', shield: 'M12 3l8 3v6c0 5-3.500 8-8 9-4.500-1-8-4-8-9V6z', leaf: 'M5 19c0-9 5-14 15-14 0 10-5 15-14 15M5 19c3-5 6-8 10-10', moon: 'M20 14A8 8 0 1110 4a6.500 6.500 0 0010 10z', sun: 'M12 16a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.500 1.500M17.500 17.500L19 19M5 19l1.500-1.500M17.500 6.500L19 5'
+};
+var CAT_IC = { anxiety: 'brain', grief: 'broken', marriage: 'rings', finance: 'coins', loneliness: 'person', depression: 'cloud', fear: 'shield', guilt: 'leaf', weary: 'moon' };
+function icon(n){ return h('span', { html: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="' + (IC[n] || IC.book) + '"/></svg>' }).firstChild; }
+function art(kind, opts, cls, inner){ var el = h('div', { class: 'art ' + (cls || '') }); el.insertAdjacentHTML('afterbegin', Scenes.svg(kind, opts)); el.appendChild(h('div', { class: 'in' }, inner)); return el; }
+var LOGO = '<svg viewBox="0 0 80 60" aria-hidden="true"><path d="M40 2v22M31 10h18" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M6 34q17-8 34 4 17-12 34-4v14q-17-8-34 4-17-12-34-4z" fill="none" stroke="#9fc4ff" stroke-width="3" stroke-linejoin="round"/><path d="M40 38v14" stroke="#9fc4ff" stroke-width="3"/></svg>';
 
-/* ---------- YouTubePlayer: official IFrame Player API, loaded when the person taps play; falls back to a plain embed if the API cannot load ---------- */
+/* ---------- YouTubePlayer: official IFrame Player API (loaded on tap), plain embed as fallback; plays inline ---------- */
 var ytApi;
-function loadYT(){
-  if(ytApi) return ytApi;
-  ytApi = new Promise(function(res, rej){
-    if(window.YT && window.YT.Player) return res(window.YT);
-    var t = setTimeout(function(){ rej(new Error('timeout')); }, 5000);
-    window.onYouTubeIframeAPIReady = function(){ clearTimeout(t); res(window.YT); };
-    var s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = function(){ clearTimeout(t); rej(new Error('blocked')); };
-    document.head.appendChild(s);
-  });
-  return ytApi;
-}
+function loadYT(){ if(ytApi) return ytApi; ytApi = new Promise(function(res, rej){ if(window.YT && window.YT.Player) return res(window.YT); var t = setTimeout(function(){ rej(new Error('timeout')); }, 5000);
+  window.onYouTubeIframeAPIReady = function(){ clearTimeout(t); res(window.YT); }; var s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = function(){ clearTimeout(t); rej(new Error('blocked')); }; document.head.appendChild(s); }); return ytApi; }
 function YouTubePlayer(id, title){
-  var box = h('div', { class: 'player' });
-  var start = h('button', { class: 'play', 'aria-label': 'Play the devotional video: ' + title, onclick: function(){
-    var slot = h('div'); box.innerHTML = ''; box.appendChild(slot);
-    loadYT().then(function(YT){
-      new YT.Player(slot, { host: 'https://www.youtube-nocookie.com', videoId: id, width: '100%', height: '100%', playerVars: { autoplay: 1, rel: 0, playsinline: 1, modestbranding: 1 } });
-    }).catch(function(){
-      box.innerHTML = ''; box.appendChild(h('iframe', { src: 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&playsinline=1&enablejsapi=1', title: title, allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen', allowfullscreen: true, loading: 'lazy' }));
-    });
-  } }, h('span', {}, '▶'));
-  box.appendChild(h('img', { src: 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg', alt: '', loading: 'lazy', onerror: function(){ this.style.display = 'none'; box.style.background = 'linear-gradient(135deg,var(--accent),#000)'; } }));
-  box.appendChild(start); return box;
+  var box = h('div', { class: 'player' }); box.insertAdjacentHTML('afterbegin', Scenes.svg('sunrise', { cross: false }));
+  box.appendChild(h('button', { class: 'play', 'aria-label': 'Play the devotional video: ' + title, onclick: function(){ var slot = h('div'); box.innerHTML = ''; box.appendChild(slot);
+    loadYT().then(function(YT){ new YT.Player(slot, { host: 'https://www.youtube-nocookie.com', videoId: id, width: '100%', height: '100%', playerVars: { autoplay: 1, rel: 0, playsinline: 1, modestbranding: 1 } }); })
+      .catch(function(){ box.innerHTML = ''; box.appendChild(h('iframe', { src: 'https://www.youtube-nocookie.com/embed/' + id + '?rel=0&playsinline=1&enablejsapi=1', title: title, allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen', allowfullscreen: true, loading: 'lazy' })); }); } }, h('span', {}, '▶')));
+  return box;
 }
-
 /* ---------- Dashboard pieces ---------- */
-function GreetingBanner(){ var n = getName(); return h('section', { class: 'card greet' }, h('h1', {}, greeting() + (n ? ', ' + n : '') + '.'), h('p', {}, 'God is with you today.')); }
-function DailyScripture(t){ return h('section', { class: 'card', 'aria-label': 'Daily scripture' }, h('div', { class: 'eyebrow' }, 'Daily Scripture'), h('div', { class: 'verse' }, '“' + t.text + '”'), h('div', { class: 'ref' }, t.ref + ' (KJV)')); }
-function DailyDevotion(t){ return h('section', { class: 'card', 'aria-label': 'Daily devotional' }, h('div', { class: 'eyebrow' }, 'Daily Devotional'), h('h2', { style: 'margin:0 0 6px' }, t.title), h('p', { style: 'margin:0 0 4px' }, t.devotion), YouTubePlayer(t.youtubeId, t.title), h('p', { style: 'margin:0;font-style:italic' }, 'Prayer: ' + t.prayer)); }
-function Tile(emoji, title, sub, go){ return h('button', { class: 'tile', onclick: function(){ go(); } }, h('span', { class: 'ic', 'aria-hidden': 'true' }, emoji), h('b', {}, title), h('small', {}, sub)); }
-function DashboardLayout(nav){
-  var t = today();
-  return h('div', {}, GreetingBanner(), DailyScripture(t), DailyDevotion(t),
-    h('div', { class: 'tiles' }, Tile('🕊️', 'Messages of Hope', 'Short words of promise', function(){ nav('hope'); }), Tile('🤝', 'Counseling Portal', 'Scripture for what you face', function(){ nav('counsel'); })));
-}
+function Hero(){ var n = getName() || 'Friend'; var el = art('sunrise', { cross: true, sunX: 690 }, 'hero', [ h('div', { class: 'logo-m', html: LOGO + '<div class="t">Draw Near</div><div class="s">BIBLE • DEVOTIONAL • HOPE</div>' }), h('div', { class: 'g' }, h('h1', { class: 'script' }, greeting() + ', ' + n + ' 👋'), h('p', {}, 'May the Lord bless you today and fill your heart with His peace, strength and purpose.')) ]); el.firstChild.setAttribute('class', 'sd'); el.insertAdjacentHTML('afterbegin', Scenes.svg('sunrise', { cross: true, sunX: 610 }).replace('<svg ', '<svg class="sm" ')); return el; }
+function VerseCard(t, go){ return art('sunrise', {}, 'card vcard', [ h('div', { class: 'ch', style: 'color:#fff' }, h('span', { class: 'ic' }, icon('book')), 'Verse of the Day'), h('div', { class: 'verse' }, '“' + t.text + '”'), h('div', { class: 'ref' }, t.ref + ' (KJV)'), h('div', {}, h('button', { class: 'btn light', onclick: function(){ go('devotions'); } }, 'Read Devotion  →')) ]); }
+function DevoCard(t){ return h('section', { class: 'card devo', 'aria-label': 'Daily devotional' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('play')), 'Daily Devotional'), h('div', { class: 'sub' }, t.title), YouTubePlayer(t.youtubeId, t.title)); }
+function CatTile(c, i, go, small){ return h('button', { class: 'ctile', 'data-k': i % 9, onclick: function(){ go('counsel', c.id); } }, icon(CAT_IC[c.id] || 'heart'), c.title); }
+function CounselCard(go){ return h('section', { class: 'card couns' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('people')), 'Counseling Portal', h('button', { class: 'a', style: 'margin-left:auto;background:none;border:0;color:var(--accent);font-size:.82rem', onclick: function(){ go('counsel'); } }, 'View All ›')), h('div', { class: 'cgrid' }, D.counseling.slice(0, 6).map(function(c, i){ return CatTile(c, i, go); }))); }
+function FeaturedCard(t, go){ return h('section', { class: 'card feat' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('book')), 'Featured Devotional'), h('h3', { style: 'margin-bottom:8px' }, 'God\'s Plan for Your Tomorrow'), h('p', { class: 'sub', style: 'margin:0 0 12px' }, 'Life can be uncertain, but God\'s plan for you is always good. This devotion will encourage you to trust His timing, His process and His purpose for your life.'), h('button', { class: 'btn', style: 'margin-bottom:12px', onclick: function(){ go('devotions'); } }, '▶  Watch Devotion'), art('meadow', { road: true }, '', h('div', { class: 'script', style: 'font-size:1.8rem;padding:34px 20px;text-align:center' }, 'Trust His Plan'))); }
+function ThemeCard(){ var c = Theme.get(); var card = h('section', { class: 'card themec' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('gear')), 'Theme & Appearance'), DarkRow(), h('div', { style: 'font-weight:600;margin-top:14px' }, 'Accent Color'), Swatches(true)); return card; }
+function DarkRow(){ var sw = h('button', { class: 'switch', id: 'dark' + Math.random().toString(36).slice(2, 5), role: 'switch', 'aria-label': 'Dark mode', 'data-dark': '1', 'aria-checked': String(Theme.get().themeMode === 'dark'), onclick: function(){ Theme.set({ themeMode: Theme.get().themeMode === 'dark' ? 'light' : 'dark' }); } });
+  Theme.subscribe(function(s){ sw.setAttribute('aria-checked', String(s.themeMode === 'dark')); }); return h('div', { class: 'row', style: 'margin-top:6px' }, h('div', {}, h('b', {}, 'Dark Mode'), h('div', { class: 'note' }, 'Switch between light and dark themes.')), sw); }
+function Swatches(labels){ var wrap = h('div', { class: 'swl', role: 'group', 'aria-label': 'Accent colour' });
+  function draw(){ wrap.innerHTML = ''; D.accents.forEach(function(a){ wrap.appendChild(h('button', { class: 'swb', 'data-color': a.value, 'aria-label': a.name, 'aria-pressed': String(a.value.toLowerCase() === Theme.get().accentColor.toLowerCase()), onclick: function(){ Theme.set({ accentColor: a.value }); draw(); } }, h('span', { class: 'dot', style: 'background:' + a.value }), labels ? a.name : null)); }); }
+  draw(); return wrap; }
+function MsgSlide(m){ return art(m.scene, {}, 'mslide', [ h('div', { class: 'serif' }, m.text), h('small', {}, 'Inspired by ' + m.ref) ]); }
+function MiniMessages(go){ var i = 0, box = h('div'), dots = h('div', { class: 'dots' }); function draw(){ box.innerHTML = ''; box.appendChild(MsgSlide(D.hope[i])); dots.innerHTML = ''; D.hope.forEach(function(_, k){ dots.appendChild(h('i', { class: k === i ? 'on' : '' })); }); }
+  draw(); return h('section', { class: 'card msgs' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('heart')), 'Messages of Hope', h('button', { class: 'a', style: 'margin-left:auto;background:none;border:0;color:var(--accent)', 'aria-label': 'See all messages of hope', onclick: function(){ go('hope'); } }, '›')),
+    h('div', { class: 'mcar' }, h('button', { class: 'marr l', 'aria-label': 'Previous message', onclick: function(){ i = (i + D.hope.length - 1) % D.hope.length; draw(); } }, '‹'), box, h('button', { class: 'marr r', 'aria-label': 'Next message', onclick: function(){ i = (i + 1) % D.hope.length; draw(); } }, '›')), dots); }
+function HopeBanner(){ return art('meadow', { road: true }, 'banner', [ h('h2', { class: 'script' }, 'Hope Changes Everything'), h('small', {}, 'SAME GOD  •  NEW MERCIES  •  EVERY DAY') ]); }
+function PrayerCard(rerender){ var done = load(K.prayed, '') === dayKey(); var b = h('button', { class: 'btn', 'aria-pressed': String(done), onclick: function(){ save(K.prayed, dayKey()); b.setAttribute('aria-pressed', 'true'); b.textContent = '✓ Prayed'; var p = $('.pip'); if(p) p.remove(); } }, done ? '✓ Prayed' : '✓ Mark as Prayed');
+  return h('section', { class: 'card prayer row' }, h('div', { style: 'display:flex;gap:12px;align-items:flex-start' }, h('span', { class: 'ch' }, h('span', { class: 'ic' }, icon('pray'))), h('div', {}, h('b', {}, 'Today\'s Prayer'), h('p', {}, todayPrayer()))), b); }
+function TopBar(go){ var s = h('input', { type: 'search', placeholder: 'Search the Bible', 'aria-label': 'Search books of the Bible', onkeydown: function(e){ if(e.key === 'Enter'){ go('bible', null, s.value); } } });
+  var unread = load(K.prayed, '') !== dayKey();
+  return h('div', { class: 'top' }, h('label', { class: 'search' }, icon('search'), s), h('button', { class: 'iconbtn', 'aria-label': unread ? 'Today\'s prayer is waiting' : 'No reminders', onclick: function(){ go('prayers'); } }, icon('bell'), unread ? h('span', { class: 'pip' }) : null),
+    h('div', { class: 'tgl' }, icon('moon'), DarkRow().querySelector('button')), h('div', { class: 'mini' }, D.accents.map(function(a){ return h('button', { class: 'swb', 'aria-label': a.name + ' accent', onclick: function(){ Theme.set({ accentColor: a.value }); } }, h('span', { class: 'dot', style: 'background:' + a.value })); }))); }
+function QuickAccess(go){ return h('div', { class: 'mob' }, h('h2', { class: 'qh' }, 'Quick Access'), h('div', { class: 'qa' }, h('button', { class: 'ctile', 'data-k': 0, onclick: function(){ go('counsel'); } }, icon('people'), h('b', {}, 'Counseling Portal'), h('small', {}, 'Find support & healing')), h('button', { class: 'ctile', 'data-k': 1, onclick: function(){ go('hope'); } }, icon('heart'), h('b', {}, 'Messages of Hope'), h('small', {}, 'Encouragement for today')))); }
+function Dashboard(go){ var t = todayDev(); return h('div', {}, h('div', { class: 'dash' }, Hero(), TopBar(go), VerseCard(t, go), DevoCard(t), CounselCard(go), FeaturedCard(t, go), ThemeCard(), MiniMessages(go), HopeBanner(), PrayerCard()), QuickAccess(go)); }
 
-/* ---------- Messages of Hope: horizontal swipe carousel ---------- */
-function MessagesCarousel(){
-  var track = h('div', { class: 'carousel', role: 'region', 'aria-label': 'Messages of hope, swipe sideways', tabindex: '0' });
-  D.hope.forEach(function(m, i){ track.appendChild(h('article', { class: 'hope' }, h('div', {}, m), h('small', {}, (i + 1) + ' OF ' + D.hope.length))); });
-  var dots = h('div', { class: 'dots', 'aria-hidden': 'true' }); D.hope.forEach(function(_, i){ dots.appendChild(h('i', { class: i === 0 ? 'on' : '' })); });
-  function step(d){ var w = track.firstChild.getBoundingClientRect().width + 14; track.scrollBy({ left: d * w, behavior: 'smooth' }); }
-  var tick;
-  track.addEventListener('scroll', function(){ clearTimeout(tick); tick = setTimeout(function(){
-    var w = track.firstChild.getBoundingClientRect().width + 14, i = Math.min(D.hope.length - 1, Math.round(track.scrollLeft / w));
-    Array.prototype.forEach.call(dots.children, function(d, k){ d.className = k === i ? 'on' : ''; });
-  }, 60); });
-  return h('div', {}, h('h2', {}, 'Messages of Hope'), track, dots, h('div', { class: 'nav2' }, h('button', { class: 'btn ghost', 'aria-label': 'Previous message', onclick: function(){ step(-1); } }, '←  Previous'), h('button', { class: 'btn', 'aria-label': 'Next message', onclick: function(){ step(1); } }, 'Next  →')));
+/* ---------- Pages ---------- */
+function page(title, ic, go, body, back){ return h('div', {}, h('div', { class: 'phead' }, back !== false ? h('button', { class: 'back mob', 'aria-label': 'Back', onclick: function(){ history.length > 1 ? history.back() : go('home'); } }, '‹') : null, icon(ic), title), h('div', { class: 'sheet' }, body)); }
+function Devotions(go){ var t = todayDev(); return page('Daily Devotional', 'play', go, h('div', { class: 'stack narrow' }, YouTubePlayer(t.youtubeId, t.title), h('h2', {}, t.title),
+  h('div', { class: 'card' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('book')), 'Devotional'), h('p', {}, t.devotion), h('p', { style: 'margin-top:10px;font-style:italic' }, 'Prayer: ' + t.prayer)),
+  h('div', { class: 'quote serif' }, '“' + t.text + '”', h('div', { class: 'note', style: 'margin-top:6px;font-style:normal' }, t.ref + ' (KJV)')),
+  h('a', { class: 'btn block', href: 'https://www.youtube.com/watch?v=' + encodeURIComponent(t.youtubeId), target: '_blank', rel: 'noopener' }, '▶  Watch on YouTube'))); }
+function Hope(go){ var track = h('div', { class: 'car', style: 'display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none', tabindex: '0', role: 'region', 'aria-label': 'Messages of hope, swipe sideways' });
+  D.hope.forEach(function(m){ var s = MsgSlide(m); s.style.cssText = 'flex:0 0 100%;scroll-snap-align:center;height:380px;font-size:1.5rem;border-radius:20px'; track.appendChild(s); });
+  var thumbs = h('div', { style: 'display:flex;gap:10px;overflow-x:auto;scrollbar-width:none' }, D.hope.map(function(m, i){ var s = art(m.scene, {}, '', h('div', { class: 'serif', style: 'font-size:.7rem;padding:8px;height:100%' }, m.text.slice(0, 40) + '…')); s.style.cssText = 'flex:0 0 120px;height:100px;border-radius:12px;cursor:pointer'; s.setAttribute('role', 'button'); s.setAttribute('tabindex', '0'); s.addEventListener('click', function(){ track.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' }); }); return s; }));
+  return page('Messages of Hope', 'heart', go, h('div', { class: 'stack narrow' }, h('p', { class: 'note' }, 'Short reminders. Big truth. Swipe sideways.'), track, h('div', { class: 'row' }, h('button', { class: 'btn ghost', 'aria-label': 'Previous message', onclick: function(){ track.scrollBy({ left: -track.clientWidth, behavior: 'smooth' }); } }, '‹  Previous'), h('button', { class: 'btn', 'aria-label': 'Next message', onclick: function(){ track.scrollBy({ left: track.clientWidth, behavior: 'smooth' }); } }, 'Next  ›')), thumbs)); }
+function Counsel(go, id){
+  if(id){ var c = D.counseling.filter(function(x){ return x.id === id; })[0]; if(c) return CounselDetail(c, go); }
+  return page('Counseling Portal', 'people', go, h('div', { class: 'stack narrow' }, h('p', { style: 'text-align:center' }, 'You are not alone. There is help, hope and healing.'), h('div', { class: 'cgrid big' }, D.counseling.map(function(c, i){ return CatTile(c, i, go); })), h('div', { class: 'quote' }, 'Choose a category to get encouraging support, scripture and a practical action plan.'), h('p', { class: 'note' }, 'This is spiritual encouragement, not professional medical or mental health care. If you are in danger, contact your local emergency services or someone you trust right now.'))); }
+function CounselDetail(c, go){
+  var hero = art('sunrise', {}, '', h('div', { style: 'padding:26px 18px 30px;min-height:190px;display:flex;flex-direction:column;justify-content:flex-end' }, h('h1', { class: 'script', style: 'font-size:2.1rem;font-weight:400' }, '“' + c.title + '”'), h('p', {}, 'God sees you, walks with you and carries you through.')));
+  var pray = h('button', { class: 'btn block', onclick: function(){ var l = load(K.prayers, []); l.unshift({ t: 'Prayer about ' + c.title.toLowerCase() + ': ' + c.action, done: false, at: dayKey() }); save(K.prayers, l); go('prayers'); } }, 'Pray Now');
+  return page(c.title, CAT_IC[c.id] || 'heart', go, h('div', { class: 'narrow' }, hero, h('div', { class: 'card', style: 'margin-top:14px' },
+    h('div', { class: 'part' }, h('span', { class: 'num' }, '1'), h('div', {}, h('h3', {}, 'Validation'), h('p', {}, c.validation))),
+    h('div', { class: 'part' }, h('span', { class: 'num' }, '2'), h('div', {}, h('h3', {}, 'Scripture Anchors'), h('ul', { style: 'margin:0;padding-left:18px' }, c.anchors.map(function(a){ return h('li', { style: 'margin-bottom:8px' }, h('b', {}, a.ref + ' (KJV)'), h('div', { class: 'serif', style: 'font-style:italic' }, '“' + a.text + '”')); })))),
+    h('div', { class: 'part' }, h('span', { class: 'num' }, '3'), h('div', {}, h('h3', {}, 'Action Plan'), h('p', {}, c.action))), pray,
+    h('p', { class: 'note', style: 'margin-top:12px' }, 'Spiritual encouragement, not professional care. If you are in danger, contact emergency services or someone you trust right now.'))));
 }
+/* ---- Bible: books, chapters, reader (KJV text from bible-api.com, kept on the phone once read) ---- */
+function Bible(go, arg, query){
+  var tab = 'ot', q = (query || '').toLowerCase(), favs = load(K.favs, []), wrap = h('div', { class: 'stack narrow' });
+  var search = h('label', { class: 'search' }, icon('search'), h('input', { type: 'search', placeholder: 'Search books, chapters or verses...', value: query || '', 'aria-label': 'Search books', oninput: function(){ q = this.value.toLowerCase(); draw(); } }));
+  var tabs = h('div', { class: 'tabs2', role: 'tablist' }); var list = h('div', { class: 'list' });
+  function draw(){ tabs.innerHTML = ''; [['ot', 'Old Testament'], ['nt', 'New Testament'], ['fav', 'Favorites']].forEach(function(t){ tabs.appendChild(h('button', { role: 'tab', 'aria-selected': String(tab === t[0]), onclick: function(){ tab = t[0]; draw(); } }, t[1])); });
+    list.innerHTML = '';
+    if(tab === 'fav'){ if(!favs.length) list.appendChild(h('p', { class: 'note', style: 'padding:14px 0' }, 'No favorites yet. Open a chapter and tap the star.')); favs.forEach(function(f){ list.appendChild(h('button', { class: 'li', onclick: function(){ go('reader', f); } }, h('span', { class: 'circ', style: 'background:#d6a31a' }, '★'), f.book + ' ' + f.ch)); }); return; }
+    var all = D.books[tab], hue = 0; all.forEach(function(b, i){ if(q && b[0].toLowerCase().indexOf(q) < 0) return; var col = 'hsl(' + ((i * 47 + (tab === 'nt' ? 20 : 0)) % 360) + ',55%,48%)';
+      list.appendChild(h('button', { class: 'li', onclick: function(){ go('chapters', b[0]); } }, h('span', { class: 'circ', style: 'background:' + col }, b[0].replace(/^\d\s*/, '').charAt(0)), b[0], h('span', { class: 'chev' }, '›'))); }); }
+  draw(); wrap.append(search, tabs, list); return page('Bible', 'book', go, wrap, false); }
+function Chapters(go, book){ var all = D.books.ot.concat(D.books.nt), b = all.filter(function(x){ return x[0] === book; })[0]; if(!b) return Bible(go);
+  var g = h('div', { class: 'chap' }); for(var i = 1; i <= b[1]; i++) (function(n){ g.appendChild(h('button', { onclick: function(){ go('reader', { book: book, ch: n }); } }, String(n))); })(i);
+  return page(book, 'book', go, h('div', { class: 'stack narrow' }, h('p', { class: 'note' }, 'Choose a chapter. ' + b[1] + ' chapters.'), g)); }
+function Reader(go, ref){
+  var key = 'woh_ch_' + ref.book + '_' + ref.ch, body = h('div', { class: 'verses serif', 'aria-live': 'polite' }, h('p', { class: 'note' }, 'Loading…'));
+  function show(v){ body.innerHTML = ''; v.forEach(function(x){ body.appendChild(h('p', {}, h('sup', {}, String(x.verse)), x.text.replace(/\s+/g, ' ').trim())); }); }
+  var cached = load(key, null);
+  if(cached) show(cached); else fetch('https://bible-api.com/' + encodeURIComponent(ref.book + ' ' + ref.ch) + '?translation=kjv').then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ if(!j.verses || !j.verses.length) throw 0; save(key, j.verses.map(function(x){ return { verse: x.verse, text: x.text }; })); show(j.verses); })
+    .catch(function(){ body.innerHTML = ''; body.appendChild(h('p', { class: 'note' }, 'This chapter needs an internet connection the first time. Please connect and try again. Once read, it stays on your phone.')); });
+  var favs = load(K.favs, []), isFav = function(){ return favs.some(function(f){ return f.book === ref.book && f.ch === ref.ch; }); };
+  var star = h('button', { class: 'btn ghost', 'aria-label': 'Favorite this chapter', 'aria-pressed': String(isFav()), onclick: function(){ favs = isFav() ? favs.filter(function(f){ return !(f.book === ref.book && f.ch === ref.ch); }) : favs.concat([{ book: ref.book, ch: ref.ch }]); save(K.favs, favs); this.textContent = isFav() ? '★ Favorite' : '☆ Favorite'; this.setAttribute('aria-pressed', String(isFav())); } }, isFav() ? '★ Favorite' : '☆ Favorite');
+  var max = D.books.ot.concat(D.books.nt).filter(function(x){ return x[0] === ref.book; })[0][1];
+  return page(ref.book + ' ' + ref.ch, 'book', go, h('div', { class: 'stack narrow' }, h('div', { class: 'card' }, body), h('div', { class: 'row' }, h('button', { class: 'btn ghost', disabled: ref.ch <= 1, onclick: function(){ go('reader', { book: ref.book, ch: ref.ch - 1 }); } }, '‹ Previous'), star, h('button', { class: 'btn', disabled: ref.ch >= max, onclick: function(){ go('reader', { book: ref.book, ch: ref.ch + 1 }); } }, 'Next ›')), h('p', { class: 'note' }, 'King James Version (public domain).'))); }
+function Prayers(go){ var list = load(K.prayers, []), box = h('div', { class: 'list' }), inp = h('textarea', { rows: '3', placeholder: 'Write a prayer or a request...', 'aria-label': 'New prayer' });
+  function draw(){ box.innerHTML = ''; if(!list.length) box.appendChild(h('p', { class: 'note', style: 'padding:10px 0' }, 'No prayers yet. Write one above.')); list.forEach(function(p, i){ box.appendChild(h('div', { class: 'li', style: 'align-items:flex-start' }, h('input', { type: 'checkbox', checked: p.done, 'aria-label': 'Mark as prayed', style: 'width:22px;height:22px;margin-top:3px', onchange: function(){ p.done = this.checked; save(K.prayers, list); } }), h('div', { style: 'flex:1' }, h('div', {}, p.t), h('small', {}, p.at)), h('button', { class: 'btn ghost', 'aria-label': 'Delete prayer', style: 'min-height:36px;padding:6px 12px', onclick: function(){ list.splice(i, 1); save(K.prayers, list); draw(); } }, '✕'))); }); }
+  draw(); return page('My Prayers', 'pray', go, h('div', { class: 'stack narrow' }, h('div', { class: 'card' }, inp, h('button', { class: 'btn block', style: 'margin-top:10px', onclick: function(){ var t = inp.value.trim(); if(!t) return; list.unshift({ t: t.slice(0, 600), done: false, at: dayKey() }); save(K.prayers, list); inp.value = ''; draw(); } }, 'Add Prayer')), h('div', { class: 'card' }, box))); }
+function Notes(go){ var list = load(K.notes, []), box = h('div', { class: 'list' }), inp = h('textarea', { rows: '4', placeholder: 'Write a note from today\'s reading...', 'aria-label': 'New note' });
+  function draw(){ box.innerHTML = ''; if(!list.length) box.appendChild(h('p', { class: 'note', style: 'padding:10px 0' }, 'No notes yet.')); list.forEach(function(n, i){ box.appendChild(h('div', { class: 'li', style: 'align-items:flex-start' }, h('div', { style: 'flex:1;white-space:pre-wrap' }, n.t, h('small', {}, n.at)), h('button', { class: 'btn ghost', 'aria-label': 'Delete note', style: 'min-height:36px;padding:6px 12px', onclick: function(){ list.splice(i, 1); save(K.notes, list); draw(); } }, '✕'))); }); }
+  draw(); return page('Notes', 'note', go, h('div', { class: 'stack narrow' }, h('div', { class: 'card' }, inp, h('button', { class: 'btn block', style: 'margin-top:10px', onclick: function(){ var t = inp.value.trim(); if(!t) return; list.unshift({ t: t.slice(0, 2000), at: dayKey() }); save(K.notes, list); inp.value = ''; draw(); } }, 'Save Note')), h('div', { class: 'card' }, box))); }
+function ThemePage(go){ var fs = h('div', { class: 'fs' }); function draw(){ fs.innerHTML = ''; [['small', 'A', '.8em'], ['medium', 'A', '1em'], ['large', 'A', '1.3em']].forEach(function(f){ fs.appendChild(h('button', { 'aria-pressed': String(Theme.get().fontSize === f[0]), 'aria-label': f[0] + ' text', style: 'font-size:' + f[2], onclick: function(){ Theme.set({ fontSize: f[0] }); draw(); } }, f[1])); }); } draw();
+  return page('Theme & Appearance', 'gear', go, h('div', { class: 'stack narrow' }, h('div', { class: 'card' }, DarkRow(), h('div', { style: 'font-weight:600;margin-top:16px' }, 'Accent Color'), h('div', { class: 'note' }, 'Choose your favorite colour.'), Swatches(true)), art('dawn', {}, 'card', h('div', { class: 'script', style: 'font-size:2rem;padding:34px 8px' }, 'A new day. Same God. Bigger plans.')), h('div', { class: 'card' }, h('b', {}, 'Font Size'), h('div', { class: 'note', style: 'margin-bottom:10px' }, 'Adjust text size for better readability.'), fs))); }
+function Founder(){ return h('section', { class: 'card founder', 'aria-label': 'About the Founder' }, h('div', { html: '<svg viewBox="0 0 80 60" style="width:44px;height:34px" aria-hidden="true"><path d="M40 4v24M31 12h18" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M8 38q16-7 32 3 16-10 32-3v12q-16-7-32 3-16-10-32-3z" fill="none" stroke="#9fc4ff" stroke-width="3"/></svg>' }), h('h2', {}, 'About the Founder'), h('p', {}, 'Founded & Developed by Loren Ashyn Van Rensburg. Dedicated to making the Word available to everyone, everywhere, entirely for free.'), h('div', { class: 'sig script' }, 'Loren Ashyn Van Rensburg'), h('p', { class: 'note', style: 'color:#cfe0ff;margin-top:10px' }, '♥ 100% Free • No Paywalls • No Subscriptions • Ever')); }
+function Settings(go){ var name = h('input', { type: 'text', id: 'nameIn', value: getName(), placeholder: 'Your name', maxlength: '40', 'aria-label': 'Your name', oninput: function(){ save(K.name, this.value.trim()); } });
+  return page('Settings', 'gear', go, h('div', { class: 'stack narrow' }, h('div', { class: 'card' }, h('div', { class: 'ch' }, h('span', { class: 'ic' }, icon('person')), 'Account'), h('div', { class: 'note', style: 'margin-bottom:8px' }, 'Your name is used for your greeting. It stays on this phone.'), name),
+    h('div', { class: 'card list' }, h('button', { class: 'li', onclick: function(){ go('theme'); } }, icon('gear'), h('span', {}, 'Theme & Appearance', h('small', {}, 'Dark mode & accent color')), h('span', { class: 'chev' }, '›')), h('div', { class: 'li' }, icon('book'), h('span', {}, 'About the App', h('small', {}, 'Version 1.0.0')))), Founder())); }
+function More(go){ var items = [['counsel', 'people', 'Counseling Portal'], ['hope', 'heart', 'Messages of Hope'], ['prayers', 'pray', 'My Prayers'], ['notes', 'note', 'Notes'], ['theme', 'gear', 'Theme & Appearance'], ['settings', 'gear', 'Settings']];
+  return page('More', 'more', go, h('div', { class: 'card list narrow' }, items.map(function(i){ return h('button', { class: 'li', onclick: function(){ go(i[0]); } }, icon(i[1]), i[2], h('span', { class: 'chev' }, '›')); })), false); }
 
-/* ---------- Biblical Counseling Portal ---------- */
-function CounselingCard(c, open){ return h('button', { class: 'tile', onclick: function(){ open(c); } }, h('span', { class: 'ic', 'aria-hidden': 'true' }, c.icon), h('b', {}, c.title)); }
-function showCounseling(c){
-  var m = $('#modal');
-  m.innerHTML = '';
-  m.appendChild(h('div', { class: 'mbody' },
-    h('div', { class: 'row' }, h('h2', { id: 'modalTitle', style: 'margin:0' }, c.icon + '  ' + c.title), h('button', { class: 'btn ghost', 'aria-label': 'Close', onclick: function(){ m.close(); } }, '✕')),
-    h('div', { class: 'sec' }, h('h3', {}, '1. You are not alone'), h('p', { style: 'margin:0' }, c.validation)),
-    h('div', { class: 'sec' }, h('h3', {}, '2. Scripture anchors'), h('ul', { class: 'anchors' }, c.anchors.map(function(a){ return h('li', {}, h('b', {}, a.ref + ' (KJV)'), h('div', { style: 'font-style:italic' }, '“' + a.text + '”')); }))),
-    h('div', { class: 'sec' }, h('h3', {}, '3. Action plan'), h('p', { style: 'margin:0' }, c.action)),
-    h('p', { class: 'note' }, 'This is spiritual encouragement, not professional medical or mental health care. If you are in danger or thinking of harming yourself, contact your local emergency services or a trusted person right now.')));
-  if(!m.open) m.showModal();
+/* ---------- shell: sidebar (desktop), bottom nav (mobile), routing ---------- */
+var SIDE = [['home', 'home', 'Dashboard'], ['bible', 'book', 'Bible'], ['devotions', 'cal', 'Devotions'], ['counsel', 'people', 'Counseling'], ['hope', 'heart', 'Messages of Hope'], ['prayers', 'pray', 'My Prayers'], ['notes', 'note', 'Notes'], ['settings', 'gear', 'Settings']];
+var BOTTOM = [['home', 'home', 'Home'], ['bible', 'book', 'Bible'], ['devotions', 'play', 'Devotions'], ['more', 'more', 'More']];
+var GROUP = { chapters: 'bible', reader: 'bible', theme: 'settings' };
+function build(){
+  var s = $('#side'); s.innerHTML = '';
+  s.appendChild(h('div', { class: 'brand', html: LOGO + '<div class="t">Draw Near</div><div class="s">BIBLE • DEVOTIONAL • HOPE</div>' }));
+  s.appendChild(h('div', { class: 'nav', role: 'navigation' }, SIDE.map(function(i){ return h('a', { 'data-nav': i[0], role: 'link', tabindex: '0', onclick: function(){ go(i[0]); }, onkeydown: function(e){ if(e.key === 'Enter') go(i[0]); } }, icon(i[1]), i[2]); })));
+  s.appendChild(h('div', { class: 'founder-side' }, h('div', { class: 'avatar', 'aria-hidden': 'true' }, 'L'), h('h3', {}, 'About the Founder'), h('p', {}, 'Founded & Developed by Loren Ashyn Van Rensburg. Dedicated to making the Word available to everyone, everywhere, entirely for free.'), h('div', { class: 'sig script' }, 'Loren Ashyn Van Rensburg'), h('div', { class: 'free' }, '♥  100% Free  •  No Paywalls  •  No Subscriptions  •  Ever')));
 }
-function CounselingPortal(){ return h('div', {}, h('h2', {}, 'Biblical Counseling'), h('p', { style: 'margin:0 0 14px;color:var(--muted)' }, 'Choose what you are facing. You will find comfort, scripture and one simple step.'), h('div', { class: 'grid' }, D.counseling.map(function(c){ return CounselingCard(c, showCounseling); }))); }
-
-/* ---------- Settings: theme, accent colour, name, and the founder ---------- */
-function SettingsPanel(rerender){
-  var cur = Theme.get();
-  var sw = h('button', { class: 'switch', role: 'switch', 'aria-checked': String(cur.themeMode === 'dark'), 'aria-label': 'Dark mode', id: 'darkSwitch', onclick: function(){ var d = Theme.get().themeMode === 'dark' ? 'light' : 'dark'; Theme.set({ themeMode: d }); this.setAttribute('aria-checked', String(d === 'dark')); } });
-  var swatches = h('div', { class: 'swatches', role: 'group', 'aria-label': 'Accent colour' });
-  D.accents.forEach(function(a){
-    swatches.appendChild(h('button', { class: 'swatch', style: 'background:' + a.value, title: a.name, 'aria-label': a.name, 'aria-pressed': String(a.value.toLowerCase() === cur.accentColor.toLowerCase()), 'data-color': a.value, onclick: function(){
-      Theme.set({ accentColor: a.value }); Array.prototype.forEach.call(swatches.children, function(b){ b.setAttribute('aria-pressed', String(b === this)); }, this);
-    } }));
-  });
-  var name = h('input', { type: 'text', id: 'nameIn', value: getName(), placeholder: 'Your name', maxlength: '40', autocomplete: 'given-name', 'aria-label': 'Your name' });
-  name.addEventListener('input', function(){ try { localStorage.setItem(NAME_KEY, name.value.trim()); } catch(e) {} });
-  return h('div', {}, h('h2', {}, 'Settings'),
-    h('section', { class: 'card' }, h('div', { class: 'row' }, h('label', { for: 'darkSwitch' }, h('b', {}, 'Dark mode')), sw), h('div', { class: 'eyebrow', style: 'margin-top:16px' }, 'Accent colour'), swatches),
-    h('section', { class: 'card' }, h('label', { for: 'nameIn' }, h('b', {}, 'Your name')), name, h('p', { class: 'note' }, 'Used for your greeting. It stays on this phone.')),
-    h('section', { class: 'card founder', 'aria-label': 'About the founder' }, h('div', { class: 'seal', 'aria-hidden': 'true' }, '✝'), h('div', { class: 'eyebrow' }, 'About the Founder'), h('h3', {}, 'Loren Ashyn Van Rensburg'), h('p', {}, 'Founded & Developed by Loren Ashyn Van Rensburg. Dedicated to making the Word available to everyone, everywhere, entirely for free.')),
-    h('p', { class: 'note', style: 'text-align:center' }, 'Word of Hope is 100% free. Scripture: King James Version (public domain).'));
+var ROUTES = { home: Dashboard, bible: Bible, chapters: Chapters, reader: Reader, devotions: Devotions, counsel: Counsel, hope: Hope, prayers: Prayers, notes: Notes, settings: Settings, theme: ThemePage, more: More };
+function go(id, arg, query){
+  var view = $('#view'); view.innerHTML = ''; view.appendChild((ROUTES[id] || Dashboard)(go, arg, query));
+  var cur = GROUP[id] || id;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-nav]'), function(a){ if(a.getAttribute('data-nav') === cur) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  var b = $('#bnav'); b.innerHTML = ''; var bcur = ['home', 'bible', 'devotions'].indexOf(cur) > -1 ? cur : 'more';
+  BOTTOM.forEach(function(t){ b.appendChild(h('button', { 'aria-current': t[0] === bcur ? 'page' : false, 'data-tab': t[0], onclick: function(){ go(t[0]); } }, icon(t[1]), t[2])); });
+  window.scrollTo(0, 0);
 }
-
-/* ---------- App shell: tab navigation ---------- */
-var TABS = [['home', '🏠', 'Home'], ['hope', '🕊️', 'Hope'], ['counsel', '🤝', 'Counsel'], ['settings', '⚙️', 'Settings']];
-var current = 'home';
-function nav(id){
-  current = id; var view = $('#view'); view.innerHTML = '';
-  view.appendChild(id === 'home' ? DashboardLayout(nav) : id === 'hope' ? MessagesCarousel() : id === 'counsel' ? CounselingPortal() : SettingsPanel());
-  var tabs = $('#tabs'); tabs.innerHTML = '';
-  TABS.forEach(function(t){ tabs.appendChild(h('button', { 'aria-current': t[0] === id ? 'page' : false, 'data-tab': t[0], onclick: function(){ nav(t[0]); window.scrollTo(0, 0); } }, h('span', { class: 'e', 'aria-hidden': 'true' }, t[1]), t[2])); });
-  try { history.replaceState(null, '', '#' + id); } catch(e) {}
-}
-$('#modal').addEventListener('click', function(e){ if(e.target === this) this.close(); });
-var start = (location.hash || '').slice(1);
-nav(TABS.some(function(t){ return t[0] === start; }) ? start : 'home');
+build(); go('home');
 if('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){ try { navigator.serviceWorker.register('sw.js'); } catch(e) {} }
 })();
