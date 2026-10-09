@@ -206,3 +206,8 @@ h2{letter-spacing:.2px}
 .verses.rtl .v sup{margin-left:6px;margin-right:0}
 :lang(ar) .v,:lang(he) .v{font-family:"Noto Naskh Arabic","Noto Sans Hebrew","Times New Roman",serif}
 .ytthumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.player .play{z-index:1}
+
+/* gospel music card */
+.song{padding:12px 0;border-top:1px solid var(--line)}.song:first-of-type{border-top:0}
+.lyric{white-space:pre-wrap;font-style:italic;border-left:4px solid var(--gold);padding:6px 12px;background:color-mix(in srgb,var(--gold) 10%,var(--card));border-radius:8px}
+.musiccard .li{text-decoration:none;color:inherit}
