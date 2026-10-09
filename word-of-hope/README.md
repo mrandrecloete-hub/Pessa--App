@@ -35,3 +35,9 @@ Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artw
 - `daily.js` (built by `node tools/build_daily.js`): 366 different daily verses in 25 themes with exact KJV text. The devotion, verse of the day, journal prompt and dashboard all follow the phone's local date, so every phone shows the same day's content and rolls over at midnight, even if the app stays open.
 - YouTube uses a plain embed (no extra script) and listens to the player's own messages for errors. A Watch on YouTube link is always shown under the video.
 - Book covers load from Project Gutenberg or Open Library when online; the drawn cover stays if they cannot load.
+
+## Bible in many languages (added)
+- Bundled offline: KJV (English), Smith-Van Dyck 1865 (Arabic, full Bible) and the Aleppo Codex (Hebrew Old Testament), under `bible/svd` and `bible/aleppo` (from the open bible-data collection, public domain). Arabic and Hebrew display right to left.
+- 30 more versions in 23 languages load from the open bible-data collection (raw.githubusercontent.com, with a jsDelivr fallback) and are saved on the phone once read. The Hebrew and Greek originals are Old Testament only and New Testament only.
+- Copyrighted versions (Afrikaans 1953, NIV, ESV and others) cannot be bundled; the optional free API.Bible key adds many of them.
+- The Reader has a version picker at the top. The app screens themselves are still English.

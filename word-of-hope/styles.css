@@ -200,3 +200,9 @@ h2{letter-spacing:.2px}
 .ytwrap{display:flex;flex-direction:column;gap:4px}.ythint{margin:0;text-align:center}.ythint a{color:var(--accent);font-weight:700}
 .cover{position:relative;overflow:hidden}.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
 .cover.real{border-left:0;padding:0}.cover.real span{display:none}
+
+/* right to left Bible text (Arabic, Hebrew) */
+.verses.rtl{text-align:right;font-size:1.18em;line-height:2}
+.verses.rtl .v sup{margin-left:6px;margin-right:0}
+:lang(ar) .v,:lang(he) .v{font-family:"Noto Naskh Arabic","Noto Sans Hebrew","Times New Roman",serif}
+.ytthumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.player .play{z-index:1}
