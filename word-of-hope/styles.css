@@ -280,3 +280,8 @@ body.on-signin #app{display:block}body.on-signin .main{margin-left:0!important;m
 .auth-out{margin-top:8px;border-radius:12px;padding:0}.auth-out p{margin:6px 0}
 .auth-out.good,.auth-out.warn,.auth-out.bad{padding:8px 12px}.auth-out.good{background:#e6f7ec;color:#0c5a2a}.auth-out.warn{background:#fff3d6;color:#7a4b00}.auth-out.bad{background:#fde6e6;color:#8f1522}
 .unofficial{position:sticky;top:0;z-index:90;background:#8f1522;color:#fff;padding:10px 14px;font-weight:600;text-align:center}.unofficial a{color:#ffe08a}
+
+/* founder photo in the blue boxes */
+.fphoto{display:block;width:120px;height:120px;border-radius:50%;object-fit:cover;object-position:center 30%;margin:0 auto 10px;border:3px solid var(--gold);box-shadow:0 0 0 4px rgba(245,181,46,.25),0 8px 20px rgba(0,0,0,.35);background:#10358f}
+.fphoto.sm{width:88px;height:88px;margin-bottom:8px}
+.founder,.founder-side{text-align:center}.founder p,.founder-side p{text-align:center}
