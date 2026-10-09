@@ -314,3 +314,5 @@ body.on-signin #app{display:block}body.on-signin .main{margin-left:0!important;m
 .prayer-card{border-top-color:var(--accent)}.prayer-card h3{margin:0 0 6px}.ptext{white-space:pre-wrap;line-height:1.7;font-size:1.04rem;background:color-mix(in srgb,var(--gold) 9%,var(--card));border-left:4px solid var(--gold);border-radius:10px;padding:12px 14px}
 .care{background:color-mix(in srgb,var(--accent) 8%,var(--card))}
 .deeplink{display:flex;align-items:center;gap:12px;width:100%;text-align:left;color:var(--ink);font:inherit;border:1px solid var(--line);cursor:pointer}.deeplink span:nth-child(2){flex:1;display:flex;flex-direction:column}.deeplink small{color:var(--muted)}.deeplink img.i3{width:44px;height:44px}
+
+.ytcap{margin:6px 2px 0;font-size:.88rem;color:var(--muted)}.ytcap b{color:var(--ink)}
