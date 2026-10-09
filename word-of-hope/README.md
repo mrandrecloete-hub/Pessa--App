@@ -52,3 +52,7 @@ Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artw
 - Verse pictures are drawn on the phone from original artwork or the user's own photo. Pinterest images belong to their creators, so none are copied; use photos you own or from free sources such as Unsplash, Pexels or Pixabay (check each licence).
 - Security (browser level, not a network firewall): a Content-Security-Policy in index.html and `_headers` (for Netlify), sign-in lockout after 5 wrong passwords, a warning on unofficial addresses, and an Authentic build check (About) that compares the program files on the phone with `integrity.json` and with the official site.
 - Release step: after every change run `node tools/build_integrity.js` inside the app folder, then publish. Files can still be copied by anyone who opens the app; this makes changes visible, it does not prevent copying, and it is not a certificate from any outside body. See LICENSE.
+
+## Notes as a word processor (added)
+Notes: list with search and pin, and an editor with undo and redo, heading styles, font size and family, bold, italic, underline, strikethrough, text colour and highlight, alignment, bullet and numbered lists, indent, tables, links, divider, date, clear formatting, find and replace, word count, autosave, and Download Word (.doc), Download text, Print / PDF, Copy and Share. Pasted or stored text is cleaned so scripts and unsafe tags cannot run.
+The founder photo shows only on the About page.
