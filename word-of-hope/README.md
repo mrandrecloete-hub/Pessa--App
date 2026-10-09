@@ -16,3 +16,10 @@ A free Bible and devotional app. Plain HTML, CSS and JavaScript, no build step. 
 Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artwork drawn in code), `app.js` (components), `styles.css`.
 
 **Replace before sharing:** every devotion uses the sample YouTube ID `dQw4w9WgXcQ`. Put your own devotional video IDs in `mockData.js` (`youtubeId`). Scripture is the King James Version (public domain). The scenic pictures are drawn in code, not photographs, so you can swap in licensed photos later. The counseling portal is spiritual encouragement, not professional care, and says so.
+
+## Guide, translations, downloads (added)
+- `knowledge.js`: built in Bible knowledge (66 books, 25 life topics with KJV verses, practices and prayers, 8 biblical coping skills, faith Q&A).
+- `assistant.js`: the Ashelz Guide engine. Rule based and offline, no AI service. It answers feelings and questions from the knowledge base, runs app actions (open chapters, theme, prayers, notes, reminders) and puts safety first for crisis words. It is not a general chatbot or a counselor.
+- Translations: bible-api.com versions work without a key. A free key from scripture.api.bible adds many more versions and languages (entered in Bible Translations, kept on the phone). Live services were tested here only with mocked responses.
+- Devotion videos: YouTube IFrame API with loading, error messages and retry. YouTube videos cannot be downloaded inside the app; slides (PNG ZIP) and text can. Add `videoUrl` (mp4) to a devotion in mockData.js for a downloadable video.
+- Select any text to copy, share, highlight (saved to Notes) or ask the Guide.
