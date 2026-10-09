@@ -59,3 +59,7 @@ The founder photo shows only on the About page.
 
 ## Deep topics and powerful prayers (added)
 `tools/deep_src.js` holds 22 topics (witchcraft and the occult, sexual sin and restoration, idolatry, curses and generational patterns, pride and rebellion, spiritual warfare, lust and purity, repentance, born again, sin, death, life, heaven, hell and judgment, demons and deliverance, angels, the blood of Jesus, the Holy Spirit, strongholds and addictions, the fear of the Lord, the second coming, fasting) with teaching points, reflection questions, 24 prayers and declarations. `node tools/build_deep.js` checks every scripture reference against the bundled KJV and writes `deep.js`. The Ashelz Guide also answers questions on these topics. Care notes point to pastors, doctors and emergency services where that matters.
+
+## Online Homecell (added)
+Create a Homecell (name, leader, weekly day and time) with a private random code, invite by WhatsApp or Facebook, join with a code or link, and test your camera and microphone first. Calls run on Jitsi Meet (meet.jit.si): "Join now" opens the room on its own tab (best on phones), "Join inside Ashelz" opens it full screen in the app. Ashelz does not record or store calls. The Permissions-Policy in `_headers` allows camera and microphone for the app and meet.jit.si.
+Graphics: all 3D icons are 256 px; the 10 original icons were upscaled 2x with sharpening (no new detail), the rest were re-rendered from vector at 256 px.

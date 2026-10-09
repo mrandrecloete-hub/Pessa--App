@@ -332,3 +332,21 @@ body.on-signin #app{display:block}body.on-signin .main{margin-left:0!important;m
 /* note save buttons */
 .ntop{display:flex;gap:8px;align-items:center}.ntop .ntitle{flex:1;min-width:0}.nsave{flex:0 0 auto;min-height:44px;padding:8px 16px}
 .nsavebar{gap:8px;justify-content:stretch}.nsavebar .btn{flex:1}
+
+/* quality: bolder letters, richer colour, crisper graphics */
+:root:not([data-theme=dark]){--ink:#0b1630;--muted:#3f4f78;--line:#cfd9ef}
+body{font-weight:500;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+h1,h2,h3{font-weight:800;letter-spacing:.1px}.phead{font-weight:800}
+.btn{font-weight:800;letter-spacing:.2px}.li{font-weight:600}.li small{font-weight:500}.note{font-weight:500}
+.ctile b,.nav a,.bnav button{font-weight:700}.ctile{font-weight:700}.chip{font-weight:800}.tag{font-weight:800}
+.card{box-shadow:0 10px 30px rgba(12,34,84,.14)}
+img.i3{filter:saturate(1.2) contrast(1.06) drop-shadow(0 3px 4px rgba(10,31,77,.38));image-rendering:-webkit-optimize-contrast}
+.art>svg,.vwatch>svg{filter:saturate(1.25) contrast(1.06)}
+.ctile[data-k="6"]{--t:#ffe8d6;--c:#d9480f}.ctile[data-k="7"]{--t:#e6f7ec;--c:#0c7a3a}.ctile[data-k="8"]{--t:#e3eeff;--c:#1b6ef3}.ctile[data-k="9"]{--t:#fff1d2;--c:#c98400}
+/* Online Homecell */
+.hcell-hero{border-radius:20px;color:#fff}.homecell input,.homecell select{width:100%;margin:6px 0;padding:12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600}
+.camprev{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;background:#000;transform:scaleX(-1);margin:8px 0;display:block}.camprev[hidden],.micmeter[hidden]{display:none}
+.micmeter{height:12px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0 10px}.micmeter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2fbf71,#F5B52E,#D8343F);transition:width .08s}
+.cellcard .ch .ic{width:2.4rem;height:2.4rem}
+.meetwrap{position:fixed;inset:0;z-index:120;background:#050d26;display:flex;flex-direction:column}.meetwrap iframe{flex:1;width:100%;border:0;background:#000}
+.meetbar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0a1f4d;color:#fff}.meetgap{flex:1}.leavebtn{background:#D8343F!important;color:#fff!important}
