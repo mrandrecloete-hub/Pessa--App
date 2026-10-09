@@ -56,3 +56,6 @@ Files: `mockData.js` (all content), `theme.js` (ThemeContext), `scenes.js` (artw
 ## Notes as a word processor (added)
 Notes: list with search and pin, and an editor with undo and redo, heading styles, font size and family, bold, italic, underline, strikethrough, text colour and highlight, alignment, bullet and numbered lists, indent, tables, links, divider, date, clear formatting, find and replace, word count, autosave, and Download Word (.doc), Download text, Print / PDF, Copy and Share. Pasted or stored text is cleaned so scripts and unsafe tags cannot run.
 The founder photo shows only on the About page.
+
+## Deep topics and powerful prayers (added)
+`tools/deep_src.js` holds 17 topics (spiritual warfare, lust and purity, repentance, born again, sin, death, life, heaven, hell and judgment, demons and deliverance, angels, the blood of Jesus, the Holy Spirit, strongholds and addictions, the fear of the Lord, the second coming, fasting) with teaching points, reflection questions, 24 prayers and declarations. `node tools/build_deep.js` checks every scripture reference against the bundled KJV and writes `deep.js`. The Ashelz Guide also answers questions on these topics. Care notes point to pastors, doctors and emergency services where that matters.
