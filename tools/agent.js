@@ -226,6 +226,9 @@ function agentParse(raw){
   if(!q) return { text:'Type or say what you need, for example: how much did I sell today?' };
   var staff = true; try{ staff = isManagerOrOwner(); }catch(e){}
   if(!staff) return { text:'The assistant helps owners and managers.' };
+  var rem = text.match(/^(?:please\s+)?remember(?:\s+that)?[:\s]+(.{3,300})$/i);
+  if(rem){ var note = rem[1].trim(); return { text:'Save this note? It stays on this phone and you can delete it any time.', lines:[note], confirm:function(){ aiNoteAdd(note); return 'Saved. See and delete notes under Pesa AI, My saved notes.'; } }; }
+  if(/^(what do you remember|what have you remembered|show (my )?(saved )?notes|my saved notes|forget (everything|all))$/.test(q)) return { text:'Opening your saved notes. You can edit or delete any of them there.', go:'ainotes', open:true };
 
   // removals are never done from here
   if(/^(delete|remove|erase|clear|wipe)\b/.test(q)) return { text:'Removing records needs a manager or owner password and a reason, so I will not do it from here. Open the page and remove it there.', go:'', pages:AGENT_PAGES.filter(function(x){ return x[0].test(q); }).slice(0, 1) };
@@ -384,14 +387,14 @@ function openAgentSheet(){
       return '<div class="row"><div class="main"><div class="title" style="color:' + (col[n.level] || col.info) + ';">' + esc(n.title) + '</div><div class="sub">' + esc(n.body) + '</div><div class="sub">' + esc(fmtDateTime(n.createdAt)) + '</div></div>' +
         '<div class="trail">' + (n.status !== 'dismissed' && n.status !== 'done' ? '<button class="btn btn-ghost" data-ag-x="' + i + '" type="button">' + tr('Done') + '</button>' : '') + '</div></div>';
     }).join('') + '</div>' : '<div class="ac-help">' + tr('No notes yet. The assistant checks by itself every half hour and leaves notes here and in the Alert centre.') + '</div>') +
-    '<div class="ac-btns" style="margin-top:12px;"><button class="btn btn-ghost" id="agToggle" type="button">' + tr(on ? 'Pause assistant' : 'Turn assistant on') + '</button><button class="btn btn-primary" id="agRun" type="button">' + tr('Check now') + '</button></div>' +
+    '<div class="ac-btns" style="margin-top:12px;"><button class="btn btn-ghost" id="agAi" type="button">' + tr('Pesa AI') + '</button><button class="btn btn-ghost" id="agFile" type="button">' + tr('Attach a CSV file') + '</button><button class="btn btn-ghost" id="agToggle" type="button">' + tr(on ? 'Pause assistant' : 'Turn assistant on') + '</button><button class="btn btn-primary" id="agRun" type="button">' + tr('Check now') + '</button></div>' +
     '<div class="rep-note" style="margin-top:12px;">' + tr('The assistant works from your own records on this device and only does what you confirm. These are signs worth checking, not proof that anyone did anything wrong. It will not remove records: that needs a manager or owner password and a reason on the page itself. Anything it does while offline sends when the connection returns.') + '</div>' +
     '<div class="ac-foot"><i>Pesa</i><span>' + tr('Your Mula, Your Pride') + '</span></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="agClose" type="button">' + tr('Close') + '</button></div>';
   var ov = openSheet(html);
   var shEl = ov.querySelector('.sheet'); if(shEl) shEl.classList.add('ac-dark');
   var inp = ov.querySelector('#agQ'), out = ov.querySelector('#agOut');
-  function go(r){ closeModal(); if(r.page) handleDrawerAction(r.page); else if(r.go === 'alerts') openSmartSection('alerts'); else if(r.go) openSmartSection(r.go); }
+  function go(r){ closeModal(); if(r.go === 'ainotes'){ openAiNotesSheet(); return; } if(r.page) handleDrawerAction(r.page); else if(r.go === 'alerts') openSmartSection('alerts'); else if(r.go) openSmartSection(r.go); }
   function show(q, r){
     var h = '<div class="ag-msg me" style="animation:none">' + esc(q) + '</div><div class="ag-msg"><div style="font-weight:700;">' + esc(r.text) + '</div>' +
       (r.lines ? r.lines.map(function(l){ return '<div class="ln">' + esc(l) + '</div>'; }).join('') : '') + '<div class="ag-btns">' +
@@ -416,13 +419,27 @@ function openAgentSheet(){
   function ask(t){
     t = String(t || '').trim(); if(!t) return; inp.value = '';
     var r; try{ r = agentParse(t); }catch(e){ r = { text:'Something went wrong with that request. Nothing was changed.' }; }
+    if(!r.confirm && !r.go && !r.page && /^I did not understand/.test(r.text) && aiReady()){ askAi(t); return; }
     show(t, r);
+  }
+  function askAi(t){
+    var token = ++_agent.say;
+    out.innerHTML = '<div class="ag-msg me ag-in">' + esc(t) + '</div><div class="ag-msg ag-think" aria-label="' + esc(tr('Thinking')) + '"><i></i><i></i><i></i></div><div class="ag-btns"><button class="btn btn-ghost" id="agStop" type="button">' + tr('Cancel') + '</button></div>';
+    var stop = out.querySelector('#agStop'); if(stop) stop.addEventListener('click', function(){ aiCancel(); });
+    aiAsk(t).then(function(a){
+      if(token !== _agent.say) return;
+      var lines = (a.lines || []).concat((a.notes || []).map(function(n){ return 'Note: ' + n; }));
+      out.innerHTML = '<div class="ag-msg me" style="animation:none">' + esc(t) + '</div><div class="ag-msg"><div style="font-weight:700;white-space:pre-wrap;">' + esc(a.text) + '</div>' +
+        lines.map(function(l){ return '<div class="ln">' + esc(l) + '</div>'; }).join('') + '<div class="ln" style="opacity:.75;">' + esc(tr('Written by AI. It can make mistakes, so check important figures.')) + '</div></div>';
+    }, function(e){ if(token !== _agent.say) return; show(t, { text:aiErrorText(e) }); });
   }
   ov.querySelector('#agGo').addEventListener('click', function(){ ask(inp.value); });
   inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); ask(inp.value); } });
   var mic = ov.querySelector('#agMic'); if(mic) mic.addEventListener('click', function(){ startVoiceSearch(mic, ask); });
   ov.querySelectorAll('[data-ag-t]').forEach(function(b){ b.addEventListener('click', function(){ ask(AGENT_TILES[+b.getAttribute('data-ag-t')][2]); }); });
   ov.querySelectorAll('[data-ag-e]').forEach(function(b){ b.addEventListener('click', function(){ var t = AGENT_TRY[+b.getAttribute('data-ag-e')]; inp.value = t; inp.focus(); }); });
+  ov.querySelector('#agAi').addEventListener('click', function(){ closeModal(); openAiSettingsSheet(); });
+  ov.querySelector('#agFile').addEventListener('click', function(){ aiAttachPick(function(n){ toast(tr('Attached') + ': ' + n); }); });
   ov.querySelector('#agToggle').addEventListener('click', function(){ btSave({ agentOff: on }); closeModal(); openAgentSheet(); });
   ov.querySelector('#agRun').addEventListener('click', function(){ _agent.last = 0; agentTick('manual'); toast(tr('Checked')); closeModal(); openAgentSheet(); });
   ov.querySelector('#agClose').addEventListener('click', closeModal);

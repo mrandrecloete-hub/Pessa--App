@@ -6,7 +6,8 @@
     "build:test": "node tests/build.js",
     "check": "node tests/check.js",
     "build:ts": "tsc src/utils/pesaAccountant.ts --outDir tests/specs/tsc/out --module commonjs --target es2019 --skipLibCheck",
-    "test": "node tests/run.js"
+    "test": "node tests/run.js",
+    "test:ai": "node tests/ai_t.mjs && node tests/wa_t.mjs"
   },
   "devDependencies": {
     "jspdf": "2.5.1",
