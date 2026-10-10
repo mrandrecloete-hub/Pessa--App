@@ -19826,7 +19826,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.164';
+var APP_VERSION = '2026.10.165';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20105,6 +20105,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.165', items:[
+    'Pesa now recognises which kind of business it is running, using what the shop really does (rooms and bookings, appointments and services, or stock and sales). If the saved type looks wrong, the owner and managers are asked on the dashboard whether to switch. The saved type syncs to every phone and every employee, so everyone gets the same dashboard and menu.'
+  ] },
   { v:'2026.10.164', items:[
     'Mobile money check: a Paste from my phone clipboard button fills in the copied payment message and checks it in one tap.',
     'Automatic backups: a button to send a copy by WhatsApp, email or Drive.',
@@ -23988,10 +23991,48 @@ function openBizTypeSheet(){
   ov.querySelector('#btClose').addEventListener('click', closeModal);
   ov.querySelectorAll('[data-bt]').forEach(function(b){ b.addEventListener('click', function(){
     var k = b.getAttribute('data-bt'); if(k === cur){ closeModal(); return; }
-    try{ refs.company.update({ businessType:k }); State.company = Object.assign({}, State.company, { businessType:k }); logAudit('update', 'company', null, 'Business type set to ' + k); }catch(e){}
-    State.showRetailDash = false; closeModal(); toast(tr('Business type changed')); setTab('dashboard'); render();
+    vSetBizType(k); closeModal(); toast(tr('Business type changed')); setTab('dashboard'); render();
   }); });
 }
+
+/* ---- smart business type: Pesa looks at what the shop really does and offers the right dashboard.
+   The type is saved on the business record, so every phone and every employee who syncs gets the same menu and dashboard. ---- */
+function vSetBizType(k){
+  var at = new Date().toISOString();
+  try{ refs.company.update({ businessType:k, businessTypeAt:at }); State.company = Object.assign({}, State.company, { businessType:k, businessTypeAt:at }); logAudit('update', 'company', null, 'Business type set to ' + k); }catch(e){}
+  State.showRetailDash = false;
+}
+// Returns { type, why } when the shop's records clearly point to a different type than the one saved, otherwise null.
+function bizTypeSuggest(){
+  var cur = bizType(), hos = vList('hosRooms').length + vList('hosBookings').length + vList('hosTabs').length,
+    appts = vList('appointments').length, services = vServices().length,
+    stock = (State.products || []).filter(function(p){ return !p.isService; }).length, sales = (State.sales || []).length;
+  if(hos > 0 && cur !== 'hospitality') return { type:'hospitality', why:'It has rooms, room bookings or tabs.' };
+  if(hos === 0 && (appts > 0 || services >= 3) && cur !== 'beauty') return { type:'beauty', why:'It has appointments or services with prices.' };
+  if(cur !== 'retail' && hos === 0 && appts === 0 && services === 0 && sales >= 10 && stock >= 5) return { type:'retail', why:'It sells stock and has no rooms, bookings or appointments.' };
+  return null;
+}
+function vSmartTypeKey(type){ return 'pesa_bt_nudge_' + (typeof WS !== 'undefined' ? WS.id : '') + '_' + type; }
+function vSmartTypeCard(){
+  try{
+    if(!State.session || !isManagerOrOwner()) return '';
+    var sg = bizTypeSuggest(); if(!sg) return '';
+    try{ var d = +localStorage.getItem(vSmartTypeKey(sg.type)) || 0; if(d && Date.now() - d < 14 * 86400000) return ''; }catch(e){}
+    var nm = (BIZ_TYPES.filter(function(t){ return t.k === sg.type; })[0] || {}).name || sg.type;
+    return '<div class="card" id="btSmartCard" style="margin:10px 0;padding:14px;border:1.5px solid #D99A1E;"><div style="font-weight:800;margin-bottom:4px;">' + tr('Is this a ' + nm + ' business?') + '</div>' +
+      '<div style="font-size:13.5px;line-height:1.5;margin-bottom:10px;">' + tr('Pesa is set up for ' + (({ retail:'Retail', beauty:'Barbershop and Salon', hospitality:'Hospitality' })[bizType()])) + ', but ' + esc(tr(sg.why)).charAt(0).toLowerCase() + esc(tr(sg.why)).slice(1) + ' ' + tr('Switching changes the dashboard and menu for you and everyone on your team. Nothing is deleted.') + '</div>' +
+      '<div class="actions" style="display:flex;gap:8px;"><button class="btn btn-primary" type="button" data-btsmart="accept" data-bttype="' + sg.type + '">' + tr('Switch to') + ' ' + esc(tr(nm)) + '</button><button class="btn btn-ghost" type="button" data-btsmart="keep" data-bttype="' + sg.type + '">' + tr('Keep it as it is') + '</button></div></div>';
+  }catch(e){ return ''; }
+}
+(function(){ try{
+  var _dw = dashWrap; dashWrap = function(inner){ return _dw(vSmartTypeCard() + inner); };
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest ? e.target.closest('[data-btsmart]') : null; if(!b) return;
+    var act = b.getAttribute('data-btsmart'), type = b.getAttribute('data-bttype');
+    if(act === 'accept'){ vSetBizType(type); toast(tr('Business type changed')); setTab('dashboard'); render(); }
+    else { try{ localStorage.setItem(vSmartTypeKey(type), String(Date.now())); }catch(x){} var c = document.getElementById('btSmartCard'); if(c) c.remove(); }
+  });
+}catch(e){} })();
 
 /* ==================================== shared dashboard pieces ==================================== */
 function vTile(act, icon, label, sub){
