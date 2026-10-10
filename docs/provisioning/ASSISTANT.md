@@ -19,6 +19,7 @@ Then in Pesa: Assistant, Pesa AI. Paste the function address (https://<project>.
 |---|---|---|
 | PESA_AI_KEY | yes | Access phrase, pasted into Pesa. At least 8 characters, use a long one |
 | ANTHROPIC_API_KEY | yes, or OPENAI_API_KEY | Model provider key. Costs money, see your provider's pricing |
+| LOCAL_AI_BASE_URL, LOCAL_AI_KEY | no | Your own model server (OpenAI compatible). With this you need no outside provider, see SELF_HOSTED_AI.md |
 | OPENAI_API_KEY, OPENAI_BASE_URL | no | A second provider (any OpenAI compatible service) used as a fallback |
 | AI_MODEL_FAST, AI_MODEL_STRONG, AI_MODEL_FALLBACK | no | Models for easy questions, hard questions and fallback. Default claude-haiku-5-5 and claude-sonnet-5-5. Write openai:model-name for the second provider |
 | AI_PRICES | no | JSON of per million token prices so cost estimates show, for example {"claude-haiku-5-5":{"in":1,"out":5}}. Without it cost shows as unknown |

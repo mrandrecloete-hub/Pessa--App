@@ -3,6 +3,7 @@
 // calls it (with fallback), runs web search itself, and hands any shop data tool calls back to the phone,
 // because the shop's records live on the phone. Nothing here can change shop data.
 // deps: { key, anthropicKey, openaiKey, openaiBase, models:{fast,strong,fallback}, prices, searchKey, searchUrl,
+//         localBase, localKey (your own model server, any OpenAI compatible one such as Ollama, vLLM or llama.cpp; no outside provider needed),
 //         hourlyLimit, dailyTokens, timeoutMs, fetch, now, hits, usage }
 const MAX_MESSAGES = 24, MAX_TEXT = 6000, MAX_MEMORY = 12, MAX_TOOL_ROUNDS = 3, MAX_SEARCHES = 3, MAX_ANSWER = 5000;
 
@@ -97,9 +98,10 @@ function cleanMessages(msgs){
 async function callModel(model, system, messages, tools, deps){
   const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, timer = ctl ? setTimeout(() => ctl.abort(), deps.timeoutMs || 25000) : null;
   try{
-    if(model.provider === 'openai'){
-      const r = await deps.fetch((deps.openaiBase || 'https://api.openai.com/v1') + '/chat/completions', { method:'POST', signal:ctl ? ctl.signal : undefined,
-        headers:{ 'content-type':'application/json', authorization:'Bearer ' + deps.openaiKey }, body:JSON.stringify(openaiBody(model.id, system, messages, tools)) });
+    if(model.provider === 'openai' || model.provider === 'local'){
+      const local = model.provider === 'local', base = local ? String(deps.localBase || '').replace(/\/+$/, '') : (deps.openaiBase || 'https://api.openai.com/v1'), hdr = { 'content-type':'application/json' };
+      const k = local ? deps.localKey : deps.openaiKey; if(k) hdr.authorization = 'Bearer ' + k;
+      const r = await deps.fetch(base + '/chat/completions', { method:'POST', signal:ctl ? ctl.signal : undefined, headers:hdr, body:JSON.stringify(openaiBody(model.id, system, messages, tools)) });
       if(!r.ok) return { ok:false, status:r.status };
       return { ok:true, data:fromOpenai(await r.json()) };
     }
@@ -143,7 +145,7 @@ function pickModels(cls, deps){
   const m = deps.models || {}, list = [];
   const mk = s => { if(!s) return null; const i = String(s).indexOf(':'); return i > 0 ? { provider:s.slice(0, i), id:s.slice(i + 1) } : { provider:'anthropic', id:s }; };
   [cls.tier === 'strong' ? m.strong : m.fast, m.fallback, cls.tier === 'strong' ? m.fast : m.strong].forEach(s => { const x = mk(s); if(x && !list.some(y => y.provider === x.provider && y.id === x.id)) list.push(x); });
-  return list.filter(x => x.provider === 'openai' ? !!deps.openaiKey : !!deps.anthropicKey);
+  return list.filter(x => x.provider === 'local' ? /^https?:\/\//.test(deps.localBase || '') : x.provider === 'openai' ? !!deps.openaiKey : !!deps.anthropicKey);
 }
 function estCost(model, u, prices){
   const p = prices && prices[model.id]; if(!p) return null;
@@ -152,11 +154,11 @@ function estCost(model, u, prices){
 
 export async function handleAssistant(req, deps){
   if(req.method !== 'POST') return out(405, { error:'post_only' });
-  if(!deps.key || (!deps.anthropicKey && !deps.openaiKey)) return out(503, { error:'not_configured' });
+  if(!deps.key || (!deps.anthropicKey && !deps.openaiKey && !deps.localBase)) return out(503, { error:'not_configured' });
   const h = req.headers || {};
   if(!same(h['x-pesa-key'], deps.key)) return out(401, { error:'bad_key' });
   const b = req.body || {};
-  if(b.action === 'ping') return out(200, { ok:true, search:!!deps.searchKey, providers:[deps.anthropicKey ? 'anthropic' : '', deps.openaiKey ? 'openai' : ''].filter(Boolean) });
+  if(b.action === 'ping') return out(200, { ok:true, search:!!deps.searchKey, providers:[deps.anthropicKey ? 'anthropic' : '', deps.openaiKey ? 'openai' : '', deps.localBase ? 'local' : ''].filter(Boolean) });
   const messages = cleanMessages(b.messages);
   if(!messages) return out(400, { error:'bad_messages' });
   const now = deps.now ? deps.now() : Date.now(), hits = deps.hits || (deps.hits = []), usage = deps.usage || (deps.usage = { day:'', tokens:0 });

@@ -74,4 +74,15 @@ await post(ask('1'), 'k', d4); ok((await post(ask('2'), 'k', d4)).body.error ===
 reset(tool('shop_summary', { period:'today' }, 'a'), tool('shop_summary', { period:'today' }, 'b'));
 // the server never loops on phone tools
 ok(true, 'phone tool turns end the server loop');
+// self hosted model: no outside provider at all
+const oa = (txt, tc) => ({ json:{ choices:[{ message:tc ? { content:null, tool_calls:[{ id:'c1', type:'function', function:{ name:tc[0], arguments:JSON.stringify(tc[1]) } }] } : { content:txt } }], usage:{ prompt_tokens:30, completion_tokens:10 } } });
+const dl = (x = {}) => deps({ anthropicKey:'', openaiKey:'', localBase:'http://10.0.0.5:11434/v1/', models:{ fast:'local:qwen-small', strong:'local:qwen-big' }, ...x });
+reset(oa('Hello from my own server.'));
+r = await post(ask('hi'), 'k', dl()); ok(r.status === 200 && r.body.text === 'Hello from my own server.' && calls[0].u === 'http://10.0.0.5:11434/v1/chat/completions' && !calls[0].o.headers.authorization, 'works with only a self hosted model, no outside key');
+ok(JSON.parse(calls[0].o.body).model === 'qwen-small' && JSON.parse(calls[0].o.body).messages[0].role === 'system', 'self hosted request uses the chat format and the local model name');
+ok((await post({ action:'ping' }, 'k', dl())).body.providers[0] === 'local', 'ping shows the self hosted model');
+reset(oa('', ['shop_summary', { period:'today' }]));
+r = await post(ask('how was today'), 'k', dl({ localKey:'LK' })); ok(!r.body.done && r.body.calls[0].name === 'shop_summary' && calls[0].o.headers.authorization === 'Bearer LK', 'self hosted tool calls reach the phone, optional key is sent');
+reset(oa('x'));
+ok((await post(ask('hi'), 'k', dl({ localBase:'' }))).status === 503, 'no provider and no local server is reported');
 console.log(fails ? 'FAILED ' + fails : 'ALL OK'); process.exit(fails ? 1 : 0);

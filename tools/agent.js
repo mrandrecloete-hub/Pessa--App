@@ -326,6 +326,8 @@ function agentParse(raw){
     if(pg){ if(/^(alerts?|alert centre)$/.test(q)) return { text:'Opening the Alert centre.', go:'alerts', open:true }; return { text:'Opening ' + pg[2] + '.', page:pg[1], open:true }; }
     if(/alert/.test(q)) return { text:'Opening the Alert centre.', go:'alerts', open:true };
   }
+  // offline analysis: forecasts, comparisons, unusual days, weekday patterns and price what ifs (no AI service, no internet)
+  try{ var la = localAnswer(text); if(la) return la; }catch(e){}
   // questions about the shop
   var r = brainAnswer(text);
   if(r && !/^I did not understand/.test(r.text)) return r;
