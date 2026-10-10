@@ -5056,7 +5056,7 @@ function openMomoSheet(day0){
     '<div class="banner" style="display:block;">'+tr('Pesa cannot read your text messages. Copy the payment messages from your messages app, paste them below, and Pesa lines them up with the wallet sales you recorded. Leave a blank line between messages.')+'</div>' +
     '<div class="field" style="margin-top:10px;"><label>'+tr('Day to check')+'</label><input id="mmDay" type="date" value="'+day+'"></div>' +
     '<div class="field"><label>'+tr('Pasted messages')+'</label><textarea id="mmText" rows="6" placeholder="'+esc(tr('Paste the payment messages here'))+'"></textarea></div>' +
-    '<div class="actions"><button class="btn btn-primary btn-block" id="mmGo" type="button">'+tr('Check')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="mmPaste" type="button">'+tr('Paste from my phone clipboard')+'</button><button class="btn btn-primary btn-block" id="mmGo" type="button">'+tr('Check')+'</button></div>' +
     '<div id="mmOut"></div>' + btBack();
   var ov = openSheet(html); btWireBack(ov);
   function run(){
@@ -5083,6 +5083,16 @@ function openMomoSheet(day0){
       '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">'+tr('Pesa reads the amount and reference from the wording of each message. Wording differs between providers, so always glance at anything marked as not matched.')+'</div>';
   }
   ov.querySelector('#mmGo').addEventListener('click', run);
+  ov.querySelector('#mmPaste').addEventListener('click', function(){
+    var ta = ov.querySelector('#mmText');
+    if(!(navigator.clipboard && navigator.clipboard.readText)){ toast(tr('Press and hold in the box, then tap Paste')); ta.focus(); return; }
+    navigator.clipboard.readText().then(function(t){
+      t = String(t || '').trim();
+      if(!t){ toast(tr('Nothing to paste. Copy the payment message first')); return; }
+      if(ta.value.indexOf(t) < 0) ta.value = ta.value.trim() ? ta.value.trim() + '\n\n' + t : t;
+      run();
+    }, function(){ toast(tr('Press and hold in the box, then tap Paste')); ta.focus(); });
+  });
 }
 
 /* --- 3. sale pre-check at the till --- */
@@ -14134,6 +14144,58 @@ function drawerRowHtml(key, icon, label, count){
   '</button>';
 }
 
+/* ---- help translate: native speakers fill in a file, and the phrases are used on this device ---- */
+function lxKey(code){ return 'pesa_lang_extra_' + code; }
+function lxLoad(code){ try{ return JSON.parse(localStorage.getItem(lxKey(code)) || '{}') || {}; }catch(e){ return {}; } }
+function lxApplyAll(){ ['osh','her','naq'].forEach(function(c){ var x = lxLoad(c); if(LANGS[c] && Object.keys(x).length){ Object.assign(LANGS[c].strings, x); if(LANGS[c].confidence === 'unverified') LANGS[c].confidence = 'partial'; } }); }
+try{ lxApplyAll(); }catch(e){}
+function lxCsv(rows){ return rows.map(function(r){ return r.map(function(c){ c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\r\n'); }
+function lxParse(text){
+  var rows = [], row = [], cur = '', q = false, t = String(text || '').replace(/^﻿/, '');
+  for(var i = 0; i < t.length; i++){ var ch = t[i];
+    if(q){ if(ch === '"'){ if(t[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if(ch === '"') q = true;
+    else if(ch === ','){ row.push(cur); cur = ''; }
+    else if(ch === '\n' || ch === '\r'){ if(ch === '\r' && t[i+1] === '\n') i++; row.push(cur); cur = ''; if(row.length > 1 || row[0] !== '') rows.push(row); row = []; }
+    else cur += ch; }
+  if(cur !== '' || row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function lxExport(code){
+  langEnsure('af');
+  var tries = 0;
+  (function wait(){
+    var keys = Object.keys((LANGS.af && LANGS.af.strings) || {});
+    if(keys.length < 200 && tries++ < 40){ setTimeout(wait, 150); return; }
+    var have = LANGS[code].strings || {};
+    var rows = [['English', LANGS[code].name]].concat(keys.filter(function(k){ return k.length < 140; }).map(function(k){ return [k, have[k] || '']; }));
+    downloadTextFile('pesa-translate-' + code + '.csv', '﻿' + lxCsv(rows));
+    toast(tr('Translation file downloaded'));
+  })();
+}
+function lxImport(code, text){
+  var rows = lxParse(text), put = {}, n = 0;
+  rows.slice(1).forEach(function(r){ if(r.length >= 2 && String(r[0]).trim() && String(r[1]).trim()){ put[String(r[0])] = String(r[1]).trim(); n++; } });
+  if(!n){ toast(tr('No translations found in that file')); return 0; }
+  var all = Object.assign(lxLoad(code), put);
+  try{ localStorage.setItem(lxKey(code), JSON.stringify(all)); }catch(e){ toast(tr('Could not save the translations')); return 0; }
+  lxApplyAll(); try{ i18nRefresh(); }catch(e){}
+  toast(n + ' ' + tr('phrases added on this device'));
+  return n;
+}
+function lxHelpHtml(){
+  return '<details class="lxhelp" style="margin:6px 0 10px;"><summary style="cursor:pointer;font-weight:700;">'+tr('Help translate Oshiwambo, Otjiherero or Khoekhoegowab')+'</summary>' +
+    '<p class="note" style="margin:8px 0;">'+tr('Some phrases in these languages are drafts or missing. A native speaker can fill them in. Choose the language above, download the file, add the words in the second column, then import it. The words are used on this device only until they are checked and added to Pesa by the developer.')+'</p>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="lxDown" type="button">'+tr('Download the translation file')+'</button><button class="btn btn-ghost btn-block" id="lxUp" type="button">'+tr('Import a finished file')+'</button></div>' +
+    '<input type="file" id="lxFile" accept=".csv,.txt,text/csv" hidden></details>';
+}
+function wireLxHelp(ov){
+  var sel = ov.querySelector('#stLang'), d = ov.querySelector('#lxDown'), u = ov.querySelector('#lxUp'), f = ov.querySelector('#lxFile'); if(!d) return;
+  function code(){ var c = sel.value; return ['osh','her','naq'].indexOf(c) > -1 ? c : ''; }
+  d.addEventListener('click', function(){ var c = code(); if(!c){ toast(tr('Choose Oshiwambo, Otjiherero or Khoekhoegowab above first')); return; } lxExport(c); });
+  u.addEventListener('click', function(){ if(!code()){ toast(tr('Choose Oshiwambo, Otjiherero or Khoekhoegowab above first')); return; } f.click(); });
+  f.addEventListener('change', function(){ var file = f.files && f.files[0], c = code(); if(!file || !c) return; var r = new FileReader(); r.onload = function(){ lxImport(c, String(r.result || '')); f.value = ''; }; r.readAsText(file); });
+}
 function openCashierSettingsSheet(){
   var s = State.settings;
   var html = '<div class="sheet-head"><h2>'+tr('Settings')+'</h2></div>' +
@@ -14144,14 +14206,14 @@ function openCashierSettingsSheet(){
         var l = LANGS[code];
         return '<option value="'+code+'" '+((s.language||'en')===code?'selected':'')+'>'+esc(l.native)+langConfidenceLabel(code)+'</option>';
       }).join('') +
-    '</select></div>' +
+    '</select></div>' + lxHelpHtml() +
     '<div class="actions"><button class="btn btn-primary btn-block" id="stSaveLangOnly">'+tr('Save settings')+'</button></div>' +
     notificationSettingsHtml() +
     '<div class="section-title">'+tr('Help and about')+'</div>' + settingsMoreHtml() +
     settingsAboutFooterHtml();
   var ov = openSheet(html); wireSettingsMore(ov);
   wireNotificationSettings(ov);
-  wireAccountSection(ov);
+  wireAccountSection(ov); wireLxHelp(ov);
   ov.querySelector('#stSaveLangOnly').addEventListener('click', function(){
     State.settings = Object.assign({}, State.settings, { language: ov.querySelector('#stLang').value });
     refs.settings.set(State.settings);
@@ -19764,7 +19826,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.163';
+var APP_VERSION = '2026.10.164';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19953,7 +20015,7 @@ function openBackupsSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('Automatic backups')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+tr('Pesa saves a backup on this device about once a day while it is open, and keeps the latest 7. They stay on this device only. If you clear your browser data or lose the device, they go too, so download a copy now and then.')+'</div>' +
     '<div id="bkFolder"></div>' +
-    '<div class="actions"><button class="btn btn-primary btn-block" id="bkNow" type="button">'+tr('Back up now')+'</button></div><div id="bkList" style="margin-top:10px;"></div>' + smartBackBtn();
+    '<div class="actions"><button class="btn btn-primary btn-block" id="bkNow" type="button">'+tr('Back up now')+'</button><button class="btn btn-ghost btn-block" id="bkSend" type="button">'+tr('Send a copy by WhatsApp, email or Drive')+'</button></div><div id="bkList" style="margin-top:10px;"></div>' + smartBackBtn();
   var ov = openSheet(html); wireSmartBack(ov);
   btBackupFolderPaint(ov.querySelector('#bkFolder'));
   function paint(){
@@ -19975,6 +20037,7 @@ function openBackupsSheet(){
       }); });
     }, function(){ ov.querySelector('#bkList').innerHTML = '<div class="banner">'+tr('This browser does not allow backups to be stored here.')+'</div>'; });
   }
+  ov.querySelector('#bkSend').addEventListener('click', btShareBackup);
   ov.querySelector('#bkNow').addEventListener('click', function(){
     var b = ov.querySelector('#bkNow'); b.disabled = true;
     try{ BackupFolder.renew(); }catch(e){}
@@ -20042,6 +20105,11 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.164', items:[
+    'Mobile money check: a Paste from my phone clipboard button fills in the copied payment message and checks it in one tap.',
+    'Automatic backups: a button to send a copy by WhatsApp, email or Drive.',
+    'Settings, Language: Help translate for Oshiwambo, Otjiherero and Khoekhoegowab. Download a file, let a native speaker fill it in, and import it. The words are used on this device only until they are checked.'
+  ] },
   { v:'2026.10.163', items:[
     'Back to the full Pesa app for every retail shop. Barbershop, salon and hospitality accounts show only their own pages and dashboards, and no retail pages.'
   ] },
