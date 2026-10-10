@@ -147,6 +147,8 @@ function vertMenuRows(){
   var t = bizType(), rows = '';
   vertLabels();
   if(t !== 'retail'){
+    // the owner sees which type this business is set to, right at the top, with one tap to change it
+    try{ if(State.session && isOwner()) rows += drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type: ' + (t === 'beauty' ? 'Barbershop and Salon' : 'Hospitality') + '. Tap to change'); }catch(e){}
     rows += '<div class="drawer-sub">' + (t === 'beauty' ? 'Barbershop and Salon' : 'Hospitality') + '</div>';
     VERT_PAGES[t].forEach(function(p){ if(p[3] && !isManagerOrOwner()) return; rows += drawerRowHtml(p[0], ICONS[p[2]] || ICONS.clipboard, p[1]); });
   }
@@ -189,7 +191,7 @@ function bizTypeSuggest(){
     stock = (State.products || []).filter(function(p){ return !p.isService; }).length, sales = (State.sales || []).length;
   if(hos > 0 && cur !== 'hospitality') return { type:'hospitality', why:'It has rooms, room bookings or tabs.' };
   if(hos === 0 && (appts > 0 || services >= 3) && cur !== 'beauty') return { type:'beauty', why:'It has appointments or services with prices.' };
-  if(cur !== 'retail' && hos === 0 && appts === 0 && services === 0 && sales >= 10 && stock >= 5) return { type:'retail', why:'It sells stock and has no rooms, bookings or appointments.' };
+  if(cur !== 'retail' && hos === 0 && appts === 0 && services === 0 && sales >= 3 && stock >= 3) return { type:'retail', why:'It sells stock and has no rooms, bookings or appointments.' };
   return null;
 }
 function vSmartTypeKey(type){ return 'pesa_bt_nudge_' + (typeof WS !== 'undefined' ? WS.id : '') + '_' + type; }

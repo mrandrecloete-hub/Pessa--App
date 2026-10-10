@@ -19826,7 +19826,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.168';
+var APP_VERSION = '2026.10.169';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20136,6 +20136,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.169', items:[
+    'Menu: the owner now sees Business type at the top of the menu when the shop is set to Barbershop and Salon or Hospitality, with one tap to switch back to Retail. Pesa also offers the switch to Retail sooner when the shop only sells stock.'
+  ] },
   { v:'2026.10.168', items:[
     'Pesa now installs every new version by itself. When a newer version is ready, it updates at a safe moment: nothing is open, you have paused for a moment or just come back to the app. A sale in progress is kept. The Update now bar is still there if you want it sooner.'
   ] },
@@ -24333,6 +24336,8 @@ function vertMenuRows(){
   var t = bizType(), rows = '';
   vertLabels();
   if(t !== 'retail'){
+    // the owner sees which type this business is set to, right at the top, with one tap to change it
+    try{ if(State.session && isOwner()) rows += drawerRowHtml('v-type', ICONS.branch || ICONS.box, 'Business type: ' + (t === 'beauty' ? 'Barbershop and Salon' : 'Hospitality') + '. Tap to change'); }catch(e){}
     rows += '<div class="drawer-sub">' + (t === 'beauty' ? 'Barbershop and Salon' : 'Hospitality') + '</div>';
     VERT_PAGES[t].forEach(function(p){ if(p[3] && !isManagerOrOwner()) return; rows += drawerRowHtml(p[0], ICONS[p[2]] || ICONS.clipboard, p[1]); });
   }
@@ -24375,7 +24380,7 @@ function bizTypeSuggest(){
     stock = (State.products || []).filter(function(p){ return !p.isService; }).length, sales = (State.sales || []).length;
   if(hos > 0 && cur !== 'hospitality') return { type:'hospitality', why:'It has rooms, room bookings or tabs.' };
   if(hos === 0 && (appts > 0 || services >= 3) && cur !== 'beauty') return { type:'beauty', why:'It has appointments or services with prices.' };
-  if(cur !== 'retail' && hos === 0 && appts === 0 && services === 0 && sales >= 10 && stock >= 5) return { type:'retail', why:'It sells stock and has no rooms, bookings or appointments.' };
+  if(cur !== 'retail' && hos === 0 && appts === 0 && services === 0 && sales >= 3 && stock >= 3) return { type:'retail', why:'It sells stock and has no rooms, bookings or appointments.' };
   return null;
 }
 function vSmartTypeKey(type){ return 'pesa_bt_nudge_' + (typeof WS !== 'undefined' ? WS.id : '') + '_' + type; }

@@ -19,6 +19,10 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.evaluate(()=>{ Object.keys(localStorage).filter(k=>k.indexOf('pesa_bt_nudge_')===0).forEach(k=>localStorage.removeItem(k)); window.__t.render(); }); await p.waitForSelector('#btSmartCard');
   await p.click('[data-btsmart=accept]'); await p.waitForTimeout(300);
   ck('accepting switches the saved type to Retail for everyone', await p.evaluate(()=>{ const t=window.__t; return t.bizType()==='retail' && t.State.company.businessType==='retail' && !!t.State.company.businessTypeAt; }));
+  await p.evaluate(()=>window.__t.vSetBizType('hospitality'));
+  ck('an owner sees the Business type row at the top of a non retail menu', await p.evaluate(()=>{ const d=document.createElement('div'); d.innerHTML=window.__t.menuRowsHtml(); const rows=[...d.querySelectorAll('.drawer-row,.drawer-sub')].map(e=>e.textContent.trim()); return /Business type: Hospitality/.test(rows[2]||rows[1]||''); }));
+  ck('a cashier does not see that row', await p.evaluate(()=>{ const t=window.__t, u=t.State.users.find(x=>x.id===t.State.session.userId), r=u.role; u.role='cashier'; const h=t.vertMenuRows(); u.role=r; return !/Business type:/.test(h); }));
+  await p.evaluate(()=>window.__t.vSetBizType('retail'));
   ck('retail menu has no hospitality pages', await p.evaluate(()=>!/Room bookings|Tables and tabs|Licences and levy/.test(window.__t.menuRowsHtml())));
   // data that really is hospitality
   await p.evaluate(()=>{ const t=window.__t; t.State.hosRooms=[{id:'r1',name:'Room 1',active:true}]; });
