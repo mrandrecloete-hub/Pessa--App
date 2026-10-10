@@ -19826,7 +19826,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.167';
+var APP_VERSION = '2026.10.168';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -19863,9 +19863,40 @@ function pesaCheckVersion(manual){
   try{
     if(navigator.onLine === false){ if(manual) toast(tr('You are offline. Pesa keeps working and will update when you are connected.')); return; }
     fetch('version.json?t=' + Date.now(), { cache:'no-store' }).then(function(r){ return r.ok ? r.json() : Promise.reject(); }).then(function(j){
-      if(j && pesaVerNewer(j.version, APP_VERSION)) pesaShowUpdateBar(j.version);
+      if(j && pesaVerNewer(j.version, APP_VERSION)){ _pesaNewVer = String(j.version); pesaShowUpdateBar(j.version); pesaAutoTry(); }
       else if(manual) toast(tr('You already have the newest version.') + ' (' + APP_VERSION + ')');
     }).catch(function(){ if(manual) toast(tr('Could not check for updates right now. Try again when the connection is better.')); });
+  }catch(e){}
+}
+/* Every new version applies by itself at a safe moment: when nothing is open (no sheet, no form), the person has paused for a short while
+   or has just come back to the app, and this version has not already been tried in this session (so a slow download can never cause a reload loop).
+   A sale in progress is kept across the reload. If it is not a safe moment, the Update now bar stays and Pesa tries again shortly. */
+var _pesaNewVer = '', _pesaLastAct = Date.now();
+(function(){
+  try{
+    ['pointerdown', 'keydown', 'input', 'touchstart', 'wheel'].forEach(function(ev){ document.addEventListener(ev, function(){ _pesaLastAct = Date.now(); }, true); });
+    document.addEventListener('visibilitychange', function(){ if(document.hidden){ _pesaHiddenAt = Date.now(); } else { if(_pesaHiddenAt && Date.now() - _pesaHiddenAt > 20000) _pesaLastAct = 0; try{ pesaCheckVersion(false); }catch(e){} setTimeout(pesaAutoTry, 1500); } });
+    setInterval(function(){ if(_pesaNewVer) pesaAutoTry(); }, 15000);
+  }catch(e){}
+})();
+var _pesaHiddenAt = 0;
+function pesaSafeToUpdate(){
+  try{
+    if(!State.session) return true;                                  // nobody signed in: nothing to lose
+    if(pfBusy()) return false;                                       // a sheet, a form or the till is open
+    var a = document.activeElement; if(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && String(a.value || '').length) return false;
+    return Date.now() - _pesaLastAct > 25000;                        // paused for a moment, or just came back to the app
+  }catch(e){ return false; }
+}
+function pesaAutoTry(){
+  try{
+    if(!_pesaNewVer || !pesaVerNewer(_pesaNewVer, APP_VERSION)) return;
+    if(navigator.onLine === false || !pesaSafeToUpdate()) return;
+    var key = 'pesa_auto_upd_' + _pesaNewVer;
+    if(sessionStorage.getItem(key)) return;                          // already tried this version in this session
+    sessionStorage.setItem(key, '1');
+    toast(tr('Updating Pesa to the newest version...'));
+    setTimeout(pesaForceRefresh, 700);
   }catch(e){}
 }
 function pesaShowUpdateBar(v){
@@ -20105,6 +20136,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.168', items:[
+    'Pesa now installs every new version by itself. When a newer version is ready, it updates at a safe moment: nothing is open, you have paused for a moment or just come back to the app. A sale in progress is kept. The Update now bar is still there if you want it sooner.'
+  ] },
   { v:'2026.10.167', items:[
     'The assistant can now work things out on your phone with no internet and no AI service: a sales forecast for tomorrow or the next 7 days, this week against last week, your best and slowest day, unusual days, and what happens to a product if you raise or lower its price. Answers say how much history they use and are estimates.',
     'Pesa AI can use your own self hosted model server instead of an outside AI provider. See docs/provisioning/SELF_HOSTED_AI.md.'
