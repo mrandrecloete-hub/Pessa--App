@@ -52,7 +52,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   ck('opening Pesa files the finished months automatically', /2026-08:auto,2026-09:auto|2026-09:auto,2026-08:auto/.test(n), {before,n});
   ck('no packs for the current month', !/2026-10/.test(n));
   // menu and hub entries
-  await p.click('#menuBtn'); await p.waitForSelector('.drawer-row[data-drawer-row="accountant"]',{state:'attached'});
+  await p.click('#menuBtn'); await p.waitForSelector('.drawer-row[data-drawer-row="hub-money"]',{state:'attached'}); await p.evaluate(()=>document.querySelector('.drawer-row[data-drawer-row="hub-money"]').click()); await p.waitForTimeout(500); await p.waitForSelector('.drawer-row[data-drawer-row="accountant"]',{state:'attached'});
   ck('menu has Accountant for the owner', true);
   await p.evaluate(()=>document.querySelector('.drawer-row[data-drawer-row="accountant"]').click()); await p.waitForSelector('[data-acdoc]'); ck('menu opens the Accountant page', true);
   await p.evaluate(()=>window.__t.closeModal()); await p.evaluate(()=>window.__t.openBizHub()); await p.waitForSelector('[data-bt="accountant"]'); await p.click('[data-bt="accountant"]'); await p.waitForSelector('[data-acdoc]'); ck('Business tools tile opens it', true);

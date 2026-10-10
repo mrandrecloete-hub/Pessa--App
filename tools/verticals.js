@@ -80,8 +80,8 @@ function vertTiles(kind, tiles){ var h = VERT_HIDE[bizType()]; if(!h || !h[kind]
 /* Each business type has its own menu and nothing from another type. Barbershop and salon, and hospitality, get only their own pages plus the few things
    every business needs (messages, reports, expenses, team, accounts, settings). Retail keeps the full Pesa app and none of the pages below. */
 var VERT_KEEP = {
-  beauty:      ['inbox', 'tab-dashboard', 'tab-stock', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings'],
-  hospitality: ['inbox', 'tab-dashboard', 'tab-stock', 'tab-invoices', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings']
+  beauty:      ['inbox', 'tab-dashboard', 'tab-stock', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings', 'hub-money', 'hub-team', 'hub-pesa'],
+  hospitality: ['inbox', 'tab-dashboard', 'tab-stock', 'tab-invoices', 'tab-reports', 'tab-expenses', 'tab-team', 'vat', 'accountant', 'pay', 'v-type', 'settings', 'hub-money', 'hub-team', 'hub-pesa']
 };
 function vStrictRows(html){
   var t = bizType(), keep = VERT_KEEP[t].concat(['tab-me', 'tab-records']); if(!isManagerOrOwner()) keep.push('tab-till');

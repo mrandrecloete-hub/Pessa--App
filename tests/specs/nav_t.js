@@ -8,8 +8,8 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('top bar gear is gone', !(await p.isVisible('#settingsBtn')));
 
  await p.waitForTimeout(500);
- const keys=await p.evaluate(()=>[...document.querySelectorAll('#appSidebar [data-drawer-row]')].map(e=>e.getAttribute('data-drawer-row')));
- ck('Settings is the last menu row', keys[keys.length-1]==='settings', keys);
+ const keys=await p.evaluate(()=>{ const t=window.__t, top=[...document.querySelectorAll('#appSidebar [data-drawer-row]')].map(e=>e.getAttribute('data-drawer-row')); return top.concat(...top.filter(k=>/^hub-/.test(k)).map(h=>t.menuHubItems(h).map(i=>i.k))); });
+ ck('Settings is the last menu row', (await p.evaluate(()=>{ const r=[...document.querySelectorAll('#appSidebar [data-drawer-row]')]; return r[r.length-1].getAttribute('data-drawer-row'); }))==='settings', keys);
  for(const k of ['audit','security','licence','setup','training','helpsearch','display','compat','pilotform','legal','about']) ck('menu no longer lists '+k, !keys.includes(k));
  for(const k of ['tab-sell','tab-stock','inbox','tab-reports','bizhub','smart','tab-reconcile','suppliers','vat','accountant']) ck('menu still lists '+k, keys.includes(k));
  console.log('   menu rows:',keys.length);

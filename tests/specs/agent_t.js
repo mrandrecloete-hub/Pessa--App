@@ -54,7 +54,8 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  ck('unknown request is handled', /did not understand/.test(cmd.junk.text));
  ck('nothing changes without Confirm', cmd.noConfirmNoChange);
  await p.evaluate(()=>window.__t.closeModal()); await p.evaluate(()=>document.getElementById('menuBtn').click()); await p.waitForTimeout(300);
- ck('menu has its own Pesa AI Assistant row', await p.evaluate(()=>!!document.querySelector('[data-drawer-row="agent"] img')));
+ await p.evaluate(()=>document.querySelector('.drawer-row[data-drawer-row="hub-tools"]').click()); await p.waitForTimeout(500);
+ ck('the Smart tools page has its own Pesa AI Assistant row with its icon', await p.evaluate(()=>!!document.querySelector('[data-drawer-row="agent"] img')));
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));
  await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();
