@@ -53,7 +53,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.evaluate(()=>window.__t.closeModal()); await p.evaluate(()=>window.__t.openPilotFillSheet()); await p.waitForSelector('#pfSubmit');
   ck('draft reloads into the form', await p.evaluate(()=>document.querySelector('[data-pr="0:4"]').classList.contains('on') && document.querySelectorAll('#pfLog .row').length===2 && document.querySelector('[data-pw="0"]').value.indexOf('Fast')===0));
   // submit
-  await p.click('#pfSubmit'); await p.waitForSelector('#pfWa',{timeout:4000}); ck('thank you sheet shows send buttons', !!(await p.$('#pfMail')) && !!(await p.$('#pfPdf')));
+  await p.evaluate(()=>window.__t.setContact({email:'ecrypted5@gmail.com',wa:'0818211692'})); await p.click('#pfSubmit'); await p.waitForSelector('#pfWa',{timeout:4000}); ck('thank you sheet shows send buttons', !!(await p.$('#pfMail')) && !!(await p.$('#pfPdf')));
   await p.screenshot({path:D+'pf2_sent.png'});
   const hrefs=await p.evaluate(()=>({wa:document.getElementById('pfWa').href, mail:document.getElementById('pfMail').href}));
   ck('WhatsApp link goes to the developer number', /wa\.me\/264818211692\?text=/.test(hrefs.wa)); ck('email link goes to the developer address', /^mailto:ecrypted5@gmail\.com\?subject=/.test(hrefs.mail));

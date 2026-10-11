@@ -3,6 +3,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
 (async()=>{
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await require('./biz_boot.js')(p);
+ await p.evaluate(()=>window.__t.setContact({email:'ecrypted5@gmail.com',wa:'0818211692'}));
  await p.evaluate(()=>window.__t.openLegalSheet()); await p.waitForTimeout(200);
  ck('no error button when there is no error', !(await p.$('#lgErrReport')));
  await p.evaluate(()=>{ window.__t.closeModal(); localStorage.setItem('pesa_lasterr','2026-10-05T10:00:00Z TypeError: x is undefined @ index.html:1'); window.__t.openLegalSheet(); }); await p.waitForSelector('#lgErrReport');

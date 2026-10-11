@@ -4,7 +4,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  await require('./biz_boot.js')(p);
  const L = await p.evaluate(()=>{ const l=window.__t.LESSONS[0]; return { id:l.id, n:l.slides.length, who:l.who, titles:l.slides.map(s=>s.title), all:JSON.stringify(l) }; });
  ck('developer lesson is first, for everyone', L.id==='developer' && L.who==='all'); ck('7 slides', L.n===7);
- ck('contact details match the app', /081 821 1692/.test(L.all) && /ecrypted5@gmail.com/.test(L.all));
+ ck('no personal phone or email in the lesson', !/081 821 1692/.test(L.all) && !/ecrypted5@gmail.com/.test(L.all));
  ck('developer name and Windhoek present', /Björn Van Rensburg/.test(L.all) && /Windhoek/.test(L.all));
  ck('no "phone" in the new lesson', !/\bphone\b/i.test(L.all));
  // record what the speech engine is asked to say
@@ -28,7 +28,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  await p.waitForTimeout(800);
  const t2=await p.innerText('.sheet'); ck('last slide reached', /Thank you, and how to reach me/.test(t2));
  const said2=await p.evaluate(()=>window.__said.join(' | ')); console.log('   spoken last slide:', said2.slice(0,260));
- ck('email is spoken as "at" and "dot com"', /ecrypted5 at gmail dot com/.test(said2));
+ ck('no personal email is spoken', !/ecrypted5/.test(said2));
  await p.screenshot({path:'lesson_7.png'});
  // honesty slide shows the tip
  await p.evaluate(()=>window.__t.closeModal());

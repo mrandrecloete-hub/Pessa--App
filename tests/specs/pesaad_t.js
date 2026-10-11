@@ -13,7 +13,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const srcs=await p.evaluate(()=>[...document.querySelectorAll('#adVideo source')].map(x=>x.getAttribute('src'))); ck('video sources are the mp4 and webm files', srcs.length===2&&/pesa-promo\.mp4$/.test(srcs[0])&&/pesa-promo\.webm$/.test(srcs[1]), srcs);
  const st=await p.evaluate(async()=>{ const a=await fetch('media/pesa-promo.mp4',{method:'HEAD'}); const b=await fetch('media/pesa-promo-poster.jpg',{method:'HEAD'}); return [a.status,+a.headers.get('content-length'),b.status]; });
  ck('video and poster files are served', st[0]===200&&st[1]>1e6&&st[2]===200, st);
- const txt=await p.innerText('.sheet'); ck('wording is shown', /Your Mula, Your Pride/.test(txt)&&/built in Namibia, for Namibia/.test(txt)&&/Free 14 day trial/.test(txt)&&/081 821 1692/.test(txt), txt.slice(0,200));
+ const txt=await p.innerText('.sheet'); ck('wording is shown', /Your Mula, Your Pride/.test(txt)&&/built in Namibia, for Namibia/.test(txt)&&/Free 14 day trial/.test(txt)&&!/081 821 1692/.test(txt), txt.slice(0,200));
  ck('share, WhatsApp, copy and download buttons', !!(await p.$('#adShare'))&&!!(await p.$('#adWa'))&&!!(await p.$('#adCopy'))&&!!(await p.$('#adDl')));
  const href=await p.getAttribute('#adDl','href'); ck('download link', /pesa-promo\.mp4/.test(href));
  const meta=await p.evaluate(()=>new Promise(r=>{ const v=document.getElementById('adVideo'); if(v.readyState>=1) return r([v.duration,v.videoWidth]); v.addEventListener('loadedmetadata',()=>r([v.duration,v.videoWidth])); v.addEventListener('error',()=>r(['error'])); setTimeout(()=>r(['timeout']),6000); }));

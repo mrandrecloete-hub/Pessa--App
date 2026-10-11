@@ -20,7 +20,7 @@ print('index.html updated')
 
 # the privacy texts live in index.html (they are also used by the consent screen and the About PDF); read them out
 m = re.search(r'var PRIVACY_INTRO = (.*?);\nvar PRIVACY_SECTIONS = (\[.*?\n\]);', s2, flags=re.S)
-js = 'var DEV_EMAIL="ecrypted5@gmail.com", DEV_WHATSAPP="0818211692"; var PRIVACY_INTRO=%s; var PRIVACY_SECTIONS=%s; console.log(JSON.stringify({intro:PRIVACY_INTRO,sections:PRIVACY_SECTIONS}));' % (m.group(1), m.group(2))
+js = 'var DEV_EMAIL="", DEV_WHATSAPP=""; var PRIVACY_INTRO=%s; var PRIVACY_SECTIONS=%s; console.log(JSON.stringify({intro:PRIVACY_INTRO,sections:PRIVACY_SECTIONS}));' % (m.group(1), m.group(2))
 out = subprocess.run(['node', '-e', js], capture_output=True, text=True)
 privacy = json.loads(out.stdout)
 docs = dict(data['docs'])
