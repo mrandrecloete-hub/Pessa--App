@@ -13,6 +13,9 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('the welcome page is showing', /Register your business|Sign in|Welcome/i.test(await p.innerText('#authScreen')));
  for(const t of [0.5,1.5,2.5]){ await p.goto('http://localhost:8933/index.html?intro=force&introT='+t); await p.waitForFunction(()=>window.__introReady===true,null,{timeout:8000}); }
  ck('still frames render', true);
+ await p.goto('http://localhost:8933/index.html?intro=force&introT=3.5'); await p.waitForFunction(()=>window.__introReady===true,null,{timeout:8000}); await p.waitForTimeout(200);
+ ck('at the end the logo rests on the water, still showing (no spin, no flying away)', await p.evaluate(()=>{ const l=document.querySelector('#introVeil .pi-logo'); const cs=getComputedStyle(l); return +cs.opacity===1; }));
+ ck('the animation is the short four bounce version', await p.evaluate(()=>window.__t.PesaIntro.DUR)<=4);
  ck('no page errors', errs.length===0, errs);
  await b.close(); console.log(fail?'FAILED':'ALL OK'); process.exit(fail?1:0);
 })();

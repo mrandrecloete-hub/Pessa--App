@@ -1,11 +1,11 @@
 /* ============================== OPENING ANIMATION ==============================
-   Plays once each time Pesa starts: the Pesa logo drops in, bounces three times over water (with its reflection and
-   ripples), spins fast, shrinks away, and the welcome page appears. Pure CSS keyframes, no files, no libraries.
+   Plays once each time Pesa starts: the Pesa logo drops in and bounces four times on the water (with its reflection and
+   ripples), settles, and the welcome page appears. No spinning and no flying away. Pure CSS keyframes, no files, no libraries.
    Tap or press any key to skip.
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=2.5 shows one still frame at 2.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var DUR = 5.2;                                   // seconds the animation runs
+  var DUR = 3.6;                                   // seconds the animation runs
   var VEIL = null, done = false, timer = 0, ready = false;
 
   function firstScreenReady(){
@@ -21,17 +21,17 @@ var PesaIntro = (function(){
   var STEPS = [
     [0,  -330, 1,    1,    0,    0, FALL],
     [3,  -300, 1,    1,    0,    1, FALL],
-    [11, 0,    1.1,  .86,  0,    1, RISE],     // first landing
-    [19, -125, .97,  1.04, 0,    1, FALL],
-    [27, 0,    1.1,  .86,  0,    1, RISE],     // second landing
-    [33, -70,  .98,  1.03, 0,    1, FALL],
-    [39, 0,    1.08, .88,  0,    1, RISE],     // third landing
-    [48, -150, 1.12, 1.12, 900,  1, LIN],      // up and spinning
-    [66, -175, 1.25, 1.25, 2700, 1, LIN],
-    [84, -150, .5,   .5,   4300, .9, LIN],
-    [92, -120, 0,    0,    5200, 0, LIN],      // gone
-    [100,-120, 0,    0,    5200, 0, LIN]
+    [12, 0,    1.1,  .86,  0,    1, RISE],     // first landing
+    [21, -125, .97,  1.04, 0,    1, FALL],
+    [31, 0,    1.1,  .86,  0,    1, RISE],     // second landing
+    [38, -70,  .98,  1.03, 0,    1, FALL],
+    [46, 0,    1.08, .88,  0,    1, RISE],     // third landing
+    [52, -35,  .99,  1.02, 0,    1, FALL],
+    [58, 0,    1.06, .9,   0,    1, RISE],     // fourth landing
+    [66, 0,    1,    1,    0,    1, LIN],      // settles on the water and stays
+    [100,0,    1,    1,    0,    1, LIN]
   ];
+
   function kf(name, refl){
     var out = '@keyframes ' + name + '{';
     STEPS.forEach(function(s){
@@ -45,10 +45,10 @@ var PesaIntro = (function(){
   function css(){
     var A = 'animation-duration:' + DUR + 's;animation-fill-mode:both;animation-iteration-count:1;animation-delay:var(--pi-d,0s);animation-play-state:var(--pi-s,running);';
     return kf('piLogo', false) + kf('piRefl', true) +
-      '@keyframes piRing{0%,9%{transform:scale(.15);opacity:0}11%{transform:scale(.2);opacity:.9}18%{transform:scale(1.5);opacity:0}25%{transform:scale(.15);opacity:0}27%{transform:scale(.2);opacity:.9}34%{transform:scale(1.4);opacity:0}37%{transform:scale(.15);opacity:0}39%{transform:scale(.2);opacity:.9}47%{transform:scale(1.5);opacity:0}100%{transform:scale(1.5);opacity:0}}' +
-      '@keyframes piShadow{0%,3%{transform:scale(.2);opacity:0}11%{transform:scale(1.1);opacity:.85}19%{transform:scale(.75);opacity:.5}27%{transform:scale(1.1);opacity:.85}33%{transform:scale(.85);opacity:.6}39%{transform:scale(1.05);opacity:.85}48%{transform:scale(.5);opacity:.35}84%{transform:scale(.4);opacity:.25}92%,100%{transform:scale(.2);opacity:0}}' +
-      '@keyframes piGlow{0%,8%{opacity:0;transform:scale(.7)}40%{opacity:.6;transform:scale(1)}66%{opacity:1;transform:scale(1.5)}92%,100%{opacity:0;transform:scale(1.8)}}' +
-      '@keyframes piTag{0%,58%{opacity:0;transform:translateY(10px)}70%,88%{opacity:1;transform:none}100%{opacity:0;transform:none}}' +
+      '@keyframes piRing{0%,10%{transform:scale(.15);opacity:0}12%{transform:scale(.2);opacity:.9}19%{transform:scale(1.5);opacity:0}29%{transform:scale(.15);opacity:0}31%{transform:scale(.2);opacity:.9}38%{transform:scale(1.4);opacity:0}44%{transform:scale(.15);opacity:0}46%{transform:scale(.2);opacity:.9}53%{transform:scale(1.5);opacity:0}56%{transform:scale(.15);opacity:0}58%{transform:scale(.2);opacity:.9}68%{transform:scale(1.5);opacity:0}100%{transform:scale(1.5);opacity:0}}' +
+      '@keyframes piShadow{0%,3%{transform:scale(.2);opacity:0}12%{transform:scale(1.1);opacity:.85}21%{transform:scale(.75);opacity:.5}31%{transform:scale(1.1);opacity:.85}38%{transform:scale(.85);opacity:.6}46%{transform:scale(1.05);opacity:.85}52%{transform:scale(.92);opacity:.7}58%{transform:scale(1.05);opacity:.85}66%,100%{transform:scale(1);opacity:.8}}' +
+      '@keyframes piGlow{0%,8%{opacity:0;transform:scale(.7)}58%{opacity:.7;transform:scale(1)}100%{opacity:.85;transform:scale(1.15)}}' +
+      '@keyframes piTag{0%,60%{opacity:0;transform:translateY(10px)}72%,100%{opacity:1;transform:none}}' +
       '@keyframes piShim{from{background-position:0 0}to{background-position:0 44px}}' +
       '#introVeil{display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(90% 55% at 50% 22%,rgba(255,214,102,.30) 0%,rgba(255,214,102,0) 60%),radial-gradient(120% 80% at 50% 0%,#14A37A 0%,#0B7A5C 38%,#043d2f 100%)!important;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}' +
       '#introVeil .pi-water{position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(180deg,rgba(120,255,214,.20) 0%,rgba(43,212,160,.10) 30%,rgba(2,40,30,.55) 100%)}' +
