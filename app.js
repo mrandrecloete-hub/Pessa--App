@@ -7536,7 +7536,40 @@ function renderLoginHtml(){
 function newHereHtml(){
   return '<div class="newhere"><div class="nh-t">'+tr('New here?')+'</div><div class="nh-b">' +
     '<button class="btn btn-ghost" id="empSignupBtn" type="button">'+tr('I have an invite code')+'</button>' +
-    '<button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Register a new business')+'</button></div></div>';
+    '<button class="btn btn-ghost" id="loginRegisterBtn" type="button" data-newbiz="1">'+tr('Register a new business')+'</button></div>' +
+    '<div style="text-align:center;margin-top:14px;"><button type="button" data-erase-device="1" style="all:unset;cursor:pointer;font-size:12.5px;color:var(--text-muted);text-decoration:underline;">'+tr('Forgot the passwords? Erase everything on this device')+'</button></div></div>';
+}
+/* ---- erase everything on this device, from the outside (sign in and register screens), for when every password is forgotten ----
+   It needs no password, on purpose: it only destroys. It cannot show or open anything. It asks for a typed word first, lists what goes
+   and what stays, and does not touch copies in the owner's own cloud sync project or files saved outside the app. */
+document.addEventListener('click', function(e){ var b = e.target && e.target.closest ? e.target.closest('[data-erase-device]') : null; if(b){ e.preventDefault(); openEraseDeviceSheet(); } });
+function openEraseDeviceSheet(){
+  var names = []; try{ names = WS.list().map(function(w){ return w.name; }).filter(Boolean); }catch(e){}
+  var html = '<div class="sheet-head"><h2>'+tr('Erase everything on this device')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+ICONS.warn+' <b>'+tr('This cannot be undone.')+'</b> '+tr('Use it only if you have forgotten the passwords and want to start again.')+'</div>' +
+    (names.length ? '<div class="section-title" style="margin-top:12px;">'+tr('Businesses that will be erased')+'</div><div class="rowlist">'+names.map(function(n){ return '<div class="row"><div class="main"><div class="title">'+esc(n)+'</div></div></div>'; }).join('')+'</div>' : '<div class="small" style="margin:10px 0;">'+tr('No business is saved on this device.')+'</div>') +
+    '<div class="section-title" style="margin-top:12px;">'+tr('What is erased')+'</div>' +
+    '<div class="small" style="line-height:1.5;">'+tr('Every business on this device with its products, sales, customers, staff accounts and passwords, the automatic backups kept on this device, and the settings saved here.')+'</div>' +
+    '<div class="section-title" style="margin-top:12px;">'+tr('What is not erased')+'</div>' +
+    '<div class="small" style="line-height:1.5;">'+tr('Copies kept in your own cloud sync project, backup files you saved to a folder, downloaded or sent to someone, and anything on other devices. Remove those yourself if you want them gone.')+'</div>' +
+    '<div class="small" style="margin-top:10px;line-height:1.5;">'+tr('This does not open or show any business. Anyone holding this device could use it, so keep the device safe.')+'</div>' +
+    '<div class="field" style="margin-top:12px;"><label>'+tr('Type ERASE to confirm')+'</label><input id="edWord" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ERASE"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="edGo" type="button" disabled>'+tr('Erase everything now')+'</button><button class="btn btn-ghost btn-block" id="edNo" type="button" style="margin-top:8px;">'+tr('Cancel')+'</button></div>';
+  var ov = openSheet(html), w = ov.querySelector('#edWord'), go = ov.querySelector('#edGo');
+  ov.querySelector('#edNo').addEventListener('click', closeModal);
+  w.addEventListener('input', function(){ go.disabled = String(w.value).trim().toUpperCase() !== 'ERASE'; });
+  go.addEventListener('click', function(){
+    if(String(w.value).trim().toUpperCase() !== 'ERASE') return;
+    go.disabled = true; go.textContent = tr('Erasing…');
+    eraseDeviceNow().then(function(){ try{ toast(tr('Everything was erased from this device.')); }catch(e){} setTimeout(function(){ location.replace(location.pathname + location.search); }, 600); });
+  });
+}
+function eraseDeviceNow(){
+  var ids = []; try{ ids = WS.list().map(function(x){ return x.id; }); }catch(e){}
+  ids.concat(['default']).forEach(function(rid){ try{ Persist.dropWs(rid); }catch(e){} });
+  return Persist.saved().catch(function(){}).then(function(){
+    return Promise.all(['pesa_backups_v1', 'pesa_bkfolder_v1'].map(function(n){ return new Promise(function(res){ try{ var r = indexedDB.deleteDatabase(n); r.onsuccess = r.onerror = r.onblocked = function(){ res(); }; setTimeout(res, 1500); }catch(e){ res(); } }); }));
+  }).then(function(){ try{ localStorage.clear(); }catch(e){} try{ sessionStorage.clear(); }catch(e){} });
 }
 function lastUserKey(){ return 'pesa_last_user_' + WS.id; }
 function wireLoginView(root){
@@ -19905,7 +19938,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.179';
+var APP_VERSION = '2026.10.180';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20215,6 +20248,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.180', items:[
+    'New on the sign in and register screens: Forgot the passwords? Erase everything on this device. It needs no password, asks you to type ERASE, lists the businesses that will go and what is and is not erased, then clears every business, account and backup kept on this device and starts fresh. Copies in your own cloud sync project and files you saved elsewhere are not touched'
+  ] },
   { v:'2026.10.179', items:[
     'Blaze can now be found: the Pesa AI Assistant page shows a Blaze line under the question box (off, not downloaded yet, or on) that opens the setup. Open questions now say how to turn Blaze on. Added 11 read only tools for barbershops and salons (bookings, walk in queue, stylist earnings, top services, prices) and for guest houses and lodges (occupancy, bookings ahead, room status, open tabs, room fees and levy estimate, licence dates), offered only to that business type'
   ] },
