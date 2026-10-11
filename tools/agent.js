@@ -333,7 +333,7 @@ function agentParse(raw){
   if(r && !/^I did not understand/.test(r.text)) return r;
   var pg2 = AGENT_PAGES.find(function(x){ return x[0].test(q); });
   if(pg2) return { text:'I can open ' + pg2[2] + ' for you.', page:pg2[1], label:'Open ' + pg2[2] };
-  return { text:'I did not understand that yet. I can answer questions about your sales, stock and customers, open any page, add an expense, a product or stock, change a price, message your team, make a backup and file the month. Try one of the examples.' };
+  return { text:'I did not understand that yet. I can answer questions about your sales, stock and customers, open any page, add an expense, a product or stock, change a price, message your team, make a backup and file the month. Try one of the examples.' + (aiReady() ? '' : ' For open questions like this one, turn on Blaze: tap the Blaze line under the question box.') };
 }
 
 /* ---- the page ---- */
@@ -380,6 +380,7 @@ function openAgentSheet(){
     '<div class="ag-hero"><div class="tx"><h2 class="ag-hello">' + tr('Hello, I am your') + '<br><b>Pesa</b> ' + tr('AI Assistant') + '</h2><div class="ag-sub">' + tr('I help you run your shop: answer questions, open pages, record expenses and stock, message your team and keep watch.') + '</div></div><img class="ag-robot" src="' + AGENT_ROBOT + '" alt="" draggable="false"></div>' +
     '<div class="ag-ask"><svg class="sp" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 6.3L21 10l-6.8 1.7L12 18l-2.2-6.3L3 10l6.8-1.7L12 2Z"/></svg><input id="agQ" type="text" autocomplete="off" placeholder="' + esc(tr('Ask me anything...')) + '">' +
       (voiceSupported() ? '<button class="ag-mic" id="agMic" type="button" aria-label="' + esc(tr('Voice')) + '">' + MIC_ICON + '</button>' : '') + '<button class="ag-send" id="agGo" type="button" aria-label="' + esc(tr('Send')) + '">' + SEND_ICON + '</button></div>' +
+    (function(){ var h = blazeHeadline(); return '<button type="button" id="agBz" class="ag-bz' + (h.on ? ' on' : '') + '" style="all:unset;box-sizing:border-box;display:flex;gap:8px;align-items:center;width:100%;margin:8px 0 0;padding:9px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.28);cursor:pointer;font-size:13px;line-height:1.35;color:inherit;background:rgba(255,255,255,.08);"><span style="width:9px;height:9px;border-radius:50%;flex:none;background:' + (h.on ? '#3ddc97' : '#f2c25a') + ';"></span><span style="flex:1;">' + esc(tr(h.text)) + '</span><b style="flex:none;text-decoration:underline;">' + esc(tr(h.go)) + '</b></button>'; })() +
     '<div class="ag-out" id="agOut" aria-live="polite"></div>' +
     '<div class="ag-h">' + tr('Quick actions') + '</div><div class="ag-grid">' + AGENT_TILES.map(function(t, i){
       return '<button type="button" class="ag-tile" data-ag-t="' + i + '"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + t[3] + '</svg></span><span class="nm">' + tr(t[0]) + '</span><span class="ds">' + tr(t[1]) + '</span></button>'; }).join('') + '</div>' +
@@ -441,6 +442,7 @@ function openAgentSheet(){
   ov.querySelectorAll('[data-ag-t]').forEach(function(b){ b.addEventListener('click', function(){ ask(AGENT_TILES[+b.getAttribute('data-ag-t')][2]); }); });
   ov.querySelectorAll('[data-ag-e]').forEach(function(b){ b.addEventListener('click', function(){ var t = AGENT_TRY[+b.getAttribute('data-ag-e')]; inp.value = t; inp.focus(); }); });
   ov.querySelector('#agAi').addEventListener('click', function(){ closeModal(); openAiSettingsSheet(); });
+  var bzb = ov.querySelector('#agBz'); if(bzb) bzb.addEventListener('click', function(){ closeModal(); setTimeout(openAiSettingsSheet, 350); });
   ov.querySelector('#agFile').addEventListener('click', function(){ aiAttachPick(function(n){ toast(tr('Attached') + ': ' + n); }); });
   ov.querySelector('#agToggle').addEventListener('click', function(){ btSave({ agentOff: on }); closeModal(); openAgentSheet(); });
   ov.querySelector('#agRun').addEventListener('click', function(){ _agent.last = 0; agentTick('manual'); toast(tr('Checked')); closeModal(); openAgentSheet(); });

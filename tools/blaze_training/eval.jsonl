@@ -1,180 +1,246 @@
-{"q": "please what is 830 + 18 please", "tool": "calc", "args": {"expression": "830 + 18"}}
-{"q": "tell me, work out 129 + 20 please", "tool": "calc", "args": {"expression": "129 + 20"}}
-{"q": "hey, what is 657 - 44", "tool": "calc", "args": {"expression": "657 - 44"}}
-{"q": "ok so work out 521 x 13?", "tool": "calc", "args": {"expression": "521 * 13"}}
-{"q": "hi Blaze, calculate 132 - 7 now", "tool": "calc", "args": {"expression": "132 - 7"}}
-{"q": "hi Blaze, what is 208 x 6 now", "tool": "calc", "args": {"expression": "208 * 6"}}
-{"q": "please shop summary this year?", "tool": "shop_summary", "args": {"period": "year"}}
-{"q": "eish, sales and expenses this year", "tool": "shop_summary", "args": {"period": "year"}}
-{"q": "hi Blaze, give me the totals month to date please", "tool": "shop_summary", "args": {"period": "month"}}
-{"q": "shop summary this month now", "tool": "shop_summary", "args": {"period": "month"}}
-{"q": "tell me, give me the totals so far today now", "tool": "shop_summary", "args": {"period": "today"}}
-{"q": "give me the totals the day before today", "tool": "shop_summary", "args": {"period": "yesterday"}}
-{"q": "what does bath cost me", "tool": "find_product", "args": {"query": "bath"}}
-{"q": "price of fanta now", "tool": "find_product", "args": {"query": "fanta"}}
-{"q": "hey, price of cooking please", "tool": "find_product", "args": {"query": "cooking"}}
-{"q": "how much is cooking please", "tool": "find_product", "args": {"query": "cooking"}}
-{"q": "tell me, how many spaza do I have", "tool": "find_product", "args": {"query": "spaza"}}
-{"q": "eish, how many eggs do i have please", "tool": "find_product", "args": {"query": "eggs"}}
-{"q": "what is running low", "tool": "low_stock", "args": {}}
-{"q": "hey, what do I need to buy now", "tool": "low_stock", "args": {}}
-{"q": "quick one: what should I reorder please", "tool": "low_stock", "args": {}}
-{"q": "what should I reorder thanks", "tool": "low_stock", "args": {}}
-{"q": "hi Blaze, what is running low", "tool": "low_stock", "args": {}}
-{"q": "what do i need to buy thanks", "tool": "low_stock", "args": {}}
-{"q": "ok so who owes me money", "tool": "customers_owing", "args": {}}
-{"q": "who owes me money", "tool": "customers_owing", "args": {}}
-{"q": "please debtors list please", "tool": "customers_owing", "args": {}}
-{"q": "quick one: who has not paid?", "tool": "customers_owing", "args": {}}
-{"q": "who has not paid thanks", "tool": "customers_owing", "args": {}}
-{"q": "who has not paid", "tool": "customers_owing", "args": {}}
-{"q": "quick one: what notes do I have about rent now", "tool": "recall_memory", "args": {"query": "prices"}}
-{"q": "ok so what did I tell you about the supplier boss", "tool": "recall_memory", "args": {"query": "prices"}}
-{"q": "hey, what notes do I have about rent", "tool": "recall_memory", "args": {"query": "prices"}}
-{"q": "eish, do you remember my note about prices now", "tool": "recall_memory", "args": {"query": "supplier"}}
-{"q": "what notes do I have about rent boss", "tool": "recall_memory", "args": {"query": "prices"}}
-{"q": "hey, what notes do I have about rent", "tool": "recall_memory", "args": {"query": "supplier"}}
-{"q": "please save a note: the supplier delivers on tuesdays?", "tool": "remember", "args": {"text": "the supplier delivers on Tuesdays"}}
-{"q": "quick one: please save a note: Mr Haufiku pays at month end", "tool": "remember", "args": {"text": "Mr Haufiku pays at month end"}}
-{"q": "remember that Mr Haufiku pays at month end?", "tool": "remember", "args": {"text": "Mr Haufiku pays at month end"}}
-{"q": "tell me, please save a note: the supplier delivers on Tuesdays", "tool": "remember", "args": {"text": "the supplier delivers on Tuesdays"}}
-{"q": "please remember that rent is due on the 28th", "tool": "remember", "args": {"text": "rent is due on the 28th"}}
-{"q": "tell me, remember that rent is due on the 28th boss", "tool": "remember", "args": {"text": "rent is due on the 28th"}}
-{"q": "total of the file I attached", "tool": "analyze_csv", "args": {}}
-{"q": "hi Blaze, what is in my csv?", "tool": "analyze_csv", "args": {}}
-{"q": "what is in my csv please", "tool": "analyze_csv", "args": {}}
-{"q": "quick one: what is in my csv now", "tool": "analyze_csv", "args": {}}
-{"q": "ok so analyze the attached sheet now", "tool": "analyze_csv", "args": {}}
-{"q": "please analyze the attached sheet thanks", "tool": "analyze_csv", "args": {}}
-{"q": "please total takings for the month", "tool": "sales_by_period", "args": {"period": "month"}}
-{"q": "please how many sales did we do year to date now", "tool": "sales_by_period", "args": {"period": "year"}}
-{"q": "eish, how many sales did we do this month boss", "tool": "sales_by_period", "args": {"period": "month"}}
-{"q": "hey, what are my sales month to date boss", "tool": "sales_by_period", "args": {"period": "month"}}
-{"q": "hi Blaze, sales yesterday thanks", "tool": "sales_by_period", "args": {"period": "yesterday"}}
-{"q": "hey, how many sales did we do this month?", "tool": "sales_by_period", "args": {"period": "month"}}
-{"q": "what should I never run out of this year boss", "tool": "top_products", "args": {"period": "year"}}
-{"q": "hi blaze, what sells best this year", "tool": "top_products", "args": {"period": "year"}}
-{"q": "ok so best sellers for the year boss", "tool": "top_products", "args": {"period": "year"}}
-{"q": "hey, top products this year now", "tool": "top_products", "args": {"period": "year"}}
-{"q": "quick one: which items sold the most for the month", "tool": "top_products", "args": {"period": "month"}}
-{"q": "hey, which items sold the most month to date", "tool": "top_products", "args": {"period": "month"}}
-{"q": "hi Blaze, sales per cashier for the month?", "tool": "sales_by_staff", "args": {"period": "month"}}
-{"q": "hey, which employee made the most sales for the month", "tool": "sales_by_staff", "args": {"period": "month"}}
-{"q": "eish, how did my staff do the day before today?", "tool": "sales_by_staff", "args": {"period": "yesterday"}}
-{"q": "please how did my staff do so far today?", "tool": "sales_by_staff", "args": {"period": "today"}}
-{"q": "ok so sales per cashier last month?", "tool": "sales_by_staff", "args": {"period": "last_month"}}
-{"q": "hi blaze, which employee made the most sales this year?", "tool": "sales_by_staff", "args": {"period": "year"}}
-{"q": "eish, cash versus card this year now", "tool": "payment_methods", "args": {"period": "year"}}
-{"q": "cash versus card today now", "tool": "payment_methods", "args": {"period": "today"}}
-{"q": "payment methods last month", "tool": "payment_methods", "args": {"period": "last_month"}}
-{"q": "eish, how did customers pay today so far", "tool": "payment_methods", "args": {"period": "today"}}
-{"q": "please cash versus card this month thanks", "tool": "payment_methods", "args": {"period": "month"}}
-{"q": "hi Blaze, payment methods yesterday now", "tool": "payment_methods", "args": {"period": "yesterday"}}
-{"q": "hey, what is on the shelves worth at cost", "tool": "stock_value", "args": {}}
-{"q": "tell me, what is on the shelves worth at cost please", "tool": "stock_value", "args": {}}
-{"q": "how much money is tied up in stock?", "tool": "stock_value", "args": {}}
-{"q": "quick one: what is on the shelves worth at cost", "tool": "stock_value", "args": {}}
-{"q": "stock value thanks", "tool": "stock_value", "args": {}}
-{"q": "stock value now", "tool": "stock_value", "args": {}}
-{"q": "quick one: does my stock match what it should be thanks", "tool": "stock_variances", "args": {}}
-{"q": "hi Blaze, expected stock against counted stock?", "tool": "stock_variances", "args": {}}
-{"q": "hey, is my stock short now", "tool": "stock_variances", "args": {}}
-{"q": "hey, expected stock against counted stock boss", "tool": "stock_variances", "args": {}}
-{"q": "is my stock short?", "tool": "stock_variances", "args": {}}
-{"q": "please stock variance now", "tool": "stock_variances", "args": {}}
-{"q": "ok so out of stock list", "tool": "out_of_stock", "args": {}}
-{"q": "hi Blaze, what do I have none of?", "tool": "out_of_stock", "args": {}}
-{"q": "please out of stock list", "tool": "out_of_stock", "args": {}}
-{"q": "hey, what is out of stock now", "tool": "out_of_stock", "args": {}}
-{"q": "tell me, which products are finished thanks", "tool": "out_of_stock", "args": {}}
-{"q": "ok so what do I have none of?", "tool": "out_of_stock", "args": {}}
-{"q": "ok so which products are just sitting there", "tool": "slow_movers", "args": {}}
-{"q": "ok so dead stock thanks", "tool": "slow_movers", "args": {}}
-{"q": "dead stock?", "tool": "slow_movers", "args": {}}
-{"q": "what is not selling now", "tool": "slow_movers", "args": {}}
-{"q": "please slow movers", "tool": "slow_movers", "args": {}}
-{"q": "hi Blaze, slow movers thanks", "tool": "slow_movers", "args": {}}
-{"q": "ok so how much do I owe my suppliers", "tool": "supplier_balances", "args": {}}
-{"q": "tell me, unpaid supplier invoices", "tool": "supplier_balances", "args": {}}
-{"q": "how much do i owe my suppliers?", "tool": "supplier_balances", "args": {}}
-{"q": "who must I pay?", "tool": "supplier_balances", "args": {}}
-{"q": "eish, supplier balances thanks", "tool": "supplier_balances", "args": {}}
-{"q": "unpaid supplier invoices", "tool": "supplier_balances", "args": {}}
-{"q": "ok so do my supplier statements agree thanks", "tool": "supplier_reconciliation", "args": {}}
-{"q": "how does Okahandja Dairy reconcile thanks", "tool": "supplier_reconciliation", "args": {"supplier": "Okahandja"}}
-{"q": "quick one: supplier reconciliation?", "tool": "supplier_reconciliation", "args": {}}
-{"q": "tell me, how does Okahandja Dairy reconcile?", "tool": "supplier_reconciliation", "args": {"supplier": "Okahandja"}}
-{"q": "hi Blaze, how does Windhoek Wholesalers reconcile boss", "tool": "supplier_reconciliation", "args": {"supplier": "Windhoek"}}
-{"q": "hey, any supplier problems?", "tool": "supplier_reconciliation", "args": {}}
-{"q": "is everything reconciled?", "tool": "reconciliation_status", "args": {}}
-{"q": "tell me, are my books checked?", "tool": "reconciliation_status", "args": {}}
-{"q": "tell me, reconciliation status thanks", "tool": "reconciliation_status", "args": {}}
-{"q": "tell me, reconciliation status now", "tool": "reconciliation_status", "args": {}}
-{"q": "eish, are my books checked", "tool": "reconciliation_status", "args": {}}
-{"q": "hey, is everything reconciled thanks", "tool": "reconciliation_status", "args": {}}
-{"q": "ok so how much has amutenya bought?", "tool": "customer_history", "args": {"query": "amutenya"}}
-{"q": "ok so how much has joseph bought boss", "tool": "customer_history", "args": {"query": "joseph"}}
-{"q": "hi Blaze, how much has joseph bought now", "tool": "customer_history", "args": {"query": "joseph"}}
-{"q": "eish, how much has hendrik bought thanks", "tool": "customer_history", "args": {"query": "hendrik"}}
-{"q": "ok so show me beukes history", "tool": "customer_history", "args": {"query": "beukes"}}
-{"q": "ok so show me amutenya history?", "tool": "customer_history", "args": {"query": "amutenya"}}
-{"q": "biggest expenses yesterday boss", "tool": "expenses_summary", "args": {"period": "yesterday"}}
-{"q": "eish, expenses today boss", "tool": "expenses_summary", "args": {"period": "today"}}
-{"q": "hi Blaze, expenses today so far thanks", "tool": "expenses_summary", "args": {"period": "today"}}
-{"q": "how much did I spend for the year", "tool": "expenses_summary", "args": {"period": "year"}}
-{"q": "what did i spend money on in the previous month please", "tool": "expenses_summary", "args": {"period": "last_month"}}
-{"q": "biggest expenses this week please", "tool": "expenses_summary", "args": {"period": "week"}}
-{"q": "till status now", "tool": "till_status", "args": {}}
-{"q": "till status", "tool": "till_status", "args": {}}
-{"q": "hi Blaze, how is the till now", "tool": "till_status", "args": {}}
-{"q": "how much cash in the till so far", "tool": "till_status", "args": {}}
-{"q": "ok so what is in the till?", "tool": "till_status", "args": {}}
-{"q": "how much cash in the till so far please", "tool": "till_status", "args": {}}
-{"q": "quick one: voided sales in the previous month?", "tool": "refunds_summary", "args": {"period": "last_month"}}
-{"q": "eish, any refunds yesterday thanks", "tool": "refunds_summary", "args": {"period": "yesterday"}}
-{"q": "quick one: any refunds this week", "tool": "refunds_summary", "args": {"period": "week"}}
-{"q": "hi blaze, how many refunds this year", "tool": "refunds_summary", "args": {"period": "year"}}
-{"q": "hey, any refunds the month before this one thanks", "tool": "refunds_summary", "args": {"period": "last_month"}}
-{"q": "refunds and voids last month?", "tool": "refunds_summary", "args": {"period": "last_month"}}
-{"q": "how much VAT did I collect for the month boss", "tool": "vat_summary", "args": {"period": "month"}}
-{"q": "how much VAT did I collect for the year?", "tool": "vat_summary", "args": {"period": "year"}}
-{"q": "ok so VAT last month now", "tool": "vat_summary", "args": {"period": "last_month"}}
-{"q": "hi Blaze, VAT in the previous month?", "tool": "vat_summary", "args": {"period": "last_month"}}
-{"q": "tell me, VAT summary this year?", "tool": "vat_summary", "args": {"period": "year"}}
-{"q": "quick one: VAT for the month thanks", "tool": "vat_summary", "args": {"period": "month"}}
-{"q": "did I make a profit last month", "tool": "profit_and_loss", "args": {"period": "last_month"}}
-{"q": "profit and loss in the previous month", "tool": "profit_and_loss", "args": {"period": "last_month"}}
-{"q": "ok so how much profit for the month?", "tool": "profit_and_loss", "args": {"period": "month"}}
-{"q": "eish, net result in the previous month thanks", "tool": "profit_and_loss", "args": {"period": "last_month"}}
-{"q": "eish, net result the month before this one now", "tool": "profit_and_loss", "args": {"period": "last_month"}}
-{"q": "quick one: did i make a profit in the previous month thanks", "tool": "profit_and_loss", "args": {"period": "last_month"}}
-{"q": "hey, forecast", "tool": "forecast", "args": {}}
-{"q": "tell me, sales forecast for the next 7 days now", "tool": "forecast", "args": {}}
-{"q": "tell me, sales forecast for the next 7 days?", "tool": "forecast", "args": {}}
-{"q": "what will I sell next week now", "tool": "forecast", "args": {}}
-{"q": "tell me, predict my sales", "tool": "forecast", "args": {}}
-{"q": "hey, forecast?", "tool": "forecast", "args": {}}
-{"q": "am I doing better than last month", "tool": "compare_periods", "args": {"kind": "month"}}
-{"q": "please sales up or down this week please", "tool": "compare_periods", "args": {"kind": "week"}}
-{"q": "how is this week against the one before", "tool": "compare_periods", "args": {"kind": "week"}}
-{"q": "ok so sales up or down this month?", "tool": "compare_periods", "args": {"kind": "month"}}
-{"q": "please sales up or down this week?", "tool": "compare_periods", "args": {"kind": "week"}}
-{"q": "quick one: how is this month against the one before boss", "tool": "compare_periods", "args": {"kind": "month"}}
-{"q": "quick one: were there any odd sales days boss", "tool": "unusual_days", "args": {}}
-{"q": "eish, any strange days lately thanks", "tool": "unusual_days", "args": {}}
-{"q": "hey, were there any odd sales days", "tool": "unusual_days", "args": {}}
-{"q": "which days were unusually high or low?", "tool": "unusual_days", "args": {}}
-{"q": "hi Blaze, which days were unusually high or low?", "tool": "unusual_days", "args": {}}
-{"q": "ok so which days were unusually high or low please", "tool": "unusual_days", "args": {}}
-{"q": "hey, warnings boss", "tool": "alerts_and_notes", "args": {}}
-{"q": "any alerts thanks", "tool": "alerts_and_notes", "args": {}}
-{"q": "warnings?", "tool": "alerts_and_notes", "args": {}}
-{"q": "quick one: any alerts thanks", "tool": "alerts_and_notes", "args": {}}
-{"q": "what has the assistant noticed", "tool": "alerts_and_notes", "args": {}}
-{"q": "any notes from the assistant now", "tool": "alerts_and_notes", "args": {}}
-{"q": "who are you", "tool": null, "args": null}
-{"q": "who built you", "tool": null, "args": null}
-{"q": "who made you", "tool": null, "args": null}
-{"q": "what is your name", "tool": null, "args": null}
-{"q": "which company made you", "tool": null, "args": null}
-{"q": "are you chatgpt", "tool": null, "args": null}
+{"q": "please what is 830 + 18 please", "tool": "calc", "args": {"expression": "830 + 18"}, "biz": "retail"}
+{"q": "tell me, work out 129 + 20 please", "tool": "calc", "args": {"expression": "129 + 20"}, "biz": "retail"}
+{"q": "hey, what is 657 - 44", "tool": "calc", "args": {"expression": "657 - 44"}, "biz": "retail"}
+{"q": "ok so work out 521 x 13?", "tool": "calc", "args": {"expression": "521 * 13"}, "biz": "retail"}
+{"q": "hi Blaze, calculate 132 - 7 now", "tool": "calc", "args": {"expression": "132 - 7"}, "biz": "retail"}
+{"q": "hi Blaze, what is 208 x 6 now", "tool": "calc", "args": {"expression": "208 * 6"}, "biz": "retail"}
+{"q": "please shop summary this year?", "tool": "shop_summary", "args": {"period": "year"}, "biz": "retail"}
+{"q": "eish, sales and expenses this year", "tool": "shop_summary", "args": {"period": "year"}, "biz": "retail"}
+{"q": "hi Blaze, give me the totals month to date please", "tool": "shop_summary", "args": {"period": "month"}, "biz": "retail"}
+{"q": "shop summary this month now", "tool": "shop_summary", "args": {"period": "month"}, "biz": "retail"}
+{"q": "tell me, give me the totals so far today now", "tool": "shop_summary", "args": {"period": "today"}, "biz": "retail"}
+{"q": "give me the totals the day before today", "tool": "shop_summary", "args": {"period": "yesterday"}, "biz": "retail"}
+{"q": "what does bath cost me", "tool": "find_product", "args": {"query": "bath"}, "biz": "retail"}
+{"q": "price of fanta now", "tool": "find_product", "args": {"query": "fanta"}, "biz": "retail"}
+{"q": "hey, price of cooking please", "tool": "find_product", "args": {"query": "cooking"}, "biz": "retail"}
+{"q": "how much is cooking please", "tool": "find_product", "args": {"query": "cooking"}, "biz": "retail"}
+{"q": "tell me, how many spaza do I have", "tool": "find_product", "args": {"query": "spaza"}, "biz": "retail"}
+{"q": "eish, how many eggs do i have please", "tool": "find_product", "args": {"query": "eggs"}, "biz": "retail"}
+{"q": "what is running low", "tool": "low_stock", "args": {}, "biz": "retail"}
+{"q": "hey, what do I need to buy now", "tool": "low_stock", "args": {}, "biz": "retail"}
+{"q": "quick one: what should I reorder please", "tool": "low_stock", "args": {}, "biz": "retail"}
+{"q": "what should I reorder thanks", "tool": "low_stock", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, what is running low", "tool": "low_stock", "args": {}, "biz": "retail"}
+{"q": "what do i need to buy thanks", "tool": "low_stock", "args": {}, "biz": "retail"}
+{"q": "ok so who owes me money", "tool": "customers_owing", "args": {}, "biz": "retail"}
+{"q": "who owes me money", "tool": "customers_owing", "args": {}, "biz": "retail"}
+{"q": "please debtors list please", "tool": "customers_owing", "args": {}, "biz": "retail"}
+{"q": "quick one: who has not paid?", "tool": "customers_owing", "args": {}, "biz": "retail"}
+{"q": "who has not paid thanks", "tool": "customers_owing", "args": {}, "biz": "retail"}
+{"q": "who has not paid", "tool": "customers_owing", "args": {}, "biz": "retail"}
+{"q": "quick one: what notes do I have about rent now", "tool": "recall_memory", "args": {"query": "prices"}, "biz": "retail"}
+{"q": "ok so what did I tell you about the supplier boss", "tool": "recall_memory", "args": {"query": "prices"}, "biz": "retail"}
+{"q": "hey, what notes do I have about rent", "tool": "recall_memory", "args": {"query": "prices"}, "biz": "retail"}
+{"q": "eish, do you remember my note about prices now", "tool": "recall_memory", "args": {"query": "supplier"}, "biz": "retail"}
+{"q": "what notes do I have about rent boss", "tool": "recall_memory", "args": {"query": "prices"}, "biz": "retail"}
+{"q": "hey, what notes do I have about rent", "tool": "recall_memory", "args": {"query": "supplier"}, "biz": "retail"}
+{"q": "please save a note: the supplier delivers on tuesdays?", "tool": "remember", "args": {"text": "the supplier delivers on Tuesdays"}, "biz": "retail"}
+{"q": "quick one: please save a note: Mr Haufiku pays at month end", "tool": "remember", "args": {"text": "Mr Haufiku pays at month end"}, "biz": "retail"}
+{"q": "remember that Mr Haufiku pays at month end?", "tool": "remember", "args": {"text": "Mr Haufiku pays at month end"}, "biz": "retail"}
+{"q": "tell me, please save a note: the supplier delivers on Tuesdays", "tool": "remember", "args": {"text": "the supplier delivers on Tuesdays"}, "biz": "retail"}
+{"q": "please remember that rent is due on the 28th", "tool": "remember", "args": {"text": "rent is due on the 28th"}, "biz": "retail"}
+{"q": "tell me, remember that rent is due on the 28th boss", "tool": "remember", "args": {"text": "rent is due on the 28th"}, "biz": "retail"}
+{"q": "total of the file I attached", "tool": "analyze_csv", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, what is in my csv?", "tool": "analyze_csv", "args": {}, "biz": "retail"}
+{"q": "what is in my csv please", "tool": "analyze_csv", "args": {}, "biz": "retail"}
+{"q": "quick one: what is in my csv now", "tool": "analyze_csv", "args": {}, "biz": "retail"}
+{"q": "ok so analyze the attached sheet now", "tool": "analyze_csv", "args": {}, "biz": "retail"}
+{"q": "please analyze the attached sheet thanks", "tool": "analyze_csv", "args": {}, "biz": "retail"}
+{"q": "please total takings for the month", "tool": "sales_by_period", "args": {"period": "month"}, "biz": "retail"}
+{"q": "please how many sales did we do year to date now", "tool": "sales_by_period", "args": {"period": "year"}, "biz": "retail"}
+{"q": "eish, how many sales did we do this month boss", "tool": "sales_by_period", "args": {"period": "month"}, "biz": "retail"}
+{"q": "hey, what are my sales month to date boss", "tool": "sales_by_period", "args": {"period": "month"}, "biz": "retail"}
+{"q": "hi Blaze, sales yesterday thanks", "tool": "sales_by_period", "args": {"period": "yesterday"}, "biz": "retail"}
+{"q": "hey, how many sales did we do this month?", "tool": "sales_by_period", "args": {"period": "month"}, "biz": "retail"}
+{"q": "what should I never run out of this year boss", "tool": "top_products", "args": {"period": "year"}, "biz": "retail"}
+{"q": "hi blaze, what sells best this year", "tool": "top_products", "args": {"period": "year"}, "biz": "retail"}
+{"q": "ok so best sellers for the year boss", "tool": "top_products", "args": {"period": "year"}, "biz": "retail"}
+{"q": "hey, top products this year now", "tool": "top_products", "args": {"period": "year"}, "biz": "retail"}
+{"q": "quick one: which items sold the most for the month", "tool": "top_products", "args": {"period": "month"}, "biz": "retail"}
+{"q": "hey, which items sold the most month to date", "tool": "top_products", "args": {"period": "month"}, "biz": "retail"}
+{"q": "hi Blaze, sales per cashier for the month?", "tool": "sales_by_staff", "args": {"period": "month"}, "biz": "retail"}
+{"q": "hey, which employee made the most sales for the month", "tool": "sales_by_staff", "args": {"period": "month"}, "biz": "retail"}
+{"q": "eish, how did my staff do the day before today?", "tool": "sales_by_staff", "args": {"period": "yesterday"}, "biz": "retail"}
+{"q": "please how did my staff do so far today?", "tool": "sales_by_staff", "args": {"period": "today"}, "biz": "retail"}
+{"q": "ok so sales per cashier last month?", "tool": "sales_by_staff", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "hi blaze, which employee made the most sales this year?", "tool": "sales_by_staff", "args": {"period": "year"}, "biz": "retail"}
+{"q": "eish, cash versus card this year now", "tool": "payment_methods", "args": {"period": "year"}, "biz": "retail"}
+{"q": "cash versus card today now", "tool": "payment_methods", "args": {"period": "today"}, "biz": "retail"}
+{"q": "payment methods last month", "tool": "payment_methods", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "eish, how did customers pay today so far", "tool": "payment_methods", "args": {"period": "today"}, "biz": "retail"}
+{"q": "please cash versus card this month thanks", "tool": "payment_methods", "args": {"period": "month"}, "biz": "retail"}
+{"q": "hi Blaze, payment methods yesterday now", "tool": "payment_methods", "args": {"period": "yesterday"}, "biz": "retail"}
+{"q": "hey, what is on the shelves worth at cost", "tool": "stock_value", "args": {}, "biz": "retail"}
+{"q": "tell me, what is on the shelves worth at cost please", "tool": "stock_value", "args": {}, "biz": "retail"}
+{"q": "how much money is tied up in stock?", "tool": "stock_value", "args": {}, "biz": "retail"}
+{"q": "quick one: what is on the shelves worth at cost", "tool": "stock_value", "args": {}, "biz": "retail"}
+{"q": "stock value thanks", "tool": "stock_value", "args": {}, "biz": "retail"}
+{"q": "stock value now", "tool": "stock_value", "args": {}, "biz": "retail"}
+{"q": "quick one: does my stock match what it should be thanks", "tool": "stock_variances", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, expected stock against counted stock?", "tool": "stock_variances", "args": {}, "biz": "retail"}
+{"q": "hey, is my stock short now", "tool": "stock_variances", "args": {}, "biz": "retail"}
+{"q": "hey, expected stock against counted stock boss", "tool": "stock_variances", "args": {}, "biz": "retail"}
+{"q": "is my stock short?", "tool": "stock_variances", "args": {}, "biz": "retail"}
+{"q": "please stock variance now", "tool": "stock_variances", "args": {}, "biz": "retail"}
+{"q": "ok so out of stock list", "tool": "out_of_stock", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, what do I have none of?", "tool": "out_of_stock", "args": {}, "biz": "retail"}
+{"q": "please out of stock list", "tool": "out_of_stock", "args": {}, "biz": "retail"}
+{"q": "hey, what is out of stock now", "tool": "out_of_stock", "args": {}, "biz": "retail"}
+{"q": "tell me, which products are finished thanks", "tool": "out_of_stock", "args": {}, "biz": "retail"}
+{"q": "ok so what do I have none of?", "tool": "out_of_stock", "args": {}, "biz": "retail"}
+{"q": "ok so which products are just sitting there", "tool": "slow_movers", "args": {}, "biz": "retail"}
+{"q": "ok so dead stock thanks", "tool": "slow_movers", "args": {}, "biz": "retail"}
+{"q": "dead stock?", "tool": "slow_movers", "args": {}, "biz": "retail"}
+{"q": "what is not selling now", "tool": "slow_movers", "args": {}, "biz": "retail"}
+{"q": "please slow movers", "tool": "slow_movers", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, slow movers thanks", "tool": "slow_movers", "args": {}, "biz": "retail"}
+{"q": "ok so how much do I owe my suppliers", "tool": "supplier_balances", "args": {}, "biz": "retail"}
+{"q": "tell me, unpaid supplier invoices", "tool": "supplier_balances", "args": {}, "biz": "retail"}
+{"q": "how much do i owe my suppliers?", "tool": "supplier_balances", "args": {}, "biz": "retail"}
+{"q": "who must I pay?", "tool": "supplier_balances", "args": {}, "biz": "retail"}
+{"q": "eish, supplier balances thanks", "tool": "supplier_balances", "args": {}, "biz": "retail"}
+{"q": "unpaid supplier invoices", "tool": "supplier_balances", "args": {}, "biz": "retail"}
+{"q": "ok so do my supplier statements agree thanks", "tool": "supplier_reconciliation", "args": {}, "biz": "retail"}
+{"q": "how does Okahandja Dairy reconcile thanks", "tool": "supplier_reconciliation", "args": {"supplier": "Okahandja"}, "biz": "retail"}
+{"q": "quick one: supplier reconciliation?", "tool": "supplier_reconciliation", "args": {}, "biz": "retail"}
+{"q": "tell me, how does Okahandja Dairy reconcile?", "tool": "supplier_reconciliation", "args": {"supplier": "Okahandja"}, "biz": "retail"}
+{"q": "hi Blaze, how does Windhoek Wholesalers reconcile boss", "tool": "supplier_reconciliation", "args": {"supplier": "Windhoek"}, "biz": "retail"}
+{"q": "hey, any supplier problems?", "tool": "supplier_reconciliation", "args": {}, "biz": "retail"}
+{"q": "is everything reconciled?", "tool": "reconciliation_status", "args": {}, "biz": "retail"}
+{"q": "tell me, are my books checked?", "tool": "reconciliation_status", "args": {}, "biz": "retail"}
+{"q": "tell me, reconciliation status thanks", "tool": "reconciliation_status", "args": {}, "biz": "retail"}
+{"q": "tell me, reconciliation status now", "tool": "reconciliation_status", "args": {}, "biz": "retail"}
+{"q": "eish, are my books checked", "tool": "reconciliation_status", "args": {}, "biz": "retail"}
+{"q": "hey, is everything reconciled thanks", "tool": "reconciliation_status", "args": {}, "biz": "retail"}
+{"q": "ok so how much has amutenya bought?", "tool": "customer_history", "args": {"query": "amutenya"}, "biz": "retail"}
+{"q": "ok so how much has joseph bought boss", "tool": "customer_history", "args": {"query": "joseph"}, "biz": "retail"}
+{"q": "hi Blaze, how much has joseph bought now", "tool": "customer_history", "args": {"query": "joseph"}, "biz": "retail"}
+{"q": "eish, how much has hendrik bought thanks", "tool": "customer_history", "args": {"query": "hendrik"}, "biz": "retail"}
+{"q": "ok so show me beukes history", "tool": "customer_history", "args": {"query": "beukes"}, "biz": "retail"}
+{"q": "ok so show me amutenya history?", "tool": "customer_history", "args": {"query": "amutenya"}, "biz": "retail"}
+{"q": "biggest expenses yesterday boss", "tool": "expenses_summary", "args": {"period": "yesterday"}, "biz": "retail"}
+{"q": "eish, expenses today boss", "tool": "expenses_summary", "args": {"period": "today"}, "biz": "retail"}
+{"q": "hi Blaze, expenses today so far thanks", "tool": "expenses_summary", "args": {"period": "today"}, "biz": "retail"}
+{"q": "how much did I spend for the year", "tool": "expenses_summary", "args": {"period": "year"}, "biz": "retail"}
+{"q": "what did i spend money on in the previous month please", "tool": "expenses_summary", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "biggest expenses this week please", "tool": "expenses_summary", "args": {"period": "week"}, "biz": "retail"}
+{"q": "till status now", "tool": "till_status", "args": {}, "biz": "retail"}
+{"q": "till status", "tool": "till_status", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, how is the till now", "tool": "till_status", "args": {}, "biz": "retail"}
+{"q": "how much cash in the till so far", "tool": "till_status", "args": {}, "biz": "retail"}
+{"q": "ok so what is in the till?", "tool": "till_status", "args": {}, "biz": "retail"}
+{"q": "how much cash in the till so far please", "tool": "till_status", "args": {}, "biz": "retail"}
+{"q": "quick one: voided sales in the previous month?", "tool": "refunds_summary", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "eish, any refunds yesterday thanks", "tool": "refunds_summary", "args": {"period": "yesterday"}, "biz": "retail"}
+{"q": "quick one: any refunds this week", "tool": "refunds_summary", "args": {"period": "week"}, "biz": "retail"}
+{"q": "hi blaze, how many refunds this year", "tool": "refunds_summary", "args": {"period": "year"}, "biz": "retail"}
+{"q": "hey, any refunds the month before this one thanks", "tool": "refunds_summary", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "refunds and voids last month?", "tool": "refunds_summary", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "how much VAT did I collect for the month boss", "tool": "vat_summary", "args": {"period": "month"}, "biz": "retail"}
+{"q": "how much VAT did I collect for the year?", "tool": "vat_summary", "args": {"period": "year"}, "biz": "retail"}
+{"q": "ok so VAT last month now", "tool": "vat_summary", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "hi Blaze, VAT in the previous month?", "tool": "vat_summary", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "tell me, VAT summary this year?", "tool": "vat_summary", "args": {"period": "year"}, "biz": "retail"}
+{"q": "quick one: VAT for the month thanks", "tool": "vat_summary", "args": {"period": "month"}, "biz": "retail"}
+{"q": "did I make a profit last month", "tool": "profit_and_loss", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "profit and loss in the previous month", "tool": "profit_and_loss", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "ok so how much profit for the month?", "tool": "profit_and_loss", "args": {"period": "month"}, "biz": "retail"}
+{"q": "eish, net result in the previous month thanks", "tool": "profit_and_loss", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "eish, net result the month before this one now", "tool": "profit_and_loss", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "quick one: did i make a profit in the previous month thanks", "tool": "profit_and_loss", "args": {"period": "last_month"}, "biz": "retail"}
+{"q": "hey, forecast", "tool": "forecast", "args": {}, "biz": "retail"}
+{"q": "tell me, sales forecast for the next 7 days now", "tool": "forecast", "args": {}, "biz": "retail"}
+{"q": "tell me, sales forecast for the next 7 days?", "tool": "forecast", "args": {}, "biz": "retail"}
+{"q": "what will I sell next week now", "tool": "forecast", "args": {}, "biz": "retail"}
+{"q": "tell me, predict my sales", "tool": "forecast", "args": {}, "biz": "retail"}
+{"q": "hey, forecast?", "tool": "forecast", "args": {}, "biz": "retail"}
+{"q": "am I doing better than last month", "tool": "compare_periods", "args": {"kind": "month"}, "biz": "retail"}
+{"q": "please sales up or down this week please", "tool": "compare_periods", "args": {"kind": "week"}, "biz": "retail"}
+{"q": "how is this week against the one before", "tool": "compare_periods", "args": {"kind": "week"}, "biz": "retail"}
+{"q": "ok so sales up or down this month?", "tool": "compare_periods", "args": {"kind": "month"}, "biz": "retail"}
+{"q": "please sales up or down this week?", "tool": "compare_periods", "args": {"kind": "week"}, "biz": "retail"}
+{"q": "quick one: how is this month against the one before boss", "tool": "compare_periods", "args": {"kind": "month"}, "biz": "retail"}
+{"q": "quick one: were there any odd sales days boss", "tool": "unusual_days", "args": {}, "biz": "retail"}
+{"q": "eish, any strange days lately thanks", "tool": "unusual_days", "args": {}, "biz": "retail"}
+{"q": "hey, were there any odd sales days", "tool": "unusual_days", "args": {}, "biz": "retail"}
+{"q": "which days were unusually high or low?", "tool": "unusual_days", "args": {}, "biz": "retail"}
+{"q": "hi Blaze, which days were unusually high or low?", "tool": "unusual_days", "args": {}, "biz": "retail"}
+{"q": "ok so which days were unusually high or low please", "tool": "unusual_days", "args": {}, "biz": "retail"}
+{"q": "hey, warnings boss", "tool": "alerts_and_notes", "args": {}, "biz": "retail"}
+{"q": "any alerts thanks", "tool": "alerts_and_notes", "args": {}, "biz": "retail"}
+{"q": "warnings?", "tool": "alerts_and_notes", "args": {}, "biz": "retail"}
+{"q": "quick one: any alerts thanks", "tool": "alerts_and_notes", "args": {}, "biz": "retail"}
+{"q": "what has the assistant noticed", "tool": "alerts_and_notes", "args": {}, "biz": "retail"}
+{"q": "any notes from the assistant now", "tool": "alerts_and_notes", "args": {}, "biz": "retail"}
+{"q": "tell me, appointments for tomorrow?", "tool": "appointments", "args": {"day": "tomorrow"}, "biz": "beauty"}
+{"q": "eish, any no shows for tomorrow boss", "tool": "appointments", "args": {"day": "tomorrow"}, "biz": "beauty"}
+{"q": "tell me, appointments for tomorrow", "tool": "appointments", "args": {"day": "tomorrow"}, "biz": "beauty"}
+{"q": "hey, appointments today boss", "tool": "appointments", "args": {"day": "today"}, "biz": "beauty"}
+{"q": "tell me, any no shows tomorrow?", "tool": "appointments", "args": {"day": "tomorrow"}, "biz": "beauty"}
+{"q": "what is the diary like today please", "tool": "appointments", "args": {"day": "today"}, "biz": "beauty"}
+{"q": "hi Blaze, who is waiting boss", "tool": "walk_in_queue", "args": {}, "biz": "beauty"}
+{"q": "walk in queue please", "tool": "walk_in_queue", "args": {}, "biz": "beauty"}
+{"q": "hey, who is waiting thanks", "tool": "walk_in_queue", "args": {}, "biz": "beauty"}
+{"q": "eish, how many walk ins are waiting now", "tool": "walk_in_queue", "args": {}, "biz": "beauty"}
+{"q": "hi Blaze, walk in queue thanks", "tool": "walk_in_queue", "args": {}, "biz": "beauty"}
+{"q": "ok so who is waiting now", "tool": "walk_in_queue", "args": {}, "biz": "beauty"}
+{"q": "stylist earnings this month", "tool": "stylist_earnings", "args": {"period": "month"}, "biz": "beauty"}
+{"q": "quick one: commission owed this week?", "tool": "stylist_earnings", "args": {"period": "week"}, "biz": "beauty"}
+{"q": "please stylist earnings this month boss", "tool": "stylist_earnings", "args": {"period": "month"}, "biz": "beauty"}
+{"q": "tell me, barber sales today boss", "tool": "stylist_earnings", "args": {"period": "today"}, "biz": "beauty"}
+{"q": "ok so stylist earnings this month", "tool": "stylist_earnings", "args": {"period": "month"}, "biz": "beauty"}
+{"q": "eish, stylist earnings this month", "tool": "stylist_earnings", "args": {"period": "month"}, "biz": "beauty"}
+{"q": "tell me, what do clients book most for the month now", "tool": "top_services", "args": {"period": "month"}, "biz": "beauty"}
+{"q": "which service sells most this year thanks", "tool": "top_services", "args": {"period": "year"}, "biz": "beauty"}
+{"q": "hi Blaze, what do clients book most for the month please", "tool": "top_services", "args": {"period": "month"}, "biz": "beauty"}
+{"q": "quick one: top services the last 7 days please", "tool": "top_services", "args": {"period": "week"}, "biz": "beauty"}
+{"q": "hey, best selling cuts for the year boss", "tool": "top_services", "args": {"period": "year"}, "biz": "beauty"}
+{"q": "what do clients book most in the past week?", "tool": "top_services", "args": {"period": "week"}, "biz": "beauty"}
+{"q": "how much is a pedicure please", "tool": "service_prices", "args": {"query": "pedicure"}, "biz": "beauty"}
+{"q": "tell me, how much is a dry thanks", "tool": "service_prices", "args": {"query": "dry"}, "biz": "beauty"}
+{"q": "eish, how much is a trim please", "tool": "service_prices", "args": {"query": "trim"}, "biz": "beauty"}
+{"q": "eish, how much is a braids now", "tool": "service_prices", "args": {"query": "braids"}, "biz": "beauty"}
+{"q": "how much is a trim?", "tool": "service_prices", "args": {"query": "trim"}, "biz": "beauty"}
+{"q": "what do we charge for services please", "tool": "service_prices", "args": {}, "biz": "beauty"}
+{"q": "hey, how many rooms are taken this morning now", "tool": "occupancy", "args": {"day": "today"}, "biz": "hospitality"}
+{"q": "how many rooms are taken this morning now", "tool": "occupancy", "args": {"day": "today"}, "biz": "hospitality"}
+{"q": "hey, how many rooms are taken yesterday thanks", "tool": "occupancy", "args": {"day": "yesterday"}, "biz": "hospitality"}
+{"q": "who is leaving this morning now", "tool": "occupancy", "args": {"day": "today"}, "biz": "hospitality"}
+{"q": "quick one: occupancy this morning thanks", "tool": "occupancy", "args": {"day": "today"}, "biz": "hospitality"}
+{"q": "how many guests today thanks", "tool": "occupancy", "args": {"day": "today"}, "biz": "hospitality"}
+{"q": "ok so who is arriving this week now", "tool": "bookings_ahead", "args": {}, "biz": "hospitality"}
+{"q": "ok so bookings for the next two weeks now", "tool": "bookings_ahead", "args": {}, "biz": "hospitality"}
+{"q": "please bookings for the next two weeks now", "tool": "bookings_ahead", "args": {}, "biz": "hospitality"}
+{"q": "who is arriving this week thanks", "tool": "bookings_ahead", "args": {}, "biz": "hospitality"}
+{"q": "bookings for the next two weeks", "tool": "bookings_ahead", "args": {}, "biz": "hospitality"}
+{"q": "any reservations coming?", "tool": "bookings_ahead", "args": {}, "biz": "hospitality"}
+{"q": "tell me, which rooms need cleaning boss", "tool": "room_status", "args": {}, "biz": "hospitality"}
+{"q": "which rooms need cleaning?", "tool": "room_status", "args": {}, "biz": "hospitality"}
+{"q": "eish, room status please", "tool": "room_status", "args": {}, "biz": "hospitality"}
+{"q": "hey, room status", "tool": "room_status", "args": {}, "biz": "hospitality"}
+{"q": "hey, which rooms need cleaning now", "tool": "room_status", "args": {}, "biz": "hospitality"}
+{"q": "quick one: which rooms are free please", "tool": "room_status", "args": {}, "biz": "hospitality"}
+{"q": "hey, tabs still open thanks", "tool": "open_tabs", "args": {}, "biz": "hospitality"}
+{"q": "hi Blaze, who has an open tab?", "tool": "open_tabs", "args": {}, "biz": "hospitality"}
+{"q": "hey, open tabs please", "tool": "open_tabs", "args": {}, "biz": "hospitality"}
+{"q": "please tabs still open please", "tool": "open_tabs", "args": {}, "biz": "hospitality"}
+{"q": "hey, bar tabs?", "tool": "open_tabs", "args": {}, "biz": "hospitality"}
+{"q": "open tabs please", "tool": "open_tabs", "args": {}, "biz": "hospitality"}
+{"q": "please room income in the previous month boss", "tool": "room_revenue", "args": {"period": "last_month"}, "biz": "hospitality"}
+{"q": "quick one: room fees for the month boss", "tool": "room_revenue", "args": {"period": "month"}, "biz": "hospitality"}
+{"q": "quick one: room income in the previous month", "tool": "room_revenue", "args": {"period": "last_month"}, "biz": "hospitality"}
+{"q": "hi Blaze, room income the month before this one thanks", "tool": "room_revenue", "args": {"period": "last_month"}, "biz": "hospitality"}
+{"q": "hey, how much did the rooms make for the year boss", "tool": "room_revenue", "args": {"period": "year"}, "biz": "hospitality"}
+{"q": "tell me, room income in the previous month", "tool": "room_revenue", "args": {"period": "last_month"}, "biz": "hospitality"}
+{"q": "health certificate expiry?", "tool": "licences_and_levy", "args": {}, "biz": "hospitality"}
+{"q": "please when do my licences expire please", "tool": "licences_and_levy", "args": {}, "biz": "hospitality"}
+{"q": "hey, is my liquor licence still valid please", "tool": "licences_and_levy", "args": {}, "biz": "hospitality"}
+{"q": "hey, any licences running out", "tool": "licences_and_levy", "args": {}, "biz": "hospitality"}
+{"q": "hi Blaze, health certificate expiry now", "tool": "licences_and_levy", "args": {}, "biz": "hospitality"}
+{"q": "ok so licence renewal dates boss", "tool": "licences_and_levy", "args": {}, "biz": "hospitality"}
+{"q": "who are you", "tool": null, "args": null, "biz": "retail"}
+{"q": "who built you", "tool": null, "args": null, "biz": "retail"}
+{"q": "who made you", "tool": null, "args": null, "biz": "retail"}
+{"q": "what is your name", "tool": null, "args": null, "biz": "retail"}
+{"q": "which company made you", "tool": null, "args": null, "biz": "retail"}
+{"q": "are you chatgpt", "tool": null, "args": null, "biz": "retail"}

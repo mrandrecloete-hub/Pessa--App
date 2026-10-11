@@ -7,7 +7,7 @@ Tick these off in order. Part A gets Blaze working with Pesa's tools. Part B is 
 ### 0. Before Colab (5 minutes, on any computer)
 - [ ] `git pull` the Pesa repo (version 2026.10.178 or newer).
 - [ ] `node tools/blaze_training/sync_tools.mjs` (refreshes `tools.json`).
-- [ ] `python3 tools/blaze_training/make_dataset.py --existing <your old Blaze train.jsonl>` (keeps the calculator, time, files, jokes and identity rows you already trained). It writes `train.jsonl` (about 1,850 rows) and `eval.jsonl` (180 held out questions).
+- [ ] `python3 tools/blaze_training/make_dataset.py --existing <your old Blaze train.jsonl>` (keeps the calculator, time, files, jokes and identity rows you already trained). It writes `train.jsonl` (about 2,570 rows) and `eval.jsonl` (246 held out questions).
 - [ ] Look at 20 random rows of `train.jsonl` yourself. Check the tone, the Namibian dollar amounts and that answers only repeat numbers from the tool response.
 - [ ] Write 30 to 50 questions in YOUR own words into `eval_own.jsonl` (format in `eval_own.example.jsonl`). The generated eval uses the same phrasings as training, so only your own wording shows whether Blaze truly understood.
 - [ ] Decide: retrain from the base model (recommended) or continue from your merged Blaze (see step 3).
@@ -24,7 +24,7 @@ Tick these off in order. Part A gets Blaze working with Pesa's tools. Part B is 
 - [ ] Sequence length 3072 or more. Every row carries the tool list (about 2,300 tokens), so 2048 would cut rows off. Check no row is cut: print the longest tokenized row.
 - [ ] Train only on what the assistant writes, not on the questions or the `<tool_response>` text. In trl use `DataCollatorForCompletionOnlyLM` with `instruction_template="<|im_start|>user"` and `response_template="<|im_start|>assistant\n"` (older trl), or the `assistant_only_loss` option on newer versions. Without this Blaze can learn to write fake tool responses. If you cannot do this, train on everything and check carefully in step 5.
 - [ ] Keep 5 percent of rows aside as validation. Watch the validation loss: if it rises while training loss falls, stop at the earlier epoch.
-- [ ] Expect 15 to 40 minutes for about 1,850 long rows on a T4 (the old 5 minute run had short rows).
+- [ ] Expect 20 to 50 minutes for about 2,570 long rows on a T4 (the old 5 minute run had short rows).
 - [ ] Save the LoRA adapter to Google Drive straight after training.
 
 ### 3. Retrain from base, or continue from Blaze?
@@ -78,7 +78,7 @@ Tick these off in order. Part A gets Blaze working with Pesa's tools. Part B is 
 - [ ] **Two or three tools in one answer**: "give me a full picture of the month" should call sales, expenses and profit tools together and combine them. Today only 5 pairs are generated; write more combinations.
 - [ ] **Other languages**: Afrikaans, Oshiwambo (Oshikwanyama and Oshindonga), Otjiherero, German, and the mixed English most shopkeepers really type. The questions can be in those languages while tool names and numbers stay the same. Ask native speakers to write or check them. Do not machine translate blindly.
 - [ ] **Explaining the numbers**: "why is my margin low", "what does stock variance mean", "what is the difference between gross and net profit". Plain explanations plus a tool call for the shop's own figures.
-- [ ] **Business types**: beauty (bookings, stylists, commission) and hospitality (rooms, bookings). First build the read only tools (they do not exist yet, tell me and I will add them with their tests), then teach them.
+- [ ] **Business types**: the salon tools (appointments, walk_in_queue, stylist_earnings, top_services, service_prices) and lodge tools (occupancy, bookings_ahead, room_status, open_tabs, room_revenue, licences_and_levy) now exist and have training examples. Add real wording from salon and guest house owners ("who is in the chair", "is Room 3 clean", "how full are we this weekend"). "This weekend" needs a date range, so ask me for a tool that takes one if owners ask for it often.
 - [ ] **Honesty rows**: "will I make more next week" (estimate, not a promise), "is this legal / what tax do I owe" (to be confirmed with the relevant legal bodies, authorities and entities of Namibia), "are you sure" (it can be wrong, check important amounts). Keep these wordings, they are on purpose.
 - [ ] **Safety rows**: more prompt injection tests (names, product names and notes containing instructions), requests for passwords or keys, requests to delete or send. The right answer is always a calm refusal plus what to do instead.
 - [ ] **Staff mode**: cashiers cannot use the tools. Teach Blaze to explain "only the owner or a manager can see that" when a tool answer says so (the app returns that text).
@@ -95,5 +95,5 @@ Or just ask me to do steps 1 to 4 for a tool you want.
 - [ ] Never train on real customer names, phone numbers or shop figures. Use fake data only. If real questions are used, remove names and numbers first.
 - [ ] Keep a changelog: model version, date, data version, eval score, q4 and q8 sizes, phone speed. Name files with the version (`blaze-v2-q4_k_m.gguf`), and keep the old files so you can roll back.
 - [ ] Do not make the model bigger by habit. 1.5B keeps phones working. If quality is not enough after good data, tell me and we compare Qwen2.5-3B (check its licence first: it is not Apache 2.0) or a stronger server model for the server option only.
-- [ ] Re-check the tool list limits: more tools make every prompt longer and slower on phones. If you pass about 40 tools, tell me and we choose which tools are sent per question.
+- [ ] Tool list size: more tools make every prompt longer and slower on phones. Each business type already gets its own short list (29 shop, 34 salon, 35 lodge) and training shows Blaze all three. After you add a tool, check the tool counts and the token length of the biggest list. If a list passes about 40 tools, tell me and we choose which tools are sent per question.
 - [ ] Remember the honest limits: a small model can be wrong. Never describe Blaze as always accurate, secure or approved by any authority.

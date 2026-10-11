@@ -28,7 +28,7 @@ Then in Pesa: Assistant, Pesa AI. Paste the function address (https://<project>.
 
 ## Run your own model, Blaze
 Blaze is Björn's own model (Qwen2.5 1.5B Instruct, fine tuned with LoRA, exported as GGUF). Full guide: `docs/BLAZE.md`. The short version for the server:
-1. On a server with enough memory (about 4 GB free for the 8 bit file) run llama.cpp: `llama-server -m blaze-q8.gguf --jinja --host 127.0.0.1 --port 8080 -c 6144 --api-key <a long random key>`. The `--jinja` flag is required, it makes the Qwen chat template handle tools. `-c 6144` leaves room for the tool list (29 tools use about 2,500 tokens). Or use Ollama with a Modelfile whose system prompt is `You are Blaze, a helpful, friendly assistant built by Björn. Use the provided tools when they help.`
+1. On a server with enough memory (about 4 GB free for the 8 bit file) run llama.cpp: `llama-server -m blaze-q8.gguf --jinja --host 127.0.0.1 --port 8080 -c 6144 --api-key <a long random key>`. The `--jinja` flag is required, it makes the Qwen chat template handle tools. `-c 6144` leaves room for the tool list (29 to 35 tools use about 2,500 to 3,000 tokens). Or use Ollama with a Modelfile whose system prompt is `You are Blaze, a helpful, friendly assistant built by Björn. Use the provided tools when they help.`
 2. Put it behind HTTPS (Caddy or nginx) and keep the API key. Never expose the raw port.
 3. In the shop's Supabase project: `supabase secrets set LOCAL_AI_BASE_URL=https://<host>/v1 LOCAL_AI_KEY=<the api key> AI_MODEL_FAST=local:blaze AI_MODEL_STRONG=local:blaze`. A local model whose name contains blaze automatically gets the short system prompt it was trained with.
 4. Check: Settings, Pesa AI, Test the connection (the `ping` answer lists `local`), then ask a real question such as "how much did I sell this month". The answer shows "Answered by Blaze on your own server".
@@ -37,7 +37,7 @@ Blaze can read the same shop facts as the other models, plus the extra read only
 
 ## Safety design
 - The key is only in server secrets. The phone sends its own access phrase, which only unlocks this function.
-- Tools are a fixed list in the server (29 read only phone tools and web search). Anything else the model asks for is refused, and the arguments of every call are checked. No tool can change shop data. The same list, in the same order, is used by the app and by Blaze's training data (`node tools/blaze_training/sync_tools.mjs`).
+- Tools are a fixed list in the server (read only phone tools, 29 for every business plus 5 for a salon or 6 for a lodge, and web search). Anything else the model asks for is refused, and the arguments of every call are checked. No tool can change shop data. The same list, in the same order, is used by the app and by Blaze's training data (`node tools/blaze_training/sync_tools.mjs`).
 - Shop data, notes, files and web pages are passed to the model as untrusted data with an instruction never to follow text inside them.
 - Limits: at most 4 model calls per question, 8 phone tool calls, 3 searches, 25 second timeout per call, 70 seconds overall, and the question can be cancelled.
 - Notes are saved only after the owner confirms. They stay on the phone, per business, are shown on screen, can be edited or deleted, and expire after 180 days.

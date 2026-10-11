@@ -20,9 +20,12 @@ def check_args(tool, args):
         if 'enum' in p and v not in p['enum']: return 'bad_' + k
     return ''
 
+def tools_for(tools, biz):
+    return [t for t in tools if not t.get('biz') or t.get('biz') == biz]
+
 def call(base, key, model, question, tools):
     body = {'model': model, 'temperature': 0, 'max_tokens': 300, 'messages': [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': question}],
-            'tools': [{'type': 'function', 'function': t} for t in tools]}
+            'tools': [{'type': 'function', 'function': {k: v for k, v in t.items() if k != 'biz'}} for t in tools]}
     req = urllib.request.Request(base.rstrip('/') + '/chat/completions', json.dumps(body).encode(), {'Content-Type': 'application/json', **({'Authorization': 'Bearer ' + key} if key else {})})
     return json.load(urllib.request.urlopen(req, timeout=120))['choices'][0]['message']
 
@@ -47,7 +50,7 @@ def main():
     items = [json.loads(l) for l in open(a.file, encoding='utf-8') if l.strip()]
     per, bad = {}, []
     for it in items:
-        try: ok, why = score(call(a.base, a.key, a.model, it['q'], tools), it, tools)
+        try: ok, why = score(call(a.base, a.key, a.model, it['q'], tools_for(tools, it.get('biz', 'retail'))), it, tools)
         except Exception as e: ok, why = False, 'request failed: %s' % e
         k = it['tool'] or '(chat)'; p = per.setdefault(k, [0, 0]); p[1] += 1; p[0] += ok
         if not ok: bad.append((k, it['q'], why))

@@ -1,5 +1,5 @@
 // Node test of the Pesa AI Assistant server logic. Run: node tests/ai_t.mjs
-import { handleAssistant, classifyTask, checkToolInput, TOOLS, BLAZE_SYSTEM, isBlaze } from '../supabase/functions/_shared/aihandler.mjs';
+import { handleAssistant, classifyTask, checkToolInput, TOOLS, BLAZE_SYSTEM, isBlaze, toolNamesFor } from '../supabase/functions/_shared/aihandler.mjs';
 let fails = 0; const ok = (c, m) => { if(!c){ fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
 let calls = [], script = [];
 const fetchStub = async (u, o) => { calls.push({ u, o }); const next = script.shift(); if(!next) throw new Error('no script'); if(next.throw) throw Object.assign(new Error('x'), { name:next.throw });
@@ -94,7 +94,7 @@ ok(JSON.parse(calls[0].o.body).messages[0].content === BLAZE_SYSTEM && !/Pesa AI
 ok(isBlaze({ provider:'local', id:'blaze' }) && isBlaze({ provider:'local', id:'blaze-q8' }) && !isBlaze({ provider:'local', id:'qwen-small' }) && !isBlaze({ provider:'anthropic', id:'blaze' }), 'only a local model named blaze gets the Blaze prompt');
 reset(oa('x')); await post(ask('hi'), 'k', dl()); ok(/Pesa AI Assistant/.test(JSON.parse(calls[0].o.body).messages[0].content), 'other local models keep the full Pesa prompt');
 { const names = JSON.parse((reset(oa('x')), await post(ask('hi'), 'k', dbz()), calls[0].o.body)).tools.map(t => t.function.name);
-  ok(names.length === Object.keys(TOOLS).length - 1 && ['sales_by_period', 'top_products', 'stock_value', 'profit_and_loss', 'vat_summary', 'forecast', 'alerts_and_notes', 'customer_history', 'supplier_balances'].every(n => names.includes(n)) && !names.includes('web_search'), 'every read only Blaze tool is offered, search stays hidden without a key'); }
+  ok(names.length === toolNamesFor('retail').length - 1 && !names.includes('appointments') && !names.includes('occupancy') && ['sales_by_period', 'top_products', 'stock_value', 'profit_and_loss', 'vat_summary', 'forecast', 'alerts_and_notes', 'customer_history', 'supplier_balances'].every(n => names.includes(n)) && !names.includes('web_search'), 'every read only Blaze tool is offered, search stays hidden without a key'); }
 reset(oa('', ['sales_by_period', { period:'last_month' }]));
 r = await post(ask('how much did I sell last month'), 'k', dbz()); ok(!r.body.done && r.body.calls[0].name === 'sales_by_period' && r.body.calls[0].input.period === 'last_month', 'a Blaze tool call is handed to the phone');
 reset(oa('', ['sales_by_period', { period:'forever' }]), oa('I could not read that.'));
@@ -103,4 +103,13 @@ ok(checkToolInput('top_products', { period:'today' }) === 'bad_period' && checkT
 ok(Object.keys(TOOLS).filter(n => TOOLS[n].where === 'phone').every(n => TOOLS[n].d.length <= 120), 'tool descriptions stay short for a small model');
 ok(Object.keys(TOOLS).every(n => !/(add|delete|remove|change|send|set)_/.test(n) || n === 'remember'), 'no tool can change shop data (only the confirmed note tool exists)');
 { const pg = (await post({ action:'ping' }, 'k', dbz())).body; ok(pg.providers[0] === 'local' && pg.models.includes('local:blaze') && !JSON.stringify(pg).includes('LK'), 'ping returns the local provider and the Blaze model name, no keys'); }
+
+// business type tools: a salon gets salon tools, a lodge gets room tools, a shop gets neither
+{ const names = async biz => { reset(oa('x')); await post({ messages:[{ role:'user', content:'hi' }], meta:{ shopName:'S', bizType:biz } }, 'k', dbz()); return JSON.parse(calls[0].o.body).tools.map(t => t.function.name); };
+  const be = await names('beauty'), ho = await names('hospitality'), re = await names('retail'), bad = await names('nonsense');
+  ok(be.includes('appointments') && be.includes('stylist_earnings') && !be.includes('occupancy') && be.includes('sales_by_period'), 'a salon is offered salon tools and the shared tools, not room tools');
+  ok(ho.includes('occupancy') && ho.includes('open_tabs') && !ho.includes('appointments'), 'a lodge is offered room tools, not salon tools');
+  ok(!re.includes('appointments') && !re.includes('occupancy') && bad.length === re.length, 'a shop, or an unknown type, gets the shared tools only');
+  ok(be.length === 34 && ho.length === 35 && re.length === 29, 'tool list sizes stay small (29 shop, 34 salon, 35 lodge)'); }
+ok(checkToolInput('appointments', { day:'today' }) === '' && checkToolInput('appointments', { day:'next week' }) === 'bad_day' && checkToolInput('occupancy', {}) === 'missing_day' && checkToolInput('service_prices', {}) === '' && checkToolInput('room_revenue', { period:'week' }) === 'bad_period', 'the salon and lodge tools check their input');
 console.log(fails ? 'FAILED ' + fails : 'ALL OK'); process.exit(fails ? 1 : 0);
