@@ -5941,6 +5941,14 @@ function checkAuthAndRoute(){
   startIdleWatch(); touchUserActive(); setTimeout(btMaybeSetupPrompt, 2200); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
   (function(uid0){ setTimeout(function(){ try{ if(State.session && State.session.userId === uid0) pfRemindStart(0); }catch(e){} }, 5000); })(State.session ? State.session.userId : null);
+  (function(uid0){ setTimeout(function(){ try{ bkShowOnOpen(uid0, 0); }catch(e){} }, 1800); })(State.session ? State.session.userId : null);
+}
+/* Optional (Settings, Backups): show the saved backup files each time the owner or a manager opens Pesa.
+   It waits politely if another sheet is open, and gives up after about a minute. */
+function bkShowOnOpen(uid0, tries){
+  if(!State.session || State.session.userId !== uid0 || !State.settings || !State.settings.bkShowOnOpen || !isManagerOrOwner()) return;
+  if(pfBusy()){ if(tries < 12) setTimeout(function(){ try{ bkShowOnOpen(uid0, tries + 1); }catch(e){} }, 5000); return; }
+  openBackupsSheet();
 }
 var _whatsNewChecked = false;
 
@@ -14494,6 +14502,10 @@ function openSettingsSheet(){
     '<div class="actions"><button class="btn btn-ghost btn-block" id="stDrawerTest" type="button">'+tr('Connect printer and test the drawer')+'</button></div>' +
     '<div style="font-size:12px;color:var(--text-muted);margin:6px 2px 14px;">'+tr('The drawer plugs into a Bluetooth receipt printer, which sends the open signal. This works in Chrome on Android. Without a printer, Pesa tells you to open the drawer by hand.')+'</div>' +
 '', false) +
+    (isManagerOrOwner() ? stGrp('Backups','Show my backup files when I open Pesa',
+    '<label class="pf-tg" style="margin-top:4px;"><input type="checkbox" id="stBkOpen"'+(State.settings.bkShowOnOpen ? ' checked' : '')+'><span><b>'+tr('Show my backup files every time I open Pesa')+'</b><i>'+tr('After you sign in, your saved backups appear so you can download a copy, restore one or back up now. You can close the list at any time. This setting is saved for this business.')+'</i></span></label>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="stBkNow" type="button">'+tr('See my backup files now')+'</button></div>' +
+'', false) : '') +
     stGrp('Notifications and email','Alerts and the email service',
 ''+
     notificationSettingsHtml() +
@@ -14575,6 +14587,8 @@ function openSettingsSheet(){
     document.documentElement.style.setProperty('--font-head', f.cssHead); document.documentElement.style.setProperty('--font-sans', f.cssBody);
   });
   ov.querySelector('#stDrawerTest').addEventListener('click', function(){ openCashDrawer(true); });
+  var bkOpenCb = ov.querySelector('#stBkOpen'); if(bkOpenCb) bkOpenCb.addEventListener('change', function(){ btSave({ bkShowOnOpen: bkOpenCb.checked }); toast(tr(bkOpenCb.checked ? 'Your backup files will show when you open Pesa' : 'Backup files will no longer show when you open Pesa')); });
+  var bkNowBtn = ov.querySelector('#stBkNow'); if(bkNowBtn) bkNowBtn.addEventListener('click', function(){ closeModal(); setTimeout(openBackupsSheet, 350); });
   var stTaxBtn = ov.querySelector('#stTaxBtn'); if(stTaxBtn) stTaxBtn.addEventListener('click', openFiscalSheet);
   ov.querySelector('#stSave').addEventListener('click', function(){
     var name = ov.querySelector('#stName').value.trim() || 'My Shop';
@@ -19891,7 +19905,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.173';
+var APP_VERSION = '2026.10.174';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20201,6 +20215,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.174', items:[
+    'New setting under Settings, Backups: show my backup files every time I open Pesa. After sign in the saved backups list opens so the owner or a manager can download, restore or back up now, and it waits if another screen is open'
+  ] },
   { v:'2026.10.173', items:[
     'Contact details removed for now: the personal phone number and email no longer appear in the app, legal documents or website. Buttons that used them hide until new contact details are published'
   ] },
