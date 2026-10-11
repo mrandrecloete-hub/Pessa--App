@@ -324,7 +324,7 @@ def legacy_rows():
     return rows
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('--per-tool', type=int, default=55); ap.add_argument('--existing'); ap.add_argument('--tokenizer'); ap.add_argument('--out', default=os.path.join(HERE, 'train.jsonl'))
+    ap = argparse.ArgumentParser(); ap.add_argument('--per-tool', type=int, default=55); ap.add_argument('--existing'); ap.add_argument('--extra', help='your own examples file (see teach_more.example.jsonl)'); ap.add_argument('--eval-out', default=os.path.join(HERE, 'eval.jsonl')); ap.add_argument('--tokenizer'); ap.add_argument('--out', default=os.path.join(HERE, 'train.jsonl'))
     a = ap.parse_args()
     tools = json.load(open(os.path.join(HERE, 'tools.json'), encoding='utf-8'))
     names = [t['name'] for t in tools]; missing = [n for n in names if n not in MAKERS]
@@ -369,6 +369,31 @@ def main():
             if line:
                 t = json.loads(line).get('text')
                 if t and t not in seen: seen.add(t); rows.append(t)
+    if a.extra:
+        n_extra = 0
+        for line in open(a.extra, encoding='utf-8'):
+            line = line.strip()
+            if not line or line.startswith('#'): continue
+            e = json.loads(line)
+            if e.get('tool'):
+                if e['tool'] not in names: sys.exit('--extra: unknown tool ' + e['tool'])
+                turns = [{'role': 'user', 'content': e['q']}, {'role': 'assistant', 'content': '', 'calls': [{'name': e['tool'], 'arguments': e.get('args', {})}]}, {'role': 'tool', 'content': js(e['response'])}, {'role': 'assistant', 'content': e['answer']}]
+            else: turns = [{'role': 'user', 'content': e['q']}, {'role': 'assistant', 'content': e['answer']}]
+            if not numbers_ok(turns): sys.exit('--extra: the answer repeats a number that is not in the tool response: ' + e['q'])
+            if add(tools, turns): n_extra += 1
+        print('added', n_extra, 'rows from', a.extra)
+    # a small held out set to test the retrained model (different random draws, never used for training): eval.py scores it
+    R2 = random.Random(77); global R
+    keep = R; R = R2
+    held = []
+    for n in names:
+        for _ in range(6):
+            t = build_one(n)
+            held.append({'q': t[0]['content'], 'tool': t[1]['calls'][0]['name'], 'args': t[1]['calls'][0]['arguments']})
+    for q, ans in IDENT[:6]: held.append({'q': q, 'tool': None, 'args': None})
+    R = keep
+    with open(a.eval_out, 'w', encoding='utf-8') as f:
+        for h in held: f.write(json.dumps(h, ensure_ascii=False) + '\n')
     R.shuffle(rows)
     with open(a.out, 'w', encoding='utf-8') as f:
         for t in rows: f.write(json.dumps({'text': t}, ensure_ascii=False) + '\n')

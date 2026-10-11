@@ -1,0 +1,3 @@
+{"q": "eish how did the till do this morning", "tool": "till_status", "args": {}}
+{"q": "is my profit looking ok for the month", "tool": "profit_and_loss", "args": {"period": "month"}}
+{"q": "what is the weather in Windhoek", "tool": null, "args": null}

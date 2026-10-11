@@ -1,0 +1,5 @@
+# One JSON object per line. Lines starting with # are ignored. Identical examples are dropped, so write the same idea in several different ways (aim for 15 to 30 per new skill).
+# 1) A plain answer, no tool:
+{"q": "How do I record a payment from a customer who owes me?", "answer": "Open the customer's page and use Record payment. Pesa takes it off what they owe and keeps a receipt."}
+# 2) A tool question. The answer may only repeat numbers that are in the response:
+{"q": "how much stock do I have in rands... I mean dollars", "tool": "stock_value", "args": {}, "response": {"products": 120, "unitsInStock": 2400.0, "valueAtCost": 18500.5, "valueAtSellingPrice": 24100.0, "productsOutOfStock": 3}, "answer": "Your stock is worth N$18,500.50 at cost and N$24,100.00 at selling price. 3 products are out of stock."}
