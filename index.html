@@ -862,11 +862,11 @@
   .sumline.total{ font-size:16px; font-weight:700; color:var(--text); padding-top:9px; border-top:1px solid var(--border); margin-top:5px; }
 
   .toast{
+    /* fixed colours on purpose: the pop up must stay readable in every skin (the dark teal skin turns --text near white, which made a white box with white words) */
     position:fixed; left:50%; transform:translateX(-50%); bottom:calc(20px + env(safe-area-inset-bottom,0px));
-    background:var(--text); color:var(--bg); padding:10px 16px; border-radius:10px; font-size:13px; z-index:60;
-    box-shadow:var(--shadow); max-width:90%; text-align:center;
+    background:#0B3B2C; color:#F6FFFA; border:1px solid rgba(124,240,196,.45); padding:11px 16px; border-radius:12px; font-size:14px; font-weight:600; line-height:1.4; z-index:60;
+    box-shadow:0 8px 24px rgba(0,0,0,.35); max-width:90%; text-align:center;
   }
-  :root[data-theme="dark"] .toast{ background:var(--surface-3); color:var(--text); }
 
   .cs-line{ border:1px solid var(--border); border-radius:14px; padding:10px 10px 4px; margin-bottom:10px; background:var(--surface-2); position:relative; }
   .cs-line .cs-x{ position:absolute; top:6px; right:8px; width:26px; height:26px; border-radius:8px; border:0; background:transparent; color:var(--text-muted); font-size:20px; line-height:1; cursor:pointer; }
@@ -1927,4 +1927,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.170"></script>
+<script src="app.js?v=2026.10.171"></script>
