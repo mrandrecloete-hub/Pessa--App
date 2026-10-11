@@ -5997,7 +5997,7 @@ function showAuthScreen(view){
 function renderSignedOutHtml(){
   var company = State.company || {};
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
@@ -6092,7 +6092,7 @@ function wireBusinessSwitcher(root){
   });
   root.querySelectorAll('[data-curdel]').forEach(function(b){ b.addEventListener('click', function(){ openDeleteBusinessSheet(WS.id); }); });
   root.querySelectorAll('[data-wsdel]').forEach(function(b){
-    b.addEventListener('click', function(e){ e.stopPropagation(); openDeleteBusinessSheet(b.getAttribute('data-wsdel')); });
+    b.addEventListener('click', function(e){ e.stopPropagation(); var rid = b.getAttribute('data-wsdel'); if(State.session) openDeleteBusinessSheet(rid); else openEraseBusinessSheet(rid); });
   });
   root.querySelectorAll('[data-forgot]').forEach(function(f){ f.addEventListener('click', function(){ showAuthScreen('forgot'); }); });
   var nb = root.querySelector('[data-newbiz]');
@@ -7522,7 +7522,7 @@ function renderLoginHtml(){
     '</button>';
   }).join('');
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Sign in to continue')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Sign in to continue')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
@@ -7542,17 +7542,55 @@ function newHereHtml(){
 /* ---- erase everything on this device, from the outside (sign in and register screens), for when every password is forgotten ----
    It needs no password, on purpose: it only destroys. It cannot show or open anything. It asks for a typed word first, lists what goes
    and what stays, and does not touch copies in the owner's own cloud sync project or files saved outside the app. */
-document.addEventListener('click', function(e){ var b = e.target && e.target.closest ? e.target.closest('[data-erase-device]') : null; if(b){ e.preventDefault(); openEraseDeviceSheet(); } });
+document.addEventListener('click', function(e){
+  var t = e.target && e.target.closest ? e.target : null; if(!t) return;
+  var b = t.closest('[data-erase-device]'); if(b){ e.preventDefault(); openEraseDeviceSheet(); return; }
+  var w = t.closest('[data-erase-ws]'); if(w){ e.preventDefault(); e.stopPropagation(); openEraseBusinessSheet(w.getAttribute('data-erase-ws')); }
+});
+/* erase ONE business from the sign in or register screen with no password, only a typed word. The password protected delete inside the app
+   stays as it is. Backups and the backup folder link of that business go too, and nothing else on the device is touched. */
+function openEraseBusinessSheet(rid){
+  var entry = null; try{ entry = WS.list().filter(function(x){ return x.id === rid; })[0] || null; }catch(e){}
+  var cur = rid === WS.id, name = (entry && entry.name) || (cur && State.company && (State.company.tradingName || State.company.companyName)) || tr('this business');
+  var html = '<div class="sheet-head"><h2>'+tr('Erase this business')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+ICONS.warn+' <b>'+tr('This cannot be undone.')+'</b> '+tr('Use it only if you have forgotten the password.')+'</div>' +
+    '<div class="rowlist" style="margin-top:10px;"><div class="row"><div class="main"><div class="title">'+esc(name)+'</div></div></div></div>' +
+    '<div class="small" style="font-size:13px;color:var(--text-muted);line-height:1.5;margin-top:10px;">'+tr('Erased: this business with its products, sales, customers, staff accounts and passwords, and the automatic backups of it kept on this device. Not erased: other businesses on this device, copies in your own cloud sync project, and backup files you saved elsewhere.')+'</div>' +
+    '<div class="field" style="margin-top:12px;"><label>'+tr('Type ERASE to confirm')+'</label><input id="ebWord" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ERASE"></div>' +
+    '<div class="actions"><button class="btn btn-danger btn-block" id="ebGo" type="button" disabled>'+tr('Erase this business now')+'</button><button class="btn btn-ghost btn-block" id="ebNo" type="button" style="margin-top:8px;">'+tr('Cancel')+'</button></div>';
+  var ov = openSheet(html), w = ov.querySelector('#ebWord'), go = ov.querySelector('#ebGo');
+  ov.querySelector('#ebNo').addEventListener('click', closeModal);
+  w.addEventListener('input', function(){ go.disabled = String(w.value).trim().toUpperCase() !== 'ERASE'; });
+  go.addEventListener('click', function(){
+    if(String(w.value).trim().toUpperCase() !== 'ERASE') return;
+    go.disabled = true; go.textContent = tr('Erasing…');
+    eraseBusinessNow(rid).then(function(){ try{ toast(tr('Business erased from this device.')); }catch(e){} setTimeout(function(){ location.replace(location.pathname + location.search); }, 600); });
+  });
+}
+function eraseBusinessNow(rid){
+  var cur = rid === WS.id;
+  try{ Persist.dropWs(rid); }catch(e){}
+  try{ var keys = []; for(var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    keys.forEach(function(k){ if(k && (k.slice(-(rid.length + 1)) === '_' + rid || k.indexOf('_' + rid + '_') >= 0 || k.indexOf('ws_' + rid + '__') === 0) && k !== 'pesa_workspaces_v1' && k !== 'pesa_active_ws_v1') localStorage.removeItem(k); }); }catch(e){}
+  var idb = function(name, work){ return new Promise(function(res){ try{ var r = indexedDB.open(name, 1); r.onerror = r.onblocked = function(){ res(); }; r.onsuccess = function(){ var db = r.result; try{ work(db, function(){ db.close(); res(); }); }catch(e){ db.close(); res(); } }; r.onupgradeneeded = function(){ try{ r.transaction.abort(); }catch(e){} }; setTimeout(res, 2500); }catch(e){ res(); } }); };
+  var jobs = [
+    idb('pesa_backups_v1', function(db, done){ if(!db.objectStoreNames.contains('snaps')) return done(); var tx = db.transaction('snaps', 'readwrite'), st = tx.objectStore('snaps'), q = st.openCursor(); q.onsuccess = function(){ var c = q.result; if(c){ if(c.value && c.value.ws === rid) c.delete(); c.continue(); } }; tx.oncomplete = tx.onerror = tx.onabort = done; }),
+    idb('pesa_bkfolder_v1', function(db, done){ if(!db.objectStoreNames.contains('h')) return done(); var tx = db.transaction('h', 'readwrite'); tx.objectStore('h').delete(rid); tx.oncomplete = tx.onerror = tx.onabort = done; })
+  ];
+  try{ WS.remove(rid); }catch(e){}
+  if(cur){ var nid = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); try{ WS.add(nid); WS.setActive(nid); clearSessionLocal(); }catch(e){} }
+  return Persist.saved().catch(function(){}).then(function(){ return Promise.all(jobs); });
+}
 function openEraseDeviceSheet(){
   var names = []; try{ names = WS.list().map(function(w){ return w.name; }).filter(Boolean); }catch(e){}
   var html = '<div class="sheet-head"><h2>'+tr('Erase everything on this device')+'</h2></div>' +
     '<div class="banner" style="display:block;">'+ICONS.warn+' <b>'+tr('This cannot be undone.')+'</b> '+tr('Use it only if you have forgotten the passwords and want to start again.')+'</div>' +
     (names.length ? '<div class="section-title" style="margin-top:12px;">'+tr('Businesses that will be erased')+'</div><div class="rowlist">'+names.map(function(n){ return '<div class="row"><div class="main"><div class="title">'+esc(n)+'</div></div></div>'; }).join('')+'</div>' : '<div class="small" style="margin:10px 0;">'+tr('No business is saved on this device.')+'</div>') +
     '<div class="section-title" style="margin-top:12px;">'+tr('What is erased')+'</div>' +
-    '<div class="small" style="line-height:1.5;">'+tr('Every business on this device with its products, sales, customers, staff accounts and passwords, the automatic backups kept on this device, and the settings saved here.')+'</div>' +
+    '<div class="small" style="font-size:13px;color:var(--text-muted);line-height:1.5;">'+tr('Every business on this device with its products, sales, customers, staff accounts and passwords, the automatic backups kept on this device, and the settings saved here.')+'</div>' +
     '<div class="section-title" style="margin-top:12px;">'+tr('What is not erased')+'</div>' +
-    '<div class="small" style="line-height:1.5;">'+tr('Copies kept in your own cloud sync project, backup files you saved to a folder, downloaded or sent to someone, and anything on other devices. Remove those yourself if you want them gone.')+'</div>' +
-    '<div class="small" style="margin-top:10px;line-height:1.5;">'+tr('This does not open or show any business. Anyone holding this device could use it, so keep the device safe.')+'</div>' +
+    '<div class="small" style="font-size:13px;color:var(--text-muted);line-height:1.5;">'+tr('Copies kept in your own cloud sync project, backup files you saved to a folder, downloaded or sent to someone, and anything on other devices. Remove those yourself if you want them gone.')+'</div>' +
+    '<div class="small" style="font-size:13px;color:var(--text-muted);margin-top:10px;line-height:1.5;">'+tr('This does not open or show any business. Anyone holding this device could use it, so keep the device safe.')+'</div>' +
     '<div class="field" style="margin-top:12px;"><label>'+tr('Type ERASE to confirm')+'</label><input id="edWord" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ERASE"></div>' +
     '<div class="actions"><button class="btn btn-danger btn-block" id="edGo" type="button" disabled>'+tr('Erase everything now')+'</button><button class="btn btn-ghost btn-block" id="edNo" type="button" style="margin-top:8px;">'+tr('Cancel')+'</button></div>';
   var ov = openSheet(html), w = ov.querySelector('#edWord'), go = ov.querySelector('#edGo');
@@ -19938,7 +19976,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.180';
+var APP_VERSION = '2026.10.181';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20248,6 +20286,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.181', items:[
+    'Sign in and register screens: a trash button now sits next to each business, the open one beside its name and the others in the list. It erases that one business without its password, after you type ERASE, along with its backups. The password protected delete inside Settings is unchanged'
+  ] },
   { v:'2026.10.180', items:[
     'New on the sign in and register screens: Forgot the passwords? Erase everything on this device. It needs no password, asks you to type ERASE, lists the businesses that will go and what is and is not erased, then clears every business, account and backup kept on this device and starts fresh. Copies in your own cloud sync project and files you saved elsewhere are not touched'
   ] },

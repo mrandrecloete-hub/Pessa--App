@@ -8,11 +8,10 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  await p.waitForTimeout(800);
  await p.evaluate(()=>window.__t.startNewBusiness()); await p.waitForSelector('#rcCompanyName'); await p.waitForTimeout(800);
  ck('delete button shown on register page', await p.isVisible('[data-wsdel]'));
- await p.click('[data-wsdel]'); await p.waitForSelector('#dbPass');
- await p.fill('#dbPass','wrongpass'); await p.click('#dbGo'); await p.waitForTimeout(600);
- ck('wrong password refused', (await p.innerText('#dbErr')).length>0 && await p.isVisible('[data-wsdel]',{timeout:100}).catch(()=>true));
+ await p.click('[data-wsdel]'); await p.waitForSelector('#ebWord');   // signed out: the trash button works without the owner password, but needs the typed word
+ await p.fill('#ebWord','wrong'); ck('a wrong word keeps the erase button off', await p.evaluate(()=>document.getElementById('ebGo').disabled===true));
  const still=await p.evaluate(()=>window.__t.WS.others().length); ck('business still there', still===1, still);
- await p.fill('#dbPass','secret99'); await p.click('#dbGo');
+ await p.fill('#ebWord','ERASE'); await p.click('#ebGo');
  await p.waitForLoadState('load'); await p.waitForSelector('#rcCompanyName'); await p.waitForTimeout(1200);
  const after=await p.evaluate(()=>({o:window.__t.WS.others().length, l:window.__t.WS.list().map(x=>x.name)}));
  ck('business deleted', after.o===0, after);
