@@ -1,11 +1,15 @@
 /* ============================== OPENING ANIMATION ==============================
    Plays once each time Pesa starts: the Pesa logo drops in and bounces four times on the water (with its reflection and
    ripples), settles, and the welcome page appears. No spinning and no flying away. Pure CSS keyframes, no files, no libraries.
+   When the device can play it, the real water video (media/pesa-intro.webm or .mp4) plays instead; the CSS animation
+   below is the fallback (video cannot play, slow connection, low power or reduced motion setting).
    Tap or press any key to skip.
    Test hooks: ?intro=force plays even in automated browsers; ?intro=force&introT=2.5 shows one still frame at 2.5 s. */
 var PesaIntro = (function(){
   'use strict';
-  var DUR = 3.6;                                   // seconds the animation runs
+  var DUR = 3.6;                                   // seconds the CSS animation runs
+  var VID = { webm:'media/pesa-intro.webm', mp4:'media/pesa-intro.mp4', dur:8.3 };   // the realistic water video
+  var mode = 'css';
   var VEIL = null, done = false, timer = 0, ready = false;
 
   function firstScreenReady(){
@@ -68,6 +72,51 @@ var PesaIntro = (function(){
       'html.lite #introVeil .pi-water::after{animation-duration:5s!important;animation-iteration-count:infinite!important}' +
       '@media (prefers-reduced-motion:reduce){#introVeil .pi-logo,#introVeil .pi-refl,#introVeil .pi-glow,#introVeil .pi-shadow,#introVeil .pi-ring{animation:none!important}#introVeil .pi-logo{opacity:1;transform:none}#introVeil .pi-refl{opacity:.35;transform:scaleY(-1)}}';
   }
+  function videoCss(){
+    var m = 'linear-gradient(to bottom,transparent 0,#000 11%,#000 89%,transparent 100%),linear-gradient(to right,transparent 0,#000 7%,#000 93%,transparent 100%)';
+    return '#introVeil.pi-video{background:linear-gradient(180deg,#000c0f 0%,#0b2a26 45%,#10372f 100%)!important;display:flex;align-items:center;justify-content:center}' +
+      '#introVeil .pi-vid{position:absolute;left:50%;top:50%;width:min(138vw,100vh);height:min(138vw,100vh);transform:translate(-50%,-50%);object-fit:cover;-webkit-mask-image:' + m + ';mask-image:' + m + ';-webkit-mask-composite:source-in;mask-composite:intersect;pointer-events:none}' +
+      '@keyframes piTagV{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}' +
+      '#introVeil.pi-video .pi-tag{position:absolute;left:0;right:0;text-align:center;font:italic 600 18px/1.2 Georgia,"Times New Roman",serif;letter-spacing:.05em;color:rgba(255,238,190,.95);text-shadow:0 2px 12px rgba(0,40,28,.8);top:auto;bottom:calc(14% + env(safe-area-inset-bottom,0px));animation:piTagV .9s ease-out ' + (VID.dur - 3.2) + 's both}' +
+      '#introVeil .pi-hint{position:absolute;left:0;right:0;bottom:calc(20px + env(safe-area-inset-bottom,0px));text-align:center;font:600 11px/1 Inter,system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.5)}';
+  }
+  function canVideo(){
+    try{
+      if(/[?&]introT=/.test(location.search) && !/[?&]introV=1/.test(location.search)) return false;
+      if(/[?&]introV=0/.test(location.search)) return false;
+      if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+      if(document.documentElement.classList.contains('lite')) return false;
+      if(navigator.connection && navigator.connection.saveData) return false;
+      var v = document.createElement('video');
+      return !!(v.canPlayType && (v.canPlayType('video/webm; codecs="vp9"') || v.canPlayType('video/mp4; codecs="avc1.42E01E"')));
+    }catch(e){ return false; }
+  }
+  function buildVideo(){
+    var st = document.createElement('style'); st.id = 'introCss'; st.textContent = videoCss(); document.head.appendChild(st);
+    VEIL.classList.add('pi-video');
+    VEIL.innerHTML = '<video class="pi-vid" muted playsinline webkit-playsinline preload="auto" disablepictureinpicture tabindex="-1" aria-hidden="true">' +
+      '<source src="' + VID.webm + '" type="video/webm; codecs=vp9"><source src="' + VID.mp4 + '" type="video/mp4"></video>' +
+      '<div class="pi-tag">Your Mula, Your Pride</div><div class="pi-hint">' + ((typeof tr === 'function') ? tr('Tap to skip') : 'Tap to skip') + '</div>';
+    return VEIL.querySelector('video');
+  }
+  function startVideo(){
+    var v = buildVideo(), playing = false, fell = false;
+    mode = 'video';
+    v.muted = true; v.defaultMuted = true;
+    function fallback(){
+      if(fell || done || playing) return; fell = true; mode = 'css'; clearTimeout(timer);
+      try{ v.pause(); }catch(e){}
+      try{ var c = document.getElementById('introCss'); if(c) c.parentNode.removeChild(c); }catch(e){}
+      VEIL.classList.remove('pi-video'); VEIL.innerHTML = '';
+      startCss(true);
+    }
+    v.addEventListener('playing', function(){ playing = true; clearTimeout(timer); timer = setTimeout(waitReady, (VID.dur + .3) * 1000); window.__introVideo = true; });
+    v.addEventListener('ended', function(){ clearTimeout(timer); waitReady(); });
+    v.addEventListener('error', fallback, true);
+    var p; try{ p = v.play(); }catch(e){}
+    if(p && p.catch) p.catch(fallback);
+    timer = setTimeout(fallback, 3500);      // not playing after 3.5 s (slow network or blocked): use the CSS version
+  }
   function build(logo){
     var st = document.createElement('style'); st.id = 'introCss'; st.textContent = css(); document.head.appendChild(st);
     var size = Math.round(Math.min(window.innerWidth * .44, 170));
@@ -89,15 +138,18 @@ var PesaIntro = (function(){
     if(firstScreenReady() || performance.now() > 9000){ finish(false); return; }
     timer = setTimeout(waitReady, 150);
   }
+  function startCss(afterVideo, o){
+    build((o && o.logo) || PESA_LOGO_DATA_URL);
+    var q = /[?&]introT=([\d.]+)/.exec(location.search);
+    if(q){ seek(parseFloat(q[1])); window.__introReady = true; return; }
+    timer = setTimeout(waitReady, DUR * 1000 + 100);
+  }
   function start(o){
     o = o || {}; VEIL = document.getElementById('introVeil'); if(!VEIL) return; window.__introStarted = true; try{ sessionStorage.setItem('pesa_intro_seen', '1'); }catch(e){}
     try{
-      build(o.logo || PESA_LOGO_DATA_URL);
-      var q = /[?&]introT=([\d.]+)/.exec(location.search);
-      if(q){ seek(parseFloat(q[1])); window.__introReady = true; return; }
       window.addEventListener('pointerdown', onSkip, true); window.addEventListener('keydown', onSkip, true);
-      timer = setTimeout(waitReady, DUR * 1000 + 100);
       setTimeout(function(){ finish(true); }, 30000);                      // never trap the app behind the animation
+      if(canVideo()) startVideo(); else startCss(false, o);
     }catch(e){ try{ console.error('intro failed', e && e.stack || e); }catch(x){} finish(true); }
   }
   return { start:start, seek:seek, finish:finish, DUR:DUR };
