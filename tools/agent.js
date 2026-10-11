@@ -432,7 +432,7 @@ function openAgentSheet(){
       if(token !== _agent.say) return;
       var lines = (a.lines || []).concat((a.notes || []).map(function(n){ return 'Note: ' + n; }));
       out.innerHTML = '<div class="ag-msg me" style="animation:none">' + esc(t) + '</div><div class="ag-msg"><div style="font-weight:700;white-space:pre-wrap;">' + esc(a.text) + '</div>' +
-        lines.map(function(l){ return '<div class="ln">' + esc(l) + '</div>'; }).join('') + '<div class="ln" style="opacity:.75;">' + esc(tr('Written by AI. It can make mistakes, so check important figures.')) + '</div></div>';
+        lines.map(function(l){ return '<div class="ln">' + esc(l) + '</div>'; }).join('') + (aiViaLabel(a) ? '<div class="ln" style="opacity:.85;">' + esc(tr(aiViaLabel(a))) + '</div>' : '') + '<div class="ln" style="opacity:.75;">' + esc(tr('Written by AI. It can make mistakes, so check important figures.')) + '</div></div>';
     }, function(e){ if(token !== _agent.say) return; show(t, { text:aiErrorText(e) }); });
   }
   ov.querySelector('#agGo').addEventListener('click', function(){ ask(inp.value); });

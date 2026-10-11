@@ -1,5 +1,5 @@
 // Node test of the Pesa AI Assistant server logic. Run: node tests/ai_t.mjs
-import { handleAssistant, classifyTask, checkToolInput, TOOLS } from '../supabase/functions/_shared/aihandler.mjs';
+import { handleAssistant, classifyTask, checkToolInput, TOOLS, BLAZE_SYSTEM, isBlaze } from '../supabase/functions/_shared/aihandler.mjs';
 let fails = 0; const ok = (c, m) => { if(!c){ fails++; console.log('FAIL', m); } else console.log('ok  ', m); };
 let calls = [], script = [];
 const fetchStub = async (u, o) => { calls.push({ u, o }); const next = script.shift(); if(!next) throw new Error('no script'); if(next.throw) throw Object.assign(new Error('x'), { name:next.throw });
@@ -52,7 +52,7 @@ ok(JSON.parse(calls[1].o.body).messages.slice(-1)[0].content[0].is_error === tru
 reset(tool('remember', { text:'closes at 5' }));
 r = await post(ask('remember we close at 5')); ok(r.body.calls[0].confirm === true, 'saving a note is flagged for the owner to confirm');
 ok(checkToolInput('calc', { expression:'1+1' }) === '' && checkToolInput('calc', {}) !== '' && checkToolInput('calc', { expression:'1', extra:'x' }) !== '' && checkToolInput('nope', {}) === 'unknown_tool', 'tool input validation');
-ok(Object.keys(TOOLS).every(n => !/delete|remove|send|pay|price|stock_set|edit/i.test(n)), 'no tool can change or send anything');
+ok(Object.keys(TOOLS).every(n => !/delete|remove|send|^pay_|_pay$|set_price|stock_set|edit/i.test(n)), 'no tool can change or send anything');
 
 // web search: real results only, cited sources, honest when absent
 const search = (rows) => ({ json:{ web:{ results:rows } } });
@@ -85,4 +85,22 @@ reset(oa('', ['shop_summary', { period:'today' }]));
 r = await post(ask('how was today'), 'k', dl({ localKey:'LK' })); ok(!r.body.done && r.body.calls[0].name === 'shop_summary' && calls[0].o.headers.authorization === 'Bearer LK', 'self hosted tool calls reach the phone, optional key is sent');
 reset(oa('x'));
 ok((await post(ask('hi'), 'k', dl({ localBase:'' }))).status === 503, 'no provider and no local server is reported');
+
+// Blaze: the shop's own fine tuned model, reached through the same self hosted path as local:blaze
+const dbz = (x = {}) => dl({ models:{ fast:'local:blaze', strong:'local:blaze' }, ...x });
+reset(oa('Hello. I am Blaze.'));
+r = await post(ask('who are you'), 'k', dbz()); ok(r.status === 200 && /Blaze/.test(r.body.text) && JSON.parse(calls[0].o.body).model === 'blaze', 'local:blaze is called by name on the self hosted server');
+ok(JSON.parse(calls[0].o.body).messages[0].content === BLAZE_SYSTEM && !/Pesa AI Assistant/.test(JSON.parse(calls[0].o.body).messages[0].content), 'Blaze gets the exact short system prompt it was trained with');
+ok(isBlaze({ provider:'local', id:'blaze' }) && isBlaze({ provider:'local', id:'blaze-q8' }) && !isBlaze({ provider:'local', id:'qwen-small' }) && !isBlaze({ provider:'anthropic', id:'blaze' }), 'only a local model named blaze gets the Blaze prompt');
+reset(oa('x')); await post(ask('hi'), 'k', dl()); ok(/Pesa AI Assistant/.test(JSON.parse(calls[0].o.body).messages[0].content), 'other local models keep the full Pesa prompt');
+{ const names = JSON.parse((reset(oa('x')), await post(ask('hi'), 'k', dbz()), calls[0].o.body)).tools.map(t => t.function.name);
+  ok(names.length === Object.keys(TOOLS).length - 1 && ['sales_by_period', 'top_products', 'stock_value', 'profit_and_loss', 'vat_summary', 'forecast', 'alerts_and_notes', 'customer_history', 'supplier_balances'].every(n => names.includes(n)) && !names.includes('web_search'), 'every read only Blaze tool is offered, search stays hidden without a key'); }
+reset(oa('', ['sales_by_period', { period:'last_month' }]));
+r = await post(ask('how much did I sell last month'), 'k', dbz()); ok(!r.body.done && r.body.calls[0].name === 'sales_by_period' && r.body.calls[0].input.period === 'last_month', 'a Blaze tool call is handed to the phone');
+reset(oa('', ['sales_by_period', { period:'forever' }]), oa('I could not read that.'));
+r = await post(ask('x'), 'k', dbz()); ok(r.status === 200 && r.body.done && !r.body.calls, 'an invalid tool argument from the model is refused, never handed to the phone');
+ok(checkToolInput('top_products', { period:'today' }) === 'bad_period' && checkToolInput('top_products', { period:'week' }) === '' && checkToolInput('vat_summary', { period:'week' }) === 'bad_period' && checkToolInput('stock_value', {}) === '' && checkToolInput('stock_value', { x:'1' }) === 'unexpected_x' && checkToolInput('supplier_reconciliation', {}) === '' && checkToolInput('customer_history', {}) === 'missing_query', 'the new tools check their input');
+ok(Object.keys(TOOLS).filter(n => TOOLS[n].where === 'phone').every(n => TOOLS[n].d.length <= 120), 'tool descriptions stay short for a small model');
+ok(Object.keys(TOOLS).every(n => !/(add|delete|remove|change|send|set)_/.test(n) || n === 'remember'), 'no tool can change shop data (only the confirmed note tool exists)');
+{ const pg = (await post({ action:'ping' }, 'k', dbz())).body; ok(pg.providers[0] === 'local' && pg.models.includes('local:blaze') && !JSON.stringify(pg).includes('LK'), 'ping returns the local provider and the Blaze model name, no keys'); }
 console.log(fails ? 'FAILED ' + fails : 'ALL OK'); process.exit(fails ? 1 : 0);

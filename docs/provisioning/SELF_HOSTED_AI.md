@@ -27,3 +27,5 @@ For open ended questions, run an open weight model on a server you control and p
 - The safety checks still apply: figures are checked against your records, the AI can only read, and you can switch it off.
 - You become responsible for the server's security, updates, backups and running costs.
 - Building a brand new large language model from scratch is not realistic. It needs thousands of GPUs and millions of dollars.
+
+Blaze, the shop owner's own fine tuned model, uses this same path (`local:blaze`). See `docs/BLAZE.md` for the server, on device and outside use.

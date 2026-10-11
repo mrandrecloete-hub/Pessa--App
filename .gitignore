@@ -5,3 +5,4 @@ out_*.pdf
 tests/specs/tsc/
 
 !word-of-hope/**/*.png
+tools/blaze_training/train.jsonl

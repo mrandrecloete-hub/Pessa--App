@@ -1,0 +1,3 @@
+Blaze model files
+This model is a fine tuned and quantized derivative of Qwen2.5-1.5B-Instruct (Copyright Alibaba Cloud), which is licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+It was modified by Björn (LoRA fine tuning, merged, converted to GGUF). Keep this notice with the model files. The model is provided as is, without warranty, and can make mistakes.

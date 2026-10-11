@@ -9,10 +9,18 @@ var _ai = { doc:null, docName:'', ctl:null, busy:false, tools:0 };
 function aiCfg(){
   var c = {}; try{ c = JSON.parse(localStorage.getItem(AI_KEY) || '{}') || {}; }catch(e){}
   var url = String(c.url || '').trim(), key = String(c.key || '').trim(), on = c.on !== false;
-  return { url:url, key:key, on:on, memory:c.memory !== false, ready:on && /^https:\/\/[^\s]+$/i.test(url) && key.length >= 8 };
+  return { url:url, key:key, on:on, memory:c.memory !== false, ready:on && /^https:\/\/[^\s]+$/i.test(url) && key.length >= 8,
+    device:c.device === true, deviceOnly:c.deviceOnly === true, blazeQ4:String(c.blazeQ4 || '').trim(), blazeQ8:String(c.blazeQ8 || '').trim() };
 }
 function aiSave(patch){ var c = {}; try{ c = JSON.parse(localStorage.getItem(AI_KEY) || '{}') || {}; }catch(e){} try{ localStorage.setItem(AI_KEY, JSON.stringify(Object.assign(c, patch))); }catch(e){} }
-function aiReady(){ try{ return aiCfg().ready && agentOnline() && isManagerOrOwner(); }catch(e){ return false; } }
+function aiReady(){
+  try{
+    if(!isManagerOrOwner()) return false;
+    var c = aiCfg();
+    if(c.device && blazeDeviceReady()) return true;                       // Blaze on this device needs no internet
+    return c.ready && agentOnline() && !c.deviceOnly;                      // never the server when the owner chose on device only
+  }catch(e){ return false; }
+}
 
 /* ---- notes the owner asked Pesa to remember: per business, on this device ---- */
 function aiNotes(){
@@ -103,6 +111,7 @@ function aiToolRun(name, input){
     var nums = []; a.columns.forEach(function(c){ if(c.kind === 'number') nums.push(c.sum, c.average, c.min, c.max, c.count); });
     return { text:cap({ file:_ai.docName, data:a }), numbers:nums.concat([a.rows]) };
   }
+  var bz = (typeof blazeToolRun === 'function') ? blazeToolRun(name, input) : null; if(bz) return bz;
   throw new Error('That tool is not available');
 }
 
@@ -117,7 +126,7 @@ function aiUnverifiedAmounts(text, known){
 }
 
 /* ---- ask the Pesa AI server, run the phone tools it asks for, repeat within strict limits ---- */
-function aiAsk(question){
+function aiAskServer(question){
   var c = aiCfg(); if(!c.ready) return Promise.reject(new Error('not_configured'));
   var known = [], t0 = Date.now(), rounds = 0, ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, sources = [], used = [], last = null;
   _ai.ctl = ctl; _ai.busy = true; _ai.tools = 0;
@@ -133,13 +142,16 @@ function aiAsk(question){
         last = j; if(j.sources) sources = j.sources;
         if(j.done) return j;
         var calls = Array.isArray(j.calls) ? j.calls : [], results = (j.serverResults || []).slice();
-        calls.forEach(function(cl){
-          if(++_ai.tools > AI_MAX_TOOLS){ results.push({ type:'tool_result', tool_use_id:cl.id, content:'Tool limit reached.', is_error:true }); return; }
-          try{ var o = aiToolRun(cl.name, cl.input); used.push(cl.name); known = known.concat(o.numbers || []); results.push({ type:'tool_result', tool_use_id:cl.id, content:'<untrusted_shop_data>' + o.text + '</untrusted_shop_data>', is_error:!!o.error }); }
-          catch(e){ results.push({ type:'tool_result', tool_use_id:cl.id, content:'Tool failed: ' + String(e.message || e).slice(0, 120), is_error:true }); }
+        var jobs = calls.map(function(cl){
+          if(++_ai.tools > AI_MAX_TOOLS){ return Promise.resolve({ type:'tool_result', tool_use_id:cl.id, content:'Tool limit reached.', is_error:true }); }
+          return Promise.resolve().then(function(){ return aiToolRun(cl.name, cl.input); }).then(function(o){ used.push(cl.name); known = known.concat(o.numbers || []); return { type:'tool_result', tool_use_id:cl.id, content:'<untrusted_shop_data>' + o.text + '</untrusted_shop_data>', is_error:!!o.error }; },
+            function(e){ return { type:'tool_result', tool_use_id:cl.id, content:'Tool failed: ' + String(e.message || e).slice(0, 120), is_error:true }; });
         });
-        msgs = msgs.concat([{ role:'assistant', content:j.assistant }, { role:'user', content:results }]);
-        return post();
+        return Promise.all(jobs).then(function(rs){
+          results = results.concat(rs);
+          msgs = msgs.concat([{ role:'assistant', content:j.assistant }, { role:'user', content:results }]);
+          return post();
+        });
       });
   }
   return post().then(function(j){
@@ -152,6 +164,14 @@ function aiAsk(question){
     return { text:String(j.text || ''), lines:lines, notes:notes, trace:tr2 };
   }, function(e){ _ai.busy = false; _ai.ctl = null; throw e; });
 }
+/* where the question goes: Blaze on this device first when the owner turned it on and it is ready, else the shop's own server,
+   else (and always when "never send shop data off this device" is on) nowhere: the normal assistant answers alone. */
+function aiAsk(question){
+  var c = aiCfg();
+  if(c.device && blazeDeviceReady()) return blazeDeviceAsk(question);
+  if(c.deviceOnly) return Promise.reject(new Error(c.device ? 'device_not_ready' : 'device_only'));
+  return aiAskServer(question).then(function(a){ a.via = 'server'; return a; });
+}
 function aiCancel(){ try{ if(_ai.ctl) _ai.ctl.abort(); }catch(e){} _ai.busy = false; }
 function aiErrorText(e){
   var m = String((e && e.message) || e), st = e && e.status;
@@ -160,6 +180,10 @@ function aiErrorText(e){
   if(m === 'hourly_limit' || st === 429) return 'Too many AI questions this hour. Please try again a little later.';
   if(m === 'bad_key' || st === 401) return 'The AI key in Pesa AI settings is not accepted by the server. Check it with whoever set up the server.';
   if(m === 'not_configured' || st === 503) return 'The AI server is not fully set up yet.';
+  if(m === 'device_only' || m === 'device_not_ready') return 'You chose to never send shop data off this device, and Blaze is not ready on this device. The normal assistant still works. Open Pesa AI settings to finish setting up Blaze.';
+  if(m === 'device_weak') return 'This device is too weak to run Blaze. The normal assistant still works.';
+  if(m === 'no_model_address') return 'The Blaze model file address is not set. Open Pesa AI settings.';
+  if(m === 'empty_answer') return 'Blaze did not give an answer. Try asking in other words. Nothing was changed.';
   if(m === 'timeout' || m === 'too_many_steps') return 'That question needed too many steps. Try asking something smaller.';
   return 'I could not reach the AI service just now. The normal assistant still works. Nothing was changed.';
 }
@@ -173,10 +197,41 @@ function openAiSettingsSheet(){
     '<div class="field"><label>' + tr('Access key') + '</label><input id="aiKey" type="password" autocomplete="off" value="' + esc(c.key) + '"></div>' +
     '<label class="check" style="display:flex;gap:8px;align-items:center;margin:8px 0;"><input id="aiOn" type="checkbox"' + (c.on ? ' checked' : '') + '> ' + tr('Use the AI for questions the assistant does not know') + '</label>' +
     '<label class="check" style="display:flex;gap:8px;align-items:center;margin:8px 0;"><input id="aiMem" type="checkbox"' + (c.memory ? ' checked' : '') + '> ' + tr('Let the AI use my saved notes') + '</label>' +
+    '<div class="section-title" style="margin-top:14px;">' + tr('Blaze, your own AI') + '</div>' +
+    '<div class="banner" style="display:block;">' + tr('Blaze is a small AI model that can run on this device. Questions then stay on this device: nothing is sent to a server. A small model can be wrong, so Pesa checks its figures against your shop numbers and tells you when an amount did not come from your records. It cannot change anything. It is not tax, legal or accounting advice.') + '</div>' +
+    '<label class="check" style="display:flex;gap:8px;align-items:center;margin:8px 0;"><input id="aiDev" type="checkbox"' + (c.device ? ' checked' : '') + '> ' + tr('Run Blaze on this device') + '</label>' +
+    '<label class="check" style="display:flex;gap:8px;align-items:center;margin:8px 0;"><input id="aiOnly" type="checkbox"' + (c.deviceOnly ? ' checked' : '') + '> ' + tr('Never send shop data off this device') + '</label>' +
+    '<div class="field"><label>' + tr('Model file address, phones (small file)') + '</label><input id="aiQ4" type="url" inputmode="url" autocomplete="off" placeholder="https://huggingface.co/.../blaze-q4_k_m.gguf" value="' + esc(c.blazeQ4) + '"></div>' +
+    '<div class="field"><label>' + tr('Model file address, computers (full size file)') + '</label><input id="aiQ8" type="url" inputmode="url" autocomplete="off" placeholder="https://huggingface.co/.../blaze-q8.gguf" value="' + esc(c.blazeQ8) + '"></div>' +
+    '<div id="aiBzStatus" class="note" style="min-height:20px;"></div><div id="aiBzBar" style="display:none;height:8px;border-radius:6px;background:var(--border,#dfe6e1);overflow:hidden;margin:4px 0 8px;"><div id="aiBzFill" style="height:100%;width:0;background:var(--primary,#0B7A5C);"></div></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="aiBzGo" type="button">' + tr('Download Blaze to this device') + '</button><button class="btn btn-ghost btn-block" id="aiBzStop" type="button" style="display:none;">' + tr('Cancel download') + '</button><button class="btn btn-ghost btn-block" id="aiBzDel" type="button">' + tr('Remove Blaze from this device') + '</button></div>' +
     '<div id="aiMsg" class="note" style="min-height:20px;"></div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="aiSave" type="button">' + tr('Save') + '</button><button class="btn btn-ghost btn-block" id="aiTest" type="button">' + tr('Test the connection') + '</button><button class="btn btn-ghost btn-block" id="aiNotes" type="button">' + tr('My saved notes') + '</button><button class="btn btn-ghost btn-block" id="aiClose" type="button">' + tr('Close') + '</button></div>';
   var ov = openSheet(html), msg = ov.querySelector('#aiMsg');
-  function read(){ return { url:ov.querySelector('#aiUrl').value.trim(), key:ov.querySelector('#aiKey').value.trim(), on:ov.querySelector('#aiOn').checked, memory:ov.querySelector('#aiMem').checked }; }
+  function read(){ return { url:ov.querySelector('#aiUrl').value.trim(), key:ov.querySelector('#aiKey').value.trim(), on:ov.querySelector('#aiOn').checked, memory:ov.querySelector('#aiMem').checked,
+    device:ov.querySelector('#aiDev').checked, deviceOnly:ov.querySelector('#aiOnly').checked, blazeQ4:ov.querySelector('#aiQ4').value.trim(), blazeQ8:ov.querySelector('#aiQ8').value.trim() }; }
+  var bzSt = ov.querySelector('#aiBzStatus'), bzBar = ov.querySelector('#aiBzBar'), bzFill = ov.querySelector('#aiBzFill'), bzGo = ov.querySelector('#aiBzGo'), bzStop = ov.querySelector('#aiBzStop'), bzCtl = null;
+  function bzPaint(){ aiSave(read()); bzSt.textContent = tr(blazeStatusText()); bzGo.disabled = !ov.querySelector('#aiDev').checked; }
+  ['#aiDev', '#aiOnly', '#aiQ4', '#aiQ8'].forEach(function(id){ ov.querySelector(id).addEventListener('change', bzPaint); });
+  bzPaint();
+  bzGo.addEventListener('click', function(){
+    var v = read(); aiSave(v); var cap = blazeCapability();
+    if(!cap.ok){ bzSt.textContent = tr(blazeStatusText()); return; }
+    var url = blazeUrlFor(cap);
+    if(!/^https:\/\/[^\s]+\.gguf(\?[^\s]*)?$/i.test(url || '')){ bzSt.textContent = tr('Enter the model file address first. It must start with https:// and end with .gguf'); return; }
+    function run(){
+      bzGo.style.display = 'none'; bzStop.style.display = ''; bzBar.style.display = 'block'; bzFill.style.width = '2%'; bzSt.textContent = tr('Downloading Blaze. Keep Pesa open.');
+      var stopped = false; bzCtl = { stop:function(){ stopped = true; try{ blazeUnload(); }catch(e){} } };
+      blazeLoad(function(p){ var pc = p && p.total ? Math.max(2, Math.min(99, Math.round(p.loaded / p.total * 100))) : 5; bzFill.style.width = pc + '%'; bzSt.textContent = tr('Downloading Blaze') + ' ' + pc + '%' + (p && p.total ? ' (' + fmtBytes(p.loaded) + ' of ' + fmtBytes(p.total) + ')' : ''); })
+        .then(function(){ bzFill.style.width = '100%'; bzSt.textContent = tr('Blaze is ready on this device.'); bzGo.style.display = ''; bzStop.style.display = 'none'; bzBar.style.display = 'none'; bzPaint(); })
+        .catch(function(e){ bzGo.style.display = ''; bzStop.style.display = 'none'; bzBar.style.display = 'none'; bzSt.textContent = stopped ? tr('Download cancelled.') : tr('Blaze could not be loaded: ') + String((e && e.message) || e).slice(0, 120); });
+    }
+    storageRoom(cap.quant, function(ok){ if(!ok){ bzSt.textContent = tr('There may not be enough free space on this device for Blaze (' + BLAZE_SIZES[cap.quant] + ').'); return; }
+      if(blazeDownloaded()){ run(); return; }
+      confirmSheet(tr('Download Blaze?'), tr('The Blaze model file is ' + BLAZE_SIZES[cap.quant] + '. It is downloaded once and kept on this device. Use Wi-Fi if you can, because it may use a lot of mobile data.'), tr('Download'), function(){ run(); }); });
+  });
+  bzStop.addEventListener('click', function(){ if(bzCtl) bzCtl.stop(); });
+  ov.querySelector('#aiBzDel').addEventListener('click', function(){ blazeForget().then(function(){ bzPaint(); bzSt.textContent = tr('Blaze was removed from this device.'); }); });
   ov.querySelector('#aiSave').addEventListener('click', function(){ var v = read(); if(v.url && !/^https:\/\/[^\s]+$/i.test(v.url)){ msg.textContent = tr('The address must start with https://'); return; } aiSave(v); msg.textContent = tr('Saved'); });
   ov.querySelector('#aiTest').addEventListener('click', function(){
     var v = read(); if(!/^https:\/\/[^\s]+$/i.test(v.url) || v.key.length < 8){ msg.textContent = tr('Enter the address and the access key first'); return; }
@@ -186,6 +241,12 @@ function openAiSettingsSheet(){
   });
   ov.querySelector('#aiNotes').addEventListener('click', function(){ aiSave(read()); closeModal(); openAiNotesSheet(); });
   ov.querySelector('#aiClose').addEventListener('click', function(){ closeModal(); });
+}
+/* is there room for the model? Uses the browser's storage estimate when it has one, and says yes when it cannot tell */
+function storageRoom(quant, cb){
+  var need = quant === 'q8' ? 1.7e9 : 1.1e9;
+  try{ if(navigator.storage && navigator.storage.estimate){ navigator.storage.estimate().then(function(e){ cb(!(e && e.quota && (e.quota - (e.usage || 0)) < need)); }, function(){ cb(true); }); return; } }catch(e){}
+  cb(true);
 }
 function openAiNotesSheet(){
   var list = aiNotes();

@@ -1,0 +1,33 @@
+<|im_start|>system
+You are Blaze, a helpful, friendly assistant built by Björn. Use the provided tools when they help.
+
+# Tools
+
+You may call one or more functions to assist with the user query.
+
+You are provided with function signatures within <tools></tools> XML tags:
+<tools>
+{"type": "function", "function": {"name": "calc", "description": "Exact arithmetic. Use it for every sum, percentage, margin or total instead of working numbers out yourself.", "parameters": {"type": "object", "properties": {"expression": {"type": "string", "maxLength": 200}}, "required": ["expression"]}}}
+{"type": "function", "function": {"name": "shop_summary", "description": "Sales, count of sales and expenses for a period of this shop.", "parameters": {"type": "object", "properties": {"period": {"type": "string", "enum": ["today", "yesterday", "week", "month", "year"]}}, "required": ["period"]}}}
+{"type": "function", "function": {"name": "find_product", "description": "Look up products by name: price, cost and stock.", "parameters": {"type": "object", "properties": {"query": {"type": "string", "maxLength": 80}}, "required": ["query"]}}}
+</tools>
+
+For each function call, return a json object with function name and arguments within <tool_call></tool_call> XML tags:
+<tool_call>
+{"name": <function-name>, "arguments": <args-json-object>}
+</tool_call><|im_end|>
+<|im_start|>user
+How much did I sell today?<|im_end|>
+<|im_start|>assistant
+<tool_call>
+{"name": "sales_by_period", "arguments": {"period": "today"}}
+</tool_call><|im_end|>
+<|im_start|>user
+<tool_response>
+{"period": "today", "salesAfterRefunds": 1250.5}
+</tool_response><|im_end|>
+<|im_start|>assistant
+You sold N$1,250.50 today.<|im_end|>
+<|im_start|>user
+thanks<|im_end|>
+<|im_start|>assistant

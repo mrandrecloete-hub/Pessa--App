@@ -22,6 +22,27 @@ export const TOOLS = {
   recall_memory:    { where:'phone',  d:'Search the notes this shop owner asked Pesa to remember.', p:{ query:{ type:'string', max:80 } }, req:['query'] },
   remember:         { where:'phone',  d:'Save a short note the owner asked you to remember. Only when the owner clearly asks. The owner can see and delete notes.', p:{ text:{ type:'string', max:300 } }, req:['text'], confirm:true },
   analyze_csv:      { where:'phone',  d:'Column totals, averages, minimums and maximums for the CSV or spreadsheet text the owner attached.', p:{}, req:[] },
+  sales_by_period:  { where:'phone',  d:'Sales total, number of sales, average sale and profit estimate for a period.', p:{ period:{ type:'string', enum:['today', 'yesterday', 'week', 'month', 'last_month', 'year'] } }, req:['period'] },
+  top_products:     { where:'phone',  d:'Best selling products by quantity for a period.', p:{ period:{ type:'string', enum:['week', 'month', 'year'] } }, req:['period'] },
+  sales_by_staff:   { where:'phone',  d:'Sales per staff member for a period.', p:{ period:{ type:'string', enum:['today', 'yesterday', 'week', 'month', 'last_month', 'year'] } }, req:['period'] },
+  payment_methods:  { where:'phone',  d:'Sales split by cash, card, wallet and credit for a period.', p:{ period:{ type:'string', enum:['today', 'yesterday', 'week', 'month', 'last_month', 'year'] } }, req:['period'] },
+  stock_value:      { where:'phone',  d:'Value of all stock at cost and at selling price.', p:{}, req:[] },
+  stock_variances:  { where:'phone',  d:'Expected stock against counted stock, in units, cost and cash value.', p:{}, req:[] },
+  out_of_stock:     { where:'phone',  d:'Products that are out of stock.', p:{}, req:[] },
+  slow_movers:      { where:'phone',  d:'Products in stock that did not sell in the last 30 days.', p:{}, req:[] },
+  supplier_balances:{ where:'phone',  d:'What the shop still owes each supplier.', p:{}, req:[] },
+  supplier_reconciliation:{ where:'phone', d:'Supplier checks: statement difference, goods not invoiced, price differences.', p:{ supplier:{ type:'string', max:80 } }, req:[] },
+  reconciliation_status:{ where:'phone', d:'Overall reconciliation status this month: stock, suppliers, cash and expenses.', p:{}, req:[] },
+  customer_history: { where:'phone',  d:'One customer: balance owed, number of purchases, total bought, last purchase.', p:{ query:{ type:'string', max:80 } }, req:['query'] },
+  expenses_summary: { where:'phone',  d:'Expenses total and biggest categories for a period.', p:{ period:{ type:'string', enum:['today', 'yesterday', 'week', 'month', 'last_month', 'year'] } }, req:['period'] },
+  till_status:      { where:'phone',  d:'The open till: cash, card, wallet and credit taken so far.', p:{}, req:[] },
+  refunds_summary:  { where:'phone',  d:'Refunds and voided sales for a period.', p:{ period:{ type:'string', enum:['today', 'yesterday', 'week', 'month', 'last_month', 'year'] } }, req:['period'] },
+  vat_summary:      { where:'phone',  d:'VAT collected, VAT paid and net VAT for a period. A record, not tax advice.', p:{ period:{ type:'string', enum:['month', 'last_month', 'year'] } }, req:['period'] },
+  profit_and_loss:  { where:'phone',  d:'Profit and loss from the books: revenue, cost of sales, expenses, net result.', p:{ period:{ type:'string', enum:['month', 'last_month', 'year'] } }, req:['period'] },
+  forecast:         { where:'phone',  d:'Estimated sales for the next 7 days.', p:{}, req:[] },
+  compare_periods:  { where:'phone',  d:'Sales this period against the one before.', p:{ kind:{ type:'string', enum:['week', 'month'] } }, req:['kind'] },
+  unusual_days:     { where:'phone',  d:'Days with unusually high or low sales.', p:{}, req:[] },
+  alerts_and_notes: { where:'phone',  d:'Recent notes and warnings from the Pesa assistant. They are signs to check, not proof.', p:{}, req:[] },
   web_search:       { where:'server', d:'Search the web for current public information. Returns numbered sources with URLs.', p:{ query:{ type:'string', max:160 } }, req:['query'] },
 };
 function toolSchemas(allowSearch){
@@ -43,6 +64,12 @@ export function checkToolInput(name, input){
   }
   return '';
 }
+
+// Blaze is the shop owner's own fine tuned model (Qwen2.5 1.5B, LoRA, GGUF). It was trained with exactly this short system prompt,
+// so for a local model called blaze the long prompt is not used. Safety stays in the app: its tools are read only and every
+// tool answer is wrapped as untrusted data and checked (see tools/smartai.js and tools/blaze.js).
+export const BLAZE_SYSTEM = 'You are Blaze, a helpful, friendly assistant built by Björn. Use the provided tools when they help.';
+export const isBlaze = (m) => !!m && m.provider === 'local' && /blaze/i.test(String(m.id || ''));
 
 // Sort the request by kind and difficulty so a small model does the easy work and a stronger one the hard work.
 export function classifyTask(text){
@@ -158,7 +185,8 @@ export async function handleAssistant(req, deps){
   const h = req.headers || {};
   if(!same(h['x-pesa-key'], deps.key)) return out(401, { error:'bad_key' });
   const b = req.body || {};
-  if(b.action === 'ping') return out(200, { ok:true, search:!!deps.searchKey, providers:[deps.anthropicKey ? 'anthropic' : '', deps.openaiKey ? 'openai' : '', deps.localBase ? 'local' : ''].filter(Boolean) });
+  if(b.action === 'ping') return out(200, { ok:true, search:!!deps.searchKey, providers:[deps.anthropicKey ? 'anthropic' : '', deps.openaiKey ? 'openai' : '', deps.localBase ? 'local' : ''].filter(Boolean),
+    models:['fast', 'strong', 'fallback'].map(k => (deps.models || {})[k]).filter(Boolean).filter((m, i, a) => a.indexOf(m) === i).map(m => clip(m, 60)) });   // names only, never keys
   const messages = cleanMessages(b.messages);
   if(!messages) return out(400, { error:'bad_messages' });
   const now = deps.now ? deps.now() : Date.now(), hits = deps.hits || (deps.hits = []), usage = deps.usage || (deps.usage = { day:'', tokens:0 });
@@ -181,7 +209,7 @@ export async function handleAssistant(req, deps){
     let res = null, used = null;
     for(const mdl of models){
       for(let attempt = 0; attempt < 2; attempt++){
-        res = await callModel(mdl, system, convo, tools, deps); trace.calls++;
+        res = await callModel(mdl, isBlaze(mdl) ? BLAZE_SYSTEM : system, convo, tools, deps); trace.calls++;
         if(res.ok){ used = mdl; break; }
         if(res.status === 429 || res.status >= 500 || res.status === 0){ trace.retries++; continue; }   // recoverable, bounded
         break;                                                                                            // 400, 401, 403: next model will not help either, but try it once

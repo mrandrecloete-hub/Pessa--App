@@ -28,4 +28,5 @@ fs.writeFileSync(path.join(out,'index.html'),s);
 // old browser copy: the main script has a syntax error, so Pesa never starts and the compatibility guard must show its message
 const old=path.join(root,'tests','.build_old');fs.rmSync(old,{recursive:true,force:true});fs.cpSync(out,old,{recursive:true});
 let o=fs.readFileSync(path.join(old,'index.html'),'utf8');o=o.replace('window.__pesaBoot = true;','window.__pesaBoot = true; @@@');fs.writeFileSync(path.join(old,'index.html'),o);
+if(fs.existsSync('vendor'))fs.cpSync('vendor',path.join(out,'vendor'),{recursive:true});   // after the old copy, which does not need the 9 MB model library
 console.log('built',names.size,'hooks');

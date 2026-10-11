@@ -1,0 +1,429 @@
+[
+  {
+    "name": "calc",
+    "description": "Exact arithmetic. Use it for every sum, percentage, margin or total instead of working numbers out yourself.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "string",
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "expression"
+      ]
+    }
+  },
+  {
+    "name": "shop_summary",
+    "description": "Sales, count of sales and expenses for a period of this shop.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "week",
+            "month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "find_product",
+    "description": "Look up products by name: price, cost and stock.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "maxLength": 80
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  {
+    "name": "low_stock",
+    "description": "Products running low or out of stock.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "customers_owing",
+    "description": "Customers who owe money, largest first.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "recall_memory",
+    "description": "Search the notes this shop owner asked Pesa to remember.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "maxLength": 80
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  {
+    "name": "remember",
+    "description": "Save a short note the owner asked you to remember. Only when the owner clearly asks. The owner can see and delete notes.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "maxLength": 300
+        }
+      },
+      "required": [
+        "text"
+      ]
+    }
+  },
+  {
+    "name": "analyze_csv",
+    "description": "Column totals, averages, minimums and maximums for the CSV or spreadsheet text the owner attached.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "sales_by_period",
+    "description": "Sales total, number of sales, average sale and profit estimate for a period.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "week",
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "top_products",
+    "description": "Best selling products by quantity for a period.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "week",
+            "month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "sales_by_staff",
+    "description": "Sales per staff member for a period.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "week",
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "payment_methods",
+    "description": "Sales split by cash, card, wallet and credit for a period.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "week",
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "stock_value",
+    "description": "Value of all stock at cost and at selling price.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "stock_variances",
+    "description": "Expected stock against counted stock, in units, cost and cash value.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "out_of_stock",
+    "description": "Products that are out of stock.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "slow_movers",
+    "description": "Products in stock that did not sell in the last 30 days.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "supplier_balances",
+    "description": "What the shop still owes each supplier.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "supplier_reconciliation",
+    "description": "Supplier checks: statement difference, goods not invoiced, price differences.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "supplier": {
+          "type": "string",
+          "maxLength": 80
+        }
+      },
+      "required": []
+    }
+  },
+  {
+    "name": "reconciliation_status",
+    "description": "Overall reconciliation status this month: stock, suppliers, cash and expenses.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "customer_history",
+    "description": "One customer: balance owed, number of purchases, total bought, last purchase.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "maxLength": 80
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  },
+  {
+    "name": "expenses_summary",
+    "description": "Expenses total and biggest categories for a period.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "week",
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "till_status",
+    "description": "The open till: cash, card, wallet and credit taken so far.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "refunds_summary",
+    "description": "Refunds and voided sales for a period.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "today",
+            "yesterday",
+            "week",
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "vat_summary",
+    "description": "VAT collected, VAT paid and net VAT for a period. A record, not tax advice.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "profit_and_loss",
+    "description": "Profit and loss from the books: revenue, cost of sales, expenses, net result.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "period": {
+          "type": "string",
+          "enum": [
+            "month",
+            "last_month",
+            "year"
+          ]
+        }
+      },
+      "required": [
+        "period"
+      ]
+    }
+  },
+  {
+    "name": "forecast",
+    "description": "Estimated sales for the next 7 days.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "compare_periods",
+    "description": "Sales this period against the one before.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "week",
+            "month"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    }
+  },
+  {
+    "name": "unusual_days",
+    "description": "Days with unusually high or low sales.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  },
+  {
+    "name": "alerts_and_notes",
+    "description": "Recent notes and warnings from the Pesa assistant. They are signs to check, not proof.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  }
+]

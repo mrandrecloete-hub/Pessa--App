@@ -18,5 +18,9 @@ const same=!!mm&&sql.includes(JSON.parse(mm[1]));console.log('provisioning SQL m
 const vj=JSON.parse(fs.readFileSync('version.json','utf8')).version;console.log('version.json',vj,vj===ver?'ok':'MISMATCH');ok=ok&&vj===ver;
 const hv=(html.match(/<script src="app\.js\?v=([^"]+)">/)||[])[1],swt=fs.readFileSync('sw.js','utf8'),sv=(swt.match(/var APPJS = '\.\/app\.js\?v=([^']+)'/)||[])[1];
 console.log('index.html app.js version',hv,hv===ver?'ok':'MISMATCH','sw APPJS',sv,sv===ver?'ok':'MISMATCH');ok=ok&&hv===ver&&sv===ver;
+// Blaze: its tool list must match the server whitelist, and the copy inside app.js must match tools/blaze.js
+{ const t=cp.spawnSync('node',['tools/blaze_training/sync_tools.mjs','--check'],{encoding:'utf8'}); const okT=t.status===0; console.log('blaze tools:',okT?'in sync':'OUT OF SYNC '+(t.stderr||'').slice(0,200)); ok=ok&&okT;
+  const m=s.match(/\/\*BLAZE:START[^\n]*\n([\s\S]*?)\n\/\*BLAZE:END\*\//), src=fs.readFileSync('tools/blaze.js','utf8').trimEnd(); const okE=!!m&&m[1].trimEnd()===src; console.log('blaze block in app.js:',okE?'ok':'OUT OF DATE (run python3 tools/embed_block.py BLAZE blaze.js)'); ok=ok&&okE;
+  for(const f of ['vendor/wllama/index.min.js','vendor/wllama/wllama.wasm','tools/blaze_training/tools.json']){ const ex=fs.existsSync(f); console.log(f+':',ex?'ok':'MISSING'); ok=ok&&ex; } }
 console.log('sw cache',fs.readFileSync('sw.js','utf8').match(/var CACHE = '([^']+)'/)[1]);
 console.log(ok?'CHECK OK':'CHECK FAILED'); process.exit(ok?0:1);
