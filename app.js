@@ -8755,20 +8755,33 @@ function offerSaleReceipt(sale, customer){
   var sendKind = sale.paymentMethod === 'credit' ? 'invoice' : 'receipt';
   var html = '<div class="sheet-head"><h2>'+tr('Sale recorded')+'</h2></div>' +
     '<div style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">Total '+fmtMoney(sale.total)+'. Print a receipt for the customer?'+(sale.loyaltyCustomerId && (sale.pointsEarned||sale.pointsRedeemed) ? '<br><b style="color:var(--success);">'+esc(loyaltyNote(sale))+'</b>' : '')+'</div>' +
-    '<div class="actions">' +
-      '<button class="btn btn-ghost btn-block" id="saleSkipBtn">'+tr('Not now')+'</button>' +
+    '<div class="actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+      '<button class="btn btn-accent btn-block" id="salePrintBtn" type="button">'+tr('Print')+'</button>' +
       bluetoothPrintButtonHtml('saleBtPrintBtn') +
-      '<button class="btn btn-accent btn-block" id="saleReceiptBtn">'+tr('Receipt')+'</button>' +
+      '<button class="btn btn-ghost btn-block" id="saleSendBtn" type="button">'+tr('Email')+'</button>' +
+      '<button class="btn btn-ghost btn-block" id="saleReceiptBtn" type="button">'+tr('Download receipt')+'</button>' +
     '</div>' +
-    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="saleSendBtn" type="button">'+(sendKind==='invoice'?tr('Send invoice'):tr('Send receipt'))+' · '+tr('Email')+', '+tr('WhatsApp')+', '+tr('SMS')+'</button></div>';
+    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="saleSkipBtn" type="button">'+tr('Not now')+'</button></div>';
   var ov = openSheet(html, {center:true});
   ov.querySelector('#saleSkipBtn').addEventListener('click', closeModal);
   var saleNumberCommitted = false;
   ov.querySelector('#saleSendBtn').addEventListener('click', function(){
-    openSendSheet(documentSendCtx(draft, sendKind, {
+    var sctx = documentSendCtx(draft, sendKind, {
       customerId: customer ? customer.id : null,
       onHandedOff: function(){ if(!saleNumberCommitted){ saleNumberCommitted = true; commitInvoiceNumber(draft, sendKind, customer ? customer.id : null); } }
-    }));
+    });
+    sctx.emailOnly = true;   // this dialog is email only; WhatsApp and SMS stay in the full send sheet used elsewhere
+    openSendSheet(sctx);
+  });
+  // normal print: the browser's own print dialog
+  ov.querySelector('#salePrintBtn').addEventListener('click', async function(){
+    var btn = ov.querySelector('#salePrintBtn');
+    btn.disabled = true; var oldLabel = btn.textContent; btn.textContent = tr('Preparing…');
+    var ready = await ensureJsPDF();
+    var doc = ready ? buildReceiptPdf(draft) : null;
+    btn.disabled = false; btn.textContent = oldLabel;
+    if(!doc){ toast('Couldn’t load the PDF engine, check your connection and try again'); return; }
+    printPdfDoc(doc); closeModal();
   });
   var btPrintBtn = ov.querySelector('#saleBtPrintBtn');
   if(btPrintBtn && !btPrintBtn.disabled) btPrintBtn.addEventListener('click', function(){ printReceiptViaBluetooth(draft, btPrintBtn); });
@@ -8779,7 +8792,8 @@ function offerSaleReceipt(sale, customer){
     if(!ready){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine, check your connection and try again'); return; }
     var doc = buildReceiptPdf(draft);
     if(!doc){ btn.disabled = false; btn.textContent = oldLabel; toast('Couldn’t load the PDF engine, check your connection and try again'); return; }
-    saveGeneratedPdf(doc, 'receipt-'+todayKey()+'-'+sale.total+'.pdf').then(function(ok){
+    // a PDF straight to the device with no format question; the format chooser stays on the other download buttons
+    saveBlobFile('receipt-'+todayKey()+'-'+sale.total+'.pdf', doc.output('blob')).then(function(ok){
       if(ok) toast('Receipt downloaded');
       closeModal();
     });
@@ -11178,16 +11192,16 @@ function openSendSheet(ctx){
     '<div class="field"><label>'+tr('Send to')+'</label><select id="sdRecipient">'+opts+'</select></div>' +
     '<div class="field-row">' +
       '<div class="field"><label>'+tr('Email')+'</label><input id="sdEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com, another@example.com"></div>' +
-      '<div class="field"><label>'+tr('Mobile number')+'</label><input id="sdPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="081 234 5678"></div>' +
+      '<div class="field"'+(ctx.emailOnly ? ' style="display:none;"' : '')+'><label>'+tr('Mobile number')+'</label><input id="sdPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="081 234 5678"></div>' +
     '</div>' +
     '<div class="section-title">'+tr('Send by')+'</div>' +
     '<div class="actions" style="margin-top:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       (emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
       '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>' +
-      '<button class="btn btn-ghost" type="button" data-channel="gmail">'+tr('Gmail')+'</button>' +
-      (waReady() ? '<button class="btn btn-primary" type="button" data-channel="wanow">'+tr('Send now by WhatsApp')+'</button>' : '') +
-      '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+(waReady() ? tr('WhatsApp app') : tr('WhatsApp'))+'</button>' +
-      '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>' +
+      (ctx.emailOnly ? '' : '<button class="btn btn-ghost" type="button" data-channel="gmail">'+tr('Gmail')+'</button>') +
+      (!ctx.emailOnly && waReady() ? '<button class="btn btn-primary" type="button" data-channel="wanow">'+tr('Send now by WhatsApp')+'</button>' : '') +
+      (ctx.emailOnly ? '' : '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+(waReady() ? tr('WhatsApp app') : tr('WhatsApp'))+'</button>') +
+      (ctx.emailOnly ? '' : '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>') +
     '</div>' +
     '<div class="banner" style="margin-top:12px;">'+(emailSendCfg() ? tr('Send now emails straight from Pesa. The PDF is attached only if your EmailJS plan allows attachments (turn that on under Notifications in Settings); otherwise the details are sent without it. Email with PDF, WhatsApp and SMS open your own app with everything filled in, so you check it and tap Send there.') : tr('This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.'))+'</div>' +
     '<div id="sdResult"></div>' +
@@ -19976,7 +19990,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.182';
+var APP_VERSION = '2026.10.183';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20286,6 +20300,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.183', items:[
+    'Fewer choices after a sale: the Sale recorded box now offers Print, Print via Bluetooth, Email and Download receipt, with Not now underneath. Download receipt saves the PDF straight away, and Email goes straight to the email options only. WhatsApp and SMS are still in the send sheet on invoices and quotes'
+  ] },
   { v:'2026.10.182', items:[
     'Compact documents: receipts, invoices and quotes are now the size of the About Pesa page, with the logo still on every document. The header band on page one is shorter, titles, card text, tables, totals and notes are smaller and rows are tighter, so more fits on each page'
   ] },
