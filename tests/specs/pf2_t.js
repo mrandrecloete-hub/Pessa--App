@@ -32,6 +32,10 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   await p.evaluate(()=>window.__t.pfRemindStart(0)); await p.waitForTimeout(300);
   ck('no second pop up within 6 hours', !(await p.$('#prgo')));
   // snack nudge
+  // the reminder bar is part of the one time prompts: a person who registered long ago never gets it by itself
+  await p.evaluate(()=>window.__t.pfSave({remindAt:Date.now()-3*3600000})); await p.evaluate(()=>window.__t.pfTick()); await p.waitForTimeout(300);
+  ck('no reminder bar for someone who is not new', !(await p.$('#pfSnack')));
+  await p.evaluate(()=>window.__t.welcomeMark(window.__t.State.session.userId));   // just registered
   await p.evaluate(()=>window.__t.pfSave({remindAt:Date.now()-3*3600000})); await p.evaluate(()=>window.__t.pfTick()); await p.waitForSelector('#pfSnack',{timeout:2000}); ck('2 hour nudge shows a snack bar', true); await p.screenshot({path:D+'pf2_snack.png'});
   await p.click('#pfSnack [data-pfopen]'); await p.waitForSelector('#pfSubmit'); ck('snack opens the form', !(await p.$('#pfSnack')));
   // fill in

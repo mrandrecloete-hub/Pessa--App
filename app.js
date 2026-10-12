@@ -5614,16 +5614,29 @@ function openPilotReminderSheet(){
   ov.querySelector('#prgo').addEventListener('click', function(){ openPilotFillSheet(); });
   ov.querySelector('#prlater').addEventListener('click', closeModal);
 }
+/* One time prompts. The pilot form reminder and the backup advice appear ONCE, in the first session after a person registers
+   (the owner registering the business, or a staff member creating their account). After that they never appear by themselves.
+   The pilot form (menu) and Backups (Settings) can always be opened by choice. */
+var _welcomeFor = null;
+function welcomeKey(uid){ return 'pesa_welcome_' + WS.id + '_' + uid; }
+function welcomeMark(uid){ try{ localStorage.setItem(welcomeKey(uid), JSON.stringify({ pf:1, bk:1, fresh:1 })); }catch(e){} }
+function welcomeState(){ var uid = State.session && State.session.userId; if(!uid) return null; try{ return JSON.parse(localStorage.getItem(welcomeKey(uid)) || 'null'); }catch(e){ return null; } }
+function welcomeSet(o){ var uid = State.session && State.session.userId; if(!uid) return; try{ if(o && (o.pf || o.bk)) localStorage.setItem(welcomeKey(uid), JSON.stringify(o)); else localStorage.removeItem(welcomeKey(uid)); }catch(e){} }
+function welcomeHas(kind){ var o = welcomeState(); return !!(o && o[kind]); }
+function welcomeDone(kind){ var o = welcomeState(); if(!o) return; delete o[kind]; welcomeSet(o); }
+// At sign in: the first session after registering keeps its prompts; any later session clears whatever was left, so nothing returns.
+function welcomeAtSignIn(){ var o = welcomeState(); if(!o) return; if(o.fresh){ o.fresh = 0; welcomeSet(o); } else welcomeSet(null); }
 function pfRemindStart(tries){
-  if(!pfDue()) return;
+  if(!pfDue() || !welcomeHas('pf')) return;
   if(Date.now() - pfMine().remindAt < 6 * 3600000) return;
   if(pfBusy()){ if((tries || 0) < 12) setTimeout(function(){ pfRemindStart((tries || 0) + 1); }, 60000); return; }
-  pfSave({ remindAt:Date.now() }); openPilotReminderSheet();
+  pfSave({ remindAt:Date.now() }); welcomeDone('pf'); openPilotReminderSheet();
 }
 function pfTick(){
-  if(!pfDue() || document.hidden || pfBusy()) return;
+  // the reminder bar only ever follows the one time sheet, in the same first session, and only if the sheet could not be shown
+  if(!pfDue() || !welcomeHas('pf') || document.hidden || pfBusy()) return;
   if(Date.now() - pfMine().remindAt < 2 * 3600000) return;
-  pfSave({ remindAt:Date.now() }); pfSnack();
+  pfSave({ remindAt:Date.now() }); welcomeDone('pf'); pfSnack();
 }
 try{
   setInterval(pfTick, 15 * 60000);
@@ -5816,7 +5829,7 @@ function bkBannerHtml(){
     var dev = bkIsComputer() ? 'computer' : 'phone', out = '';
     if(_bkSafety.folder === 'permission')
       out = '<div class="card" id="bkSafeBanner" style="margin:10px 0;padding:14px;border:1.5px solid #D8343F;"><div style="font-weight:800;margin-bottom:4px;">' + tr('Your backup folder needs your permission') + '</div><div style="font-size:13.5px;line-height:1.5;margin-bottom:10px;">' + tr('Your browser stopped Pesa from saving copies to your backup folder. Copies are not reaching it until you allow it again.') + '</div><div class="actions" style="display:flex;gap:8px;"><button class="btn btn-primary" type="button" data-bksafe="allow">' + tr('Allow now') + '</button><button class="btn btn-ghost" type="button" data-bksafe="open">' + tr('Open backups') + '</button></div></div>';
-    else if(!bkOutsideSafe().safe && !(later && Date.now() - later < 86400000))
+    else if(welcomeHas('bk') && !bkOutsideSafe().safe && !(later && Date.now() - later < 86400000))
       out = '<div class="card" id="bkSafeBanner" style="margin:10px 0;padding:14px;border:1.5px solid #D99A1E;"><div style="font-weight:800;margin-bottom:4px;">' + tr('Your data is only on this ' + dev) + '</div><div style="font-size:13.5px;line-height:1.5;margin-bottom:10px;">' + tr('If this ' + dev + ' is lost, wiped or its browser data is cleared, your records and the automatic backups go with it. Make one copy somewhere else now.') + '</div><div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-bksafe="open">' + tr('Make a safe copy') + '</button><button class="btn btn-ghost" type="button" data-bksafe="later">' + tr('Remind me tomorrow') + '</button></div></div>';
     return out;
   }catch(e){ return ''; }
@@ -5827,8 +5840,8 @@ function bkBannerHtml(){
     var b = e.target && e.target.closest ? e.target.closest('[data-bksafe]') : null; if(!b) return;
     var act = b.getAttribute('data-bksafe');
     if(act === 'allow'){ BackupFolder.renew().then(function(ok){ toast(ok ? tr('Allowed') : tr('Not allowed')); bkSafetyRefresh(); setTimeout(function(){ try{ render(); }catch(x){} }, 400); }); }
-    else if(act === 'open'){ openBackupsSheet(); }
-    else { try{ localStorage.setItem('pesa_bk_later_' + WS.id, String(Date.now())); }catch(x){} var c = document.getElementById('bkSafeBanner'); if(c) c.remove(); }
+    else if(act === 'open'){ welcomeDone('bk'); openBackupsSheet(); }
+    else { welcomeDone('bk'); try{ localStorage.setItem('pesa_bk_later_' + WS.id, String(Date.now())); }catch(x){} var c = document.getElementById('bkSafeBanner'); if(c) c.remove(); }
   });
 }catch(e){} })();
 function btBackupFolderPaint(box){
@@ -5940,6 +5953,7 @@ function checkAuthAndRoute(){
   try{ licCheck(); }catch(e){}
   startIdleWatch(); touchUserActive(); setTimeout(btMaybeSetupPrompt, 2200); try{ onMessagesChanged(); if(isRestricted()) setTimeout(empStockAlertTick, 1500); }catch(e){}
   if(!_whatsNewChecked){ _whatsNewChecked = true; maybeShowWhatsNew(); }
+  try{ if(_welcomeFor !== State.session.userId){ _welcomeFor = State.session.userId; welcomeAtSignIn(); } }catch(e){}
   (function(uid0){ setTimeout(function(){ try{ if(State.session && State.session.userId === uid0) pfRemindStart(0); }catch(e){} }, 5000); })(State.session ? State.session.userId : null);
   (function(uid0){ setTimeout(function(){ try{ bkShowOnOpen(uid0, 0); }catch(e){} }, 1800); })(State.session ? State.session.userId : null);
 }
@@ -6362,6 +6376,7 @@ function wireRegisterCompany(root){
         State.settings.shopName = displayName;
         try{ await refs.settings.set(State.settings); }catch(e2){}
         State.session = { userId: newUserRef.id, name: ownerName, role:'owner' };
+        welcomeMark(newUserRef.id);   // the first session gets the one time pilot and backup prompts
         saveSessionLocal(newUserRef.id);
         showWelcomeSplash(displayName, function(){
           suppressAuthRoute = false;
@@ -6463,6 +6478,7 @@ function wireEmployeeSignup(root){
       var patch = { passHash:hash, pending:false, inviteCode:'', inviteExpires:'', joinedAt:new Date().toISOString(), phone:box.querySelector('#empPhone').value.trim(), email:box.querySelector('#empEmail').value.trim().toLowerCase(), active:true, lastActiveAt:new Date().toISOString() };
       refs.users.doc(u.id).update(patch);
       State.session = { userId:u.id, name:u.name, role:u.role };
+      welcomeMark(u.id);   // the first session gets the one time pilot and backup prompts
       saveSessionLocal(u.id);
       logAudit('create','staff',u.id,u.name+' created their account');
       toast(tr('Welcome')+', '+u.name+'!');
@@ -20041,7 +20057,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.186';
+var APP_VERSION = '2026.10.187';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20351,6 +20367,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.187', items:[
+    'No more pop ups by themselves: the pilot feedback reminder and the backup advice now appear once, in the first session after a person registers, and never again unless they choose to open them. The pilot form is still in the menu and Backups is still in Settings'
+  ] },
   { v:'2026.10.186', items:[
     'Journal and general ledger: every sale is now described from its own receipt, for example Sale INV-0007: 2 x Milk 1L, 1 x Brown bread (cash), with the customer for credit sales. The reference is the receipt number, not an internal code',
     'Fixed: a refund or a void was being booked as a sale. It is now booked as a reversal of revenue, cash and cost of goods, with the receipt it reverses. Months filed before this fix show as changed, so re-run any month that had a refund'
