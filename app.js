@@ -8759,20 +8759,24 @@ function offerSaleReceipt(sale, customer){
       '<button class="btn btn-accent btn-block" id="salePrintBtn" type="button">'+tr('Print')+'</button>' +
       bluetoothPrintButtonHtml('saleBtPrintBtn') +
       '<button class="btn btn-ghost btn-block" id="saleSendBtn" type="button">'+tr('Email')+'</button>' +
-      '<button class="btn btn-ghost btn-block" id="saleReceiptBtn" type="button">'+tr('Download receipt')+'</button>' +
+      '<button class="btn btn-ghost btn-block" id="saleWaBtn" type="button">'+tr('WhatsApp')+'</button>' +
     '</div>' +
-    '<div class="actions" style="margin-top:10px;"><button class="btn btn-ghost btn-block" id="saleSkipBtn" type="button">'+tr('Not now')+'</button></div>';
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="saleReceiptBtn" type="button">'+tr('Download receipt')+'</button></div>' +
+    '<div class="actions" style="margin-top:8px;"><button class="btn btn-ghost btn-block" id="saleSkipBtn" type="button">'+tr('Not now')+'</button></div>';
   var ov = openSheet(html, {center:true});
   ov.querySelector('#saleSkipBtn').addEventListener('click', closeModal);
   var saleNumberCommitted = false;
-  ov.querySelector('#saleSendBtn').addEventListener('click', function(){
+  // Email and WhatsApp each open the send sheet limited to that one channel; the full sheet stays on invoices and quotes
+  function openSendOnly(flag){
     var sctx = documentSendCtx(draft, sendKind, {
       customerId: customer ? customer.id : null,
       onHandedOff: function(){ if(!saleNumberCommitted){ saleNumberCommitted = true; commitInvoiceNumber(draft, sendKind, customer ? customer.id : null); } }
     });
-    sctx.emailOnly = true;   // this dialog is email only; WhatsApp and SMS stay in the full send sheet used elsewhere
+    sctx[flag] = true;
     openSendSheet(sctx);
-  });
+  }
+  ov.querySelector('#saleSendBtn').addEventListener('click', function(){ openSendOnly('emailOnly'); });
+  ov.querySelector('#saleWaBtn').addEventListener('click', function(){ openSendOnly('waOnly'); });
   // normal print: the browser's own print dialog
   ov.querySelector('#salePrintBtn').addEventListener('click', async function(){
     var btn = ov.querySelector('#salePrintBtn');
@@ -11191,17 +11195,17 @@ function openSendSheet(ctx){
     (ctx.summaryHtml ? '<div class="banner">'+ctx.summaryHtml+'</div>' : '') +
     '<div class="field"><label>'+tr('Send to')+'</label><select id="sdRecipient">'+opts+'</select></div>' +
     '<div class="field-row">' +
-      '<div class="field"><label>'+tr('Email')+'</label><input id="sdEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com, another@example.com"></div>' +
+      '<div class="field"'+(ctx.waOnly ? ' style="display:none;"' : '')+'><label>'+tr('Email')+'</label><input id="sdEmail" type="email" inputmode="email" autocomplete="off" placeholder="name@example.com, another@example.com"></div>' +
       '<div class="field"'+(ctx.emailOnly ? ' style="display:none;"' : '')+'><label>'+tr('Mobile number')+'</label><input id="sdPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="081 234 5678"></div>' +
     '</div>' +
     '<div class="section-title">'+tr('Send by')+'</div>' +
     '<div class="actions" style="margin-top:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
-      (emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
-      '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>' +
-      (ctx.emailOnly ? '' : '<button class="btn btn-ghost" type="button" data-channel="gmail">'+tr('Gmail')+'</button>') +
+      (!ctx.waOnly && emailSendCfg() ? '<button class="btn btn-primary" type="button" data-channel="emailnow">'+tr('Send now by email')+'</button>' : '') +
+      (ctx.waOnly ? '' : '<button class="btn '+(emailSendCfg() ? 'btn-ghost' : 'btn-primary')+'" type="button" data-channel="email">'+(emailSendCfg() ? tr('Email with PDF') : tr('Email'))+'</button>') +
+      ((ctx.emailOnly || ctx.waOnly) ? '' : '<button class="btn btn-ghost" type="button" data-channel="gmail">'+tr('Gmail')+'</button>') +
       (!ctx.emailOnly && waReady() ? '<button class="btn btn-primary" type="button" data-channel="wanow">'+tr('Send now by WhatsApp')+'</button>' : '') +
       (ctx.emailOnly ? '' : '<button class="btn btn-ghost" type="button" data-channel="whatsapp">'+(waReady() ? tr('WhatsApp app') : tr('WhatsApp'))+'</button>') +
-      (ctx.emailOnly ? '' : '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>') +
+      ((ctx.emailOnly || ctx.waOnly) ? '' : '<button class="btn btn-ghost" type="button" data-channel="sms">'+tr('SMS')+'</button>') +
     '</div>' +
     '<div class="banner" style="margin-top:12px;">'+(emailSendCfg() ? tr('Send now emails straight from Pesa. The PDF is attached only if your EmailJS plan allows attachments (turn that on under Notifications in Settings); otherwise the details are sent without it. Email with PDF, WhatsApp and SMS open your own app with everything filled in, so you check it and tap Send there.') : tr('This opens your own email, WhatsApp or SMS app with everything filled in. Check it, then tap Send there. Pesa does not send messages by itself.'))+'</div>' +
     '<div id="sdResult"></div>' +
@@ -11399,10 +11403,33 @@ function openSendSheet(ctx){
     toast(msg);
     showResult(msg + (n ? '' : ' ' + tr('No number entered, so choose the contact in the app.')), url, text);
   }
+  /* WhatsApp app: the receipt PDF goes with the message. Where the device can share a file (phones and many computers),
+     the PDF and the message are handed to WhatsApp through the share list. Otherwise the chat opens with the message ready
+     and the PDF is saved so it can be attached with the paperclip. */
+  async function sendWaApp(){
+    var phone = phoneIn.value.trim(), n = normalizeNamPhone(phone);
+    if(phone && n.length < 8){ toast(tr('Check the mobile number')); phoneIn.focus(); return; }
+    var name = recipientName(), text = ctx.shortText(name, 'whatsapp'), file = null;
+    if(ctx.buildFile){ file = (readyFile !== undefined) ? readyFile : await filePromise; }
+    try{
+      if(file && navigator.share && navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], text:text, title:ctx.subject });
+        logSend('whatsapp', 'PDF shared through the share list');
+        showResult(tr('Choose WhatsApp in the list and pick the customer. The PDF and the message go together.'), null, text);
+        return;
+      }
+    }catch(e){ if(e && e.name === 'AbortError') return; /* sharing a file is not possible here: use the chat instead */ }
+    var url = buildWhatsAppUrl(phone, text), saved = false;
+    openExternalUrl(url);
+    if(file) saved = await saveBlobFile(file.name, file);
+    logSend('whatsapp', saved ? 'WhatsApp opened, PDF saved to attach' : 'WhatsApp opened');
+    toast(tr('Opening WhatsApp…'));
+    showResult(tr('Opening WhatsApp…') + (saved ? ' ' + tr('The PDF was saved to your Downloads. In the chat tap the paperclip, choose Document, pick the PDF and send.') : '') + (n ? '' : ' ' + tr('No number entered, so choose the contact in the app.')), url, text);
+  }
   overlay.querySelectorAll('[data-channel]').forEach(function(b){
     b.addEventListener('click', function(){
       var ch = b.getAttribute('data-channel');
-      if(ch === 'wanow') sendWaNow(b); else if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else if(ch === 'gmail') sendGmail(); else sendText(ch);
+      if(ch === 'wanow') sendWaNow(b); else if(ch === 'emailnow') sendNow(b); else if(ch === 'email') sendEmail(); else if(ch === 'gmail') sendGmail(); else if(ch === 'whatsapp') sendWaApp(); else sendText(ch);
     });
   });
   return overlay;
@@ -19990,7 +20017,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.183';
+var APP_VERSION = '2026.10.184';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20300,6 +20327,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.184', items:[
+    'WhatsApp after a sale sends the receipt PDF: the Sale recorded box has a WhatsApp button. On a phone the PDF and the message go through the share list to WhatsApp. Where the device cannot share a file, the chat opens with the message ready and the PDF is saved so it can be attached with the paperclip. With WhatsApp Business connected, Send now still attaches the PDF'
+  ] },
   { v:'2026.10.183', items:[
     'Fewer choices after a sale: the Sale recorded box now offers Print, Print via Bluetooth, Email and Download receipt, with Not now underneath. Download receipt saves the PDF straight away, and Email goes straight to the email options only. WhatsApp and SMS are still in the send sheet on invoices and quotes'
   ] },
