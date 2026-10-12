@@ -10170,13 +10170,13 @@ function pdBandRaw(doc, st, H, compact){
   doc.setFillColor(255,255,255);
   doc.lines([[60.8, -5.3*k, 142.8, -4.1*k, 210, 1.7*k], [0, bh + 0.3 - 8.7*k], [-210, 0]], 0, y0 + 7.0*k, [1,1], 'F', true);
   // lockup
-  var mh = compact ? 10.5 : 15, mw = mh / PESA_LOGO_ASPECT, my = compact ? 7 : 8.5;
+  var mh = compact ? 10.5 : 11, mw = mh / PESA_LOGO_ASPECT, my = 7;
   try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', 14, my, mw, mh); }catch(e){}
   var tx = 14 + mw + 3.6;
-  doc.setFont('helvetica','bold'); doc.setFontSize(compact ? 15 : 24); doc.setTextColor(255,255,255);
-  pdCS(doc, 0.6); doc.text('PESA', tx, my + (compact ? 6 : 8.6)); pdCS(doc, 0);
-  doc.setFont('helvetica','bold'); doc.setFontSize(compact ? 5 : 6.2); pdSet(doc, 't', pal.gold2);
-  pdCS(doc, compact ? 0.7 : 1.0); doc.text('YOUR MULA, YOUR PRIDE', tx, my + (compact ? 9.6 : 13.2)); pdCS(doc, 0);
+  doc.setFont('helvetica','bold'); doc.setFontSize(compact ? 15 : 17); doc.setTextColor(255,255,255);
+  pdCS(doc, 0.6); doc.text('PESA', tx, my + (compact ? 6 : 6.4)); pdCS(doc, 0);
+  doc.setFont('helvetica','bold'); doc.setFontSize(5); pdSet(doc, 't', pal.gold2);
+  pdCS(doc, compact ? 0.7 : 0.8); doc.text('YOUR MULA, YOUR PRIDE', tx, my + 9.6); pdCS(doc, 0);
   // right side: the business logo on a white plate, else the business name
   var name = S.shopName || '';
   if(compact){
@@ -10185,21 +10185,21 @@ function pdBandRaw(doc, st, H, compact){
     doc.setFont('helvetica','bold'); doc.setFontSize(6.5); pdSet(doc, 't', pal.gold2);
     doc.text(tr('CONTINUED'), pageW - 14, 16.6, { align:'right' });
   } else if(S.logoDataUrl){
-    var lg = S.logoImgMeta || {}, LH = 19, LW = 19, MAXW = 62;   // a little bigger than the Pesa mark (15)
+    var lg = S.logoImgMeta || {}, LH = 12, LW = 12, MAXW = 40;   // a little bigger than the Pesa mark (11)
     if(lg.w && lg.h){ LW = LH*lg.w/lg.h; if(LW > MAXW){ LW = MAXW; LH = MAXW*lg.h/lg.w; } }
-    var px = pageW - 14 - LW - 3, py = 8.5 - 1.5 + (15 - LH)/2;
+    var px = pageW - 14 - LW - 3, py = my - 1.5 + (mh - LH)/2;
     // a cleaned (transparent) logo sits straight on the header like the Pesa mark; only a dark one gets a soft round plate so it stays readable
     // no plate, circle or frame of any kind: a dark logo is drawn as its white twin
     var plate = !lg.clean, imgUrl = (lg.clean && lg.tone < 0.45 && S.logoLightDataUrl) ? S.logoLightDataUrl : S.logoDataUrl;
     if(plate){ doc.setFillColor(255,255,255); doc.roundedRect(px, py, LW + 3, LH + 3, 2.2, 2.2, 'F'); }
     try{ doc.addImage(imgUrl, logoImgType(imgUrl), px + 1.5, py + 1.5, LW, LH); }catch(e){}
   } else if(name){
-    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
     var nl = doc.splitTextToSize(name, 92).slice(0, 2);
-    doc.text(nl, pageW - 14, 14.2, { align:'right' });
+    doc.text(nl, pageW - 14, 12.4, { align:'right' });
     if(S.businessSlogan){
-      doc.setFont('helvetica','italic'); doc.setFontSize(7.5); pdSet(doc, 't', pal.gold2);
-      doc.text(doc.splitTextToSize(S.businessSlogan, 92)[0], pageW - 14, 14.2 + nl.length*5.4 + 0.6, { align:'right' });
+      doc.setFont('helvetica','italic'); doc.setFontSize(6.5); pdSet(doc, 't', pal.gold2);
+      doc.text(doc.splitTextToSize(S.businessSlogan, 92)[0], pageW - 14, 12.4 + nl.length*4.6 + 0.4, { align:'right' });
     }
   }
 }
@@ -10239,31 +10239,31 @@ function pdFooterRaw(doc, pal, pg, total){
 }
 // Cards, titles and fields shared by the documents
 function pdTitle(doc, pal, x, y, title){
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); pdSet(doc, 't', pal.mid);
-  pdCS(doc, 0.9); doc.text(String(title).toUpperCase(), x, y + 6); pdCS(doc, 0);
-  return y + 15;
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); pdSet(doc, 't', pal.mid);
+  pdCS(doc, 0.7); doc.text(String(title).toUpperCase(), x, y + 5); pdCS(doc, 0);
+  return y + 11;
 }
 function pdCard(doc, pal, x, y, w, h, heading){
   pdSet(doc, 'f', pal.mint); pdSet(doc, 'd', pal.border); doc.setLineWidth(0.25);
   doc.roundedRect(x, y, w, h, 2.6, 2.6, 'FD');
-  if(heading) pdCardHead(doc, pal, x + 4, y + 6.8, w - 8, heading);
+  if(heading) pdCardHead(doc, pal, x + 4, y + 6, w - 8, heading);
 }
 function pdCardHead(doc, pal, x, y, w, text){
   pdSet(doc, 'f', pal.teal); doc.roundedRect(x, y - 3.1, 1.3, 3.7, 0.4, 0.4, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); pdSet(doc, 't', pal.mid);
-  pdCS(doc, 0.5); var s = String(tr(text)).toUpperCase(); doc.text(s, x + 3.2, y); pdCS(doc, 0);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); pdSet(doc, 't', pal.mid);
+  pdCS(doc, 0.4); var s = String(tr(text)).toUpperCase(); doc.text(s, x + 3.2, y); pdCS(doc, 0);
 }
-function pdInfoH(a){ return 12 + (a.name ? 6 : 0) + Math.min(6, a.lines.length)*4.3 + 4; }
+function pdInfoH(a){ return 10.4 + (a.name ? 4.8 : 0) + Math.min(6, a.lines.length)*3.7 + 3; }
 function pdInfoCard(doc, pal, x, y, w, h, a){
   pdCard(doc, pal, x, y, w, h, a.heading);
-  var ty = y + 13.4;
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); pdSet(doc, 't', pal.text);
-  if(a.name){ doc.text(doc.splitTextToSize(String(a.name), w - 8)[0], x + 4, ty); ty += 5.2; }
-  a.lines.slice(0, 6).forEach(function(l){ doc.text(doc.splitTextToSize(l, w - 8)[0], x + 4, ty); ty += 4.3; });
+  var ty = y + 11.8;
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); pdSet(doc, 't', pal.text);
+  if(a.name){ doc.text(doc.splitTextToSize(String(a.name), w - 8)[0], x + 4, ty); ty += 4.6; }
+  a.lines.slice(0, 6).forEach(function(l){ doc.text(doc.splitTextToSize(l, w - 8)[0], x + 4, ty); ty += 3.7; });
   return h;
 }
 function pdTwoCards(doc, pal, x, y, W, a, b){
-  var w = (W - 6) / 2, h = Math.max(pdInfoH(a), pdInfoH(b), 30);
+  var w = (W - 6) / 2, h = Math.max(pdInfoH(a), pdInfoH(b), 24);
   pdInfoCard(doc, pal, x, y, w, h, a); pdInfoCard(doc, pal, x + w + 6, y, w, h, b);
   return h;
 }
@@ -10298,34 +10298,34 @@ function pdSection(doc, pal, x, y, w, text){
   var tw = doc.getTextWidth(s) + s.length*0.5 + 3, rest = w - tw;
 }
 function pdTotalRows(doc, pal, x, y, w, rows){
-  var rh = 7;
+  var rh = 6.2;
   pdSet(doc, 'd', pal.border); doc.setLineWidth(0.25);
   rows.forEach(function(r, i){
     pdSet(doc, 'f', pal.mint); doc.rect(x, y + i*rh, w*0.52, rh, 'F');
     doc.setFillColor(255,255,255); doc.rect(x + w*0.52, y + i*rh, w*0.48, rh, 'F');
     doc.rect(x, y + i*rh, w, rh, 'S');
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); pdSet(doc, 't', pal.muted); pdCS(doc, 0.3); doc.text(String(tr(r[0])).toUpperCase(), x + 3, y + i*rh + 4.6); pdCS(doc, 0);
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); pdSet(doc, 't', pal.text); doc.text(String(r[1]), x + w - 3, y + i*rh + 4.8, { align:'right' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.4); pdSet(doc, 't', pal.muted); pdCS(doc, 0.3); doc.text(String(tr(r[0])).toUpperCase(), x + 3, y + i*rh + 4.1); pdCS(doc, 0);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); pdSet(doc, 't', pal.text); doc.text(String(r[1]), x + w - 3, y + i*rh + 4.3, { align:'right' });
   });
   return rows.length*rh;
 }
 function pdTotalBar(doc, pal, x, y, w, label, value, h){
-  h = h || 12;
+  h = h || 10;
   pdGrad(doc, x, y, w, h, pal.mid, pal.light);
-  pdSet(doc, 'f', pal.gold); doc.rect(x, y, w, 0.9, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255); pdCS(doc, 0.5);
-  doc.text(String(tr(label)).toUpperCase(), x + 4, y + h/2 + 2.1); pdCS(doc, 0);
-  doc.setFontSize(12); doc.text(String(value), x + w - 4, y + h/2 + 2.3, { align:'right' });
+  pdSet(doc, 'f', pal.gold); doc.rect(x, y, w, 0.8, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.2); doc.setTextColor(255,255,255); pdCS(doc, 0.4);
+  doc.text(String(tr(label)).toUpperCase(), x + 4, y + h/2 + 1.9); pdCS(doc, 0);
+  doc.setFontSize(10.5); doc.text(String(value), x + w - 4, y + h/2 + 2.1, { align:'right' });
   return h;
 }
 function pdNotesCard(doc, pal, x, y, w, heading, text, minH){
   var lines = doc.splitTextToSize(String(text || ''), w - 8);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
   lines = doc.splitTextToSize(String(text || ''), w - 8);
-  var h = Math.max(minH || 24, 12 + lines.length*4.3 + 4);
+  var h = Math.max(minH || 20, 10.4 + lines.length*3.7 + 3);
   pdCard(doc, pal, x, y, w, h, heading);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); pdSet(doc, 't', pal.text);
-  doc.text(lines, x + 4, y + 13.6);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); pdSet(doc, 't', pal.text);
+  lines.forEach(function(l, i){ doc.text(l, x + 4, y + 12 + i*3.7); });
   return h;
 }
 function pdSignBlock(doc, pal, x, y, w, heading){
@@ -10374,8 +10374,8 @@ function drawDocHeader(doc, opts){
     };
   }
   var pg = pdPage(doc);
-  if(!st.drawn[pg]){ st.drawn[pg] = true; pdBand(doc, st, pg === 1 ? 40 : 26, pg !== 1); }
-  return { y: pg === 1 ? 49 : 34, t:st.t, pal:st.pal, margin:14, contentW:182, pageW:210, limit:265, footerH:0 };
+  if(!st.drawn[pg]){ st.drawn[pg] = true; pdBand(doc, st, pg === 1 ? 31 : 26, pg !== 1); }
+  return { y: pg === 1 ? 40 : 34, t:st.t, pal:st.pal, margin:14, contentW:182, pageW:210, limit:265, footerH:0 };
 }
 
 function pdfSummaryLine(doc, x, y, width, label, value, opts){
@@ -10392,16 +10392,16 @@ function pdfSummaryLine(doc, x, y, width, label, value, opts){
  * carries on to the next page with its header repeated. boldRows lists the row numbers to print in bold. */
 function pdfTable(doc, opts){
   var pal = doc.__pd ? doc.__pd.pal : pdPal(getActiveTemplate());
-  var x = opts.x, y = opts.y, W = opts.width, cols = opts.columns, rowH = opts.rowHeight || 7.4, hdrH = 8, LH = 4, limit = opts.limit || 265;
+  var x = opts.x, y = opts.y, W = opts.width, cols = opts.columns, rowH = opts.rowHeight || 6.2, hdrH = 7, LH = 3.5, limit = opts.limit || 265;
   var bold = opts.boldRows || [], stripe = pdMix(pal.mint, [255,255,255], 0.4);
   var _cap = doc.__cap; if(_cap){ try{ _cap.tables.push({ p:doc.internal.getCurrentPageInfo().pageNumber, y:y, cols:cols.map(function(c){ return { label:String(tr(c.label)), align:c.align || 'left', width:c.width }; }), rows:opts.rows.map(function(r){ return cols.map(function(c, i){ return String(r[i] == null ? '' : r[i]); }); }), bold:bold.slice() }); }catch(e){} _cap.intbl++; }
   function drawHeader(){
     pdGrad(doc, x, y, W, hdrH, pal.mid, pal.light);
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(255,255,255); pdCS(doc, 0.35);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.4); doc.setTextColor(255,255,255); pdCS(doc, 0.3);
     var cx = x;
     cols.forEach(function(col){
       var s = String(tr(col.label)).toUpperCase(), r = col.align === 'right';
-      doc.text(s, r ? cx + col.width - 3 : cx + 3, y + hdrH/2 + 1.1, { align: r ? 'right' : 'left' });
+      doc.text(s, r ? cx + col.width - 3 : cx + 3, y + hdrH/2 + 1, { align: r ? 'right' : 'left' });
       cx += col.width;
     });
     pdCS(doc, 0);
@@ -10410,26 +10410,26 @@ function pdfTable(doc, opts){
   drawHeader();
   opts.rows.forEach(function(row, ri){
     var isBold = bold.indexOf(ri) !== -1;
-    doc.setFont('helvetica', isBold ? 'bold' : 'normal'); doc.setFontSize(8.4);
+    doc.setFont('helvetica', isBold ? 'bold' : 'normal'); doc.setFontSize(7.4);
     var cells = cols.map(function(col, ci){
       var s = String(row[ci] == null ? '' : row[ci]);
       return col.wrap ? doc.splitTextToSize(s, col.width - 6) : [s];
     });
     var lines = cells.reduce(function(m, c){ return Math.max(m, c.length); }, 1);
-    var rh = Math.max(rowH, lines*LH + 3.4);
+    var rh = Math.max(rowH, lines*LH + 2.8);
     if(y + rh > limit){
       doc.addPage(); y = pdTop(doc, 16); drawHeader();
-      doc.setFont('helvetica', isBold ? 'bold' : 'normal'); doc.setFontSize(8.4);
+      doc.setFont('helvetica', isBold ? 'bold' : 'normal'); doc.setFontSize(7.4);
     }
     if(ri % 2 === 1){ pdSet(doc, 'f', stripe); doc.rect(x, y, W, rh, 'F'); }
     pdSet(doc, 'd', pal.border); doc.setLineWidth(0.15);
     doc.line(x, y + rh, x + W, y + rh); doc.line(x, y, x, y + rh); doc.line(x + W, y, x + W, y + rh);
-    var cx = x, base = y + (rh - lines*LH)/2 + 3.1;
+    var cx = x, base = y + (rh - lines*LH)/2 + 2.7;
     cols.forEach(function(col, ci){
       if(ci > 0) doc.line(cx, y, cx, y + rh);
       var r = col.align === 'right';
       pdSet(doc, 't', pal.text);
-      doc.setFont('helvetica', isBold ? 'bold' : 'normal'); doc.setFontSize(8.4);
+      doc.setFont('helvetica', isBold ? 'bold' : 'normal'); doc.setFontSize(7.4);
       doc.text(cells[ci], r ? cx + col.width - 3 : cx + 3, base, { align: r ? 'right' : 'left' });
       cx += col.width;
     });
@@ -12314,76 +12314,76 @@ function buildReceiptPdf(draft){
   function draw(doc){
     var y = margin;
     // ---- header: colour logo at the top left, shop details beside it
-    var LOGO = 13, boxW = 13, boxH = 13, logoData = null, logoType = 'PNG';
+    var LOGO = 10, boxW = 10, boxH = 10, logoData = null, logoType = 'PNG';
     if(State.settings.logoDataUrl){
       logoData = State.settings.logoDataUrl; logoType = logoImgType(logoData);
       var lg = State.settings.logoImgMeta || {};
-      if(lg.w && lg.h){ boxH = Math.max(7, Math.min(LOGO, 30*lg.h/lg.w)); boxW = boxH*lg.w/lg.h; }   // same height as the Pesa mark, wide logos kept readable
+      if(lg.w && lg.h){ boxH = Math.max(6, Math.min(LOGO, 26*lg.h/lg.w)); boxW = boxH*lg.w/lg.h; }   // same height as the Pesa mark, wide logos kept readable
     } else {
       logoData = PESA_LOGO_DATA_URL; boxW = LOGO / PESA_LOGO_ASPECT; boxH = LOGO; if(boxW > LOGO){ boxH = LOGO / (boxW/LOGO); boxW = LOGO; }
     }
     try{ doc.addImage(logoData, logoType, margin, y, boxW, boxH); }catch(e){}
     var pesaW = 0;
     if(State.settings.logoDataUrl){   // company logo left, Pesa mark right, same size
-      var ph = Math.min(boxH, 10); pesaW = ph / PESA_LOGO_ASPECT;
+      var ph = Math.min(boxH, 8); pesaW = ph / PESA_LOGO_ASPECT;
       try{ doc.addImage(PESA_LOGO_DATA_URL, 'PNG', pageW-margin-pesaW, y, pesaW, ph); }catch(e){}
     }
-    var tx = margin + boxW + 3, leftW = contentW - boxW - 3 - (pesaW ? pesaW + 3 : 0), ly = y + 3;
-    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(primary[0],primary[1],primary[2]);
+    var tx = margin + boxW + 3, leftW = contentW - boxW - 3 - (pesaW ? pesaW + 3 : 0), ly = y + 2.6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.2); doc.setTextColor(primary[0],primary[1],primary[2]);
     var nameLines = doc.splitTextToSize(shopName, leftW);
-    doc.text(nameLines, tx, ly); ly += nameLines.length*4;
+    doc.text(nameLines, tx, ly); ly += nameLines.length*3.3;
     if(State.settings.businessSlogan){
-      doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(accent[0],accent[1],accent[2]);
-      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, tx, ly); ly += sl.length*2.7 + 0.6;
+      doc.setFont('helvetica','italic'); doc.setFontSize(5.2); doc.setTextColor(accent[0],accent[1],accent[2]);
+      var sl = doc.splitTextToSize(State.settings.businessSlogan, leftW); doc.text(sl, tx, ly); ly += sl.length*2.3 + 0.4;
     }
-    doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(4.9); doc.setTextColor(muted[0],muted[1],muted[2]);
     (State.settings.businessContact||'').split('\n').filter(Boolean).slice(0,3).forEach(function(line){
-      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, tx, ly); ly += cl.length*2.6;
+      var cl = doc.splitTextToSize(line, leftW); doc.text(cl, tx, ly); ly += cl.length*2.2;
     });
-    if(vatNo){ doc.text('VAT No. '+vatNo, tx, ly); ly += 2.6; }
-    y = Math.max(ly, y + boxH) + 1.5;
+    if(vatNo){ doc.text('VAT No. '+vatNo, tx, ly); ly += 2.2; }
+    y = Math.max(ly, y + boxH) + 1.1;
     doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineWidth(0.4); doc.line(margin, y, pageW-margin, y);
-    doc.setLineWidth(0.2); y += 4.5;
+    doc.setLineWidth(0.2); y += 3.6;
 
     // ---- title and details
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(primary[0],primary[1],primary[2]);
-    doc.text('RECEIPT', margin, y, { charSpace:0.8 });
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(dark[0],dark[1],dark[2]);
-    doc.text('No. '+draft.number, pageW-margin, y, { align:'right' }); y += 4;
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.8); doc.setTextColor(primary[0],primary[1],primary[2]);
+    doc.text('RECEIPT', margin, y, { charSpace:0.7 });
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.4); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text('No. '+draft.number, pageW-margin, y, { align:'right' }); y += 3.2;
     function detail(label, value){
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(muted[0],muted[1],muted[2]); doc.text(label, margin, y);
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(dark[0],dark[1],dark[2]);
-      var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*3;
+      doc.setFont('helvetica','normal'); doc.setFontSize(4.9); doc.setTextColor(muted[0],muted[1],muted[2]); doc.text(label, margin, y);
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.4); doc.setTextColor(dark[0],dark[1],dark[2]);
+      var vl = doc.splitTextToSize(String(value), contentW - 20); doc.text(vl, pageW-margin, y, { align:'right' }); y += Math.max(1, vl.length)*2.5;
     }
     detail('Date', docStamp(draft));
     var _sb = servedByName(draft); if(_sb) detail('Served by', _sb);
     if(draft.billToName && draft.billToName !== 'Customer') detail('Customer', draft.billToName);
-    y += 1;
+    y += 0.6;
 
     // ---- items
-    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 3.4, 'F');
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.rect(margin, y, contentW, 3, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(4.8); doc.setTextColor(255,255,255);
-    doc.text('ITEM', margin+2, y+2.4, { charSpace:0.25 }); doc.text('AMOUNT', pageW-margin-2, y+2.4, { align:'right', charSpace:0.25 });
-    y += 3.4;
+    doc.text('ITEM', margin+2, y+2.1, { charSpace:0.25 }); doc.text('AMOUNT', pageW-margin-2, y+2.1, { align:'right', charSpace:0.25 });
+    y += 3;
     items.forEach(function(it, i){
       var qty = Number(it.qty)||0, price = Number(it.unitPrice)||0, amt = qty*price;
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.8);
-      var lines = doc.splitTextToSize(it.desc || '', contentW - 4 - 18);
-      var h = lines.length*3 + 3.6;
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.8);
+      var lines = doc.splitTextToSize(it.desc || '', contentW - 4 - 16);
+      var h = lines.length*2.5 + 3;
       if(i % 2 === 1){ doc.setFillColor(245,246,245); doc.rect(margin, y, contentW, h, 'F'); }
-      doc.setFont('helvetica','bold'); doc.setFontSize(6.8); doc.setTextColor(dark[0],dark[1],dark[2]);
-      doc.text(lines, margin+2, y+2.9);
-      doc.setFont('helvetica','bold'); doc.text(fmtMoney(amt), pageW-margin-2, y+2.9, { align:'right' });
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(qty+' × '+fmtMoney(price), margin+2, y+2.9+lines.length*3 - 0.3);
+      doc.setFont('helvetica','bold'); doc.setFontSize(5.8); doc.setTextColor(dark[0],dark[1],dark[2]);
+      doc.text(lines, margin+2, y+2.4);
+      doc.setFont('helvetica','bold'); doc.text(fmtMoney(amt), pageW-margin-2, y+2.4, { align:'right' });
+      doc.setFont('helvetica','normal'); doc.setFontSize(4.9); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(qty+' × '+fmtMoney(price), margin+2, y+2.4+lines.length*2.5 - 0.1);
       y += h;
     });
-    doc.setDrawColor(210,212,210); doc.line(margin, y, pageW-margin, y); y += 3.5;
+    doc.setDrawColor(210,212,210); doc.line(margin, y, pageW-margin, y); y += 2.8;
 
     // ---- totals
     function sum(label, value){
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(muted[0],muted[1],muted[2]);
-      doc.text(label, margin+2, y); doc.setTextColor(dark[0],dark[1],dark[2]); doc.text(value, pageW-margin-2, y, { align:'right' }); y += 3.4;
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.4); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.text(label, margin+2, y); doc.setTextColor(dark[0],dark[1],dark[2]); doc.text(value, pageW-margin-2, y, { align:'right' }); y += 2.8;
     }
     sum('Items', String(items.reduce(function(a,it){ return a + (Number(it.qty)||0); }, 0)));
     if(fz) fz.pools.forEach(function(q){ sum(q.label, fmtMoney(q.amount)); });
@@ -12396,40 +12396,40 @@ function buildReceiptPdf(draft){
       if(rcptTax.exempt) sum('VAT exempt items', fmtMoney(rcptTax.exempt));
     }
     y += 0.6;
-    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 5, 0.8, 0.8, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(255,255,255);
-    doc.text('TOTAL', margin+2, y+3.4, { charSpace:0.3 });
-    doc.setFontSize(7.5); doc.text(fmtMoney(subtotal), pageW-margin-2, y+3.5, { align:'right' });
-    y += 5 + 3;
+    doc.setFillColor(primary[0],primary[1],primary[2]); doc.roundedRect(margin, y, contentW, 4.4, 0.8, 0.8, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(5); doc.setTextColor(255,255,255);
+    doc.text('TOTAL', margin+2, y+3, { charSpace:0.3 });
+    doc.setFontSize(6.4); doc.text(fmtMoney(subtotal), pageW-margin-2, y+3.1, { align:'right' });
+    y += 4.4 + 2.4;
     payRows(draft, subtotal).forEach(function(row){
-      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.4); doc.setTextColor(muted[0],muted[1],muted[2]);
       doc.text(row[0], margin+2, y);
       doc.setFont('helvetica','bold'); doc.setTextColor(dark[0],dark[1],dark[2]);
-      doc.text(row[1], pageW-margin-2, y, { align:'right' }); y += 3.6;
+      doc.text(row[1], pageW-margin-2, y, { align:'right' }); y += 3;
     });
-    y += 2;
+    y += 1.5;
     if(fz){   // tax record: reference, signature and verify address
       doc.setDrawColor(210,212,210); doc.line(margin, y, pageW-margin, y); y += 3;
-      fz.lines.forEach(function(l){ doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]); var wl = doc.splitTextToSize(l, contentW - 4); doc.text(wl, pageW/2, y, { align:'center' }); y += wl.length*2.6; });
+      fz.lines.forEach(function(l){ doc.setFont('helvetica','normal'); doc.setFontSize(4.9); doc.setTextColor(muted[0],muted[1],muted[2]); var wl = doc.splitTextToSize(l, contentW - 4); doc.text(wl, pageW/2, y, { align:'center' }); y += wl.length*2.2; });
       y += 2;
     }
 
     // ---- footer: thank you
     doc.setDrawColor(accent[0],accent[1],accent[2]); doc.setLineDashPattern([0.8,1], 0); doc.line(margin, y, pageW-margin, y); doc.setLineDashPattern([], 0);
-    y += 5;
-    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(primary[0],primary[1],primary[2]);
+    y += 4;
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.4); doc.setTextColor(primary[0],primary[1],primary[2]);
     var ty = doc.splitTextToSize('Thank you for your business!', contentW);
-    doc.text(ty, pageW/2, y, { align:'center' }); y += ty.length*4;
-    doc.setFont('helvetica','italic'); doc.setFontSize(5.8); doc.setTextColor(muted[0],muted[1],muted[2]);
+    doc.text(ty, pageW/2, y, { align:'center' }); y += ty.length*3.2;
+    doc.setFont('helvetica','italic'); doc.setFontSize(4.9); doc.setTextColor(muted[0],muted[1],muted[2]);
     var sub = doc.splitTextToSize('We appreciate your support. Please keep this receipt for your records.', contentW - 6);
-    doc.text(sub, pageW/2, y, { align:'center' }); y += sub.length*2.7 + 1.2;
-    doc.setFont('helvetica','bold'); doc.setFontSize(5.8); doc.setTextColor(dark[0],dark[1],dark[2]);
+    doc.text(sub, pageW/2, y, { align:'center' }); y += sub.length*2.3 + 0.8;
+    doc.setFont('helvetica','bold'); doc.setFontSize(4.9); doc.setTextColor(dark[0],dark[1],dark[2]);
     var rf = doc.splitTextToSize('This receipt is proof of purchase. Keep it: it is required for any return or refund.', contentW - 6);
-    doc.text(rf, pageW/2, y, { align:'center' }); y += rf.length*2.7 + 1.2;
+    doc.text(rf, pageW/2, y, { align:'center' }); y += rf.length*2.3 + 0.8;
     doc.setFont('helvetica','italic'); doc.setTextColor(muted[0],muted[1],muted[2]);
     var custom = (draft.notes || '').trim();
     if(custom && custom !== (t.defaultNote||'').trim()){
-      var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*2.7 + 1.2;
+      var nl = doc.splitTextToSize(custom, contentW - 6); doc.setFont('helvetica','normal'); doc.text(nl, pageW/2, y, { align:'center' }); y += nl.length*2.3 + 0.8;
     }
     y += 1;
     return y;
@@ -19976,7 +19976,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.181';
+var APP_VERSION = '2026.10.182';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20286,6 +20286,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.182', items:[
+    'Compact documents: receipts, invoices and quotes are now the size of the About Pesa page, with the logo still on every document. The header band on page one is shorter, titles, card text, tables, totals and notes are smaller and rows are tighter, so more fits on each page'
+  ] },
   { v:'2026.10.181', items:[
     'Sign in and register screens: a trash button now sits next to each business, the open one beside its name and the others in the list. It erases that one business without its password, after you type ERASE, along with its backups. The password protected delete inside Settings is unchanged'
   ] },
