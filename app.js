@@ -16030,8 +16030,29 @@ function acctDK(iso){ var d = new Date(iso); return isNaN(d) ? '' : todayKey(d);
 function acctLine(acct, dr, cr){ return { account:acct, dr:dr, cr:cr }; }
 function acctKeep(lines){ return lines.filter(function(l){ return l.dr > 0 || l.cr > 0; }); }
 
+/** A plain description of a sale for the journal and the general ledger: the receipt number, who it was for, what was sold and how it
+ *  was paid. It is built only from the sale record, so it always matches the receipt. A refund or void says which receipt it reverses. */
+function acctQtyText(q){ var n = Math.abs(Number(q) || 0); return String(Math.round(n * 1000) / 1000); }
+function acctSaleMemo(s, isRef, method){
+  var head = s.type === 'void' ? 'Void' : isRef ? 'Refund' : 'Sale', rn = String(s.receiptNo || '').trim();
+  if(rn) head += ' ' + rn;
+  else { var d = new Date(s.createdAt); if(!isNaN(d.getTime())) head += ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  if(isRef && s.refundOfReceipt) head += ' of receipt ' + s.refundOfReceipt;
+  var who = String(s.customerName || '').replace(/\s+/g, ' ').trim();
+  if(who) head += (isRef ? ' for ' : ' to ') + who;
+  var its = (s.items || []).filter(function(it){ return it && (it.name || Number(it.qty)); });
+  var parts = its.slice(0, 4).map(function(it){
+    var nm = String(it.name || 'Item').replace(/\s+/g, ' ').trim(); if(nm.length > 40) nm = nm.slice(0, 38) + '...';
+    return acctQtyText(it.qty) + ' x ' + nm;
+  });
+  if(its.length > 4) parts.push('and ' + (its.length - 4) + ' more');
+  var how = method === 'credit' ? 'on credit' : method === 'wallet' ? 'wallet' + (s.walletProvider ? ': ' + s.walletProvider : '') : method;
+  var out = head + (parts.length ? ': ' + parts.join(', ') : '') + ' (' + how + ')';
+  if(isRef && s.reason) out += '. Reason: ' + String(s.reason).replace(/\s+/g, ' ').trim().slice(0, 80);
+  return out;
+}
 function acctSaleJournal(s, ctx){
-  var isRef = s.type === 'refund', dk = ctx.dateKey(s.createdAt), snap = (s.tax && s.tax.v != null) ? s.tax : null;
+  var isRef = s.type === 'refund' || s.type === 'void', dk = ctx.dateKey(s.createdAt), snap = (s.tax && s.tax.v != null) ? s.tax : null;
   var vend = snap ? !!snap.registered : taxRegisteredOn(dk), bp = snap ? Math.round(Number(snap.rate) * 100) : taxRateAt(dk).bp;
   var T = Math.abs(acctC(s.total)), cb = Math.abs(acctC(s.cashBack)), cost = Math.abs(acctC(s.cost)), flags = [], method = s.paymentMethod || 'cash', w = [0, 0, 0, 0];
   (s.items || []).forEach(function(it){
@@ -16057,7 +16078,7 @@ function acctSaleJournal(s, ctx){
   ]);
   if(isRef) lines = lines.map(function(l){ return { account:l.account, dr:l.cr, cr:l.dr }; });
   if(cost === 0 && T > 0 && !isRef) flags.push('NO_COST_RECORDED');
-  return { id:(isRef ? 'REF-' : 'SALE-') + s.id, date:dk, kind:isRef ? 'REFUND' : 'SALE', ref:s.id, memo:(isRef ? 'Refund ' : 'Sale ') + s.id + ' (' + method + ')', lines:lines, flags:flags };
+  return { id:(isRef ? 'REF-' : 'SALE-') + s.id, date:dk, kind:isRef ? 'REFUND' : 'SALE', ref:String(s.receiptNo || '').trim() || s.id, memo:acctSaleMemo(s, isRef, method), lines:lines, flags:flags };
 }
 function acctExpenseJournal(e, ctx){
   var A = acctC(e.amount), flags = [], V = taxRegisteredOn(ctx.dateKey(e.createdAt)) ? acctC(e.vat) : 0;
@@ -16123,7 +16144,7 @@ async function acctGather(){
   return {
     vatVendor: isVatVendor(), vatRatePct: Fiscal.vatRate(),
     sales: State.sales, expenses: State.expenses, supInv: State.supplierInvoices, supPay: State.supplierPayments, wastage: State.wastage,
-    custEntries: entries, sup: sup, byId: byId, byName: byName,
+    custEntries: entries, custName: cust, sup: sup, byId: byId, byName: byName,
     opening: State.settings.acctOpening && State.settings.acctOpening.date ? State.settings.acctOpening : null,
     shopName: State.settings.shopName || 'Pesa', tin: tin, vatNumber: String((State.company && State.company.vatNumber) || '').trim(),
     customersOwed: acctC(State.customers.reduce(function(s, c){ return s + (Number(c.balance) || 0); }, 0)),
@@ -16145,9 +16166,12 @@ function acctBuild(G){
   G.sales.forEach(function(s){
     var items = (s.items || []).map(function(it){
       var p = (it.productId && G.byId[it.productId]) || G.byName[String(it.name || '').trim().toLowerCase()];
-      return { lineTotal:it.lineTotal, qty:it.qty, unitPrice:it.unitPrice, taxCategory:it.taxCategory || (p && p.taxCategory) || 'STANDARD' };
+      return { name:it.name, lineTotal:it.lineTotal, qty:it.qty, unitPrice:it.unitPrice, taxCategory:it.taxCategory || (p && p.taxCategory) || 'STANDARD' };
     });
-    add(acctSaleJournal({ id:s.id, createdAt:s.createdAt, total:s.total, cost:s.cost, paymentMethod:s.paymentMethod, cashBack:s.cashBack, items:items }, ctx));
+    // the sale as it was recorded: its receipt number, customer, items and, for a refund or void, the receipt it reverses
+    add(acctSaleJournal({ id:s.id, createdAt:s.createdAt, total:s.total, cost:s.cost, paymentMethod:s.paymentMethod, cashBack:s.cashBack, items:items,
+      type:s.type, tax:s.tax, receiptNo:s.receiptNo, refundOfReceipt:s.refundOfReceipt, reason:s.reason, walletProvider:s.walletProvider,
+      customerName:s.customerName || (s.customerId && G.custName && G.custName[s.customerId]) || '' }, ctx));
   });
   G.expenses.forEach(function(e){ add(acctExpenseJournal(e, ctx)); });
   G.supInv.forEach(function(i){ add(acctSupInvJournal({ id:i.id, date:i.date || acctDK(i.createdAt), amount:i.amount, vat:i.vat, number:i.number, supplierName:G.sup[i.supplierId] }, ctx)); });
@@ -16482,7 +16506,7 @@ async function acctJournalData(from, to, rec){
     j.lines.forEach(function(l, i){
       n++; dr += l.dr; cr += l.cr;
       rows.push([j.id, j.date, j.kind, j.ref, j.memo, i + 1, l.account, ACCT_BY[l.account].name, l.dr ? acctNum(l.dr) : '', l.cr ? acctNum(l.cr) : '']);
-      pdf.push([j.date, j.id + ' / ' + (i + 1), (j.memo || (j.kind + ' ' + (j.ref || ''))), l.account + '  ' + ACCT_BY[l.account].name, l.dr ? acctNum(l.dr) : '', l.cr ? acctNum(l.cr) : '']);
+      pdf.push([j.date, (j.ref || j.id) + ' / ' + (i + 1), (j.memo || (j.kind + ' ' + (j.ref || ''))), l.account + '  ' + ACCT_BY[l.account].name, l.dr ? acctNum(l.dr) : '', l.cr ? acctNum(l.cr) : '']);
     });
   });
   pdf.push(['', n + ' ' + tr('lines'), '', tr('Totals'), acctNum(dr), acctNum(cr)]);
@@ -20017,7 +20041,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.185';
+var APP_VERSION = '2026.10.186';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20327,6 +20351,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.186', items:[
+    'Journal and general ledger: every sale is now described from its own receipt, for example Sale INV-0007: 2 x Milk 1L, 1 x Brown bread (cash), with the customer for credit sales. The reference is the receipt number, not an internal code',
+    'Fixed: a refund or a void was being booked as a sale. It is now booked as a reversal of revenue, cash and cost of goods, with the receipt it reverses. Months filed before this fix show as changed, so re-run any month that had a refund'
+  ] },
   { v:'2026.10.185', items:[
     'The Pesa seal on the About Pesa page is now all gold: a polished, shining gold medal with the original Pesa logo in gold. It is still our own emblem, not a certificate or approval'
   ] },
