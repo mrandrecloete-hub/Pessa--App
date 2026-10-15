@@ -4621,10 +4621,10 @@ function btMaybeSetupPrompt(){
 /* ---- end of day summary ---- */
 function btEodFigures(day){
   var sales = btSalesBetween(day, day), exps = btExpensesBetween(day, day);
-  var by = { cash:0, card:0, wallet:0, credit:0 }, revenue = 0, cost = 0, items = {};
+  var by = { cash:0, card:0, wallet:0, credit:0, voucher:0 }, revenue = 0, cost = 0, items = {};
   sales.forEach(function(s){
     var t = Number(s.total)||0; revenue += t; cost += Number(s.cost)||0;
-    by[by[s.paymentMethod] != null ? s.paymentMethod : 'cash'] += t;
+    var vA = saleVoucherAmt(s); by[by[s.paymentMethod] != null ? s.paymentMethod : 'cash'] += t - vA; by.voucher += vA;
     (s.items||[]).forEach(function(it){ var k = it.productId || it.name; var m = items[k] || (items[k] = { name:it.name, qty:0, revenue:0 }); m.qty += it.qty||0; m.revenue += it.lineTotal||0; });
   });
   var expTotal = exps.reduce(function(a,x){ return a + (Number(x.amount)||0); }, 0);
@@ -4638,7 +4638,7 @@ function btEodText(f){
   var d = new Date(f.day+'T12:00:00').toLocaleDateString(uiLocale(), { weekday:'long', day:'numeric', month:'long' });
   var owed = State.customers.reduce(function(a,c){ return a + (c.balance > 0 ? c.balance : 0); }, 0);
   return btShop()+' end of day, '+d+'\n' +
-    'Sales: '+fmtMoney(f.revenue)+' ('+f.count+')\nCash: '+fmtMoney(f.by.cash)+'\nCard: '+fmtMoney(f.by.card)+'\nWallet: '+fmtMoney(f.by.wallet)+'\nCredit: '+fmtMoney(f.by.credit)+'\n' +
+    'Sales: '+fmtMoney(f.revenue)+' ('+f.count+')\nCash: '+fmtMoney(f.by.cash)+'\nCard: '+fmtMoney(f.by.card)+'\nWallet: '+fmtMoney(f.by.wallet)+'\nCredit: '+fmtMoney(f.by.credit)+(f.by.voucher ? '\nVouchers: '+fmtMoney(f.by.voucher) : '')+'\n' +
     'Profit on sales: '+fmtMoney(f.gross)+'\nExpenses: '+fmtMoney(f.expenses)+'\nProfit after expenses: '+fmtMoney(f.net)+'\n' +
     (f.tills.length ? 'Cash up variance: '+fmtMoney(f.variance)+'\n' : '') +
     (f.top.length ? 'Top sellers: '+f.top.slice(0,3).map(function(t){ return t.name+' ('+t.qty+')'; }).join(', ')+'\n' : '') +
@@ -4669,7 +4669,7 @@ function openEodSheet(day0){
   var day = (typeof day0 === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day0)) ? day0 : todayKey();
   if(day === todayKey()){ try{ localStorage.setItem(btEodSeenKey(), day); }catch(e){} }
   var f = btEodFigures(day);
-  var methods = [['Cash', f.by.cash], ['Card', f.by.card], ['Mobile wallet', f.by.wallet], ['Credit (not paid yet)', f.by.credit]];
+  var methods = [['Cash', f.by.cash], ['Card', f.by.card], ['Mobile wallet', f.by.wallet], ['Credit (not paid yet)', f.by.credit]].concat(f.by.voucher ? [['Vouchers (owed by the platform)', f.by.voucher]] : []);
   var maxM = Math.max.apply(null, methods.map(function(m){ return m[1]; })) || 1;
   var html = '<div class="sheet-head"><h2>'+tr('End of day summary')+'</h2></div>' +
     '<div class="field"><label>'+tr('Date')+'</label><input id="eodDay" type="date" value="'+day+'"></div>' +
@@ -6508,7 +6508,7 @@ function renderMe(){
   // cashier
   var all = State.sales.filter(function(s){ return s.cashierName === State.session.name; });
   var mine = all.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk; });
-  var by = { cash:0, card:0, wallet:0, credit:0 }; mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + s.total; });
+  var by = { cash:0, card:0, wallet:0, credit:0 }; mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + salePaidAmt(s); });
   var till = State.till.current, tt = till ? tillTotals(till.id) : null;
   out += '<div class="me-actions">'+(me.posAccess === false ? '' : '<button class="me-act" data-me="pos">'+ICONS.till+tr('Point of sale')+'</button>')+'<button class="me-act" data-me="sell">'+ICONS.cart+tr('New sale')+'</button>' +
     '<button class="me-act" data-me="'+(till?'till-close':'till-open')+'">'+ICONS.clock+(till?tr('Close till'):tr('Open till'))+'</button><button class="me-act" data-me="profile">'+ICONS.people+tr('My profile')+'</button></div>';
@@ -6640,7 +6640,7 @@ function inRange(iso, from, to){ var t = new Date(iso).getTime(); return (!from 
 function staffStats(u, from, to){
   var sales = State.sales.filter(function(s){ return (s.cashierName === u.name) && inRange(s.createdAt, from, to); });
   var by = { cash:{n:0,t:0}, card:{n:0,t:0}, wallet:{n:0,t:0}, credit:{n:0,t:0} }, items = 0, cashBack = 0, pos = 0;
-  sales.forEach(function(s){ var m = by[s.paymentMethod||'cash'] || (by[s.paymentMethod] = {n:0,t:0}); m.n++; m.t += s.total; cashBack += s.cashBack||0; if(s.viaPos) pos++; (s.items||[]).forEach(function(i){ items += i.qty||0; }); });
+  sales.forEach(function(s){ var m = by[s.paymentMethod||'cash'] || (by[s.paymentMethod] = {n:0,t:0}); m.n++; m.t += salePaidAmt(s); cashBack += s.cashBack||0; if(s.viaPos) pos++; (s.items||[]).forEach(function(i){ items += i.qty||0; }); });
   var total = sales.reduce(function(a,s){ return a + s.total; }, 0);
   var tills = State.tillSessions.filter(function(t){ return t.cashierId === u.id && inRange(t.openedAt, from, to); });
   var closed = tills.filter(function(t){ return t.status === 'closed'; });
@@ -7452,7 +7452,8 @@ var REC = { sec:'reports' };
 function saleReceiptDraft(s){
   return { servedBy: s.cashierName || '', number:s.receiptNo || ('R-'+String(s.id||'').slice(-6).toUpperCase()), saleReceipt:true, taxSnap:s.tax || null, billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:(s.type === 'refund' || s.type === 'void') ? ((s.type === 'void' ? 'Void' : 'Refund') + ' of ' + (s.refundOfReceipt || 'a sale') + '. Reason: ' + (s.reason || '')) : '',
     at:s.createdAt, payMethod:s.paymentMethod, fiscalKey:s.fiscalId||null, walletProvider:s.walletProvider||'', cashBack:s.cashBack||0,
-    received: s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : s.total),
+    voucher: s.voucher ? { platform:s.voucher.platform, amount:Math.abs(s.voucher.amount) } : null,
+    received: s.paymentMethod === 'voucher' ? null : (s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : salePaidAmt(s))),
     items:(s.items||[]).map(function(it){ return { desc:it.name, qty:it.qty, unitPrice:it.unitPrice, cat:it.taxCategory, productId:it.productId }; }) };
 }
 function renderMyRecords(){
@@ -7891,12 +7892,13 @@ function openStaffSheet(user){
 /* ============================== till / cash-up (cash register reconciliation) ============================== */
 function tillTotals(tillId){
   var sales = State.sales.filter(function(s){ return s.tillId === tillId; });
-  var totals = {cash:0, card:0, wallet:0, credit:0};
+  var totals = {cash:0, card:0, wallet:0, credit:0, voucher:0};
   var cashBack = 0;
   var items = {cash:0, card:0, wallet:0, credit:0};
   sales.forEach(function(s){
     var m = s.paymentMethod || 'cash';
-    totals[m] = mRound2((totals[m]||0) + s.total);
+    totals[m] = mRound2((totals[m]||0) + salePaidAmt(s));
+    var vA = saleVoucherAmt(s); if(vA && m !== 'voucher') totals.voucher = mRound2((totals.voucher||0) + vA);
     cashBack = mRound2(cashBack + (s.cashBack || 0));
     var qty = (s.items||[]).reduce(function(a,it){ return a+it.qty; }, 0);
     items[m] = (items[m]||0) + qty;
@@ -7931,6 +7933,7 @@ function tillSummaryCardHtml(session, t){
     (t.cashBack > 0 ? '<div class="tillrow"><span class="l">'+tr('Cash back paid out')+'</span><span class="v num">−'+fmtMoney(t.cashBack)+'</span></div>' : '') +
     '<div class="tillrow"><span class="l">'+tr('Card sales')+'</span><span class="v num">'+fmtMoney(t.totals.card)+' ('+t.items.card+' '+(t.items.card===1?tr('item'):tr('items'))+')</span></div>' +
     '<div class="tillrow"><span class="l">'+tr('Mobile wallet sales')+'</span><span class="v num">'+fmtMoney(t.totals.wallet)+' ('+t.items.wallet+' '+(t.items.wallet===1?tr('item'):tr('items'))+')</span></div>' +
+    (t.totals.voucher ? '<div class="tillrow"><span class="l">'+tr('Voucher sales (owed by the platform)')+'</span><span class="v num">'+fmtMoney(t.totals.voucher)+'</span></div>' : '') +
     '<div class="tillrow"><span class="l">'+tr('Credit sales')+'</span><span class="v num">'+fmtMoney(t.totals.credit)+' ('+t.items.credit+' '+(t.items.credit===1?tr('item'):tr('items'))+')</span></div>' +
     '<div class="tillrow grand"><span class="l">'+tr('Total items sold')+'</span><span class="v">'+t.itemTotal+'</span></div>' +
   '</div>';
@@ -8595,7 +8598,8 @@ function openChargeSheet(){
   var custOptions = State.customers.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+', owes '+fmtMoney(c.balance||0)+'</option>'; }).join('');
   var html =
     '<div class="sheet-head"><h2>Charge '+fmtMoney(total)+'</h2></div>' + btFxChargeHtml(total) + eliteAuditHtml() +
-    '<div class="field"><label>'+tr('Payment method')+'</label>' +
+    '<div id="vchBox"></div>' +
+    '<div class="field" id="pmField"><label>'+tr('Payment method')+'</label>' +
       '<div class="segbtns">' +
         '<button class="segbtn active" data-pm="cash">'+tr('Cash')+'</button>' +
         '<button class="segbtn" data-pm="card">'+tr('Card')+'</button>' +
@@ -8609,6 +8613,59 @@ function openChargeSheet(){
   loyaltyWire(ov);
   var pm = 'cash';
   var cardSt = { devId:null, mode:'Chip', override:null };
+  // A voucher (Sanlam, BestHome and so on) pays all or part of the sale. total below is then what is still to be paid by the customer.
+  var fullTotal = total, vch = null, vchOpen = false;
+  function vchSeg(){ ov.querySelectorAll('[data-pm]').forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-pm') === pm); }); }
+  function vchPaint(){
+    var box = ov.querySelector('#vchBox'); if(!box) return;
+    var pmF = ov.querySelector('#pmField'), hd = ov.querySelector('.sheet-head h2');
+    if(hd) hd.textContent = tr('Charge') + ' ' + fmtMoney(total);
+    if(pmF) pmF.style.display = (vch && total <= 0) ? 'none' : '';
+    if(vch){
+      box.innerHTML = '<div class="banner" style="display:block;"><b>'+esc(vch.platform)+' '+tr('voucher')+'</b> · '+esc(vch.code)+'<br>'+tr('Voucher covers')+' <b>'+fmtMoney(vch.amount)+'</b>' +
+        (total > 0 ? ' · '+tr('Customer pays')+' <b>'+fmtMoney(total)+'</b>' : ' · '+tr('Nothing more to pay')) +
+        (vch.face > vch.amount ? '<br>'+tr('The voucher is worth more than this sale, so only')+' '+fmtMoney(vch.amount)+' '+tr('is used.') : '') + '</div>' +
+        '<div class="field"><button class="btn btn-ghost btn-block" id="vchRemove" type="button">'+tr('Remove voucher')+'</button></div>';
+      box.querySelector('#vchRemove').addEventListener('click', function(){ vch = null; total = fullTotal; vchOpen = false; if(pm === 'voucher') pm = 'cash'; vchSeg(); vchPaint(); renderExtra(); });
+    } else if(vchOpen){
+      box.innerHTML = '<div class="field"><label>'+tr('Voucher platform')+'</label><select id="vchPlat">' + voucherPlatforms().map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join('') + '<option value="__other">'+tr('Another platform')+'</option></select></div>' +
+        '<div class="field" id="vchOtherF" style="display:none;"><label>'+tr('Platform name')+'</label><input id="vchOther" autocomplete="off"></div>' +
+        '<div class="field"><label>'+tr('Voucher code or number')+'</label><input id="vchCode" autocomplete="off"></div>' +
+        '<div class="field"><label>'+tr('Voucher value')+'</label><input id="vchAmt" type="number" inputmode="decimal" step="0.01" placeholder="'+fullTotal.toFixed(2)+'"></div>' +
+        '<div id="vchErr" class="banner" style="display:none;"></div>' +
+        '<div class="actions"><button class="btn btn-primary btn-block" id="vchApply" type="button">'+tr('Use voucher')+'</button><button class="btn btn-ghost btn-block" id="vchCancel" type="button">'+tr('Cancel')+'</button></div>';
+      var sel = box.querySelector('#vchPlat');
+      sel.addEventListener('change', function(){ box.querySelector('#vchOtherF').style.display = sel.value === '__other' ? '' : 'none'; });
+      box.querySelector('#vchCancel').addEventListener('click', function(){ vchOpen = false; vchPaint(); });
+      box.querySelector('#vchApply').addEventListener('click', function(){
+        var err = box.querySelector('#vchErr');
+        function bad(m){ err.style.display = 'flex'; err.textContent = m; }
+        var plat = sel.value === '__other' ? box.querySelector('#vchOther').value.trim() : sel.value;
+        var code = box.querySelector('#vchCode').value.trim(), face = mRound2(parseFloat(box.querySelector('#vchAmt').value));
+        if(!plat){ bad(tr('Enter the platform name')); return; }
+        if(!code){ bad(tr('Enter the voucher code or number')); return; }
+        if(!(face > 0)){ bad(tr('Enter the voucher value')); return; }
+        var used = voucherCodeUsed(plat, code);
+        if(used){ bad(tr('This voucher was already used on receipt') + ' ' + (used.receiptNo || fmtDateTime(used.createdAt)) + '.'); return; }
+        var use = Math.min(face, fullTotal);
+        vch = { platform:plat, code:code, face:face, amount:use };
+        total = mRound2(fullTotal - use);
+        if(total <= 0.004){ total = 0; pm = 'voucher'; } else if(pm === 'voucher') pm = 'cash';
+        vchOpen = false; vchSeg(); vchPaint(); renderExtra();
+      });
+    } else {
+      box.innerHTML = '<div class="field"><button class="btn btn-ghost btn-block" id="vchOpen" type="button">'+tr('Customer has a voucher')+'</button></div>';
+      box.querySelector('#vchOpen').addEventListener('click', function(){ vchOpen = true; vchPaint(); });
+    }
+  }
+  function chargeFinal(m, c, ex){
+    ex = ex || {};
+    if(vch){
+      ex.voucher = { platform:vch.platform, code:vch.code, amount:vch.amount, face:vch.face };
+      var pl = voucherPlatforms(); if(pl.indexOf(vch.platform) < 0) btSave({ voucherPlatforms: pl.concat([vch.platform]) });
+    }
+    finalizeSale(m, c, ex);
+  }
   function renderExtra(){
     var extra = ov.querySelector('#pmExtra');
     if(pm === 'cash'){
@@ -8635,6 +8692,8 @@ function openChargeSheet(){
         WALLET_PROVIDERS.map(function(w){ return '<option value="'+esc(w)+'">'+esc(w)+'</option>'; }).join('') + '</select></div>' +
         '<div class="field"><label>'+tr('Reference or transaction number (optional)')+'</label><input id="walletRef" placeholder="e.g. TXN123456"></div>' + '<div class="field"><label>'+tr('Paid by (name, optional)')+'</label><input id="payerName" placeholder="'+tr('Who is paying?')+'"></div>' +
         '<div class="banner">Record once the payment has been confirmed on your phone or in your bank app.</div>';
+    } else if(pm === 'voucher'){
+      extra.innerHTML = '<div class="banner">'+tr('The voucher covers the whole sale. There is nothing more to collect.')+'</div>';
     } else {
       if(State.customers.length === 0){
         extra.innerHTML = '<div class="banner">'+ICONS.warn+'<span>No customers yet. Add one from the Credit tab first.</span></div>';
@@ -8654,27 +8713,29 @@ function openChargeSheet(){
       renderExtra();
     });
   });
+  vchPaint();
   ov.querySelector('#confirmChargeBtn').addEventListener('click', function(){
+    if(pm === 'voucher'){ chargeFinal('voucher', null, {}); return; }
     if(pm === 'credit'){
       if(State.customers.length === 0){ toast('Add a customer first'); return; }
       var sel = ov.querySelector('#custSelect');
       var custId = sel.value;
       var cust = State.customers.find(function(c){ return c.id===custId; });
-      if(cust && overCreditLimit(cust, total)){ confirmOverLimit(cust, total, function(){ finalizeSale(pm, cust); }); return; }
-      finalizeSale(pm, cust);
+      if(cust && overCreditLimit(cust, total)){ confirmOverLimit(cust, total, function(){ chargeFinal(pm, cust); }); return; }
+      chargeFinal(pm, cust);
     } else if(pm === 'wallet'){
       var wp = ov.querySelector('#walletProv'), wr = ov.querySelector('#walletRef');
       var pnw = ov.querySelector('#payerName');
-      finalizeSale(pm, null, { walletProvider: wp ? wp.value : '', payRef: wr ? wr.value.trim() : '', payerName: pnw ? pnw.value.trim() : '' });
+      chargeFinal(pm, null, { walletProvider: wp ? wp.value : '', payRef: wr ? wr.value.trim() : '', payerName: pnw ? pnw.value.trim() : '' });
     } else if(pm === 'cash'){
       var cr = ov.querySelector('#cashRecv'), rv = cr ? parseFloat(cr.value) : NaN;
       if(cr && cr.value !== '' && (isNaN(rv) || rv < total)){ toast('Cash received is less than the total'); return; }
       var got = (cr && cr.value !== '') ? rv : total;
-      finalizeSale(pm, null, { cashReceived: got, changeGiven: Math.max(0, Math.round((got-total)*100)/100) });
+      chargeFinal(pm, null, { cashReceived: got, changeGiven: Math.max(0, Math.round((got-total)*100)/100) });
     } else if(pm === 'card'){
-      posCardSubmit(ov, total, cardSt).then(function(ex){ if(ex){ var pn = ov.querySelector('#payerName'); ex.payerName = pn ? pn.value.trim() : ''; var cbi = ov.querySelector('#cashBack'), cbq = cbi ? Math.round((parseFloat(cbi.value)||0)*100)/100 : 0; if(cbq > 0){ ex.cashBack = cbq; ex.cardCharged = Math.round((total+cbq)*100)/100; } finalizeSale('card', null, ex); } });
+      posCardSubmit(ov, total, cardSt).then(function(ex){ if(ex){ var pn = ov.querySelector('#payerName'); ex.payerName = pn ? pn.value.trim() : ''; var cbi = ov.querySelector('#cashBack'), cbq = cbi ? Math.round((parseFloat(cbi.value)||0)*100)/100 : 0; if(cbq > 0){ ex.cashBack = cbq; ex.cardCharged = Math.round((total+cbq)*100)/100; } chargeFinal('card', null, ex); } });
     } else {
-      finalizeSale(pm, null);
+      chargeFinal(pm, null);
     }
   });
 }
@@ -8735,9 +8796,10 @@ function finalizeSale(method, customer, extra){
   checkLowStockAlerts(stockChanges);
   // credit ledger
   if(method === 'credit' && customer){
-    var newBal = (customer.balance||0) + total;
+    var owedNow = salePaidAmt(sale);
+    var newBal = (customer.balance||0) + owedNow;
     refs.customers.doc(customer.id).update({ balance: newBal });
-    refs.customers.doc(customer.id).collection('ledger').add({ type:'charge', amount: total, note:'Sale on credit', createdAt:new Date().toISOString(), balanceAfter:newBal });
+    refs.customers.doc(customer.id).collection('ledger').add({ type:'charge', amount: owedNow, note:'Sale on credit', createdAt:new Date().toISOString(), balanceAfter:newBal });
   }
   if(method === 'cash' || sale.cashBack > 0) openCashDrawer(false);
   State.cart = [];
@@ -8764,7 +8826,8 @@ function offerSaleReceipt(sale, customer){
     fiscalKey: sale.fiscalId || null,
     walletProvider: sale.walletProvider || '',
     cashBack: sale.cashBack || 0,
-    received: sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : sale.total),
+    voucher: sale.voucher ? { platform:sale.voucher.platform, amount:Math.abs(sale.voucher.amount) } : null,
+    received: sale.paymentMethod === 'voucher' ? null : (sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : salePaidAmt(sale))),
     items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice, cat: it.taxCategory, productId: it.productId }; })
   };
   if(sale.__fiscal) sale.__fiscal.then(function(r){ if(r && r.record) draft.fiscalKey = r.record.id; });
@@ -9281,7 +9344,7 @@ function posTabHtml(d){
   var till = State.till.current, tk = todayKey();
   var mine = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk && s.cashierName === POS.user.name; });
   var by = { cash:0, card:0, wallet:0, credit:0 };
-  mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + s.total; });
+  mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + salePaidAmt(s); });
   function line(a,b){ return '<div class="sumline"><span>'+a+'</span><span class="num">'+b+'</span></div>'; }
   var h2 = '<div class="section-title" style="margin-top:0;">'+tr('Your sales today')+'</div>' + line(tr('Sales'), mine.length) + line(tr('Cash'), fmtMoney(by.cash)) + line(tr('Card'), fmtMoney(by.card)) + line(tr('Mobile wallet'), fmtMoney(by.wallet)) + line(tr('Credit'), fmtMoney(by.credit)) +
     '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num">'+fmtMoney(posSum(mine))+'</span></div>' +
@@ -9364,7 +9427,7 @@ function posWireMain(r, d){
 function posWireGrid(g){ if(!g) return; var mb = g.querySelector('[data-posmore]'); if(mb) mb.addEventListener('click', function(){ POS.limit = Math.max(LIST_PAGE, POS.limit || 0) + LIST_PAGE*2; g.innerHTML = posGridHtml(); posWireGrid(g); }); wireTicks(g); g.querySelectorAll('[data-padd]').forEach(function(b){ b.addEventListener('click', function(){ addToCart(b.getAttribute('data-padd')); }); }); }
 
 /* ---- POS records: only sales made on the POS, one category per payment method ---- */
-var POS_CATS = [['cash','Cash'],['card','Card'],['wallet','Mobile wallet'],['credit','Credit']];
+var POS_CATS = [['cash','Cash'],['card','Card'],['wallet','Mobile wallet'],['credit','Credit'],['voucher','Voucher']];
 function posRecordSales(){
   var now = new Date(), tk = todayKey(), cut = now.getTime() - 7*86400000;
   return State.sales.filter(function(s){
@@ -9378,6 +9441,7 @@ function posRecordSales(){
 }
 function posSaleWho(s){
   if(s.paymentMethod === 'credit') return s.customerName || tr('Customer');
+  if(s.paymentMethod === 'voucher') return (s.voucher && s.voucher.platform ? s.voucher.platform + ' ' : '') + tr('voucher');
   if(s.payerName) return s.payerName;
   if(s.paymentMethod === 'card') return tr('Card customer');
   if(s.paymentMethod === 'wallet') return tr('Wallet customer');
@@ -9420,6 +9484,7 @@ function openPosSaleDetail(id){
   var html = '<div class="sheet-head"><h2>'+tr(m==='wallet'?'Mobile wallet':m.charAt(0).toUpperCase()+m.slice(1))+' · '+fmtMoney(s.total)+'</h2></div>' +
     line(tr(m==='credit'?'Customer':'Paid by'), posSaleWho(s)) + line(tr('Date and time'), fmtDateTime(s.createdAt)) + line(tr('Cashier'), s.cashierName||'') +
     (m==='card' ? line(tr('Terminal'), (s.posDeviceName||'')+(s.terminalId?' · '+s.terminalId:'')) + line(tr('Card type'), s.cardBrand) + line(tr('Card number'), s.cardLast4 ? '···· ···· ···· '+s.cardLast4 : '') + line(tr('How the card was used'), s.entryMode ? tr(s.entryMode) : '') + line(tr('Approval code'), s.authCode) + (s.cashBack ? line(tr('Cash back'), fmtMoney(s.cashBack)) + line(tr('Charged to card'), fmtMoney(s.total+s.cashBack)) : '') + (s.overrideBy ? line(tr('Limit override approved by'), s.overrideBy) : '') : '') +
+    (s.voucher ? line(tr('Voucher'), s.voucher.platform+' · '+s.voucher.code+' · '+fmtMoney(Math.abs(s.voucher.amount))) : '') +
     (m==='wallet' ? line(tr('Wallet or transfer type'), s.walletProvider) + line(tr('Reference'), s.payRef) : '') +
     (m==='cash' && s.cashReceived != null ? line(tr('Cash received'), fmtMoney(s.cashReceived)) + line(tr('Change given'), fmtMoney(s.changeGiven||0)) : '') +
     (m==='credit' ? line(tr('Status'), posSaleDetailLine(s)) : '') +
@@ -10111,21 +10176,94 @@ function docStamp(draft){
   var d = fmtDateNice(draft.dateStr || todayKey());
   return at ? d+'  '+timeText(at) : d;
 }
-var PAY_LABELS = { cash:'Cash', card:'Card', wallet:'Mobile wallet', credit:'On credit' };
+var PAY_LABELS = { cash:'Cash', card:'Card', wallet:'Mobile wallet', credit:'On credit', voucher:'Voucher' };
+/* Vouchers. A voucher is a way of PAYING, not a discount: the platform (Sanlam, BestHome and so on) settles it with the shop later.
+   sale.voucher = { platform, code, amount } is the part of the sale covered by the voucher. sale.paymentMethod is how the REST was paid,
+   or 'voucher' when the voucher covered everything. Refunds carry the same fields with a negative amount. */
+function voucherPlatforms(){ var l = State.settings && State.settings.voucherPlatforms; return (Array.isArray(l) && l.length) ? l : ['Sanlam', 'BestHome']; }
+function voucherClaims(){ var l = State.settings && State.settings.voucherClaims; return Array.isArray(l) ? l : []; }
+function saleVoucherAmt(s){ var v = s && s.voucher; if(!v) return 0; var a = Math.abs(Number(v.amount) || 0); return (Number(s.total) || 0) < 0 ? -a : a; }
+function salePaidAmt(s){ return mRound2((Number(s && s.total) || 0) - saleVoucherAmt(s)); }
+function voucherCodeUsed(platform, code){
+  var c = String(code || '').trim().toLowerCase(), p = String(platform || '').trim().toLowerCase();
+  return State.sales.find(function(s){ return s.voucher && s.type !== 'refund' && s.type !== 'void' && String(s.voucher.code || '').trim().toLowerCase() === c && String(s.voucher.platform || '').trim().toLowerCase() === p; }) || null;
+}
+function voucherSummary(){
+  var by = {};
+  function P(n){ return by[n] || (by[n] = { platform:n, redeemed:0, claimed:0, count:0, owed:0 }); }
+  State.sales.forEach(function(s){ var a = saleVoucherAmt(s); if(!a || !s.voucher) return; var p = P(s.voucher.platform || 'Other'); p.redeemed = mRound2(p.redeemed + a); if(a > 0) p.count++; });
+  voucherClaims().forEach(function(c){ var p = P(c.platform || 'Other'); p.claimed = mRound2(p.claimed + (Number(c.amount) || 0)); });
+  voucherPlatforms().forEach(P);
+  return Object.keys(by).map(function(k){ var p = by[k]; p.owed = mRound2(p.redeemed - p.claimed); return p; });
+}
+function openVouchersSheet(){
+  var sum = voucherSummary(), canClaim = isManagerOrOwner();
+  var reds = State.sales.filter(function(s){ return s.voucher && s.type !== 'refund' && s.type !== 'void'; })
+    .sort(function(a, b){ return String(b.createdAt).localeCompare(String(a.createdAt)); });
+  var owedAll = sum.reduce(function(a, p){ return a + p.owed; }, 0);
+  var html = '<div class="sheet-head"><h2>'+tr('Vouchers')+'</h2></div>' +
+    '<div class="banner" style="display:block;">'+tr('Pesa records the vouchers customers use and how much each platform owes you. It does not check a voucher with the platform and it does not collect the money. Claim the money from the platform, then record the payment here.')+'</div>' +
+    '<div class="sumline total"><span>'+tr('Platforms owe you')+'</span><span class="num">'+fmtMoney(owedAll)+'</span></div>' +
+    '<div class="rowlist">' + sum.map(function(p){
+      return '<div class="row"><div class="main"><div class="title">'+esc(p.platform)+'</div><div class="sub">'+tr('Used')+' '+fmtMoney(p.redeemed)+' · '+tr('Paid to you')+' '+fmtMoney(p.claimed)+'</div></div>' +
+        '<div class="trail"><div class="amt num">'+fmtMoney(p.owed)+'</div>' + (canClaim && p.owed > 0 ? '<button class="btn btn-ghost" type="button" data-vclaim="'+esc(p.platform)+'" style="padding:4px 10px;">'+tr('Record payment')+'</button>' : '') + '</div></div>';
+    }).join('') + '</div>' +
+    '<div class="section-title">'+tr('Recent vouchers used')+'</div>' +
+    (reds.length ? '<div class="rowlist">' + reds.slice(0, 40).map(function(s){
+      return '<div class="row"><div class="main"><div class="title">'+esc(s.voucher.platform)+' · '+esc(s.voucher.code)+'</div><div class="sub">'+esc(fmtDateTime(s.createdAt))+' · '+esc(s.receiptNo || '')+'</div></div><div class="trail"><div class="amt num">'+fmtMoney(Math.abs(s.voucher.amount))+'</div></div></div>';
+    }).join('') + '</div>' : '<div style="font-size:13px;color:var(--text-muted);padding:4px 2px 8px;">'+tr('No vouchers used yet. Choose Customer has a voucher when you charge a sale.')+'</div>') +
+    '<div class="actions">' + (canClaim ? '<button class="btn btn-ghost btn-block" type="button" id="vchAddPlat">'+tr('Add a platform')+'</button>' : '') +
+    '<button class="btn btn-ghost btn-block" type="button" id="vchCsv">'+tr('Download list')+'</button></div>' + smartBackBtn();
+  var ov = openSheet(html); wireSmartBack(ov);
+  ov.querySelectorAll('[data-vclaim]').forEach(function(b){ b.addEventListener('click', function(){ openVoucherClaimSheet(b.getAttribute('data-vclaim')); }); });
+  var ap = ov.querySelector('#vchAddPlat');
+  if(ap) ap.addEventListener('click', function(){
+    var nm = (window.prompt(tr('Platform name'), '') || '').trim(); if(!nm) return;
+    var l = voucherPlatforms(); if(l.indexOf(nm) < 0) btSave({ voucherPlatforms: l.concat([nm]) });
+    closeModal(); openVouchersSheet();
+  });
+  ov.querySelector('#vchCsv').addEventListener('click', function(){
+    var rows = [['Date', 'Receipt', 'Platform', 'Voucher code', 'Amount']].concat(State.sales.filter(function(s){ return s.voucher; }).sort(function(a, b){ return String(a.createdAt).localeCompare(String(b.createdAt)); })
+      .map(function(s){ return [String(s.createdAt).slice(0, 10), s.receiptNo || '', s.voucher.platform || '', s.voucher.code || '', String(saleVoucherAmt(s))]; }));
+    rows.push([]); rows.push(['Payments received from platforms']); rows.push(['Date', 'Platform', 'Reference', 'Amount']);
+    voucherClaims().forEach(function(c){ rows.push([c.date || '', c.platform || '', c.ref || '', String(c.amount)]); });
+    btSaveCsv('Pesa-vouchers-' + todayKey() + '.csv', rows);
+  });
+}
+function openVoucherClaimSheet(platform){
+  var p = voucherSummary().find(function(x){ return x.platform === platform; }) || { owed:0 };
+  var html = '<div class="sheet-head"><h2>'+tr('Payment from')+' '+esc(platform)+'</h2></div>' +
+    '<div class="field"><label>'+tr('Amount received')+'</label><input id="vcAmt" type="number" inputmode="decimal" step="0.01" value="'+(p.owed > 0 ? p.owed.toFixed(2) : '')+'"></div>' +
+    '<div class="field"><label>'+tr('Date')+'</label><input id="vcDate" type="date" value="'+todayKey()+'"></div>' +
+    '<div class="field"><label>'+tr('Reference (optional)')+'</label><input id="vcRef" placeholder="'+tr('Bank reference or remittance number')+'"></div>' +
+    '<div class="banner" style="display:block;">'+tr('Record this only once the money is in your bank account. It is booked as money in the bank and clears what the platform owed.')+'</div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="vcSave" type="button">'+tr('Save payment')+'</button></div>' + smartBackBtn();
+  var ov = openSheet(html); wireSmartBack(ov);
+  ov.querySelector('#vcSave').addEventListener('click', function(){
+    var amt = mRound2(parseFloat(ov.querySelector('#vcAmt').value)), d = ov.querySelector('#vcDate').value || todayKey();
+    if(!(amt > 0)){ toast(tr('Enter the amount received')); return; }
+    var c = { id:'vc' + Date.now().toString(36), platform:platform, amount:amt, date:d, ref:ov.querySelector('#vcRef').value.trim().slice(0, 60), by:State.session ? State.session.name : '', createdAt:new Date().toISOString() };
+    btSave({ voucherClaims: voucherClaims().concat([c]) });
+    logAudit('create', 'voucher', c.id, 'Voucher payment of ' + fmtMoney(amt) + ' received from ' + platform + (c.ref ? ' (' + c.ref + ')' : ''));
+    toast(tr('Payment recorded')); closeModal(); openVouchersSheet();
+  });
+}
 /** Payment rows for a document: method, amount received, change or balance. */
 function payRows(draft, total){
   var rows = [];
-  if(draft.payMethod){
+  var vA = draft.voucher ? Math.abs(Number(draft.voucher.amount) || 0) : 0, due = total >= 0 ? Math.max(0, mRound2(total - vA)) : total;
+  if(draft.payMethod && draft.payMethod !== 'voucher'){
     var lbl = PAY_LABELS[draft.payMethod] || draft.payMethod;
     if(draft.payMethod === 'wallet' && draft.walletProvider) lbl = draft.walletProvider;
     rows.push(['Paid by', lbl]);
   }
+  if(vA > 0) rows.push(['Voucher' + (draft.voucher.platform ? ' (' + draft.voucher.platform + ')' : ''), fmtMoney(vA)]);
   if(draft.cashBack > 0){ rows.push(['Cash back', fmtMoney(draft.cashBack)]); rows.push(['Charged to card', fmtMoney(total + Number(draft.cashBack))]); }
   if(draft.received != null && draft.received !== '' && !isNaN(Number(draft.received))){
     var rc = Number(draft.received);
     rows.push(['Amount received', fmtMoney(rc)]);
-    if(rc >= total) rows.push(['Change given', fmtMoney(rc-total)]);
-    else rows.push(['Balance due', fmtMoney(total-rc)]);
+    if(rc >= due) rows.push(['Change given', fmtMoney(rc-due)]);
+    else rows.push(['Balance due', fmtMoney(due-rc)]);
   }
   return rows;
 }
@@ -12730,7 +12868,7 @@ function computeReportFigures(start, end, opts){
   fig.salesCount = salesIn.filter(function(s){ return s.type !== 'refund' && s.type !== 'void'; }).length;
   fig.refundCount = salesIn.length - fig.salesCount;
   var pay = { cash:0, card:0, wallet:0, credit:0 };
-  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; pay[m] = mRound2((pay[m]||0) + s.total); });
+  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; pay[m] = mRound2((pay[m]||0) + salePaidAmt(s)); var vA = saleVoucherAmt(s); if(vA && m !== 'voucher') pay.voucher = mRound2((pay.voucher||0) + vA); });
   fig.payments = pay;
   var taxP = taxPeriod(salesIn), rateNow = taxRateAt(todayKey());
   fig.vat = { rate:rateNow.rate, version:rateNow.v, output: taxP.vat, input: taxInputVat(expensesIn), zero:taxP.zero, exempt:taxP.exempt, nonVat:taxP.non, registered:taxRegisteredOn(todayKey()) };
@@ -13923,7 +14061,7 @@ function renderDashboard(){
   var totalOwed = State.customers.reduce(function(s,c){return s+(c.balance||0);},0);
 
   var pmTotals = {cash:0, card:0, wallet:0, credit:0};
-  todaySales.forEach(function(s){ pmTotals[s.paymentMethod] = (pmTotals[s.paymentMethod]||0) + s.total; });
+  todaySales.forEach(function(s){ pmTotals[s.paymentMethod] = (pmTotals[s.paymentMethod]||0) + salePaidAmt(s); });
 
   var lowStockProducts = State.products.filter(function(p){ return p.stockQty!=null && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault); })
     .sort(function(a,b){ return a.stockQty-b.stockQty; });
@@ -14010,7 +14148,7 @@ function renderDashboard(){
     html += '<div class="card pad" style="color:var(--text-muted);font-size:13px;">No sales recorded yet.</div>';
   } else {
     html += '<div class="rowlist">' + State.sales.slice(0,5).map(function(s){
-      var pmLabel = s.paymentMethod==='cash'?tr('Cash'):(s.paymentMethod==='card'?tr('Card'):(s.paymentMethod==='wallet'?(s.walletProvider||tr('Mobile wallet')):tr('Credit')));
+      var pmLabel = s.paymentMethod==='cash'?tr('Cash'):(s.paymentMethod==='card'?tr('Card'):(s.paymentMethod==='wallet'?(s.walletProvider||tr('Mobile wallet')):(s.paymentMethod==='voucher'?tr('Voucher')+(s.voucher?' · '+s.voucher.platform:''):tr('Credit'))));
       var itemCount = (s.items||[]).reduce(function(a,i){return a+i.qty;},0);
       return '<div class="row" style="cursor:default;">' +
         '<div class="avatar">'+ICONS.cart.replace(/width="26" height="26"/,'width="16" height="16"')+'</div>' +
@@ -14253,6 +14391,7 @@ function handleDrawerAction(key){
   else if(key==='compat') openCompatSheet();
   else if(key==='training') openTrainingSheet();
   else if(key==='pilotform') openPilotFormSheet();
+  else if(key==='vouchers') openVouchersSheet();
   else if(key==='smart') openSmartToolsSheet();
   else if(key==='agent') openAgentSheet();
   else if(key==='bizhub') openBizHub();
@@ -14510,6 +14649,7 @@ function settingsMoreHtml(){
   if(isManagerOrOwner()) rows.splice(isOwner() ? 1 : 0, 0, ['pesaad','Pesa Ad','Watch the promo video and share it']);
   if(isOwner()) rows.push(['setup','Setup guide','Steps to get your shop ready']);
   if(!isInstalledApp()) rows.push(['install','Install Pesa on this device','Open it like a normal app']);
+  if(isManagerOrOwner()) rows.push(['vouchers','Vouchers','Sanlam, BestHome and other platforms']);
   rows.push(['training','Training','Short lessons and the manual']);
   rows.push(['helpsearch','Search help','Find an answer fast']);
   rows.push(['display','Text size and contrast','Make Pesa easier to read']);
@@ -16010,7 +16150,7 @@ var ACCT_CHART = [
   ['1000','Cash on hand (tills and drawer)','ASSET','CASH'], ['1010','Digital wallets (PayToday, easyWallet and others)','ASSET','CASH'],
   ['1020','Bank','ASSET','CASH'], ['1030','Card takings not yet settled to the bank','ASSET','CASH'],
   ['1040','Receipts and payments with no source recorded','ASSET','CASH'], ['1200','Inventory (stock on hand at cost)','ASSET','INVENTORY'],
-  ['1300','Trade receivables (customer credit)','ASSET','RECEIVABLE'], ['1400','VAT input tax (claimable from NamRA)','ASSET','TAX'],
+  ['1300','Trade receivables (customer credit)','ASSET','RECEIVABLE'], ['1350','Vouchers due from platforms (Sanlam, BestHome and others)','ASSET','VOUCHER'], ['1400','VAT input tax (claimable from NamRA)','ASSET','TAX'],
   ['2000','Trade payables (suppliers)','LIABILITY','PAYABLE'], ['2150','VAT output tax (payable to NamRA)','LIABILITY','TAX'],
   ['3000','Owner’s equity and opening balances','EQUITY','EQUITY'],
   ['4000','Sales, standard rated','REVENUE','SALES'], ['4010','Sales, zero rated (0%)','REVENUE','SALES'], ['4020','Sales, VAT exempt','REVENUE','SALES'], ['4030','Sales, outside VAT (not a VAT item)','REVENUE','SALES'],
@@ -16063,6 +16203,7 @@ function acctSaleMemo(s, isRef, method){
   });
   if(its.length > 4) parts.push('and ' + (its.length - 4) + ' more');
   var how = method === 'credit' ? 'on credit' : method === 'wallet' ? 'wallet' + (s.walletProvider ? ': ' + s.walletProvider : '') : method;
+  if(s.voucher && s.voucher.platform) how = method === 'voucher' ? 'voucher: ' + s.voucher.platform : how + ' and voucher: ' + s.voucher.platform;
   var out = head + (parts.length ? ': ' + parts.join(', ') : '') + ' (' + how + ')';
   if(isRef && s.reason) out += '. Reason: ' + String(s.reason).replace(/\s+/g, ' ').trim().slice(0, 80);
   return out;
@@ -16086,8 +16227,10 @@ function acctSaleJournal(s, ctx){
     vat = vend ? acctVatInside(std, bp) : 0;
   }
   var debit = method === 'card' ? '1030' : method === 'wallet' ? '1010' : method === 'credit' ? '1300' : '1000';
+  var vOff = s.voucher ? Math.min(T, Math.abs(acctC(s.voucher.amount))) : 0;   // the part a platform will pay the shop later
   var lines = acctKeep([
-    acctLine(debit, T + (method === 'card' ? cb : 0), 0),
+    acctLine(debit, T - vOff + (method === 'card' ? cb : 0), 0),
+    acctLine('1350', vOff, 0),
     acctLine('4000', 0, std - vat), acctLine('4010', 0, zero), acctLine('4020', 0, ex), acctLine('4030', 0, non), acctLine('2150', 0, vat),
     acctLine('1000', 0, method === 'card' ? cb : 0),
     acctLine('5000', cost, 0), acctLine('1200', 0, cost)
@@ -16165,6 +16308,7 @@ async function acctGather(){
     shopName: State.settings.shopName || 'Pesa', tin: tin, vatNumber: String((State.company && State.company.vatNumber) || '').trim(),
     customersOwed: acctC(State.customers.reduce(function(s, c){ return s + (Number(c.balance) || 0); }, 0)),
     suppliersOwed: acctC(State.suppliers.reduce(function(s, x){ return s + rcSupplierData(x.id).owed; }, 0)),
+    voucherClaims: voucherClaims(),
     booksStartUsed: null
   };
 }
@@ -16186,7 +16330,7 @@ function acctBuild(G){
     });
     // the sale as it was recorded: its receipt number, customer, items and, for a refund or void, the receipt it reverses
     add(acctSaleJournal({ id:s.id, createdAt:s.createdAt, total:s.total, cost:s.cost, paymentMethod:s.paymentMethod, cashBack:s.cashBack, items:items,
-      type:s.type, tax:s.tax, receiptNo:s.receiptNo, refundOfReceipt:s.refundOfReceipt, reason:s.reason, walletProvider:s.walletProvider,
+      type:s.type, voucher:s.voucher || null, tax:s.tax, receiptNo:s.receiptNo, refundOfReceipt:s.refundOfReceipt, reason:s.reason, walletProvider:s.walletProvider,
       customerName:s.customerName || (s.customerId && G.custName && G.custName[s.customerId]) || '' }, ctx));
   });
   G.expenses.forEach(function(e){ add(acctExpenseJournal(e, ctx)); });
@@ -16197,6 +16341,10 @@ function acctBuild(G){
     add(acctWasteJournal({ id:w.id, createdAt:w.createdAt, qty:w.qty, unitCost:w.unitCost, productName:w.productName, reason:w.reason }, p ? Number(p.costPrice) || 0 : 0, ctx));
   });
   G.custEntries.forEach(function(c){ add(acctCustJournal(c, ctx)); });
+  (G.voucherClaims || []).forEach(function(c){
+    var A = acctC(c.amount); if(!(A > 0) || !c.date) return;
+    add({ id:'VCL-' + c.id, date:c.date, kind:'VOUCHERCLAIM', ref:c.ref || c.id, memo:'Voucher payment received from ' + (c.platform || 'a platform') + (c.ref ? ' (' + c.ref + ')' : ''), lines:acctKeep([acctLine('1020', A, 0), acctLine('1350', 0, A)]), flags:[] });
+  });
   out.sort(function(a, b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
   var flags = {};
   out.forEach(function(j){ (j.flags || []).forEach(function(f){ flags[f] = (flags[f] || 0) + 1; }); });
@@ -19362,7 +19510,7 @@ function openReconcileSheet(day0){
     State.sales.forEach(function(s){
       if(todayKey(new Date(s.createdAt)) !== d) return;
       var k = s.paymentMethod === 'wallet' ? (s.walletProvider || 'Mobile wallet') : (s.paymentMethod === 'cash' ? 'Cash' : (s.paymentMethod === 'card' ? 'Card' : 'Credit'));
-      ex[k] = (ex[k]||0) + (s.total||0);
+      ex[k] = (ex[k]||0) + salePaidAmt(s);
     });
     return ex;
   }
@@ -19513,7 +19661,7 @@ function rcSalesData(r){
   State.sales.forEach(function(s){
     if(!rcIn(s.createdAt, r)) return;
     var d = day(todayKey(new Date(s.createdAt))), m = s.paymentMethod || 'cash';
-    d[m] = (d[m]||0) + (Number(s.total)||0); d.total += Number(s.total)||0; d.n++;
+    d[m] = (d[m]||0) + salePaidAmt(s); if(saleVoucherAmt(s) && m !== 'voucher') d.voucher = (d.voucher||0) + saleVoucherAmt(s); d.total += Number(s.total)||0; d.n++;
   });
   State.tillSessions.forEach(function(t){ if(t.status === 'closed' && rcIn(t.closedAt, r)){ var d = day(todayKey(new Date(t.closedAt))); d.tillVar += Number(t.variance)||0; d.tills++; } });
   State.posBatches.forEach(function(b){ if(rcIn(b.settledAt, r)){ var d = day(todayKey(new Date(b.settledAt))); d.cardVar += Number(b.variance)||0; d.batches++; } });
@@ -20057,7 +20205,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.187';
+var APP_VERSION = '2026.10.188';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20367,6 +20515,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.188', items:[
+    'Vouchers: when a customer comes with a Sanlam, BestHome or any other platform voucher, choose Customer has a voucher when charging. A voucher can pay all or part of a sale and the rest is paid in cash, card, wallet or credit. Pesa stops the same code being used twice, keeps each platform\'s total owed, and the Vouchers page in the menu records when a platform pays you',
+    'The till, end of day, reports and the books treat a voucher as money owed by the platform, not as cash, so cash up stays correct'
+  ] },
   { v:'2026.10.187', items:[
     'No more pop ups by themselves: the pilot feedback reminder and the backup advice now appear once, in the first session after a person registers, and never again unless they choose to open them. The pilot form is still in the menu and Backups is still in Settings'
   ] },
@@ -22267,6 +22419,10 @@ function refundBuild(sale, picks, reason, kind, approver){
     approvedBy:approver ? approver.name : '', approvedById:approver ? approver.id : '', approvedAt:new Date().toISOString(),
     tax:taxNegate(taxSnap(tx)), createdAt:new Date().toISOString(), deviceId:Dev.id(), syncStatus:'pending'
   };
+  if(sale.voucher && Number(sale.total) > 0){   // the voucher part is taken back in the same proportion as the sale
+    var vr = Math.min(1, Math.abs(total / 100) / Number(sale.total)), vFull = Math.abs(Number(sale.voucher.amount) || 0);
+    rec.voucher = { platform:sale.voucher.platform, code:sale.voucher.code, amount:-(vr >= 0.9999 ? vFull : mRound2(vFull * vr)) };
+  }
   rec.profit = mF(total + cost);   // negative total plus positive cost: the profit that is taken back
   return rec;
 }
@@ -22284,7 +22440,7 @@ function refundSale(sale, picks, reason, kind, approver){
   if(sale.paymentMethod === 'credit' && sale.customerId){
     var c = State.customers.find(function(x){ return x.id === sale.customerId; });
     if(c){
-      var back = Math.abs(rec.total), nb = mRound2((Number(c.balance) || 0) - back);
+      var back = mRound2(Math.abs(rec.total) - Math.abs(saleVoucherAmt(rec))), nb = mRound2((Number(c.balance) || 0) - back);
       refs.customers.doc(c.id).update({ balance:nb });
       refs.customers.doc(c.id).collection('ledger').add({ type:'refund', amount:back, note:(kind === 'void' ? 'Void of ' : 'Refund of ') + (sale.receiptNo || 'sale'), createdAt:new Date().toISOString(), balanceAfter:nb });
     }
@@ -22343,7 +22499,7 @@ function openRefundSheet(saleId, kind){
     var rec = refundBuild(sale, p, '', kind, null);
     box.innerHTML = '<div class="tillcard"><div class="tillrow"><span class="l">' + tr('Money back to the customer') + '</span><span class="v num">' + fmtMoney(Math.abs(rec.total)) + '</span></div>' +
       (rec.tax && rec.tax.registered && rec.tax.vat ? '<div class="tillrow"><span class="l">' + tr('VAT reversed') + '</span><span class="v num">' + fmtMoney(Math.abs(rec.tax.vat)) + '</span></div>' : '') +
-      '<div class="tillrow"><span class="l">' + tr('Paid back by') + '</span><span class="v">' + esc(tr({ cash:'Cash', card:'Card', wallet:'Wallet', credit:'Reduces what they owe' }[sale.paymentMethod] || sale.paymentMethod)) + '</span></div></div>';
+      '<div class="tillrow"><span class="l">' + tr('Paid back by') + '</span><span class="v">' + esc(tr({ cash:'Cash', card:'Card', wallet:'Wallet', voucher:'Voucher', credit:'Reduces what they owe' }[sale.paymentMethod] || sale.paymentMethod)) + '</span></div></div>';
   }
   ov.querySelectorAll('[data-rq]').forEach(function(e){ e.addEventListener('input', sum); }); sum();
   ov.querySelector('#rfNo').addEventListener('click', closeModal);
@@ -22377,7 +22533,7 @@ function openSaleDetailSheet(saleId){
   var s = State.sales.find(function(x){ return x.id === saleId; }); if(!s) return;
   var isRef = s.type === 'refund' || s.type === 'void', tx = taxOfSale(s), refs_ = saleRefunds(s.id), left = saleRefundable(s);
   var html = '<div class="sheet-head"><h2>' + esc(isRef ? (s.type === 'void' ? tr('Void') : tr('Refund')) : tr('Sale')) + ' ' + esc(s.receiptNo || '') + '</h2></div>' +
-    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + esc(fmtDateTime(s.createdAt)) + ' · ' + esc(s.cashierName || '') + ' · ' + esc(tr(({ cash:'Cash', card:'Card', wallet:'Wallet', credit:'Credit' })[s.paymentMethod] || s.paymentMethod || '')) + '</div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">' + esc(fmtDateTime(s.createdAt)) + ' · ' + esc(s.cashierName || '') + ' · ' + esc(tr(({ cash:'Cash', card:'Card', wallet:'Wallet', voucher:'Voucher', credit:'Credit' })[s.paymentMethod] || s.paymentMethod || '')) + '</div>' +
     (isRef ? '<div class="banner" style="display:block;">' + tr('Reason') + ': ' + esc(s.reason || '') + '<br>' + tr('Approved by') + ' ' + esc(s.approvedBy || '') + ' · ' + tr('Reverses') + ' ' + esc(s.refundOfReceipt || '') + '</div>' : '') +
     '<div class="rowlist">' + (s.items || []).map(function(it){ return '<div class="row" style="cursor:default;"><div class="main"><div class="title">' + esc(it.name) + '</div><div class="sub">' + esc(String(it.qty)) + ' × ' + fmtMoney(it.unitPrice) + '</div></div><div class="trail"><div class="amt num">' + fmtMoney(it.lineTotal != null ? it.lineTotal : it.qty * it.unitPrice) + '</div></div></div>'; }).join('') + '</div>' +
     '<div class="tillcard" style="margin-top:8px;"><div class="tillrow grand"><span class="l">' + tr('Total') + '</span><span class="v num">' + fmtMoney(s.total) + '</span></div>' +
@@ -24328,7 +24484,7 @@ function blazeToolRun(name, input){
   }
   if(name === 'payment_methods'){
     var pp = bzPeriod(input.period), pm = {};
-    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; pm[k] = (pm[k] || 0) + (Number(s.total) || 0); });
+    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; pm[k] = (pm[k] || 0) + salePaidAmt(s); var vA = saleVoucherAmt(s); if(vA && k !== 'voucher') pm.voucher = (pm.voucher || 0) + vA; });
     var o = { period:pp.label }; Object.keys(pm).forEach(function(k){ o[k] = bzMoney(pm[k]); });
     return bzOut(Object.keys(pm).length ? o : { result:'no sales in that time' }, Object.keys(pm).map(function(k){ return bzMoney(pm[k]); }));
   }
