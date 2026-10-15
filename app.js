@@ -20205,7 +20205,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.188';
+var APP_VERSION = '2026.10.189';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20515,6 +20515,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.189', items:[
+    'Fixed: drop down lists (such as the voucher platform list) opened as a white box with white text and could not be read. Every drop down list now opens dark with light text'
+  ] },
   { v:'2026.10.188', items:[
     'Vouchers: when a customer comes with a Sanlam, BestHome or any other platform voucher, choose Customer has a voucher when charging. A voucher can pay all or part of a sale and the rest is paid in cash, card, wallet or credit. Pesa stops the same code being used twice, keeps each platform\'s total owed, and the Vouchers page in the menu records when a platform pays you',
     'The till, end of day, reports and the books treat a voucher as money owed by the platform, not as cash, so cash up stays correct'
