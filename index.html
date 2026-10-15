@@ -1853,6 +1853,9 @@
   html.lite #pesaBootMsg .bm-glow{ filter:none; }
   @media (max-height:560px){ #pesaBootMsg .bm-stage{ transform:scale(.8); margin-top:-8vh; } }
   @media (prefers-reduced-motion:reduce){ #pesaBootMsg *{ animation:none !important; } }
+  /* every dropdown list in the app, on every screen and theme, opens dark with light text */
+  select{ color-scheme:dark; }
+  select option, select optgroup{ background-color:#0B2A20 !important; color:#F6FFFA !important; }
 </style>
 <div id="pesaBootMsg" role="status" aria-live="polite" aria-label="Please wait">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="bmWave" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.07" numOctaves="1" seed="4" result="n"><animate attributeName="baseFrequency" dur="5s" values="0.012 0.07;0.02 0.1;0.012 0.07" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="11" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
@@ -1930,4 +1933,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.189"></script>
+<script src="app.js?v=2026.10.190"></script>
