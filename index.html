@@ -1791,6 +1791,9 @@
   #content .me-week{ height:84px; gap:8px; padding:8px 8px 0; border-radius:20px; background:linear-gradient(160deg, var(--surface) 50%, var(--surface-2)); border:1px solid var(--border); }
   #content .me-week i{ border-radius:8px 8px 3px 3px; opacity:1; background:linear-gradient(180deg,#2BD4A0,#0B7A5C); box-shadow:0 6px 12px -6px rgba(11,122,92,.8); }
   #content .me-week i:last-child{ background:linear-gradient(180deg,#F8CF6B,#E8871E); box-shadow:0 6px 12px -6px rgba(232,135,30,.9); }
+  /* dropdown lists: the list that opens must be dark with light text wherever the page is dark (no white list with white text) */
+  .overlay .sheet select, .app.pg-bg select, .app.inv-bg select, #posRoot select, .authscreen select, .regpage select{ color-scheme:dark; }
+  .overlay .sheet select option, .overlay .sheet select optgroup, .app.pg-bg select option, .app.pg-bg select optgroup, .app.inv-bg select option, #posRoot select option, #posRoot select optgroup, .authscreen select option, .authscreen select optgroup, .regpage select option{ background-color:#0B2A20 !important; color:#F6FFFA !important; }
 </style>
 
 <script>
@@ -1850,6 +1853,9 @@
   html.lite #pesaBootMsg .bm-glow{ filter:none; }
   @media (max-height:560px){ #pesaBootMsg .bm-stage{ transform:scale(.8); margin-top:-8vh; } }
   @media (prefers-reduced-motion:reduce){ #pesaBootMsg *{ animation:none !important; } }
+  /* every dropdown list in the app, on every screen and theme, opens dark with light text */
+  select{ color-scheme:dark; }
+  select option, select optgroup{ background-color:#0B2A20 !important; color:#F6FFFA !important; }
 </style>
 <div id="pesaBootMsg" role="status" aria-live="polite" aria-label="Please wait">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="bmWave" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.07" numOctaves="1" seed="4" result="n"><animate attributeName="baseFrequency" dur="5s" values="0.012 0.07;0.02 0.1;0.012 0.07" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="11" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
@@ -1927,4 +1933,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.182"></script>
+<script src="app.js?v=2026.10.191"></script>
