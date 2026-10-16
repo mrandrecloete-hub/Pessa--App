@@ -30,11 +30,11 @@ const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
  console.log('visibility', await p.evaluate(()=>{const T=window.__t;const out={};for(const n of ['Sam','Stella']){const u=T.State.users.find(x=>x.name===n);T.State.session={userId:u.id,name:n,role:'x'};out[n]=T.State.messages.filter(m=>m.threadId?(m.fromId===u.id||m.to===u.id):(m.fromId===u.id||m.to==='all'||m.to===u.id)).map(m=>m.body.slice(0,12));}return JSON.stringify(out);}));
  // deletion tests
  await p.evaluate(()=>{const T=window.__t,u=T.State.users.find(x=>x.name==='Sam');T.State.session={userId:u.id,name:'Sam',role:'cashier'};T.setTab('me');}); await p.waitForTimeout(300);
- await p.click('[data-me=inbox]'); await p.waitForSelector('[data-thread]'); await p.click('[data-thread]'); await p.waitForSelector('#mvTrash'); await p.screenshot({path:D+'mv6_trash.png'}); await p.click('#mvTrash'); await p.waitForSelector('#dmMe'); console.log('emp has all btn', await p.$('#dmAll')!==null); await p.screenshot({path:D+'mv7_confirm.png'}); await p.click('#dmMe'); await p.waitForTimeout(300);
+ await p.click('[data-me=inbox]'); await p.waitForSelector('[data-thread]'); await p.click('[data-thread]'); await p.waitForSelector('#mvTrash'); await p.screenshot({path:D+'mv6_trash.png'}); await p.click('#mvTrash'); await p.waitForSelector('[data-btick]'); await p.click('[data-btick] >> nth=-1'); await p.click('#mvDelSel'); await p.waitForSelector('#dmMe'); console.log('emp has all btn', await p.$('#dmAll')!==null); await p.screenshot({path:D+'mv7_confirm.png'}); await p.click('#dmMe'); await p.waitForTimeout(300);
  console.log('Sam threads after delete', await p.evaluate(()=>{const T=window.__t;return document.querySelectorAll('[data-thread]').length}));
  await p.evaluate(()=>window.__t.closeModal());
  await p.evaluate(()=>{const T=window.__t,u=T.State.users.find(x=>x.role==='owner');T.State.session={userId:u.id,name:u.name,role:'owner'};T.setTab('team');}); await p.waitForTimeout(300);
  await p.click('[data-trklog]'); await p.waitForSelector('[data-thread]'); console.log('owner still sees', await p.$$eval('[data-thread]',x=>x.length));
- await p.click('[data-del]'); await p.waitForSelector('#dmAll'); await p.screenshot({path:D+'mv8_owner_confirm.png'}); await p.click('#dmAll'); await p.waitForTimeout(400);
+ await p.click('[data-mtick]'); await p.click('[data-mdel]'); await p.waitForSelector('#dmAll'); await p.screenshot({path:D+'mv8_owner_confirm.png'}); await p.click('#dmAll'); await p.waitForTimeout(400);
  console.log('after delete all: messages in store', await p.evaluate(()=>window.__t.State.messages.length));
  console.log(e); await b.close(); })();

@@ -7,7 +7,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
   // too little history: honest refusal, not a made up number
   let r=await ask('forecast my sales for next week'); ck('refuses to forecast without enough history', /at least 14 days/.test(r.text));
   // 56 days of sales: weekends strong, Tuesdays weak, one spike
-  await p.evaluate(async()=>{ const t=window.__t, now=new Date(); for(let i=56;i>=1;i--){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i,12); const wd=d.getDay(); let v=wd===6?900:wd===0?700:wd===2?200:400; v+=((i*37)%11)*5; if(i===10) v=3000; await t.refs.sales.doc().set({ total:v, cost:v*0.7, createdAt:d.toISOString(), items:[], paymentMethod:'cash' }); } await new Promise(r=>setTimeout(r,400)); });
+  await p.evaluate(async()=>{ const t=window.__t, now=new Date(); for(let i=56;i>=1;i--){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i,12); const wd=d.getDay(); let v=wd===6?900:wd===0?700:wd===2?200:400; v+=((i*37)%11)*5; if(wd===4 && i>=8 && i<=14) v=3000; await t.refs.sales.doc().set({ total:v, cost:v*0.7, createdAt:d.toISOString(), items:[], paymentMethod:'cash' }); } await new Promise(r=>setTimeout(r,400)); });
   r=await ask('forecast my sales for next week'); ck('forecast gives a total, a range and 7 days', /next 7 days I expect about N\$/.test(r.text) && /between N\$/.test(r.text) && r.lines.filter(l=>/about N\$/.test(l)).length===7);
   ck('forecast says it is an estimate and what it rests on', r.lines.some(l=>/estimate from your last \d+ days/.test(l)));
   r=await ask('what will I sell tomorrow'); ck('tomorrow gives one day', /^Tomorrow I expect about N\$/.test(r.text));
