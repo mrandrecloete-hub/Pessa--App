@@ -57,7 +57,7 @@ Hospitality
 ## What is not built yet
 - Online booking for customers (Pesa is the owner and staff tool).
 - Rate seasons, per person rates and meal plans.
-- Kitchen tickets and table maps.
+- Table maps. Kitchen and bar tickets are built (see docs/ENTERPRISE.md).
 - Stylist and barber self service diaries.
 - Automatic WhatsApp reminders (the app opens WhatsApp with the message ready).
 

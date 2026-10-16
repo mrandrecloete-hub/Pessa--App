@@ -34,18 +34,20 @@ function vShop(){ return (State.company && (State.company.tradingName || State.c
 
 /* ---- sales made from an appointment, a room booking or a tab carry that link, and close the job once the sale is recorded ---- */
 function vertSaleMeta(){
-  var c = State.cart || [], a = c.find(function(i){ return i.apptId; }), b = c.find(function(i){ return i.bookingId; }), t = c.filter(function(i){ return i.tabId; });
-  if(!a && !b && !t.length) return null;
+  var c = State.cart || [], a = c.find(function(i){ return i.apptId; }), b = c.find(function(i){ return i.bookingId; }), t = c.filter(function(i){ return i.tabId; }), ch = c.find(function(i){ return i.channelLogId; });
+  if(!a && !b && !t.length && !ch) return null;
   var extra = {}, tabIds = [];
   if(a){ extra.appointmentId = a.apptId; extra.stylistId = a.stylistId || ''; extra.stylistName = a.stylistName || ''; }
   if(b){ extra.bookingId = b.bookingId; extra.roomId = b.roomId || ''; }
   t.forEach(function(i){ if(tabIds.indexOf(i.tabId) < 0) tabIds.push(i.tabId); });
   if(tabIds.length) extra.tabIds = tabIds;
+  if(ch){ extra.channelOrderId = ch.channelOrderId; extra.channel = ch.channel; }
   return { extra:extra, after:function(sale){
     var at = new Date().toISOString();
     if(a) vPatch('appointments', a.apptId, { status:'done', doneAt:at, saleTotal:sale.total });
     if(b) vPatch('hosBookings', b.bookingId, { status:'out', checkedOutAt:at, paidTotal:sale.total });
     tabIds.forEach(function(id){ vPatch('hosTabs', id, { status:'closed', closedAt:at }); });
+    if(ch) entPatch('channelLogs', ch.channelLogId, { status:'recorded', recordedAt:at, receiptNo:sale.receiptNo || '' });
   } };
 }
 
@@ -67,7 +69,7 @@ function regPickedType(root){ var r = root.querySelector('input[name="rcBizType"
 /* ---- menu rows and page keys ---- */
 var VERT_PAGES = {
   beauty: [['v-appts', 'Appointments', 'clock'], ['v-queue', 'Walk in queue', 'people'], ['v-clients', 'Clients', 'people'], ['v-services', 'Services and prices', 'clipboard', 1], ['v-earn', 'Stylist earnings', 'chartbar', 1]],
-  hospitality: [['v-bookings', 'Room bookings', 'clock'], ['v-rooms', 'Rooms', 'box'], ['v-tabs', 'Tables and tabs', 'receipt'], ['v-guests', 'Guests', 'people'], ['v-comply', 'Licences and levy', 'clipboard', 1]]
+  hospitality: [['v-bookings', 'Room bookings', 'clock'], ['v-rooms', 'Rooms', 'box'], ['v-tabs', 'Tables and tabs', 'receipt'], ['v-kds', 'Kitchen and bar board', 'clipboard'], ['v-guests', 'Guests', 'people'], ['v-comply', 'Licences and levy', 'clipboard', 1]]
 };
 /* What each business type does NOT need. Retail hides nothing. Everything hidden is still in the app and comes back if the business type is changed.
    Salon: no full screen point of sale (Sell does the job), no purchase orders, stock takes, wastage, branches or invoices, no barcode labels, import cost calculator, currency or quotes.
@@ -158,7 +160,7 @@ function vertDrawerAction(key){
   if(key.indexOf('v-') !== 0) return false;
   if(VERT_MGR[key] && !isManagerOrOwner()){ toast(tr('That page is for owners and managers.')); return true; }
   var m = { 'v-appts':function(){ openApptSheet(todayKey()); }, 'v-queue':openQueueSheet, 'v-clients':openClientsSheet, 'v-services':openServicesSheet, 'v-earn':openEarningsSheet,
-    'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet }[key];
+    'v-bookings':openBookingsSheet, 'v-rooms':openRoomsSheet, 'v-tabs':openTabsSheet, 'v-kds':function(){ openKitchenBoard(''); }, 'v-guests':openGuestsSheet, 'v-comply':openComplySheet, 'v-type':openBizTypeSheet }[key];
   if(m) m(); return !!m;
 }
 (function(){ try{ [['Appointments', 'v-appts'], ['Walk in queue', 'v-queue'], ['Clients', 'v-clients'], ['Services and prices', 'v-services'], ['Room bookings', 'v-bookings'], ['Rooms', 'v-rooms'], ['Tables and tabs', 'v-tabs']].forEach(function(p){ AGENT_PAGES.unshift([new RegExp(p[0].toLowerCase().replace(/ and /g, '.*')), p[1], p[0]]); }); }catch(e){} })();
@@ -655,7 +657,7 @@ function openTabForm(tab, booking){
       (stays.length ? vField('Put this on a room', '<select id="tfRoom">' + vOpts(stays.map(function(b){ return [b.id, b.roomName + ' ' + b.guestName]; }), t.bookingId, 'Not on a room') + '</select>') : '') +
       '<div class="section-title">' + tr('Items') + '</div>' + (t.items.length ? '<div class="rowlist">' + t.items.map(function(i, n){ return '<div class="row"><div class="main"><div class="title">' + esc(i.name) + '</div><div class="sub">' + fmtMoney(i.unitPrice) + '</div></div><div class="trail" style="display:flex;gap:6px;align-items:center;"><button class="btn btn-ghost" data-m="' + n + '" type="button" style="padding:4px 10px;">-</button><b>' + i.qty + '</b><button class="btn btn-ghost" data-p="' + n + '" type="button" style="padding:4px 10px;">+</button></div></div>'; }).join('') + '</div><div class="row"><div class="main"><div class="title"><b>' + tr('Total') + '</b></div></div><div class="trail num"><b>' + fmtMoney(vTabTotal(t)) + '</b></div></div>' : '<div class="banner" style="display:block;">' + tr('Nothing added yet.') + '</div>') +
       '<div class="field"><label>' + tr('Add an item') + '</label><input id="tfQ" placeholder="' + esc(tr('Search the menu and drinks')) + '" autocomplete="off"></div><div id="tfRes"></div>' +
-      '<div class="actions" style="flex-wrap:wrap;"><button class="btn btn-ghost" id="tfSave" type="button">' + tr('Save tab') + '</button>' + (t.items.length ? '<button class="btn btn-primary" id="tfCharge" type="button">' + tr('Charge the tab') + '</button>' : '') + '<button class="btn btn-ghost" id="tfBack" type="button">' + tr('Back') + '</button></div>';
+      '<div class="actions" style="flex-wrap:wrap;"><button class="btn btn-ghost" id="tfSave" type="button">' + tr('Save tab') + '</button>' + (t.items.length ? '<button class="btn btn-ghost" id="tfKitchen" type="button">' + tr('Send to kitchen and bar') + '</button>' : '') + (t.items.length ? '<button class="btn btn-primary" id="tfCharge" type="button">' + tr('Charge the tab') + '</button>' : '') + '<button class="btn btn-ghost" id="tfBack" type="button">' + tr('Back') + '</button></div>';
     var q = ov.querySelector('#tfQ');
     q.addEventListener('input', function(){
       var s = q.value.toLowerCase().trim(), hits = s ? prods.filter(function(p){ return String(p.name).toLowerCase().indexOf(s) > -1; }).slice(0, 8) : [];
@@ -666,6 +668,7 @@ function openTabForm(tab, booking){
     ov.querySelectorAll('[data-m]').forEach(function(b){ b.addEventListener('click', function(){ keep(); var i = t.items[+b.getAttribute('data-m')]; i.qty--; if(i.qty <= 0) t.items.splice(+b.getAttribute('data-m'), 1); paint(); }); });
     ov.querySelector('#tfBack').addEventListener('click', function(){ closeModal(); openTabsSheet(); });
     ov.querySelector('#tfSave').addEventListener('click', function(){ if(!persist()) return; closeModal(); openTabsSheet(); });
+    var kt = ov.querySelector('#tfKitchen'); if(kt) kt.addEventListener('click', function(){ if(!persist()) return; var made = entSendTickets(t); toast(made.length ? made.length + ' ' + tr('tickets sent') : tr('Nothing new to send')); paint(); });
     var ch = ov.querySelector('#tfCharge'); if(ch) ch.addEventListener('click', function(){
       if(!persist()) return; if(t.bookingId){ toast(tr('This tab is on a room. It is charged when the guest checks out.')); closeModal(); openTabsSheet(); return; }
       if(!vCartIsFree()) return;
