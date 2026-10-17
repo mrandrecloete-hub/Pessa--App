@@ -28,7 +28,7 @@ Then in Pesa: Assistant, Pesa AI. Paste the function address (https://<project>.
 | AI_HOURLY_LIMIT, AI_DAILY_TOKENS | no | Caps, default 60 requests an hour and 200000 tokens a day (per running copy of the function) |
 
 ## Use Google Gemini
-Gemini works as a provider next to (or instead of) the others. The key stays in the server secrets and never reaches the phone. The phone only ever sends its own access phrase.
+Gemini works as a provider next to (or instead of) the others. If GEMINI_API_KEY is the only provider key set, Gemini is used by default with no model settings at all. The key stays in the server secrets and never reaches the phone. The phone only ever sends its own access phrase.
 ```
 supabase secrets set GEMINI_API_KEY=<key from Google AI Studio> AI_MODEL_FAST=gemini:gemini-2.5-flash AI_MODEL_STRONG=gemini:gemini-2.5-pro
 supabase functions deploy assistant --no-verify-jwt
