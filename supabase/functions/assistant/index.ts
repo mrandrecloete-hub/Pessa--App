@@ -2,6 +2,7 @@
 // Secrets (supabase secrets set ...):
 //   PESA_AI_KEY          a long random phrase. The owner pastes the same phrase into Pesa, Settings, Pesa AI.
 //   ANTHROPIC_API_KEY    the model provider key (server only, never put it in the app)
+//   GEMINI_API_KEY       optional, Google Gemini (get a key in Google AI Studio). Use "gemini:model-name" in AI_MODEL_FAST / AI_MODEL_STRONG / AI_MODEL_FALLBACK, for example gemini:gemini-2.5-flash. Server only, never put it in the app
 //   OPENAI_API_KEY       optional second provider (any OpenAI compatible service); OPENAI_BASE_URL optional
 //   LOCAL_AI_BASE_URL    optional, your OWN model server (OpenAI compatible, for example http://your-server:11434/v1 for Ollama). With this you need no outside provider at all; LOCAL_AI_KEY optional
 //   AI_MODEL_FAST / AI_MODEL_STRONG / AI_MODEL_FALLBACK   optional, default claude-haiku-5-5, claude-sonnet-5-5, none. Use "openai:model" for the second provider and "local:model" for your own server, for example local:qwen2.5:7b
@@ -22,7 +23,7 @@ Deno.serve(async (request) => {
   let out, prices = {}; try{ prices = JSON.parse(env('AI_PRICES', '{}')); }catch(e){}
   try{
     out = await handleAssistant({ method:request.method, headers, body }, {
-      key:env('PESA_AI_KEY'), anthropicKey:env('ANTHROPIC_API_KEY'), openaiKey:env('OPENAI_API_KEY'), openaiBase:env('OPENAI_BASE_URL'), localBase:env('LOCAL_AI_BASE_URL'), localKey:env('LOCAL_AI_KEY'),
+      key:env('PESA_AI_KEY'), anthropicKey:env('ANTHROPIC_API_KEY'), openaiKey:env('OPENAI_API_KEY'), geminiKey:env('GEMINI_API_KEY'), openaiBase:env('OPENAI_BASE_URL'), localBase:env('LOCAL_AI_BASE_URL'), localKey:env('LOCAL_AI_KEY'),
       models:{ fast:env('AI_MODEL_FAST', 'claude-haiku-5-5'), strong:env('AI_MODEL_STRONG', 'claude-sonnet-5-5'), fallback:env('AI_MODEL_FALLBACK') },
       prices, searchKey:env('SEARCH_API_KEY'), hourlyLimit:+env('AI_HOURLY_LIMIT', '60'), dailyTokens:+env('AI_DAILY_TOKENS', '200000'),
       fetch:(u, o) => fetch(u, o), now:() => Date.now(), hits, usage,

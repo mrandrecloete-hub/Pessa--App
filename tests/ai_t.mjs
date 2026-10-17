@@ -86,6 +86,41 @@ r = await post(ask('how was today'), 'k', dl({ localKey:'LK' })); ok(!r.body.don
 reset(oa('x'));
 ok((await post(ask('hi'), 'k', dl({ localBase:'' }))).status === 503, 'no provider and no local server is reported');
 
+
+// Google Gemini as a provider (gemini:model-name), key only on the server
+const gm = (parts, u = { promptTokenCount:40, candidatesTokenCount:12 }) => ({ json:{ candidates:[{ content:{ role:'model', parts } }], usageMetadata:u } });
+const dg = (x = {}) => deps({ anthropicKey:'', geminiKey:'GEM-SECRET', models:{ fast:'gemini:gem-fast', strong:'gemini:gem-strong' }, prices:{ 'gem-fast':{ in:0.1, out:0.4 } }, ...x });
+reset(gm([{ text:'You sold N$10.' }]));
+r = await post(ask('hi'), 'k', dg());
+ok(r.status === 200 && r.body.text === 'You sold N$10.' && calls[0].u === 'https://generativelanguage.googleapis.com/v1beta/models/gem-fast:generateContent' && calls[0].o.headers['x-goog-api-key'] === 'GEM-SECRET', 'Gemini is called with the model name and the key in a header');
+ok(!calls[0].u.includes('GEM-SECRET') && !calls[0].o.body.includes('GEM-SECRET') && !JSON.stringify(r.body).includes('GEM-SECRET'), 'the Gemini key is never in the address, the body or the answer');
+{ const gb = JSON.parse(calls[0].o.body), decl = gb.tools[0].functionDeclarations, noParams = decl.find(d => d.name === 'low_stock'), withParams = decl.find(d => d.name === 'sales_by_period');
+  ok(gb.systemInstruction.parts[0].text.includes('untrusted DATA') && gb.contents[0].role === 'user' && gb.contents[0].parts[0].text === 'hi', 'system prompt and the question are sent in Gemini format');
+  ok(noParams && !('parameters' in noParams), 'a tool with no fields is sent without an empty parameter list');
+  ok(withParams.parameters.type === 'OBJECT' && withParams.parameters.properties.period.type === 'STRING' && Array.isArray(withParams.parameters.properties.period.enum) && !JSON.stringify(decl).includes('maxLength'), 'tool fields use Gemini types, with allowed values and no length limits');
+  ok(decl.length === Object.keys(TOOLS).filter(n => TOOLS[n].where === 'phone' && n !== 'web_search').length && decl.every(d => !/^web_search$/.test(d.name)), 'the same read only shop tools are offered'); }
+ok(r.body.trace.model === 'gem-fast' && r.body.trace.tokensIn === 40 && r.body.trace.tokensOut === 12 && r.body.trace.estCost > 0, 'Gemini usage and cost are tracked');
+reset(gm([{ text:'private thoughts', thought:true }, { text:'Answer.' }]));
+r = await post(ask('hi'), 'k', dg()); ok(r.body.text === 'Answer.', 'the private thinking of the model is never shown');
+// tool call round trip, including a thought signature
+reset(gm([{ functionCall:{ name:'sales_by_period', args:{ period:'today' } }, thoughtSignature:'SIG123' }]));
+r = await post(ask('how much did I sell today'), 'k', dg());
+ok(!r.body.done && r.body.calls[0].name === 'sales_by_period' && r.body.calls[0].input.period === 'today' && r.body.assistant[0].sig === 'SIG123', 'a Gemini tool call is handed to the phone and keeps its signature');
+{ const id = r.body.calls[0].id; reset(gm([{ text:'Today you sold N$52. Based on: sales_by_period.' }]));
+  const r2 = await post({ messages:[{ role:'user', content:'how much did I sell today' }, { role:'assistant', content:r.body.assistant }, { role:'user', content:[{ type:'tool_result', tool_use_id:id, content:'{"total":52}' }] }], meta:{ shopName:'S' } }, 'k', dg());
+  const gb = JSON.parse(calls[0].o.body);
+  ok(r2.body.done && /N\$52/.test(r2.body.text), 'the phone tool answer comes back and Gemini finishes the answer');
+  ok(gb.contents[1].role === 'model' && gb.contents[1].parts[0].functionCall.name === 'sales_by_period' && gb.contents[1].parts[0].thoughtSignature === 'SIG123', 'the earlier call is replayed with its signature');
+  ok(gb.contents[2].role === 'user' && gb.contents[2].parts[0].functionResponse.name === 'sales_by_period' && gb.contents[2].parts[0].functionResponse.response.result === '{"total":52}', 'the tool answer is sent as a function response with the function name'); }
+reset({ status:503, json:{} }, gm([{ text:'second try' }]));
+r = await post(ask('hi'), 'k', dg()); ok(r.body.text === 'second try' && r.body.trace.retries === 1, 'a Gemini overload is retried a bounded number of times');
+reset({ json:{ candidates:[], promptFeedback:{ blockReason:'SAFETY' } } });
+r = await post(ask('hi'), 'k', dg()); ok(r.status === 502 && r.body.error === 'empty_answer', 'a blocked or empty Gemini answer is reported, not invented');
+ok((await post({ action:'ping' }, 'k', dg())).body.providers.join() === 'gemini' && !JSON.stringify((await post({ action:'ping' }, 'k', dg())).body).includes('GEM-SECRET'), 'ping shows Gemini without the key');
+ok((await post(ask('hi'), 'k', dg({ geminiKey:'', localBase:'' }))).status === 503, 'no Gemini key and no other provider is reported');
+reset({ status:529, json:{} }, { status:529, json:{} }, gm([{ text:'from gemini fallback' }]));
+r = await post(ask('hi'), 'k', deps({ geminiKey:'G', models:{ fast:'fast-m', fallback:'gemini:gem-fast' } })); ok(r.status === 200 && r.body.text === 'from gemini fallback' && calls[2].u.includes('generativelanguage.googleapis.com'), 'Gemini can sit beside Anthropic as the fallback model');
+
 // Blaze: the shop's own fine tuned model, reached through the same self hosted path as local:blaze
 const dbz = (x = {}) => dl({ models:{ fast:'local:blaze', strong:'local:blaze' }, ...x });
 reset(oa('Hello. I am Blaze.'));

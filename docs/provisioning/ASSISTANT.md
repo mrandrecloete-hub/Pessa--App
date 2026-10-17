@@ -18,13 +18,22 @@ Then in Pesa: Assistant, Pesa AI. Paste the function address (https://<project>.
 | Name | Needed | Meaning |
 |---|---|---|
 | PESA_AI_KEY | yes | Access phrase, pasted into Pesa. At least 8 characters, use a long one |
-| ANTHROPIC_API_KEY | yes, or OPENAI_API_KEY | Model provider key. Costs money, see your provider's pricing |
+| ANTHROPIC_API_KEY | yes, or GEMINI_API_KEY, or OPENAI_API_KEY | Model provider key. Costs money, see your provider's pricing |
 | LOCAL_AI_BASE_URL, LOCAL_AI_KEY | no | Your own model server (OpenAI compatible). With this you need no outside provider, see SELF_HOSTED_AI.md |
+| GEMINI_API_KEY | no | Google Gemini. Get a key in Google AI Studio. Write gemini:model-name in the model settings below |
 | OPENAI_API_KEY, OPENAI_BASE_URL | no | A second provider (any OpenAI compatible service) used as a fallback |
-| AI_MODEL_FAST, AI_MODEL_STRONG, AI_MODEL_FALLBACK | no | Models for easy questions, hard questions and fallback. Default claude-haiku-5-5 and claude-sonnet-5-5. Write openai:model-name for the second provider |
+| AI_MODEL_FAST, AI_MODEL_STRONG, AI_MODEL_FALLBACK | no | Models for easy questions, hard questions and fallback. Default claude-haiku-5-5 and claude-sonnet-5-5. Write openai:model-name for the second provider, gemini:model-name for Google Gemini |
 | AI_PRICES | no | JSON of per million token prices so cost estimates show, for example {"claude-haiku-5-5":{"in":1,"out":5}}. Without it cost shows as unknown |
 | SEARCH_API_KEY | no | Brave Search API key. Without it the assistant says it cannot search the web |
 | AI_HOURLY_LIMIT, AI_DAILY_TOKENS | no | Caps, default 60 requests an hour and 200000 tokens a day (per running copy of the function) |
+
+## Use Google Gemini
+Gemini works as a provider next to (or instead of) the others. The key stays in the server secrets and never reaches the phone. The phone only ever sends its own access phrase.
+```
+supabase secrets set GEMINI_API_KEY=<key from Google AI Studio> AI_MODEL_FAST=gemini:gemini-2.5-flash AI_MODEL_STRONG=gemini:gemini-2.5-pro
+supabase functions deploy assistant --no-verify-jwt
+```
+Check the current model names in Google AI Studio before you set them: Google retires old models (gemini-1.5-flash is gone), so use a name your key can still call. Without AI_PRICES the cost shows as unknown. Gemini uses the same read only shop tools as every other provider, so it answers from the shop's real records on the phone and can change nothing. Pesa AI settings in the app do not change: Settings, Pesa AI, the function address and the access phrase.
 
 ## Run your own model, Blaze
 Blaze is Björn's own model (Qwen2.5 1.5B Instruct, fine tuned with LoRA, exported as GGUF). Full guide: `docs/BLAZE.md`. The short version for the server:

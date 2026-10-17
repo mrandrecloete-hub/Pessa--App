@@ -2,7 +2,7 @@
 // The model provider key lives only on the server. The phone sends the conversation, the server picks a model,
 // calls it (with fallback), runs web search itself, and hands any shop data tool calls back to the phone,
 // because the shop's records live on the phone. Nothing here can change shop data.
-// deps: { key, anthropicKey, openaiKey, openaiBase, models:{fast,strong,fallback}, prices, searchKey, searchUrl,
+// deps: { key, anthropicKey, openaiKey, openaiBase, geminiKey (Google Gemini, models written gemini:model-name), models:{fast,strong,fallback}, prices, searchKey, searchUrl,
 //         localBase, localKey (your own model server, any OpenAI compatible one such as Ollama, vLLM or llama.cpp; no outside provider needed),
 //         hourlyLimit, dailyTokens, timeoutMs, fetch, now, hits, usage }
 const MAX_MESSAGES = 24, MAX_TEXT = 6000, MAX_MEMORY = 12, MAX_TOOL_ROUNDS = 3, MAX_SEARCHES = 3, MAX_ANSWER = 5000;
@@ -113,7 +113,7 @@ function cleanMessages(msgs){
     for(const b of m.content){
       if(!b || typeof b !== 'object') return null;
       if(b.type === 'text'){ if(typeof b.text !== 'string' || b.text.length > MAX_TEXT) return null; blocks.push({ type:'text', text:b.text }); }
-      else if(b.type === 'tool_use' && m.role === 'assistant'){ if(typeof b.id !== 'string' || !TOOLS[b.name]) return null; blocks.push({ type:'tool_use', id:clip(b.id, 80), name:b.name, input:b.input && typeof b.input === 'object' ? b.input : {} }); }
+      else if(b.type === 'tool_use' && m.role === 'assistant'){ if(typeof b.id !== 'string' || !TOOLS[b.name]) return null; blocks.push(Object.assign({ type:'tool_use', id:clip(b.id, 80), name:b.name, input:b.input && typeof b.input === 'object' ? b.input : {} }, typeof b.sig === 'string' && b.sig.length <= 12000 ? { sig:b.sig } : {})); }
       else if(b.type === 'tool_result' && m.role === 'user'){ if(typeof b.tool_use_id !== 'string') return null; blocks.push({ type:'tool_result', tool_use_id:clip(b.tool_use_id, 80), content:clip(b.content, 8000), is_error:!!b.is_error }); }
       else return null;
     }
@@ -133,6 +133,13 @@ async function callModel(model, system, messages, tools, deps){
       if(!r.ok) return { ok:false, status:r.status };
       return { ok:true, data:fromOpenai(await r.json()) };
     }
+    if(model.provider === 'gemini'){
+      // Google Gemini (Generative Language API). The key goes in a header, never in the web address, and stays on the server.
+      const r = await deps.fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model.id) + ':generateContent', { method:'POST', signal:ctl ? ctl.signal : undefined,
+        headers:{ 'content-type':'application/json', 'x-goog-api-key':deps.geminiKey }, body:JSON.stringify(geminiBody(system, messages, tools)) });
+      if(!r.ok) return { ok:false, status:r.status };
+      return { ok:true, data:fromGemini(await r.json()) };
+    }
     const r = await deps.fetch('https://api.anthropic.com/v1/messages', { method:'POST', signal:ctl ? ctl.signal : undefined,
       headers:{ 'content-type':'application/json', 'x-api-key':deps.anthropicKey, 'anthropic-version':'2023-06-01' },
       body:JSON.stringify({ model:model.id, max_tokens:1200, system, messages, tools }) });
@@ -141,6 +148,42 @@ async function callModel(model, system, messages, tools, deps){
     return { ok:true, data:{ content:Array.isArray(j.content) ? j.content : [], stop:j.stop_reason, usage:{ i:(j.usage && j.usage.input_tokens) || 0, o:(j.usage && j.usage.output_tokens) || 0 } } };
   }catch(e){ return { ok:false, status:0, aborted:e && e.name === 'AbortError' }; }
   finally{ if(timer) clearTimeout(timer); }
+}
+// Gemini wants upper case types, no empty parameter lists and no length limits in the schema
+function geminiSchema(x){
+  if(!x || typeof x !== 'object') return x;
+  const o = { type:String(x.type || 'string').toUpperCase() };
+  if(x.description) o.description = x.description;
+  if(x.enum) o.enum = x.enum;
+  if(x.properties){ o.properties = {}; Object.keys(x.properties).forEach(k => { o.properties[k] = geminiSchema(x.properties[k]); }); }
+  if(x.required && x.required.length) o.required = x.required;
+  return o;
+}
+function geminiBody(system, messages, tools){
+  const names = {};   // tool_result blocks name the call by id, Gemini wants the function name
+  messages.forEach(m => { if(Array.isArray(m.content)) m.content.forEach(b => { if(b.type === 'tool_use') names[b.id] = b.name; }); });
+  const contents = messages.map(m => {
+    if(typeof m.content === 'string') return { role:m.role === 'assistant' ? 'model' : 'user', parts:[{ text:m.content }] };
+    const parts = [];
+    m.content.forEach(b => {
+      if(b.type === 'text') parts.push({ text:b.text });
+      else if(b.type === 'tool_use'){ const p = { functionCall:{ name:b.name, args:b.input || {} } }; if(b.sig) p.thoughtSignature = b.sig; parts.push(p); }
+      else if(b.type === 'tool_result') parts.push({ functionResponse:{ name:names[b.tool_use_id] || 'tool', response:b.is_error ? { error:b.content } : { result:b.content } } });
+    });
+    return { role:m.role === 'assistant' ? 'model' : 'user', parts };
+  });
+  const decl = tools.map(t => { const d = { name:t.name, description:t.description }, ps = t.input_schema && t.input_schema.properties; if(ps && Object.keys(ps).length) d.parameters = geminiSchema(t.input_schema); return d; });
+  return { systemInstruction:{ parts:[{ text:system }] }, contents, tools:[{ functionDeclarations:decl }], generationConfig:{ maxOutputTokens:1200 } };
+}
+function fromGemini(j){
+  const c = (j.candidates && j.candidates[0] && j.candidates[0].content) || {}, content = []; let n = 0;
+  (c.parts || []).forEach(p => {
+    if(p.thought === true) return;   // the model's private thinking is never shown
+    if(typeof p.text === 'string' && p.text) content.push({ type:'text', text:p.text });
+    else if(p.functionCall && p.functionCall.name){ const b = { type:'tool_use', id:'g' + (++n) + '_' + clip(p.functionCall.name, 40), name:p.functionCall.name, input:p.functionCall.args && typeof p.functionCall.args === 'object' ? p.functionCall.args : {} }; if(p.thoughtSignature) b.sig = String(p.thoughtSignature); content.push(b); }
+  });
+  const u = j.usageMetadata || {};
+  return { content, stop:content.some(b => b.type === 'tool_use') ? 'tool_use' : 'end_turn', usage:{ i:u.promptTokenCount || 0, o:(u.candidatesTokenCount || 0) + (u.thoughtsTokenCount || 0) } };
 }
 function openaiBody(id, system, messages, tools){
   const msgs = [{ role:'system', content:system }];
@@ -173,7 +216,7 @@ function pickModels(cls, deps){
   const m = deps.models || {}, list = [];
   const mk = s => { if(!s) return null; const i = String(s).indexOf(':'); return i > 0 ? { provider:s.slice(0, i), id:s.slice(i + 1) } : { provider:'anthropic', id:s }; };
   [cls.tier === 'strong' ? m.strong : m.fast, m.fallback, cls.tier === 'strong' ? m.fast : m.strong].forEach(s => { const x = mk(s); if(x && !list.some(y => y.provider === x.provider && y.id === x.id)) list.push(x); });
-  return list.filter(x => x.provider === 'local' ? /^https?:\/\//.test(deps.localBase || '') : x.provider === 'openai' ? !!deps.openaiKey : !!deps.anthropicKey);
+  return list.filter(x => x.provider === 'local' ? /^https?:\/\//.test(deps.localBase || '') : x.provider === 'openai' ? !!deps.openaiKey : x.provider === 'gemini' ? !!deps.geminiKey : !!deps.anthropicKey);
 }
 function estCost(model, u, prices){
   const p = prices && prices[model.id]; if(!p) return null;
@@ -182,11 +225,11 @@ function estCost(model, u, prices){
 
 export async function handleAssistant(req, deps){
   if(req.method !== 'POST') return out(405, { error:'post_only' });
-  if(!deps.key || (!deps.anthropicKey && !deps.openaiKey && !deps.localBase)) return out(503, { error:'not_configured' });
+  if(!deps.key || (!deps.anthropicKey && !deps.openaiKey && !deps.geminiKey && !deps.localBase)) return out(503, { error:'not_configured' });
   const h = req.headers || {};
   if(!same(h['x-pesa-key'], deps.key)) return out(401, { error:'bad_key' });
   const b = req.body || {};
-  if(b.action === 'ping') return out(200, { ok:true, search:!!deps.searchKey, providers:[deps.anthropicKey ? 'anthropic' : '', deps.openaiKey ? 'openai' : '', deps.localBase ? 'local' : ''].filter(Boolean),
+  if(b.action === 'ping') return out(200, { ok:true, search:!!deps.searchKey, providers:[deps.anthropicKey ? 'anthropic' : '', deps.openaiKey ? 'openai' : '', deps.geminiKey ? 'gemini' : '', deps.localBase ? 'local' : ''].filter(Boolean),
     models:['fast', 'strong', 'fallback'].map(k => (deps.models || {})[k]).filter(Boolean).filter((m, i, a) => a.indexOf(m) === i).map(m => clip(m, 60)) });   // names only, never keys
   const messages = cleanMessages(b.messages);
   if(!messages) return out(400, { error:'bad_messages' });
