@@ -11,7 +11,6 @@ const list = Object.keys(TOOLS).filter(n => TOOLS[n].where === 'phone').map(n =>
   const t = TOOLS[n], props = {};
   Object.keys(t.p).forEach(k => { const x = t.p[k]; props[k] = x.enum ? { type:'string', enum:x.enum } : { type:'string', maxLength:x.max }; });
   const o = { name:n, description:t.d, parameters:{ type:'object', properties:props, required:t.req } };
-  if(t.biz) o.biz = t.biz;   // only offered to that business type (the prompt text never shows this field)
   return o;
 });
 const json = JSON.stringify(list, null, 2) + '\n';

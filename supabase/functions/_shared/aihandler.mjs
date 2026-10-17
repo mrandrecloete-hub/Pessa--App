@@ -43,25 +43,11 @@ export const TOOLS = {
   compare_periods:  { where:'phone',  d:'Sales this period against the one before.', p:{ kind:{ type:'string', enum:['week', 'month'] } }, req:['kind'] },
   unusual_days:     { where:'phone',  d:'Days with unusually high or low sales.', p:{}, req:[] },
   alerts_and_notes: { where:'phone',  d:'Recent notes and warnings from the Pesa assistant. They are signs to check, not proof.', p:{}, req:[] },
-  // Barbershop and salon tools (sent only when the business type is beauty)
-  appointments:     { where:'phone', biz:'beauty', d:'Bookings for a day: how many, done, waiting, no shows, and who is next.', p:{ day:{ type:'string', enum:['yesterday', 'today', 'tomorrow'] } }, req:['day'] },
-  walk_in_queue:    { where:'phone', biz:'beauty', d:'Walk in clients waiting or in the chair right now.', p:{}, req:[] },
-  stylist_earnings: { where:'phone', biz:'beauty', d:'Sales and commission per stylist for a period.', p:{ period:{ type:'string', enum:['today', 'week', 'month'] } }, req:['period'] },
-  top_services:     { where:'phone', biz:'beauty', d:'Most booked services by number sold for a period.', p:{ period:{ type:'string', enum:['week', 'month', 'year'] } }, req:['period'] },
-  service_prices:   { where:'phone', biz:'beauty', d:'Price and minutes for services, optionally matching a name.', p:{ query:{ type:'string', max:80 } }, req:[] },
-  // Hospitality tools (sent only when the business type is hospitality)
-  occupancy:        { where:'phone', biz:'hospitality', d:'Rooms occupied, arrivals and departures for a day.', p:{ day:{ type:'string', enum:['yesterday', 'today', 'tomorrow'] } }, req:['day'] },
-  bookings_ahead:   { where:'phone', biz:'hospitality', d:'Room bookings arriving in the next 14 days.', p:{}, req:[] },
-  room_status:      { where:'phone', biz:'hospitality', d:'Each room: free or occupied, clean or dirty.', p:{}, req:[] },
-  open_tabs:        { where:'phone', biz:'hospitality', d:'Open tabs and what each one owes.', p:{}, req:[] },
-  room_revenue:     { where:'phone', biz:'hospitality', d:'Room fees charged and the estimated tourism levy for a period.', p:{ period:{ type:'string', enum:['month', 'last_month', 'year'] } }, req:['period'] },
-  licences_and_levy:{ where:'phone', biz:'hospitality', d:'Licence and certificate renewal dates and days left.', p:{}, req:[] },
   web_search:       { where:'server', d:'Search the web for current public information. Returns numbered sources with URLs.', p:{ query:{ type:'string', max:160 } }, req:['query'] },
 };
-// Business type tools are only offered to that type of business, which keeps the tool list short for a small model.
-export const toolNamesFor = (biz) => Object.keys(TOOLS).filter(n => !TOOLS[n].biz || TOOLS[n].biz === biz);
-function toolSchemas(allowSearch, biz){
-  return toolNamesFor(biz).filter(n => allowSearch || n !== 'web_search').map(n => {
+export const toolNamesFor = () => Object.keys(TOOLS);
+function toolSchemas(allowSearch){
+  return toolNamesFor().filter(n => allowSearch || n !== 'web_search').map(n => {
     const t = TOOLS[n], props = {};
     Object.keys(t.p).forEach(k => { const x = t.p[k]; props[k] = x.enum ? { type:'string', enum:x.enum } : { type:'string', maxLength:x.max }; });
     return { name:n, description:t.d, input_schema:{ type:'object', properties:props, required:t.req } };
@@ -101,9 +87,9 @@ export function classifyTask(text){
 }
 
 function systemPrompt(meta, memory, canSearch){
-  const shop = clip(meta.shopName, 80) || 'the shop', type = ['retail', 'beauty', 'hospitality'].indexOf(meta.bizType) >= 0 ? meta.bizType : 'retail';
+  const shop = clip(meta.shopName, 80) || 'the shop';
   return [
-    'You are the Pesa AI Assistant for a small business in Namibia. Shop: ' + shop + ' (type: ' + type + '). Currency is Namibian dollars (N$).',
+    'You are the Pesa AI Assistant for a small business in Namibia. Shop: ' + shop + ' (a retail business). Currency is Namibian dollars (N$).',
     'Be accurate, plain and brief. Use short sentences and everyday words. Say clearly when you are unsure or do not have the data. Never claim to be certain, infallible, or to have official approval from NamRA or any authority. Tax and legal points are general information, to be confirmed with the relevant legal bodies, authorities and entities of Namibia.',
     'Rules you must always follow:',
     '1. Use tools for shop figures and for every calculation. Never guess a number. If a tool returns no data, say so.',
@@ -216,7 +202,7 @@ export async function handleAssistant(req, deps){
   let lastText = ''; for(let i = messages.length - 1; i >= 0 && !lastText; i--){ const m = messages[i]; if(m.role === 'user') lastText = typeof m.content === 'string' ? m.content : m.content.filter(x => x.type === 'text').map(x => x.text).join(' '); }
   const cls = classifyTask(lastText), models = pickModels(cls, deps);
   if(!models.length) return out(503, { error:'no_model_available' });
-  const canSearch = !!deps.searchKey, system = systemPrompt(meta, memory, canSearch), tools = toolSchemas(canSearch, ['beauty', 'hospitality'].includes(meta.bizType) ? meta.bizType : 'retail');
+  const canSearch = !!deps.searchKey, system = systemPrompt(meta, memory, canSearch), tools = toolSchemas(canSearch);
   const t0 = now, sources = [], trace = { route:cls, calls:0, searches:0, retries:0, tokens:{ i:0, o:0 }, cost:null, model:'' };
   let convo = messages.slice(), pendingServer = [];
 

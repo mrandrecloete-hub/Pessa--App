@@ -131,7 +131,7 @@ function aiAskServer(question){
   var known = [], t0 = Date.now(), rounds = 0, ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, sources = [], used = [], last = null;
   _ai.ctl = ctl; _ai.busy = true; _ai.tools = 0;
   var msgs = [{ role:'user', content:String(question).slice(0, 1500) }];
-  var meta = { shopName:(State.company && (State.company.tradingName || State.company.companyName)) || '', bizType:(typeof bizType === 'function' ? bizType() : 'retail') };
+  var meta = { shopName:(State.company && (State.company.tradingName || State.company.companyName)) || '' };
   var memory = c.memory ? aiNotesFor(question, 6).map(function(n){ return n.text; }) : [];
   function post(){
     if(Date.now() - t0 > AI_TOTAL_MS) return Promise.reject(new Error('timeout'));

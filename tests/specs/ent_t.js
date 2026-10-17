@@ -9,7 +9,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  ck('Enterprise tools tile is in Business tools', /Enterprise tools/.test(r));
  await p.evaluate(()=>{ window.__t.closeModal(); window.__t.openEnterpriseSheet(); });
  r=await p.evaluate(()=>document.body.innerText);
- ck('hub lists the five tools', ['Product families','Branch dashboard','Stock transfers between branches','Sales channels and online shop','Kitchen and bar board'].every(x=>r.indexOf(x)>-1));
+ ck('hub lists the four tools', ['Product families','Branch dashboard','Stock transfers between branches','Sales channels and online shop'].every(x=>r.indexOf(x)>-1));
  await p.evaluate(()=>window.__t.closeModal());
  // ---------- product families: 2 colours x 3 sizes = 6 products, no duplicates on a second run
  r=await p.evaluate(()=>{ const T=window.__t; const o={name:'Work shirt',category:'Clothes',ax1:'Colour',v1:'Blue, Red',ax2:'Size',v2:'S, M, L',ax3:'',v3:'',cost:'50',sell:'120',qty:'4',low:'1',prefix:'SH'}; const a=T.entCreateFamily(o); const b2=T.entCreateFamily(o); return {a,b2, kids:T.State.products.filter(p=>p.parentId===a.parentId).map(p=>[p.name,p.stockQty,p.barcode,p.sellPrice])}; });
@@ -61,19 +61,6 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  ck('stock is queued once per product and sent to the shop address', r.n>5 && r.n2===0 && r.x.sent===r.n && r.left===0);
  r=await p.evaluate(()=>{ const T=window.__t; T.btSave({entChannel:{platform:'Shopify',endpoint:'http://insecure.example.com'}}); return new Promise(res=>T.entPushQueue(x=>res(x))); });
  ck('a plain http address is refused', /https/.test(r.error||''));
- // ---------- kitchen and bar
- r=await p.evaluate(()=>{ const T=window.__t; const tab={id:'tab1',name:'Table 5',items:[{productId:'k1',name:'Burger',qty:2,unitPrice:60},{productId:'k2',name:'Cola',qty:3,unitPrice:20}]};
-   T.refs.products.doc('k1').set({name:'Burger',category:'Meals',sellPrice:60,costPrice:30,stockQty:9}); T.refs.products.doc('k2').set({name:'Cola',category:'Cold drinks',sellPrice:20,costPrice:8,stockQty:9});
-   return new Promise(res=>setTimeout(()=>{ const made=T.entSendTickets(tab); const again=T.entSendTickets(tab); tab.items[0].qty=3; const more=T.entSendTickets(tab); res({made:made.map(t=>[t.dept,t.items.length,t.items[0].qty]), again:again.length, more:more.map(t=>[t.dept,t.items[0].qty])}); },400)); });
- ck('a tab splits into one kitchen and one bar ticket', r.made.length===2 && r.made.some(m=>m[0]==='Kitchen'&&m[2]===2) && r.made.some(m=>m[0]==='Bar'&&m[2]===3));
- ck('items are sent only once; later additions send alone', r.again===0 && r.more.length===1 && r.more[0][0]==='Kitchen' && r.more[0][1]===1);
- await p.evaluate(()=>window.__t.openKitchenBoard('')); await p.waitForTimeout(200);
- r=await p.evaluate(()=>({txt:document.body.innerText, n:document.querySelectorAll('[data-adv]').length}));
- ck('the board lists open tickets with a Start button', r.n===3 && /Table 5/.test(r.txt) && /Start/.test(r.txt));
- await p.click('[data-adv]'); await p.waitForTimeout(150);
- r=await p.evaluate(()=>window.__t.State.kitchenTickets.map(t=>t.status).sort().join(','));
- ck('a ticket moves from new to preparing', /preparing/.test(r));
- await p.evaluate(()=>window.__t.closeModal());
  // ---------- shift breaks
  r=await p.evaluate(()=>{ const T=window.__t; const u=T.tmMe(); T.clockIn(u); return new Promise(res=>setTimeout(()=>{ const open=T.clockOpenLog(u.id); const t0=Date.now();
    open.inAt=new Date(t0-3*3600000).toISOString(); T.entToggleBreak(u); open.breaks[0].from=new Date(t0-2*3600000).toISOString(); const onB=T.entOnBreak(open); open.breaks[0].to=new Date(t0-3600000).toISOString(); const afterEnd=T.entOnBreak(open);
@@ -86,22 +73,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  await p.evaluate(()=>{ const T=window.__t; T.clockIn(T.tmMe()); }); await p.waitForTimeout(400);
  r=await p.evaluate(()=>window.__t.tmCardHtml()); ck('shift card offers Start break when clocked in', /data-tm="break"[^>]*>Start break/.test(r));
 
- // ---------- hospitality: tab form button and the menu row
- { const c2=await b.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}); const q=await c2.newPage(); const e2=[]; q.on('pageerror',e=>e2.push(e.message));
-   await q.goto('http://localhost:8933/index.html'); await q.waitForSelector('#rcCompanyName'); await q.click('.rt-card:has(input[value="hospitality"])');
-   await q.fill('#rcCompanyName','Lodge'); await q.fill('#rcOwnerName','Owner'); await q.fill('#rcOwnerEmail','o@x.com'); await q.fill('#rcOwnerPassword','aaaa1111'); await q.fill('#rcOwnerPassword2','aaaa1111'); await q.click('#rcSubmit');
-   await q.waitForSelector('#cnAgree'); await q.click('#cnAgree'); await q.click('#cnAccept'); await q.waitForSelector('.dkd, .hero-card');
-   await q.evaluate(()=>{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); window.__t.refs.products.doc('h1').set({name:'Steak',category:'Meals',sellPrice:150,costPrice:70,stockQty:20,createdAt:new Date().toISOString()}); });
-   await q.waitForTimeout(400);
-   let rr=await q.evaluate(()=>{ const d=document.createElement('div'); d.innerHTML=window.__t.vertMenuRows(); return d.innerText; }); ck('hospitality menu has the Kitchen and bar board', /Kitchen and bar board/.test(rr));
-   await q.evaluate(()=>window.__t.openTabForm()); await q.waitForSelector('#tfName'); await q.fill('#tfName','Table 9'); await q.fill('#tfQ','Steak'); await q.waitForSelector('[data-add]'); await q.click('[data-add]');
-   await q.waitForSelector('#tfKitchen'); await q.click('#tfKitchen'); await q.waitForTimeout(500);
-   rr=await q.evaluate(()=>({t:window.__t.State.kitchenTickets.map(t=>[t.table,t.dept,t.items[0].name,t.items[0].qty]), tab:window.__t.State.hosTabs.map(x=>x.items.map(i=>i.sentQty))}));
-   ck('Send to kitchen and bar from a tab makes a ticket and marks the item sent', rr.t.length===1 && rr.t[0].join()==='Table 9,Kitchen,Steak,1' && rr.tab[0][0]===1);
-   await q.evaluate(()=>{ window.__t.closeModal(); window.__t.vertDrawerAction('v-kds'); }); await q.waitForTimeout(200);
-   rr=await q.evaluate(()=>document.body.innerText); ck('the menu row opens the board', /Kitchen and bar board/.test(rr) && /Table 9/.test(rr));
-   ck('hospitality: no page errors', e2.length===0); if(e2.length) console.log(e2.slice(0,3)); await c2.close(); }
- // ---------- a cashier does not see the hub
+ // ---------- the hub function exists
  r=await p.evaluate(()=>{ const T=window.__t; const was=T.isManagerOrOwner; return typeof T.openEnterpriseSheet==='function'; }); ck('hub function exists', r);
  ck('no page errors', errs.length===0); if(errs.length) console.log(errs.slice(0,3));
  await b.close(); console.log(fail?('FAILED '+fail):'ALL OK'); process.exit(fail?1:0); })();

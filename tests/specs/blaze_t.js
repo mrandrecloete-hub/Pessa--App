@@ -5,7 +5,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await require('./biz_boot.js')(p,{demo:true});
  const T=JSON.parse(fs.readFileSync(path.join(__dirname,'..','..','tools','blaze_training','tools.json'),'utf8'));
- ck('40 read only tools are listed (29 for every business, 5 salon, 6 lodge), including the 8 original ones', T.length===40 && T.filter(t=>!t.biz).length===29 && T.filter(t=>t.biz==='beauty').length===5 && T.filter(t=>t.biz==='hospitality').length===6 && ['calc','shop_summary','find_product','low_stock','customers_owing','recall_memory','remember','analyze_csv'].every(n=>T.some(t=>t.name===n)));
+ ck('29 read only tools are listed, including the 8 original ones', T.length===29 && T.every(t=>!t.biz) && ['calc','shop_summary','find_product','low_stock','customers_owing','recall_memory','remember','analyze_csv'].every(n=>T.some(t=>t.name===n)));
  ck('the app and the server list the same tools', await p.evaluate(t=>JSON.stringify(window.__t.BLAZE_TOOLS)===JSON.stringify(t),T));
 
  // shop data to ask about
@@ -19,7 +19,7 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
    S.products.forEach((x,i)=>{ x.stockQty=i===0?0:(i===1?9:30); x.costPrice=x.costPrice||10; x.sellPrice=x.sellPrice||15; }); });
  const inputs={ sales_by_period:{period:'month'}, top_products:{period:'month'}, sales_by_staff:{period:'week'}, payment_methods:{period:'month'}, stock_value:{}, stock_variances:{}, out_of_stock:{}, slow_movers:{}, supplier_balances:{}, supplier_reconciliation:{supplier:'windhoek'}, reconciliation_status:{}, customer_history:{query:'shikongo'}, expenses_summary:{period:'month'}, till_status:{}, refunds_summary:{period:'week'}, vat_summary:{period:'month'}, profit_and_loss:{period:'month'}, forecast:{}, compare_periods:{kind:'week'}, unusual_days:{}, alerts_and_notes:{}, calc:{expression:'12*3+4'}, shop_summary:{period:'today'}, find_product:{query:'milk'}, low_stock:{}, customers_owing:{}, recall_memory:{query:'rent'} };
  for(const t of T){
-   if(!inputs[t.name]) continue;   // salon and lodge tools are tested below with their own data
+   if(!inputs[t.name]) continue;
    const r=await p.evaluate(async([n,i])=>{ try{ const o=await window.__t.aiToolRun(n,i); let j=null; try{ j=JSON.parse(o.text.replace(/\.\.\.$/,'')); }catch(e){} return {ok:true,len:o.text.length,json:!!j,nums:Array.isArray(o.numbers)&&o.numbers.every(x=>typeof x==='number'&&isFinite(x)),text:o.text.slice(0,160)}; }catch(e){ return {ok:false,err:String(e.message||e)}; } },[t.name,inputs[t.name]]);
    ck('tool '+t.name+' answers with small JSON and clean numbers', r.ok&&r.len<=3003&&r.json&&r.nums, r);
  }
@@ -34,40 +34,9 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('no tool is able to write: tool names are read only', T.every(t=>!/^(add|delete|remove|set|change|send|record|update)_/.test(t.name)));
  ck('a cashier cannot use the tools', await p.evaluate(()=>{ const S=window.__t.State; const u=S.users.find(x=>x.id===S.session.userId); const r=u.role, r2=S.session.role; u.role='cashier'; S.session.role='cashier'; let blocked=false; try{ window.__t.aiToolRun('stock_value',{}); }catch(e){ blocked=/owner or a manager/.test(e.message); } u.role=r; S.session.role=r2; return blocked; }));
 
- // business types: salon and lodge tools
- const shopRetail=await p.evaluate(async()=>{ const o={}; for(const n of ['appointments','occupancy']){ const r=await window.__t.aiToolRun(n,{day:'today'}); o[n]=JSON.parse(r.text).result; } return {o,list:window.__t.blazeToolsFor().length,chk:window.__t.blazeCheck('appointments',{day:'today'})}; });
- ck('a shop gets the 29 shared tools and a salon tool is refused politely', shopRetail.list===29&&/not set up as a barbershop/.test(shopRetail.o.appointments)&&/not set up as hospitality/.test(shopRetail.o.occupancy)&&shopRetail.chk==='not_for_this_business', shopRetail);
- await p.evaluate(()=>{ const S=window.__t.State, t=window.__t.todayKey(), add=(k,n)=>{ const d=new Date(k+'T12:00:00'); d.setDate(d.getDate()+n); return window.__t.todayKey(d); };
-   S.sales=[]; S.company.businessType='beauty'; const sv=S.products.slice(0,2); sv.forEach((x,i)=>{ x.isService=true; x.durationMin=i?60:30; x.sellPrice=i?200:80; x.name=i?'Box braids':'Fade'; });
-   S.users=S.users.concat([{id:'st1',name:'Tuyeni',role:'cashier',active:true,commissionPct:40,chairRent:300}]);
-   S.appointments=[{id:'a1',date:t,time:'09:00',clientName:'Selma',serviceNames:['Fade'],status:'done',stylistName:'Tuyeni'},{id:'a2',date:t,time:'23:30',clientName:'Petrus',serviceNames:['Box braids'],status:'booked',stylistName:'Tuyeni'},{id:'a3',date:t,time:'10:15',clientName:'Joseph',serviceNames:['Fade'],status:'waiting',kind:'walkin'},{id:'a4',date:add(t,1),time:'10:00',clientName:'Rauna',serviceNames:['Fade'],status:'booked'},{id:'a5',date:t,time:'11:00',clientName:'Gone',serviceNames:['Fade'],status:'cancelled'}];
-   S.sales.push({id:'sv1',createdAt:new Date().toISOString(),total:300,cost:0,stylistId:'st1',stylistName:'Tuyeni',paymentMethod:'cash',items:[{productId:sv[0].id,name:'Fade',qty:2,unitPrice:80,lineTotal:160},{productId:sv[1].id,name:'Box braids',qty:1,unitPrice:140,lineTotal:140}]}); });
- const sal=await p.evaluate(async()=>{ const run=async(n,i)=>JSON.parse((await window.__t.aiToolRun(n,i)).text); return {list:window.__t.blazeToolsFor().map(t=>t.name), ap:await run('appointments',{day:'today'}), tm:await run('appointments',{day:'tomorrow'}), q:await run('walk_in_queue',{}), se:await run('stylist_earnings',{period:'today'}), ts:await run('top_services',{period:'month'}), pr:await run('service_prices',{query:'brai'}), pr0:await run('service_prices',{}), chk:window.__t.blazeCheck('occupancy',{day:'today'})}; });
- ck('a salon is offered the salon tools and not the lodge tools', sal.list.length===34&&sal.list.includes('appointments')&&!sal.list.includes('occupancy')&&sal.chk==='not_for_this_business', sal.list.length);
- ck('appointments counts today, leaves out cancelled ones and lists who is next', sal.ap.bookings===3&&sal.ap.done===1&&sal.ap.waiting===1&&sal.ap.stillToCome===2&&sal.ap.next[0].client==='Joseph'&&!JSON.stringify(sal.ap).includes('Gone'), sal.ap);
- ck('appointments for tomorrow', sal.tm.bookings===1&&sal.tm.next[0].client==='Rauna', sal.tm);
- ck('walk in queue shows who is waiting', sal.q.waiting===1&&sal.q.clients[0].client==='Joseph', sal.q);
- ck('stylist earnings work out commission', sal.se.stylists[0].stylist==='Tuyeni'&&sal.se.stylists[0].sales===300&&sal.se.stylists[0].commissionEarned===120&&sal.se.stylists[0].jobs===1, sal.se);
- ck('top services counts how many times each sold', sal.ts.services[0].service==='Fade'&&sal.ts.services[0].timesSold===2, sal.ts);
- ck('service prices can be searched', sal.pr.services.length===1&&sal.pr.services[0].price===200&&sal.pr.services[0].minutes===60&&sal.pr0.services.length===2, sal.pr);
- await p.evaluate(()=>{ const S=window.__t.State, t=window.__t.todayKey(), add=(k,n)=>{ const d=new Date(k+'T12:00:00'); d.setDate(d.getDate()+n); return window.__t.todayKey(d); };
-   S.company.businessType='hospitality';
-   S.hosRooms=[{id:'r1',name:'Room 1',status:'clean',active:true},{id:'r2',name:'Room 2',status:'dirty',active:true},{id:'r3',name:'Chalet A',status:'clean',active:true},{id:'r4',name:'Old room',status:'clean',active:false}];
-   S.hosBookings=[{id:'b1',guestName:'Mr Müller',roomId:'r1',roomName:'Room 1',checkIn:add(t,-1),checkOut:add(t,2),status:'in',deposit:500},{id:'b2',guestName:'Mrs Smit',roomId:'r3',roomName:'Chalet A',checkIn:t,checkOut:add(t,1),status:'reserved',deposit:0},{id:'b3',guestName:'Hans',roomId:'r2',roomName:'Room 2',checkIn:add(t,5),checkOut:add(t,7),status:'reserved',deposit:200},{id:'b4',guestName:'Cancelled Guest',roomId:'r2',roomName:'Room 2',checkIn:add(t,3),checkOut:add(t,4),status:'cancelled'}];
-   S.hosTabs=[{id:'tb1',name:'Table 3',status:'open',items:[{qty:2,unitPrice:35},{qty:1,unitPrice:80}]},{id:'tb2',name:'Bar Hans',status:'open',items:[{qty:3,unitPrice:20}]},{id:'tb3',name:'Closed',status:'closed',items:[{qty:1,unitPrice:999}]}];
-   S.settings=Object.assign({},S.settings,{liquorExpiry:add(t,20),healthExpiry:''});
-   S.sales.push({id:'rm1',createdAt:new Date().toISOString(),total:1500,cost:0,paymentMethod:'card',items:[{productId:'room:r1',name:'Room 1 x 2 nights',qty:2,unitPrice:750,lineTotal:1500}]}); });
- const lod=await p.evaluate(async()=>{ const run=async(n,i)=>JSON.parse((await window.__t.aiToolRun(n,i)).text); return {list:window.__t.blazeToolsFor().map(t=>t.name), oc:await run('occupancy',{day:'today'}), ba:await run('bookings_ahead',{}), rs:await run('room_status',{}), ot:await run('open_tabs',{}), rr:await run('room_revenue',{period:'month'}), li:await run('licences_and_levy',{}), ap:await run('appointments',{day:'today'})}; });
- ck('a lodge is offered the lodge tools and not the salon tools', lod.list.length===35&&lod.list.includes('occupancy')&&!lod.list.includes('appointments')&&/not set up as a barbershop/.test(lod.ap.result), lod.list.length);
- ck('occupancy counts rooms that are in use, arrivals and departures', lod.oc.rooms===3&&lod.oc.occupied===2&&lod.oc.occupancyPercent===67&&lod.oc.arriving===1&&lod.oc.leaving===0, lod.oc);
- ck('bookings ahead lists arrivals and leaves out cancelled ones', lod.ba.next14Days===2&&lod.ba.arrivals.some(a=>a.guest==='Hans'&&a.nights===2)&&!JSON.stringify(lod.ba).includes('Cancelled Guest'), lod.ba);
- ck('room status shows occupied and dirty rooms', lod.rs.rooms===3&&lod.rs.occupied===1&&lod.rs.dirty===1, lod.rs);
- ck('open tabs adds up what is owed and ignores closed tabs', lod.ot.openTabs===2&&lod.ot.total===210&&lod.ot.biggest[0].tab==='Table 3'&&lod.ot.biggest[0].owes===150, lod.ot);
- ck('room revenue gives an estimated levy and says it is an estimate', lod.rr.roomFeesCharged===1500&&lod.rr.estimatedLevyAt2Percent===30&&/to be confirmed with the relevant legal bodies, authorities and entities of Namibia/.test(lod.rr.note), lod.rr);
- ck('licence dates show days left', lod.li.dates.length===1&&lod.li.dates[0].name==='Liquor licence'&&lod.li.dates[0].daysLeft===20, lod.li);
- const pr2=await p.evaluate(()=>{ const t=window.__t.blazePrompt(window.__t.BLAZE_SYSTEM,window.__t.blazeToolsFor(),[{role:'user',content:'hi'}]); return {occ:/"name": "occupancy"/.test(t),app:/"name": "appointments"/.test(t),biz:/"biz"/.test(t),n:(t.match(/"type": "function"/g)||[]).length}; });
- ck('the on device prompt lists lodge tools only, and never prints the internal business field', pr2.occ&&!pr2.app&&!pr2.biz&&pr2.n===35, pr2);
- await p.evaluate(()=>{ window.__t.State.company.businessType='retail'; });
+
+ const pr2=await p.evaluate(()=>{ const t=window.__t.blazePrompt(window.__t.BLAZE_SYSTEM,window.__t.blazeToolsFor(),[{role:'user',content:'hi'}]); return { n:t.split('<tools>').pop().split('</tools>')[0].trim().split('\n').length, biz:/"biz"/.test(t) }; });
+ ck('the on device prompt lists the 29 shop tools and never prints an internal business field', pr2.n===29&&!pr2.biz, pr2);
  // the chat format must be identical to the one the training data uses
  const golden=fs.readFileSync(path.join(__dirname,'..','..','tools','blaze_training','golden_prompt.txt'),'utf8');
  const mine=await p.evaluate(t=>window.__t.blazePrompt(window.__t.BLAZE_SYSTEM,t.slice(0,3),[{role:'user',content:'How much did I sell today?'},{role:'assistant',content:'',calls:[{name:'sales_by_period',arguments:{period:'today'}}]},{role:'tool',content:'{"period": "today", "salesAfterRefunds": 1250.5}'},{role:'assistant',content:'You sold N$1,250.50 today.'},{role:'user',content:'thanks'}]),T);

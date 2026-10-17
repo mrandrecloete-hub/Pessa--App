@@ -245,82 +245,7 @@ def t_remember():
     return [('remember', {'text': w})], [{'text': 'Notes are saved only when the owner asks. Tell the owner to type: remember that ... and then confirm.', 'error': True}], 'To save that note, please type in the assistant: remember that %s. Pesa will ask you to confirm, and then it is saved.' % w
 
 
-# ---------- barbershop and salon ----------
-CLIENTS = ['Selma', 'Petrus', 'Tuyeni', 'Joseph', 'Rauna', 'Elina', 'Johannes', 'Maria', 'Immanuel', 'Kaarina']
-SERVICES = ['Fade', 'Men’s haircut', 'Box braids', 'Beard trim', 'Gel nails', 'Wash and blow dry', 'Cornrows', 'Pedicure', 'Haircut and beard', 'Weave install']
-DAYS3 = {'today': ['today', 'now', 'this morning'], 'tomorrow': ['tomorrow', 'for tomorrow'], 'yesterday': ['yesterday']}
-def t_appointments():
-    d = R.choice(['today', 'today', 'tomorrow', 'yesterday']); w = R.choice(DAYS3[d])
-    q = ask(R.choice(['how many bookings %s', 'what is the diary like %s', 'appointments %s', 'who is booked %s', 'how busy are we %s', 'any no shows %s']) % w)
-    if R.random() < .15: return [('appointments', {'day': d})], [{'day': d, 'date': '2026-10-11', 'result': 'no bookings'}], 'There are no bookings %s.' % w
-    n = R.randint(2, 14); done = R.randint(0, n // 2) if d != 'tomorrow' else 0; ns = R.choice([0, 0, 1]) if d != 'tomorrow' else 0; wait = R.choice([0, 1, 2]) if d == 'today' else 0
-    nxt = [{'time': '%02d:%02d' % (R.randint(9, 17), R.choice([0, 30])), 'client': R.choice(CLIENTS), 'services': R.choice(SERVICES), 'stylist': R.choice(STAFF)} for _ in range(min(3, n - done))]
-    res = {'day': d, 'date': '2026-10-11', 'bookings': n, 'done': done, 'waiting': wait, 'noShows': ns, 'stillToCome': n - done - ns, 'next': nxt}
-    a = 'There are %d bookings %s: %d done, %d still to come and %d no shows.' % (n, w, done, res['stillToCome'], ns) + (' Next is %s at %s for %s.' % (nxt[0]['client'], nxt[0]['time'], nxt[0]['services']) if nxt else '')
-    return [('appointments', {'day': d})], [res], a
-def t_walk_in_queue():
-    q = ask(R.choice(['who is waiting', 'walk in queue', 'how many walk ins are waiting', 'who is in the chair', 'is anyone waiting for a cut']))
-    if R.random() < .3: return [('walk_in_queue', {})], [{'result': 'nobody is waiting or in the chair'}], 'Nobody is waiting and nobody is in the chair right now.'
-    cl = [{'client': R.choice(CLIENTS), 'service': R.choice(SERVICES), 'since': '%02d:%02d' % (R.randint(8, 16), R.randint(0, 59)), 'status': R.choice(['waiting', 'in the chair'])} for _ in range(R.randint(1, 4))]
-    res = {'waiting': sum(c['status'] == 'waiting' for c in cl), 'inTheChair': sum(c['status'] == 'in the chair' for c in cl), 'clients': cl}
-    return [('walk_in_queue', {})], [res], '%d walk ins are waiting and %d are in the chair. First is %s for %s.' % (res['waiting'], res['inTheChair'], cl[0]['client'], cl[0]['service'])
-def t_stylist_earnings():
-    k = R.choice(['today', 'week', 'month']); w = {'today': 'today', 'week': 'this week', 'month': 'this month'}[k]
-    q = ask(R.choice(['how much did each stylist make %s', 'stylist earnings %s', 'who made the most money %s', 'commission owed %s', 'barber sales %s']) % w)
-    rows = sorted([{'stylist': s, 'jobs': R.randint(2, 60), 'sales': amt(100, 5000), 'commissionPercent': float(R.choice([0, 30, 40, 50, 60])), 'commissionEarned': 0.0, 'weeklyChairRent': float(R.choice([0, 0, 300, 500]))} for s in R.sample(STAFF, R.randint(2, 3))], key=lambda x: -x['sales'])
-    for r in rows: r['commissionEarned'] = round(r['sales'] * r['commissionPercent'] / 100, 2)
-    res = {'period': k, 'stylists': rows, 'note': 'commission is worked out from sales charged through bookings and the walk in queue'}
-    return [('stylist_earnings', {'period': k})], [res], 'For %s, %s sold the most: %s from %d jobs' % (w, rows[0]['stylist'], N(rows[0]['sales']), rows[0]['jobs']) + ('. Their commission is %s.' % N(rows[0]['commissionEarned']) if rows[0]['commissionPercent'] else '.')
-def t_top_services():
-    k = R.choice(['week', 'month', 'year']); w = R.choice(PERIODS[k]); days = {'week': 7, 'month': 30, 'year': 365}[k]
-    q = ask(R.choice(['which service sells most %s', 'top services %s', 'what do clients book most %s', 'best selling cuts %s']) % w)
-    rows = sorted([{'service': s, 'timesSold': float(R.randint(4, 120)), 'sales': amt(200, 9000)} for s in R.sample(SERVICES, 4)], key=lambda x: -x['timesSold'])
-    return [('top_services', {'period': k})], [{'lastDays': days, 'services': rows}], 'The most sold service in the last %d days is %s, %s times for %s. Next is %s with %s.' % (days, rows[0]['service'], num(rows[0]['timesSold']), N(rows[0]['sales']), rows[1]['service'], num(rows[1]['timesSold']))
-def t_service_prices():
-    s = R.choice(SERVICES); key = s.split()[-1].lower(); named = R.random() < .7
-    q = ask(('how much is a %s' % key) if named else R.choice(['price list', 'what do we charge for services', 'list my services and prices']))
-    rows = [{'service': s, 'price': float(R.choice([40, 60, 80, 120, 250, 450])), 'minutes': R.choice([15, 30, 45, 60, 90, 240])}]
-    if not named: rows += [{'service': x, 'price': float(R.choice([40, 60, 80, 120, 250])), 'minutes': R.choice([15, 30, 45, 60])} for x in R.sample([y for y in SERVICES if y != s], 2)]
-    a = '%s costs %s and takes about %d minutes.' % (rows[0]['service'], N(rows[0]['price']), rows[0]['minutes']) if named else ' '.join('%s: %s (%d min).' % (r['service'], N(r['price']), r['minutes']) for r in rows)
-    return [('service_prices', {'query': key} if named else {})], [{'services': rows}], a
-
-# ---------- hospitality ----------
-ROOMS = ['Room 1', 'Room 2', 'Room 3', 'Room 4', 'Chalet A', 'Chalet B', 'Garden suite', 'Family room']
-GUESTS = ['Mr Müller', 'Mrs Smit', 'Tuyeni Nghidinwa', 'Hans Becker', 'Ms Dlamini', 'Dr Kandjii', 'Jonas Weber', 'Ndeshi']
-def t_occupancy():
-    d = R.choice(['today', 'today', 'tomorrow', 'yesterday']); w = R.choice(DAYS3[d])
-    q = ask(R.choice(['how full are we %s', 'occupancy %s', 'how many rooms are taken %s', 'who is arriving %s', 'who is leaving %s', 'how many guests %s']) % w)
-    rooms = R.randint(4, 24); occ = R.randint(0, rooms); res = {'day': d, 'date': '2026-10-11', 'rooms': rooms, 'occupied': occ, 'occupancyPercent': round(occ * 100 / rooms), 'arriving': R.randint(0, 5), 'leaving': R.randint(0, 5)}
-    return [('occupancy', {'day': d})], [res], '%s %d of %d rooms are occupied (%d percent). %d guests arrive and %d leave.' % (w[0].upper() + w[1:] if w != 'now' else 'Right now', occ, rooms, res['occupancyPercent'], res['arriving'], res['leaving'])
-def t_bookings_ahead():
-    q = ask(R.choice(['what bookings are coming up', 'who is arriving this week', 'upcoming bookings', 'bookings for the next two weeks', 'any reservations coming']))
-    if R.random() < .15: return [('bookings_ahead', {})], [{'result': 'no bookings arriving in the next 14 days'}], 'There are no bookings arriving in the next 14 days.'
-    ar = sorted([{'guest': R.choice(GUESTS), 'room': R.choice(ROOMS), 'checkIn': '2026-10-%02d' % R.randint(12, 25), 'nights': R.randint(1, 6), 'depositPaid': float(R.choice([0, 0, 200, 500, 1000]))} for _ in range(R.randint(1, 4))], key=lambda x: x['checkIn'])
-    return [('bookings_ahead', {})], [{'next14Days': len(ar), 'arrivals': ar}], '%d bookings arrive in the next 14 days. First is %s in %s on %s for %d nights.' % (len(ar), ar[0]['guest'], ar[0]['room'], ar[0]['checkIn'], ar[0]['nights'])
-def t_room_status():
-    q = ask(R.choice(['which rooms are dirty', 'room status', 'which rooms are free', 'which rooms need cleaning', 'what rooms are occupied']))
-    rs = [{'room': r, 'occupied': R.random() < .5, 'cleaning': R.choice(['clean', 'clean', 'dirty'])} for r in R.sample(ROOMS, R.randint(3, 6))]
-    res = {'rooms': len(rs), 'occupied': sum(r['occupied'] for r in rs), 'dirty': sum(r['cleaning'] == 'dirty' for r in rs), 'list': rs}
-    dirty = [r['room'] for r in rs if r['cleaning'] == 'dirty']
-    return [('room_status', {})], [res], '%d of %d rooms are occupied. ' % (res['occupied'], res['rooms']) + ('These rooms are dirty: %s.' % ', '.join(dirty) if dirty else 'All rooms are clean.')
-def t_open_tabs():
-    q = ask(R.choice(['open tabs', 'who has an open tab', 'what do the tabs total', 'bar tabs', 'tabs still open']))
-    if R.random() < .2: return [('open_tabs', {})], [{'result': 'no tabs are open'}], 'No tabs are open.'
-    tabs = sorted([{'tab': R.choice(['Table 3', 'Room 2', 'Bar Hans', 'Table 7', 'Chalet A', 'Mrs Smit']) + '', 'owes': amt(30, 1500)} for _ in range(R.randint(1, 4))], key=lambda x: -x['owes']); tot = round(sum(t['owes'] for t in tabs), 2)
-    return [('open_tabs', {})], [{'openTabs': len(tabs), 'total': tot, 'biggest': tabs}], '%d tabs are open, worth %s together. The biggest is %s at %s.' % (len(tabs), N(tot), tabs[0]['tab'], N(tabs[0]['owes']))
-def t_room_revenue():
-    k = R.choice(['month', 'last_month', 'year']); w = R.choice(PERIODS[k])
-    q = ask(R.choice(['room income %s', 'how much did the rooms make %s', 'tourism levy %s', 'room fees %s']) % w)
-    fees = amt(800, 90000); res = {'period': PLABEL[k] if k != 'month' else 'this month', 'roomFeesCharged': fees, 'roomCharges': R.randint(2, 120), 'estimatedLevyAt2Percent': round(fees * 0.02, 2), 'note': 'the levy is an estimate only, to be confirmed with the relevant legal bodies, authorities and entities of Namibia'}
-    return [('room_revenue', {'period': k})], [res], 'Room fees charged %s were %s. The estimated levy at 2 percent is %s, which is only an estimate, to be confirmed with the relevant legal bodies, authorities and entities of Namibia.' % (res['period'], N(fees), N(res['estimatedLevyAt2Percent']))
-def t_licences_and_levy():
-    q = ask(R.choice(['when do my licences expire', 'licence renewal dates', 'is my liquor licence still valid', 'health certificate expiry', 'any licences running out']))
-    if R.random() < .2: return [('licences_and_levy', {})], [{'result': 'no licence dates have been entered yet'}], 'No licence dates have been entered yet. You can add them under Licences and levy.'
-    lic = [{'name': 'Liquor licence', 'renewalDate': '2026-%02d-%02d' % (R.randint(10, 12), R.randint(1, 28)), 'daysLeft': R.randint(-5, 90)}, {'name': 'Health certificate', 'renewalDate': '2027-%02d-%02d' % (R.randint(1, 6), R.randint(1, 28)), 'daysLeft': R.randint(60, 250)}]
-    l0 = lic[0]
-    return [('licences_and_levy', {})], [{'dates': lic, 'note': 'check the dates and rules with the relevant authority'}], 'Your %s %s on %s (%d days %s). The health certificate renews on %s. Please check the dates and rules with the relevant authority.' % (l0['name'].lower(), 'renews' if l0['daysLeft'] >= 0 else 'expired', l0['renewalDate'], abs(l0['daysLeft']), 'left' if l0['daysLeft'] >= 0 else 'ago', lic[1]['renewalDate'])
-
-MAKERS = {m.__name__[2:]: m for m in [t_appointments, t_walk_in_queue, t_stylist_earnings, t_top_services, t_service_prices, t_occupancy, t_bookings_ahead, t_room_status, t_open_tabs, t_room_revenue, t_licences_and_levy, t_remember, t_sales_by_period, t_top_products, t_sales_by_staff, t_payment_methods, t_stock_value, t_stock_variances, t_out_of_stock, t_slow_movers, t_supplier_balances, t_supplier_reconciliation, t_reconciliation_status, t_customer_history, t_expenses_summary, t_till_status, t_refunds_summary, t_vat_summary, t_profit_and_loss, t_forecast, t_compare_periods, t_unusual_days, t_alerts_and_notes, t_find_product, t_low_stock, t_customers_owing, t_shop_summary, t_calc, t_recall_memory, t_analyze_csv]}
+MAKERS = {m.__name__[2:]: m for m in [t_remember, t_sales_by_period, t_top_products, t_sales_by_staff, t_payment_methods, t_stock_value, t_stock_variances, t_out_of_stock, t_slow_movers, t_supplier_balances, t_supplier_reconciliation, t_reconciliation_status, t_customer_history, t_expenses_summary, t_till_status, t_refunds_summary, t_vat_summary, t_profit_and_loss, t_forecast, t_compare_periods, t_unusual_days, t_alerts_and_notes, t_find_product, t_low_stock, t_customers_owing, t_shop_summary, t_calc, t_recall_memory, t_analyze_csv]}
 
 def build_one(name):
     # the makers return (calls, results, answer) but build the question as a side effect; call them through a wrapper that captures it
@@ -403,13 +328,10 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument('--per-tool', type=int, default=55); ap.add_argument('--existing'); ap.add_argument('--extra', help='your own examples file (see teach_more.example.jsonl)'); ap.add_argument('--eval-out', default=os.path.join(HERE, 'eval.jsonl')); ap.add_argument('--tokenizer'); ap.add_argument('--out', default=os.path.join(HERE, 'train.jsonl'))
     a = ap.parse_args()
     tools = json.load(open(os.path.join(HERE, 'tools.json'), encoding='utf-8'))
-    base_tools = [t for t in tools if not t.get('biz')]
-    TOOLSETS = {b: base_tools + [t for t in tools if t.get('biz') == b] for b in ('retail', 'beauty', 'hospitality')}
-    TOOLSETS['retail'] = base_tools
-    BIZ_OF = {t['name']: t.get('biz') for t in tools}
+    base_tools = list(tools)
+    TOOLSETS = {'retail': base_tools}
     def pick_set(name=None):
-        b = BIZ_OF.get(name) if name else None
-        return TOOLSETS[b] if b else TOOLSETS[R.choices(['retail', 'beauty', 'hospitality'], [.6, .2, .2])[0]]
+        return base_tools
     names = [t['name'] for t in tools]; missing = [n for n in names if n not in MAKERS]
     if missing: sys.exit('no examples written yet for tools: ' + ', '.join(missing) + '. Add a t_<name> function.')
     unknown = [n for n in MAKERS if n not in names]
@@ -472,7 +394,7 @@ def main():
     for n in names:
         for _ in range(6):
             t = build_one(n)
-            held.append({'q': t[0]['content'], 'tool': t[1]['calls'][0]['name'], 'args': t[1]['calls'][0]['arguments'], 'biz': BIZ_OF.get(n) or 'retail'})
+            held.append({'q': t[0]['content'], 'tool': t[1]['calls'][0]['name'], 'args': t[1]['calls'][0]['arguments'], 'biz': 'retail'})
     for q, ans in IDENT[:6]: held.append({'q': q, 'tool': None, 'args': None, 'biz': 'retail'})
     R = keep
     with open(a.eval_out, 'w', encoding='utf-8') as f:

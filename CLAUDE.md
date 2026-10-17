@@ -1,6 +1,6 @@
-# Pesa ("Your Mula, Your Pride")
+# Pesa ("Your Mula, Your Pride", under it "(Retail Automated System)")
 
-Vanilla HTML/CSS/JS PWA for shop management and point of sale (Namibia). The page is `index.html` (small shell and CSS); ALL app code is in `app.js` (about 2.3 MB, loaded as `app.js?v=VERSION` so the phone keeps its compiled code ready). The Afrikaans and German word lists are `lang_af.js` and `lang_de.js`, loaded only when that language is chosen. Also `sw.js`, `manifest.json`, `version.json`, `media/`, `docs/`, `tools/`, `tests/`.
+Vanilla HTML/CSS/JS PWA for retail shop management and point of sale (Namibia). Pesa is a retail app only: there are no other business types, dashboards or registration choices. The page is `index.html` (small shell and CSS); ALL app code is in `app.js` (about 2.3 MB, loaded as `app.js?v=VERSION` so the phone keeps its compiled code ready). The Afrikaans and German word lists are `lang_af.js` and `lang_de.js`, loaded only when that language is chosen. Also `sw.js`, `manifest.json`, `version.json`, `media/`, `docs/`, `tools/`, `tests/`.
 
 ## Rules
 - Improve only; do not remove working features. No dashes in app wording.
@@ -12,7 +12,8 @@ Vanilla HTML/CSS/JS PWA for shop management and point of sale (Namibia). The pag
 ## Code layout
 - Source blocks are edited in `tools/*.js` and embedded into app.js (the firewall HARDEN5 into index.html) with `python3 tools/embed_block.py NAME file.js 'anchor'`: HARDEN1 `harden_core.js` (guards, audit chain, sessions, removal approval), HARDEN2 `harden_tax.js` (VAT in cents, rate history), HARDEN3 `harden_fin.js` (refunds, numbering, till), HARDEN4 `harden_ops.js` (backups, recovery, integrity report, privacy controls, clear sales, removal sheet). Also `embed_courses.py`, `embed_intro.py`. Re-run after editing the source.
 - The Accountant page (`openAccountantSheet`, the Profit and Loss report, the register of reports in `State.settings.acctReports`, verify and copy tools) is edited in `tools/accounts_ui.js` and embedded with `node tools/embed_accounts_ui.js`. The books engine (`acctGather`, `acctBuild`, `acctView`, monthly filing and its hash chain) is separate and must not change without tests: `npm test -- acct`.
-- Business types (`State.company.businessType`: beauty, retail, hospitality) live in `tools/verticals.js` (VERT block, embed with `python3 tools/embed_block.py VERT verticals.js`). Retail is the default and the full dashboard. See `docs/BUSINESS_TYPES.md`. Spec: `vert_t`.
+- Retail only. The Barbershop and Salon and Hospitality business types were removed in 2026.10.192 (the VERT block, `tools/verticals.js` and `docs/BUSINESS_TYPES.md` are gone). Do not add new business types or dashboards.
+- Enterprise tools (product families, branch dashboard, branch stock transfers, online shop channels, shift breaks) live in `tools/enterprise.js` (ENT block, embed with `python3 tools/embed_block.py ENT enterprise.js '/*...'`). See `docs/ENTERPRISE.md`. Spec: `ent_t`.
 - Data: `Store.collection(name)`, `refs.x.doc(id).set/update/delete`, `State.*`. `Store.setGuard(dataGuard)` enforces rules in the data layer.
 - Important deletes need a manager or owner password and a reason (`withRemoval`, `askRemovalSheet`).
 

@@ -28,11 +28,6 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
   const cash=await asRole('cashier'); ck('a cashier sees no management pages', !cash.some(k=>/^hub-/.test(k)), cash);
   const mgr=await asRole('manager'); ck('a manager does not see owner only features (Branches, Pay for Pesa) but keeps their pages', mgr.includes('hub-stock') && mgr.includes('hub-tools'));
   ck('a manager never gets owner only items inside a page', await p.evaluate(()=>{ const t=window.__t, u=t.State.users.find(x=>x.id===t.State.session.userId), old=u.role; u.role='manager'; const a=t.menuHubItems('hub-team').map(i=>i.k), c=t.menuHubItems('hub-pesa').map(i=>i.k); u.role=old; return a.join()==='tab-team' && c.join()==='pesaad'; }));
-  // Barbershop/Salon and Hospitality keep their own short menu
-  await p.evaluate(()=>window.__t.vSetBizType('hospitality')); const hos=await rows();
-  ck('hospitality keeps its short menu, with only the pages that apply', hos.map(x=>x.k).includes('hub-money') && hos.map(x=>x.k).includes('hub-team') && !hos.map(x=>x.k).includes('hub-stock') && !hos.map(x=>x.k).includes('hub-tools') && hos.map(x=>x.k).includes('v-bookings'), hos.map(x=>x.k));
-  ck('hospitality page items follow the same rule', await p.evaluate(()=>window.__t.menuHubItems('hub-money').map(i=>i.k).join()==='vat,accountant'));
-  await p.evaluate(()=>window.__t.vSetBizType('retail'));
   ck('no page errors', errs.length===0, errs);
   await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
 })();

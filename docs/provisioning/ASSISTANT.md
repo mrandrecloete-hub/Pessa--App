@@ -37,7 +37,7 @@ Blaze can read the same shop facts as the other models, plus the extra read only
 
 ## Safety design
 - The key is only in server secrets. The phone sends its own access phrase, which only unlocks this function.
-- Tools are a fixed list in the server (read only phone tools, 29 for every business plus 5 for a salon or 6 for a lodge, and web search). Anything else the model asks for is refused, and the arguments of every call are checked. No tool can change shop data. The same list, in the same order, is used by the app and by Blaze's training data (`node tools/blaze_training/sync_tools.mjs`).
+- Tools are a fixed list in the server (read only phone tools, 29 shop tools, and web search). Anything else the model asks for is refused, and the arguments of every call are checked. No tool can change shop data. The same list, in the same order, is used by the app and by Blaze's training data (`node tools/blaze_training/sync_tools.mjs`).
 - Shop data, notes, files and web pages are passed to the model as untrusted data with an instruction never to follow text inside them.
 - Limits: at most 4 model calls per question, 8 phone tool calls, 3 searches, 25 second timeout per call, 70 seconds overall, and the question can be cancelled.
 - Notes are saved only after the owner confirms. They stay on the phone, per business, are shown on screen, can be edited or deleted, and expire after 180 days.

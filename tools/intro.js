@@ -189,7 +189,7 @@ var PesaIntro = (function(){
     var size = Math.round(Math.min(window.innerWidth * .54, 210));
     VEIL.style.setProperty('--pi-s2', size + 'px'); VEIL.style.setProperty('--pi-img', 'url("' + logo + '")');
     VEIL.innerHTML = '<div class="pi-water"></div><div class="pi-stage"><div class="pi-glow"></div><div class="pi-shadow"></div><div class="pi-ring"></div><div class="pi-refl"></div><div class="pi-logo"></div></div>' +
-      '<div class="pi-tag">Your Mula, Your Pride</div><div class="pi-hint">' + ((typeof tr === 'function') ? tr('Tap to skip') : 'Tap to skip') + '</div>';
+      '<div class="pi-tag">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><div class="pi-hint">' + ((typeof tr === 'function') ? tr('Tap to skip') : 'Tap to skip') + '</div>';
   }
   function finish(fast){
     if(done) return; done = true; clearTimeout(timer); try{ if(GL && GL.stop) GL.stop(); }catch(e){}

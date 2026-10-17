@@ -1,11 +1,10 @@
-/* ============================== ENTERPRISE TOOLS: product families, branches, transfers, sales channels, kitchen and bar, shift breaks ==============================
+/* ============================== ENTERPRISE TOOLS: product families, branches, transfers, sales channels, shift breaks ==============================
  * Built for businesses with many items, branches and staff. Everything sits on the existing records, so selling, receipts, VAT, the till and the books keep working.
  *  - Product families: each variant (colour, size and so on) is an ordinary product that carries parentId, parentName and variantAttrs.
  *  - Branch dashboard: sales, profit and stock value for every branch side by side, read only.
  *  - Stock transfers between branches: sent (leaves the first branch), then received (joins the second). State.entTransfers.
  *  - Sales channels: online orders (WooCommerce, Shopify, BigCommerce or a CSV) are recorded through the normal Charge sheet; a stock file and a stock queue
  *    keep the online shop in step. State.channelLogs. Pesa only talks to the web address the owner types in.
- *  - Kitchen and bar: tickets sent from a table tab are split by department and shown on a board. State.kitchenTickets.
  *  - Shift breaks: break start and end saved on the clock log (breaks:[{from,to}]), taken off the hours worked.
  * Wording avoids dashes on purpose. Nothing here claims approval by any authority. */
 function entList(n){ var a = State[n]; return Array.isArray(a) ? a : []; }
@@ -26,8 +25,7 @@ function openEnterpriseSheet(){
     ['families', 'Product families (colour, size and more)', 'One item with many variants, stock for each'],
     ['branchdash', 'Branch dashboard', 'Sales, profit and stock for every branch side by side'],
     ['transfers', 'Stock transfers between branches', 'Send stock, track it on the way, receive it'],
-    ['channels', 'Sales channels and online shop', 'Online orders and a stock file for WooCommerce, Shopify or BigCommerce'],
-    ['kds', 'Kitchen and bar board', 'Tickets from tables, split by kitchen and bar']
+    ['channels', 'Sales channels and online shop', 'Online orders and a stock file for WooCommerce, Shopify or BigCommerce']
   ];
   var html = '<div class="sheet-head"><h2>' + tr('Enterprise tools') + '</h2></div>' +
     '<div class="banner" style="display:block;">' + tr('For bigger operations with many items, branches and staff. Everything here works with your normal stock, sales and books.') + '</div>' +
@@ -39,7 +37,7 @@ function openEnterpriseSheet(){
 }
 function entOpen(k){
   if(k === 'families') openFamiliesSheet(); else if(k === 'branchdash') openBranchDashSheet('month'); else if(k === 'transfers') openTransfersSheet();
-  else if(k === 'channels') openChannelsSheet(); else if(k === 'kds') openKitchenBoard('');
+  else if(k === 'channels') openChannelsSheet();
 }
 
 /* ---------------- product families (matrix inventory) ---------------- */
@@ -295,53 +293,11 @@ function openChannelsSheet(){
   });
 }
 
-/* ---------------- kitchen and bar ---------------- */
-function entDeptMap(){ return (State.settings && State.settings.entDeptMap) || {}; }
-function entDeptOf(item){
-  var p = (State.products || []).find(function(x){ return x.id === item.productId; }), cat = String((p && p.category) || '').trim(), m = entDeptMap();
-  if(p && p.dept) return p.dept;
-  if(cat && m[cat]) return m[cat];
-  return /drink|beverage|\bbar\b|beer|wine|spirit|liquor|cocktail|juice|soda|coffee|tea\b|water|cooldrink/i.test(cat + ' ' + (item.name || '')) ? 'Bar' : 'Kitchen';
-}
-/* sends whatever on the tab has not gone to the kitchen or bar yet. Returns the tickets made. */
-function entSendTickets(tab){
-  var items = (tab.items || []), made = [], by = {};
-  items.forEach(function(i){ var left = (Number(i.qty) || 0) - (Number(i.sentQty) || 0); if(left <= 0) return; var d = entDeptOf(i); if(d === 'None') return; (by[d] = by[d] || []).push({ productId:i.productId, name:i.name, qty:left }); });
-  Object.keys(by).forEach(function(d){ made.push(entSave('kitchenTickets', null, { tabId:tab.id, table:tab.name, dept:d, items:by[d], status:'new', createdAt:entNow(), by:entWho() })); });
-  if(made.length){ items.forEach(function(i){ i.sentQty = Number(i.qty) || 0; }); if(tab.id && entList('hosTabs').some(function(x){ return x.id === tab.id; })) entPatch('hosTabs', tab.id, { items:items }); }
-  return made;
-}
-var ENT_FLOW = ['new', 'preparing', 'ready', 'served'];
-function entTicketText(t){ return t.dept + ' | ' + t.table + ' | ' + entTimeAgo(t.createdAt) + '\n' + t.items.map(function(i){ return i.qty + ' x ' + i.name; }).join('\n'); }
-function openKitchenBoard(dept){
-  var timer = null;
-  var ov = openSheet('<div id="kbBody"></div>');
-  function paint(){
-    var body = ov.querySelector('#kbBody'); if(!body || !document.body.contains(ov)){ clearInterval(timer); return; }
-    var depts = ['Kitchen', 'Bar'], list = entList('kitchenTickets').filter(function(t){ return t.status !== 'served' && (!dept || t.dept === dept); }).sort(function(a, b){ return String(a.createdAt).localeCompare(String(b.createdAt)); });
-    body.innerHTML = '<div class="sheet-head"><h2>' + tr('Kitchen and bar board') + '</h2></div>' +
-      '<div class="actions" style="margin-bottom:8px;">' + [['', 'All']].concat(depts.map(function(d){ return [d, d]; })).map(function(d){ return '<button class="btn ' + (d[0] === dept ? 'btn-primary' : 'btn-ghost') + '" type="button" data-kd="' + d[0] + '">' + tr(d[1]) + '</button>'; }).join('') + '</div>' +
-      (list.length ? '<div class="rowlist">' + list.map(function(t){ var late = (Date.now() - new Date(t.createdAt).getTime()) > 15 * 60000 && t.status !== 'ready', next = ENT_FLOW[ENT_FLOW.indexOf(t.status) + 1];
-        return '<div class="row" data-ticket="' + esc(t.id) + '" style="' + (late ? 'border-left:4px solid #C0392B;' : '') + '"><div class="main"><div class="title">' + esc(t.table) + ' · ' + esc(t.dept) + '</div><div class="sub">' + t.items.map(function(i){ return i.qty + ' x ' + esc(i.name); }).join(', ') + '</div><div class="sub">' + esc(tr(t.status)) + ' · ' + esc(entTimeAgo(t.createdAt)) + (late ? ' · ' + tr('waiting long') : '') + '</div></div><div class="trail"><button class="btn btn-primary" type="button" data-adv="' + esc(t.id) + '">' + esc(tr(next === 'preparing' ? 'Start' : next === 'ready' ? 'Ready' : 'Served')) + '</button></div></div>'; }).join('') + '</div>' : '<div class="empty-note" style="padding:10px 2px;">' + tr('No open tickets.') + '</div>') +
-      '<div class="actions" style="flex-wrap:wrap;"><button class="btn btn-ghost" id="kbDept" type="button">' + tr('Set kitchen or bar for each category') + '</button><button class="btn btn-ghost" id="kbCopy" type="button">' + tr('Copy open tickets') + '</button><button class="btn btn-ghost" id="kbClose" type="button">' + tr('Close') + '</button></div>';
-    body.querySelector('#kbClose').addEventListener('click', function(){ clearInterval(timer); closeModal(); });
-    body.querySelector('#kbDept').addEventListener('click', function(){ clearInterval(timer); closeModal(); openDeptSheet(); });
-    body.querySelector('#kbCopy').addEventListener('click', function(){ copyTextSafe(list.map(entTicketText).join('\n\n') || tr('No open tickets.')); });
-    body.querySelectorAll('[data-kd]').forEach(function(b){ b.addEventListener('click', function(){ dept = b.getAttribute('data-kd'); paint(); }); });
-    body.querySelectorAll('[data-adv]').forEach(function(b){ b.addEventListener('click', function(){ var t = entList('kitchenTickets').find(function(x){ return x.id === b.getAttribute('data-adv'); }); if(!t) return; var n = ENT_FLOW[ENT_FLOW.indexOf(t.status) + 1]; if(!n) return; var p = { status:n }; p[n + 'At'] = entNow(); entPatch('kitchenTickets', t.id, p); paint(); }); });
-  }
-  paint(); timer = setInterval(paint, 15000);
-}
-function copyTextSafe(text){ try{ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){ toast(tr('Copied')); }, function(){ toast(tr('Could not copy')); }); return; } }catch(e){} toast(tr('Copy is not available here')); }
-function openDeptSheet(){
-  var cats = {}; (State.products || []).forEach(function(p){ var c = String(p.category || '').trim(); if(c) cats[c] = 1; });
-  var names = Object.keys(cats).sort(), m = entDeptMap();
-  var html = '<div class="sheet-head"><h2>' + tr('Kitchen or bar for each category') + '</h2></div><div class="banner" style="display:block;">' + tr('Drinks go to the Bar and everything else to the Kitchen unless you say otherwise. Choose None for items that need no ticket, such as retail goods.') + '</div>' +
-    (names.length ? names.map(function(c, i){ var cur = m[c] || (/drink|beverage|\bbar\b|beer|wine|spirit|liquor|cocktail|juice|soda|coffee|tea\b|water|cooldrink/i.test(c) ? 'Bar' : 'Kitchen'); return '<div class="field"><label>' + esc(c) + '</label><select data-dc="' + i + '">' + ['Kitchen', 'Bar', 'None'].map(function(d){ return '<option' + (d === cur ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select></div>'; }).join('') : '<div class="empty-note">' + tr('Your products have no categories yet.') + '</div>') +
-    '<div class="actions"><button class="btn btn-primary" id="dpSave" type="button">' + tr('Save') + '</button><button class="btn btn-ghost" id="dpBack" type="button">' + tr('Back') + '</button></div>';
-  var ov = openSheet(html);
-  ov.querySelector('#dpBack').addEventListener('click', function(){ closeModal(); openKitchenBoard(''); });
-  ov.querySelector('#dpSave').addEventListener('click', function(){ var out = {}; ov.querySelectorAll('[data-dc]').forEach(function(s){ out[names[+s.getAttribute('data-dc')]] = s.value; }); btSave({ entDeptMap:out }); toast(tr('Saved')); closeModal(); openKitchenBoard(''); });
+/* an online order recorded through the Charge sheet: the sale carries the order number and platform, and the log entry is closed once the sale is saved */
+function entSaleMeta(){
+  var ch = (State.cart || []).find(function(i){ return i.channelLogId; });
+  if(!ch) return null;
+  return { extra:{ channelOrderId:ch.channelOrderId, channel:ch.channel }, after:function(sale){ entPatch('channelLogs', ch.channelLogId, { status:'recorded', recordedAt:entNow(), receiptNo:sale.receiptNo || '' }); } };
 }
 
 /* ---------------- shift breaks ---------------- */

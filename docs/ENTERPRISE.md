@@ -11,13 +11,13 @@ A proposed Supabase migration and React component (matrix inventory, shifts, e-c
 | `products.parent_id`, `variant_attributes` | `parentId`, `parentName`, `variantAttrs` on ordinary products |
 | `staff_shifts` (clock in, out, break) | the existing `clockLogs` collection, now with `breaks:[{from,to}]` |
 | `ecommerce_sync_logs` | `channelLogs` collection (orders and stock lines, each with a status) |
-| `hospitality_tables` (active cart per table) | the existing `hosTabs` (tabs and tables), plus `kitchenTickets` |
+| `hospitality_tables` (active cart per table) | not built: Pesa is retail only |
 
 ## What Pesa already had
 
-Sell, till and cash up, point of sale terminal, branches (records belong to a branch), purchase orders, suppliers and supplier reconciliation, stock take and variances, wastage, batches and expiry, barcodes and labels, loyalty, quotes and recurring invoices, VAT in cents with rate history, an accountant page with filed monthly packs, payroll and payslips, attendance with clock in and out, tips, roles (owner, manager, cashier, stock clerk), refunds and voids with manager approval, audit trail, backups and recovery, offline use with sync, and the three business types (retail, barbershop and salon, hospitality with rooms, bookings and tabs).
+Sell, till and cash up, point of sale terminal, branches (records belong to a branch), purchase orders, suppliers and supplier reconciliation, stock take and variances, wastage, batches and expiry, barcodes and labels, loyalty, quotes and recurring invoices, VAT in cents with rate history, an accountant page with filed monthly packs, payroll and payslips, attendance with clock in and out, tips, roles (owner, manager, cashier, stock clerk), refunds and voids with manager approval, audit trail, backups and recovery, and offline use with sync.
 
-## Added in 2026.10.182
+## Added in 2026.10.182 (the kitchen and bar tickets and the hospitality parts were removed again in 2026.10.192, because Pesa is retail only)
 
 | Need | Where | Notes |
 |---|---|---|
@@ -25,7 +25,6 @@ Sell, till and cash up, point of sale terminal, branches (records belong to a br
 | Branch dashboard | Enterprise tools | Sales, profit, number of sales and stock at cost for every branch side by side, today, this month or this year, with a CSV download |
 | Stock transfers between branches | Enterprise tools | Send (stock leaves the first branch at once), then Received (it joins the second branch). Stock in transit is not counted in either branch. Stock moves are recorded for both steps |
 | Online shop and sales channels | Enterprise tools, Sales channels | WooCommerce, Shopify, BigCommerce or CSV orders are read, matched to products by barcode (used as the SKU) or exact name, and recorded through the normal Charge sheet so receipts, VAT, the till and the books apply. The same online order cannot be recorded twice. A stock file (CSV) and a stock queue keep the online shop in step |
-| Kitchen and bar tickets | Tab form, Send to kitchen and bar. Menu, Kitchen and bar board (hospitality) | New items on a tab become one kitchen ticket and one bar ticket, each sent once. The board shows new, preparing, ready and served with a timer. Which category goes to the kitchen or the bar can be set |
 | Breaks on shifts | My shift card | Start and end a break. Break time is taken off the hours worked, so it also lowers hourly pay runs. Clocking out ends an open break |
 
 ## What is not built yet
@@ -33,8 +32,7 @@ Sell, till and cash up, point of sale terminal, branches (records belong to a br
 Be clear with a customer about these before they buy for a large operation.
 
 - **Live connection to an online shop.** Pesa does not log in to WooCommerce, Shopify or BigCommerce and does not receive their webhooks, because the app has no server of its own. Orders are pasted or loaded as JSON or CSV. Stock updates are sent only to a web address (https) that the owner types in, for example their own small service or an automation tool, and are kept in a queue when it cannot be reached. A built in connector needs a server component (see `supabase/functions`).
-- **Kitchen printers and a separate kitchen screen.** The board runs on any device signed in to the business. Tickets can be copied as text. Network receipt or kitchen printers are not supported.
-- **Table map and split bills.** Tabs are listed, not drawn on a floor plan. Splitting one tab between payers is not built.
+- **Split bills.** Splitting one sale between payers is not built.
 - **Recipes and ingredient stock (bill of materials), modifiers.**
 - **Approval chains** such as purchase orders above a limit needing the owner. Refunds and removals already need a manager or owner password.
 - **Price lists** (wholesale and retail prices for different customers) and **layby**.
