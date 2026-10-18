@@ -14230,7 +14230,7 @@ function devCreditHtml(size){
     '<div>'+esc(DEV_CREDIT_LINE)+'<br>'+esc(copyrightLine())+'</div></div>';
 }
 function copyrightLine(){
-  return 'Copyright ' + new Date().getFullYear() + ' Pesa Representative Team. All rights reserved. This application and its source code are protected by copyright law. Unauthorized copying, distribution, or modification without express written permission is prohibited.';
+  return 'Copyright ' + new Date().getFullYear() + ' Pesa Representative Team. All rights reserved. This application and its source code are protected by copyright law. Unauthorized copying, distribution, or modification without express written permission is prohibited. Intellectual property in Namibia is governed mainly by the Industrial Property Act, 2012 (Act No. 1 of 2012) and the Copyright and Neighbouring Rights Protection Act, 1994 (Act No. 6 of 1994). How these laws apply to Pesa is to be confirmed with the relevant legal bodies, authorities and entities of Namibia.';
 }
 function settingsAboutFooterHtml(){
   return '<div class="section-title">'+tr('About')+'</div>' +
@@ -20199,7 +20199,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.192';
+var APP_VERSION = '2026.10.193';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20509,6 +20509,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.193', items:[
+    'About Pesa: the copyright message now names the Namibian laws that govern intellectual property, the Industrial Property Act, 2012 (Act No. 1 of 2012) and the Copyright and Neighbouring Rights Protection Act, 1994 (Act No. 6 of 1994), and says how they apply to Pesa is to be confirmed with the relevant legal bodies, authorities and entities of Namibia'
+  ] },
   { v:'2026.10.192', items:[
     'Pesa is now a retail app only. Sign up no longer asks for a type of business, and the Barbershop and Salon and Hospitality dashboards, pages and menus are gone, together with the kitchen and bar tickets. Every business opens the retail dashboard. Businesses made earlier as a salon or lodge now simply open as retail, and their sales, stock and customers are all still there',
     'Under the Your Mula, Your Pride slogan Pesa now shows (Retail Automated System), on the splash, the sign in and sign up pages, the top bar, the menu and the dashboard',
