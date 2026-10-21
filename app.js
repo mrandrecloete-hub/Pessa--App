@@ -20199,7 +20199,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.193';
+var APP_VERSION = '2026.10.194';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20509,6 +20509,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.194', items:[
+    'Fix: opening the Pesa website from a phone or computer that already has Pesa installed no longer shows "This browser is too old for Pesa". The website now loads on its own and Pesa itself is unchanged'
+  ] },
   { v:'2026.10.193', items:[
     'About Pesa: the copyright message now names the Namibian laws that govern intellectual property, the Industrial Property Act, 2012 (Act No. 1 of 2012) and the Copyright and Neighbouring Rights Protection Act, 1994 (Act No. 6 of 1994), and says how they apply to Pesa is to be confirmed with the relevant legal bodies, authorities and entities of Namibia'
   ] },

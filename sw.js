@@ -5,8 +5,8 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-shell-v226';
-var APPJS = './app.js?v=2026.10.193';
+var CACHE = 'pesa-shell-v227';
+var APPJS = './app.js?v=2026.10.194';
 var SHELL = ['./index.html', APPJS, './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './icon-512-maskable.png', './jspdf.umd.min.js', './lang_af.js', './lang_de.js',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
@@ -68,6 +68,9 @@ function isNetworkFirst(url){
 self.addEventListener('fetch', function(evt){
   if(evt.request.method !== 'GET') return;
   var url = evt.request.url;
+  // The sales website lives in /site/ under the same address. It is never part of the app shell, so the page, its pictures and links
+  // go straight to the network. (Without this the saved app page was shown in its place and failed to start.)
+  if(/\/site\//.test(url)) return;
   // Video files are streamed by the browser itself (range requests), never kept by the shell cache.
   if(/\.(mp4|webm)(\?|$)/i.test(url)) return;
   // the tiny version note is always read straight from the network (never from the saved copy)
