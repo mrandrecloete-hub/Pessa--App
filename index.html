@@ -1806,7 +1806,7 @@
   try{ seen = sessionStorage.getItem('pesa_intro_seen') === '1' || localStorage.getItem('pesa_intro_day') === new Date().toDateString(); }catch(e){}
   if(!force && (off || seen || navigator.webdriver === true)){ window.__introSkip = 1; return; }
   var v = document.createElement('div'); v.id = 'introVeil'; v.setAttribute('aria-hidden', 'true');
-  v.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;overflow:hidden;background:radial-gradient(circle at 50% 45%,#0e4a3c 0%,#0a3329 38%,#05211a 75%,#020f0b 100%)';
+  v.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;overflow:hidden;background:#020605';
   if(document.body) document.body.insertBefore(v, document.body.firstChild); else document.documentElement.appendChild(v);   // the script can run before <body> exists
   document.documentElement.classList.add('intro-on');
   setTimeout(function(){ if(!window.__introStarted){ try{ v.parentNode.removeChild(v); }catch(e){} document.documentElement.classList.remove('intro-on'); } }, 6000);
@@ -1935,4 +1935,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.194"></script>
+<script src="app.js?v=2026.10.195"></script>
