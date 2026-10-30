@@ -16,9 +16,13 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
  ck('an open sheet or form is never interrupted', (await key())===null && loads===0 && await p.isVisible('#tsheet'));
  // 3. sheet closed and idle: updates by itself, once
  await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(600); await p.evaluate(()=>{ window.__t.State.cart=[]; });
+ await p.waitForTimeout(16000);
+ ck('someone who is signed in is never reloaded, even when idle: the Update now bar stays', (await key())===null && loads===0 && await p.isVisible('#pesaUpdBar'));
+ // 4. nobody signed in: the update applies by itself, once
  const nav=p.waitForEvent('load',{timeout:25000}).catch(()=>null);
+ await p.evaluate(()=>{ window.__t.State.session=null; });
  await nav;
- ck('when nothing is open and the person has paused it updates by itself', (await key())==='1' && loads>=1);
+ ck('when nobody is signed in the update applies by itself', (await key())==='1' && loads>=1);
  await p.waitForSelector('.hero-card,#rcCompanyName,#loginForm,body',{timeout:8000}); const before=loads; await p.waitForTimeout(4000);
  ck('it does not keep reloading for the same version', loads===before);
  ck('no page errors', errs.length===0, errs);

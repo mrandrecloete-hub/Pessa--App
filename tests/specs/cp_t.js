@@ -29,13 +29,12 @@ const { chromium } = require('playwright');
   { const ctx = await b.newContext({serviceWorkers:'block'}); const p = await ctx.newPage();
     await p.addInitScript(()=>{ Object.defineProperty(navigator,'deviceMemory',{value:1,configurable:true}); });
     await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
-    console.log('lite auto on weak pc:', await p.evaluate(()=>document.documentElement.className));
+    console.log('simple look on:', await p.evaluate(()=>document.documentElement.className));
     await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
     await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
     await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
-    await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#perfLite'); console.log('checkbox reflects auto:', await p.isChecked('#perfLite'));
-    await p.uncheck('#perfLite'); console.log('after untick class:', JSON.stringify(await p.evaluate(()=>document.documentElement.className)), 'stored', await p.evaluate(()=>localStorage.getItem('pesa_lite')));
-    await p.check('#perfLite'); console.log('after tick:', await p.evaluate(()=>document.documentElement.className));
+    const liteCls=await p.evaluate(()=>document.documentElement.className); if(!/\blite\b/.test(liteCls)) throw new Error('FAIL the simple look is not always on: '+liteCls); console.log('simple look always on:', JSON.stringify(liteCls), 'switch removed:', (await p.$('#perfLite'))===null);
+    await p.evaluate(()=>document.getElementById('settingsBtn').click()); await p.waitForSelector('#acctCompat');
     await p.click('#acctCompat'); await p.waitForTimeout(300); await p.screenshot({path:'compat_sheet.png'});
     console.log('compat text has Look and speed:', /Look and speed/.test(await p.innerText('.sheet')));
     await ctx.close(); }
