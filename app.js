@@ -499,8 +499,8 @@ var Persist = (function(){
     var dsnap = {}, ksnap = {}; dk.forEach(function(k){ dsnap[k] = dirty[k]; }); kk.forEach(function(k){ ksnap[k] = kvDirty[k]; });
     flushing = true;
     try{
-      for(var i=0; i<dk.length || (i===0 && kk.length); i+=8000){
-        var part = dk.slice(i, i+8000);
+      for(var i=0; i<dk.length || (i===0 && kk.length); i+=1500){
+        var part = dk.slice(i, i+1500);
         var tx = db.transaction(['docs','kv'], 'readwrite'), ds = tx.objectStore('docs'), ks = tx.objectStore('kv');
         part.forEach(function(k){
           var p = k.indexOf(SEP), cp = k.slice(0, p), id = k.slice(p+1);
@@ -1215,10 +1215,37 @@ function initRefs(){
   refs.calEvents = Store.collection('calEvents');
 }
 
+// Products are kept A to Z by name. With tens of thousands of products a full sort on every save froze the screen,
+// so the last order is reused: only new or renamed products are sorted and merged in (one pass over the list).
+var _prodOrder = { ids:null, names:null };
+function sortProductDocs(docs){
+  var coll = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator() : null;
+  function cmp(a, b){ return coll ? coll.compare(a.name||'', b.name||'') : (a.name||'').localeCompare(b.name||''); }
+  var fresh = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }), out;
+  var po = _prodOrder;
+  if(po.ids && po.ids.length > 200 && fresh.length > 200){
+    var byId = new Map(); fresh.forEach(function(p){ byId.set(p.id, p); });
+    var kept = [], used = new Set();
+    for(var i = 0; i < po.ids.length; i++){
+      var p = byId.get(po.ids[i]);
+      if(p && (p.name||'') === po.names[i]){ kept.push(p); used.add(p.id); }
+    }
+    var rest = fresh.filter(function(p){ return !used.has(p.id); }).sort(cmp);
+    if(!rest.length) out = kept;
+    else {
+      out = []; var a = 0, b = 0;
+      while(a < kept.length && b < rest.length) out.push(cmp(rest[b], kept[a]) < 0 ? rest[b++] : kept[a++]);
+      while(a < kept.length) out.push(kept[a++]);
+      while(b < rest.length) out.push(rest[b++]);
+    }
+  } else out = fresh.sort(cmp);
+  _prodOrder = { ids:out.map(function(p){ return p.id; }), names:out.map(function(p){ return p.name||''; }) };
+  return out;
+}
+
 function subscribeAll(){
   refs.products.onSnapshot(function(docs){
-    var coll = (typeof Intl !== 'undefined' && Intl.Collator) ? new Intl.Collator() : null;
-    State.products = docs.map(function(d){ return Object.assign({id:d.id}, d.data); }).sort(function(a,b){ return coll ? coll.compare(a.name||'', b.name||'') : (a.name||'').localeCompare(b.name||''); });
+    State.products = sortProductDocs(docs);
     if(MockStock.items.length) State.products = State.products.concat(MockStock.items);
     _stockTotalsCache = null;
     State.ready.products = true;
@@ -2555,7 +2582,14 @@ function btSalesBetween(fromKey, toKey){
 function btExpensesBetween(fromKey, toKey){
   return State.expenses.filter(function(x){ var k = todayKey(new Date(x.createdAt)); return k >= fromKey && k <= toKey; });
 }
-function btCsvCell(v){ var s = String(v==null?'':v); return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+// A text cell that starts with = + - @ (or a tab or carriage return) is read by Excel and other spreadsheet programs as a formula,
+// and security tools warn about such files. A leading apostrophe keeps it as plain text. Real numbers are left as they are.
+function csvGuard(v){
+  var t = String(v == null ? '' : v);
+  if(typeof v === 'number' || /^[-+]?\d+([.,]\d+)?$/.test(t)) return t;
+  return /^[=+\-@\t\r]/.test(t) ? "'" + t : t;
+}
+function btCsvCell(v){ var s = csvGuard(v); return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 function btSaveCsv(filename, rows){
   var csv = rows.map(function(r){ return r.map(btCsvCell).join(','); }).join('\r\n');
   return saveBlobFile(filename, new Blob([csv], {type:'text/csv;charset=utf-8'}));
@@ -8317,10 +8351,27 @@ function deptGroups(list){
 var _deptMemo = { src:null, len:-1, groups:null };
 function deptGroupsFor(list){   // the full stock list is grouped once per change, not on every redraw
   if(list === State.products){
-    if(_deptMemo.src !== list || _deptMemo.len !== list.length || _deptMemo.sig !== deptSig(list)){ _deptMemo = { src:list, len:list.length, sig:deptSig(list), groups:deptGroups(list) }; }
+    if(_deptMemo.src === list && _deptMemo.len === list.length && _deptMemo.sig === deptSig(list)) return _deptMemo.groups;
+    // names and departments are the same as last time (only stock or prices changed): keep the order, swap in the fresh products
+    var h = deptHash(list);
+    if(_deptMemo.hash === h && _deptMemo.len === list.length && _deptMemo.groups){
+      var byId = new Map(); list.forEach(function(p){ byId.set(p.id, p); });
+      var same = _deptMemo.groups.map(function(g){ return { key:g.key, label:g.label, explicit:g.explicit, items:g.items.map(function(p){ return byId.get(p.id) || p; }) }; });
+      _deptMemo = { src:list, len:list.length, sig:deptSig(list), hash:h, groups:same };
+      return same;
+    }
+    _deptMemo = { src:list, len:list.length, sig:deptSig(list), hash:h, groups:deptGroups(list) };
     return _deptMemo.groups;
   }
   return deptGroups(list);
+}
+function deptHash(list){   // one cheap pass over every id, name and category
+  var h = 5381;
+  for(var i = 0; i < list.length; i++){
+    var p = list[i], t = p.id + '\u0001' + (p.name||'') + '\u0001' + (p.category||'');
+    for(var j = 0; j < t.length; j++) h = ((h << 5) + h + t.charCodeAt(j)) | 0;
+  }
+  return h;
 }
 function deptSig(list){ var s = 0, n = Math.min(list.length, 50); for(var i = 0; i < n; i++){ var p = list[i]; s = (s * 31 + String(p.name||'').length * 7 + String(p.category||'').length) | 0; } var l = list[list.length - 1]; return s + '|' + (l ? String(l.name||'') + String(l.category||'') : ''); }
 
@@ -10729,7 +10780,7 @@ function xpCsv(blocks){
   var lines = rows.map(function(r){
     var width = r.length;
     return r.map(function(c){
-      var v = c.n !== undefined ? (c.dec || c.money ? c.n.toFixed(2) : String(c.n)) : String(c.v == null ? '' : c.v);
+      var v = c.n !== undefined ? (c.dec || c.money ? c.n.toFixed(2) : String(c.n)) : csvGuard(c.v);
       return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
     }).join(',');
   });
@@ -13223,7 +13274,7 @@ async function printReportRecord(rec){
 }
 function reportCsv(rec){
   var f = rec.figures || {};
-  function q(v){ v = String(v == null ? '' : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+  function q(v){ v = csvGuard(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
   var rows = [];
   function add(){ rows.push(Array.prototype.map.call(arguments, q).join(',')); }
   function m(n){ return (Math.round((Number(n)||0)*100)/100).toFixed(2); }
@@ -19955,7 +20006,7 @@ function openStockTakeSheet(id){
   paintSum(); paintList();
   ov.querySelector('#tkSearch').addEventListener('input', debounce(function(){ TK.search = ov.querySelector('#tkSearch').value; TK.limit = 40; paintList(); }, 220));
   ov.querySelector('#tkSheetBtn').addEventListener('click', function(){
-    var q = function(v){ v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    var q = function(v){ v = csvGuard(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
     var out = ['Barcode,Name,System quantity,Counted quantity'];
     State.products.forEach(function(p){ out.push([q(p.barcode||''), q(p.name), q(p.stockQty||0), q(TK.counts[p.id]!==undefined?TK.counts[p.id]:'')].join(',')); });
     if(browserDownload('pesa-count-sheet.csv', new Blob([out.join('\r\n')], {type:'text/csv'}))) toast('Count sheet downloaded ('+State.products.length.toLocaleString()+' products)');
@@ -20036,7 +20087,7 @@ function openStockTakeResultSheet(take){
     '<div class="actions"><button class="btn btn-ghost btn-block" id="trCsv" type="button">Download all variances (CSV)</button></div>';
   var ov = openSheet(html);
   ov.querySelector('#trCsv').addEventListener('click', function(){
-    var q = function(v){ v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+    var q = function(v){ v = csvGuard(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
     var out = ['Product,System quantity,Counted,Difference,Cost price,Selling price,Variance at cost,Variance cash value'];
     lines.forEach(function(l){ out.push([q(l.name), l.system, l.counted, l.diff, l.cost, l.sell, l.vc, l.vr].join(',')); });
     if(browserDownload('pesa-stock-variances-'+(take.postedAt||'').slice(0,10)+'.csv', new Blob([out.join('\r\n')], {type:'text/csv'}))) toast('Variance report downloaded');
@@ -20063,7 +20114,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.199';
+var APP_VERSION = '2026.10.200';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20372,6 +20423,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.200', items:[
+    'Much faster with tens of thousands of products (for example 50,000): saving or changing a product no longer sorts the whole list again, the Stock screen no longer regroups every product after each change, and uploads save in smaller steps so the screen keeps responding',
+    'Safer spreadsheet downloads: a name or note that starts with = + - or @ is now saved as plain text in CSV files, so Excel and security tools no longer treat it as a formula and warn about the file'
+  ] },
   { v:'2026.10.199', items:[
     'The safe copy alerts are gone from the dashboard and the alert centre. Backup advice and tools now live only in Settings, under Automatic backups and Backup and recovery'
   ] },
@@ -24841,7 +24896,7 @@ function entWho(){ return State.session ? State.session.name : ''; }
 function entTimeAgo(iso){ var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 1 ? tr('just now') : m < 60 ? m + ' ' + tr('min') : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; }
 function entNeedManager(){ if(isManagerOrOwner()) return false; toast(tr('That page is for owners and managers.')); return true; }
 function entFileDownload(name, text, type){ try{ var b = new Blob([text], { type:type || 'text/csv;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 800); }catch(e){ toast(tr('Could not save the file here')); } }
-function entCsvCell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function entCsvCell(v){ v = csvGuard(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
 
 /* ---------------- the hub ---------------- */
 function openEnterpriseSheet(){

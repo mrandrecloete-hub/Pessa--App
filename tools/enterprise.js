@@ -16,7 +16,7 @@ function entWho(){ return State.session ? State.session.name : ''; }
 function entTimeAgo(iso){ var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000)); return m < 1 ? tr('just now') : m < 60 ? m + ' ' + tr('min') : Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + 'm'; }
 function entNeedManager(){ if(isManagerOrOwner()) return false; toast(tr('That page is for owners and managers.')); return true; }
 function entFileDownload(name, text, type){ try{ var b = new Blob([text], { type:type || 'text/csv;charset=utf-8' }), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 800); }catch(e){ toast(tr('Could not save the file here')); } }
-function entCsvCell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function entCsvCell(v){ v = csvGuard(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
 
 /* ---------------- the hub ---------------- */
 function openEnterpriseSheet(){
