@@ -1152,6 +1152,7 @@ function renderSelectToolbar(tab){
   var list = selListFor(tab);
   var html = '<div class="selecttoolbar">' +
     '<button class="btn btn-ghost" id="selectModeBtn" data-tab="'+tab+'">'+(s.active?tr('Cancel'):ICONS.check.replace(/width="24" height="24"/,'width="15" height="15"')+' '+tr('Select'))+'</button>' +
+    (s.active && list.length>0 ? '<button class="btn btn-primary" id="selectAllBarBtn" data-tab="'+tab+'">'+(list.every(function(x){ return s.ids[x.id]; })?tr('Deselect all'):tr('Select all'))+'</button>' : '') +
     '<div class="spacer"></div>' +
     (!s.active && list.length>0 ? '<button class="btn btn-ghost" id="deleteAllBtn" data-tab="'+tab+'" style="color:var(--danger);">'+tr('Delete all')+'</button>' : '') +
   '</div>';
@@ -1166,11 +1167,9 @@ function renderSelectBar(tab){
   if(!s.active) return '';
   var list = selListFor(tab);
   var count = selCount(tab);
-  var allSelected = list.length>0 && list.every(function(x){ return s.ids[x.id]; });
   return '<div class="selectbar"><div class="selectbar-inner">' +
     '<span class="cnt">'+count+' '+tr('selected')+'</span>' +
     '<div class="spacer"></div>' +
-    '<button class="btn btn-ghost" id="selectAllBarBtn" data-tab="'+tab+'">'+(allSelected?tr('Deselect all'):tr('Select all'))+'</button>' +
     '<button class="btn btn-danger" id="selectDeleteBarBtn" data-tab="'+tab+'" '+(count===0?'disabled':'')+'>'+tr('Delete')+'</button>' +
   '</div></div>';
 }
@@ -18401,7 +18400,7 @@ var LESSONS = [
       tip:'Do a stock count regularly. Whatever is different from Pesa’s number is either a mistake or a loss.' },
     { title:'Deleting several products', text:'To clear out products in one go, use Select.',
       where:'Stock → Select',
-      steps:['Tap Select. Every row gets a tick box.','Tap the rows you want, or tap Select all.','Tap the red Delete at the bottom and confirm.','Delete all removes every product, so it asks you first.'],
+      steps:['Tap Select. Every row gets a tick box.','Tap Select all at the top, or tap the rows you want.','Tap the red Delete at the bottom and confirm.','Delete all removes every product, so it asks you first.'],
       tip:'This cannot be undone, so be sure. You can always export a backup first.' }
   ]},
   { id:'credit', title:'Customers and credit', icon:'people', who:'manager', slides:[
@@ -20138,7 +20137,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.201';
+var APP_VERSION = '2026.10.202';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20447,6 +20446,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.202', items:[
+    'Select all (and Deselect all) is now at the top of the Stock page, next to Cancel, as soon as you tap Select'
+  ] },
   { v:'2026.10.201', items:[
     'PDF downloads no longer carry the automatic open action that some antivirus programs wrongly report as a virus',
     'Safer spreadsheet downloads: a name or note that starts with = + - or @ is now saved as plain text in CSV files, so Excel and security tools no longer treat it as a formula and warn about the file'
