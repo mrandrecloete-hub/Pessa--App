@@ -16,14 +16,9 @@ let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') 
   const seenFlag = await p.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k => /^pesa_welcome_/.test(k)) || 'x') || 'null'));
   ck('and it is then used up', !!seenFlag && !seenFlag.pf, seenFlag);
   if (pilot) await p.click('#prlater');
-  // first session: the backup advice shows on the dashboard and goes with one tap
+  // the backup advice no longer shows on the dashboard (it lives in Settings)
   await p.evaluate(() => { window.__t.setTab('dashboard'); }); await p.waitForTimeout(500);
-  const bank = await p.$('#bkSafeBanner');
-  ck('the backup advice shows in the first session', !!bank);
-  if (bank) { await p.click('#bkSafeBanner [data-bksafe="later"], #bkSafeBanner [data-bksafe]:not([data-bksafe="open"]):not([data-bksafe="allow"])'); await p.waitForTimeout(300); }
-  ck('it goes away when dismissed', !(await p.$('#bkSafeBanner')));
-  await p.evaluate(() => { window.__t.setTab('stock'); window.__t.setTab('dashboard'); }); await p.waitForTimeout(400);
-  ck('it does not come back later in the same session', !(await p.$('#bkSafeBanner')));
+  ck('no backup advice on the dashboard', !(await p.$('#bkSafeBanner')));
   // the pilot form stays available by choice
   ck('the pilot form can still be opened by choice', await p.evaluate(() => { try { window.__t.handleDrawerAction('pilotform'); return !!document.querySelector('#pvGo'); } catch (e) { return false; } }));
   await p.evaluate(() => window.__t.closeModal());

@@ -5723,18 +5723,8 @@ function bkOutsideSafe(){
   try{ var x = parseInt(localStorage.getItem('pesa_ext_copy_' + WS.id) || '0', 10) || 0; if(x && now - x < 14 * DAY) return { safe:true, why:'copy' }; }catch(e){}
   return { safe:false, why:'none' };
 }
-function bkBannerHtml(){
-  try{
-    if(!State.session || !isManagerOrOwner()) return '';
-    var later = 0; try{ later = parseInt(localStorage.getItem('pesa_bk_later_' + WS.id) || '0', 10) || 0; }catch(e){}
-    var dev = bkIsComputer() ? 'computer' : 'phone', out = '';
-    if(_bkSafety.folder === 'permission')
-      out = '<div class="card" id="bkSafeBanner" style="margin:10px 0;padding:14px;border:1.5px solid #D8343F;"><div style="font-weight:800;margin-bottom:4px;">' + tr('Your backup folder needs your permission') + '</div><div style="font-size:13.5px;line-height:1.5;margin-bottom:10px;">' + tr('Your browser stopped Pesa from saving copies to your backup folder. Copies are not reaching it until you allow it again.') + '</div><div class="actions" style="display:flex;gap:8px;"><button class="btn btn-primary" type="button" data-bksafe="allow">' + tr('Allow now') + '</button><button class="btn btn-ghost" type="button" data-bksafe="open">' + tr('Open backups') + '</button></div></div>';
-    else if(welcomeHas('bk') && !bkOutsideSafe().safe && !(later && Date.now() - later < 86400000))
-      out = '<div class="card" id="bkSafeBanner" style="margin:10px 0;padding:14px;border:1.5px solid #D99A1E;"><div style="font-weight:800;margin-bottom:4px;">' + tr('Your data is only on this ' + dev) + '</div><div style="font-size:13.5px;line-height:1.5;margin-bottom:10px;">' + tr('If this ' + dev + ' is lost, wiped or its browser data is cleared, your records and the automatic backups go with it. Make one copy somewhere else now.') + '</div><div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" data-bksafe="open">' + tr('Make a safe copy') + '</button><button class="btn btn-ghost" type="button" data-bksafe="later">' + tr('Remind me tomorrow') + '</button></div></div>';
-    return out;
-  }catch(e){ return ''; }
-}
+// Safe copy prompts live only in Settings (Automatic backups and Backup and recovery); nothing is shown on the dashboard
+function bkBannerHtml(){ return ''; }
 (function(){ try{
   var _dw = dashWrap; dashWrap = function(inner){ return _dw(bkBannerHtml() + inner); };
   document.addEventListener('click', function(e){
@@ -18800,13 +18790,6 @@ function smartAlerts(){
     if(t.status === 'open' && t.openedAt && smartNow() - new Date(t.openedAt).getTime() > 14*3600000)
       al.push({ id:'till-'+t.id, level:'med', title:'A till has been open for over 14 hours', body: (t.cashierName||'A cashier')+' opened it '+fmtDateTime(t.openedAt)+'. Remember to close it and count the cash.' });
   });
-  var bk = (typeof Backups !== 'undefined') ? Backups.lastAt() : 0;
-  if(!bk) al.push({ id:'nobackup', level:'med', title:'No automatic backup yet', body:'A backup is made automatically once a day while Pesa is open.', go:'backups', label:'Open backups' });
-  else if(smartNow() - bk > 3*DAY_MS) al.push({ id:'oldbackup', level:'med', title:'Your last backup is '+Math.floor((smartNow()-bk)/DAY_MS)+' days old', body:'Open Pesa once with an owner or manager login to make a fresh one.', go:'backups', label:'Open backups' });
-  try{
-    if(_bkSafety.folder === 'permission') al.push({ id:'folderperm', level:'high', title:'Your backup folder needs your permission', body:'Copies are not reaching it until you allow it again in Backups.', go:'backups', label:'Open backups' });
-    if(!bkOutsideSafe().safe) al.push({ id:'noextcopy', level:'med', title:'Your data is only on this ' + (bkIsComputer() ? 'computer' : 'phone'), body:'Choose a backup folder, turn on cloud sync or send yourself a backup, so a lost or wiped device does not lose your records.', go:'backups', label:'Open backups' });
-  }catch(e){}
   try{
     var ss = Sync.status();
     if(ss.state === 'error') al.push({ id:'syncerr', level:'med', title:'Cloud connection has a problem', body:'Changes are kept safely on this device and will send when the problem clears.' });
@@ -20080,7 +20063,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.198';
+var APP_VERSION = '2026.10.199';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20389,6 +20372,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.199', items:[
+    'The safe copy alerts are gone from the dashboard and the alert centre. Backup advice and tools now live only in Settings, under Automatic backups and Backup and recovery'
+  ] },
   { v:'2026.10.198', items:[
     'Faster Pesa: the opening animation (the smoke and logo), the reload screen animation (the emblem that breaks the word PESA), the welcome splash with its sound, and all other animations and blur effects are gone. Pesa now starts straight on the sign in or sign up page, and the simple look is always on',
     'Updates no longer reload Pesa by themselves while someone is signed in. The Update now bar stays until you tap it. When nobody is signed in the update still applies on its own',
