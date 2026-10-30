@@ -10058,10 +10058,34 @@ function newPdfDoc(Ctor, opts){
   }
   ['output','save'].forEach(function(fn){
     var orig = d[fn].bind(d);
-    d[fn] = function(){ try{ drawLetterheadFooter(d); }catch(e){} return orig.apply(d, arguments); };
+    d[fn] = function(){
+      try{ drawLetterheadFooter(d); }catch(e){}
+      var type = arguments[0];
+      // jsPDF writes an /OpenAction (open at full width) into every PDF. It is harmless, but some antivirus programs treat any
+      // PDF with an open action as suspicious. It is blanked out here, with spaces of the same length so the file stays valid.
+      if(fn === 'output' && (type === 'blob' || type === 'arraybuffer')){
+        try{
+          var buf = orig.apply(d, ['arraybuffer']);
+          pdfNoOpenAction(new Uint8Array(buf));
+          return type === 'blob' ? new Blob([buf], { type:'application/pdf' }) : buf;
+        }catch(e){}
+      }
+      return orig.apply(d, arguments);
+    };
   });
   try{ xpCapture(d); }catch(e){}
   return d;
+}
+function pdfNoOpenAction(u8){
+  var n = u8.length, sizes = [8192, 65536, n], re = /\/OpenAction\s*\[[^\]]*\]/;
+  for(var s = 0; s < sizes.length; s++){
+    var from = Math.max(0, n - sizes[s]), txt = '';
+    for(var i = from; i < n; i += 8192) txt += String.fromCharCode.apply(null, u8.subarray(i, Math.min(n, i + 8192)));
+    var m = re.exec(txt);
+    if(m){ for(var k = 0; k < m[0].length; k++) u8[from + m.index + k] = 32; return u8; }
+    if(from === 0) break;
+  }
+  return u8;
 }
 function getJsPDF(){ if(!(window.jspdf && window.jspdf.jsPDF)){ try{ window.__loadJsPdf && window.__loadJsPdf(); }catch(e){} } return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null; }
 // The PDF library loads from an external CDN via a <script> tag; on a slow
@@ -20114,7 +20138,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.200';
+var APP_VERSION = '2026.10.201';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20423,9 +20447,12 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
-  { v:'2026.10.200', items:[
-    'Much faster with tens of thousands of products (for example 50,000): saving or changing a product no longer sorts the whole list again, the Stock screen no longer regroups every product after each change, and uploads save in smaller steps so the screen keeps responding',
+  { v:'2026.10.201', items:[
+    'PDF downloads no longer carry the automatic open action that some antivirus programs wrongly report as a virus',
     'Safer spreadsheet downloads: a name or note that starts with = + - or @ is now saved as plain text in CSV files, so Excel and security tools no longer treat it as a formula and warn about the file'
+  ] },
+  { v:'2026.10.200', items:[
+    'Much faster with tens of thousands of products (for example 50,000): saving or changing a product no longer sorts the whole list again, the Stock screen no longer regroups every product after each change, and uploads save in smaller steps so the screen keeps responding'
   ] },
   { v:'2026.10.199', items:[
     'The safe copy alerts are gone from the dashboard and the alert centre. Backup advice and tools now live only in Settings, under Automatic backups and Backup and recovery'
