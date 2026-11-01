@@ -69,7 +69,8 @@ fun AppNav(prefs: UserPreferences, nav: NavHostController = rememberNavControlle
                     GalleryScreen { item -> nav.navigate("viewer?uri=${enc(item.uri)}&video=${item.isVideo}") }
                 }
                 composable(Top.STUDIO.route) {
-                    StudioScreen(onEditPhoto = { nav.navigate("editor?uri=${enc(it)}") }, onTrimVideo = { nav.navigate("trim?uri=${enc(it)}") }, onCreate = { nav.navigate("create") }, onComposite = { nav.navigate("composite") })
+                    StudioScreen(onEditPhoto = { nav.navigate("editor?uri=${enc(it)}") }, onTrimVideo = { nav.navigate("trim?uri=${enc(it)}") }, onCreate = { nav.navigate("create") }, onComposite = { nav.navigate("composite") },
+                        onRemovePerson = { nav.navigate("remove?project=") }, onPlacePerson = { nav.navigate("place?project=") })
                 }
                 composable(Top.SETTINGS.route) {
                     SettingsScreen(prefs, { nav.navigate("capabilities") }, { nav.navigate("privacy") }, { nav.navigate("about") })
