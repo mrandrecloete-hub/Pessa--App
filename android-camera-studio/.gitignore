@@ -7,3 +7,6 @@ local.properties
 *.jks
 *.keystore
 .kotlin/
+
+# The repository root ignores *.png for the web app; BlazeCam needs its icon, logo and brand images.
+!*.png
