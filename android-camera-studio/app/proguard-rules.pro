@@ -4,3 +4,9 @@
 -keep class com.google.protobuf.** { *; }
 -dontwarn com.google.mediapipe.**
 -dontwarn com.google.protobuf.**
+
+# ONNX Runtime's native code looks up its Java classes (OrtException, OnnxJavaType, OnnxTensor and
+# others) by name. If R8 renames them, the app closes the moment an AI model loads (Studio: remove or
+# place a person, segmentation, AI upscaling). Keep the whole package.
+-keep class ai.onnxruntime.** { *; }
+-dontwarn ai.onnxruntime.**
