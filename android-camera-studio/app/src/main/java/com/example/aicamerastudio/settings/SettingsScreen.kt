@@ -84,7 +84,7 @@ fun SettingsScreen(prefs: UserPreferences, onCapabilities: () -> Unit, onPrivacy
                     listOf(0, 3, 10).forEach { t -> FilterChip(prefs.defaultTimer == t, { set { it.copy(defaultTimer = t) } }, { Text(if (t == 0) "Off" else "$t s") }) }
                 }
                 val mustPlay = android.os.Build.VERSION.SDK_INT >= 33 && android.media.MediaActionSound.mustPlayShutterSound()
-                SwitchRow("Shutter sound", if (mustPlay) "Required by law in your region, so it always plays." else "Plays a click when a photo is taken.", prefs.shutterSound || mustPlay) { v -> if (!mustPlay) set { it.copy(shutterSound = v) } }
+                SwitchRow("Shutter sound", if (mustPlay) "Required by law in your region, so Android's shutter sound always plays." else "A soft shutter sound when a photo is taken. Silent when your phone is on silent or vibrate.", prefs.shutterSound || mustPlay) { v -> if (!mustPlay) set { it.copy(shutterSound = v) } }
             }
             Section("Saving") {
                 Text("Save location", style = MaterialTheme.typography.labelLarge)
