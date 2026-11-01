@@ -24,6 +24,7 @@ class MainActivity : ComponentActivity() {
                 androidx.compose.foundation.layout.Box {
                     AppNav(prefs)
                     if (showIntro) com.example.aicamerastudio.core.design.StartupReveal { showIntro = false }
+                    else com.example.aicamerastudio.core.update.UpdateDialog()
                 }
             }
         }

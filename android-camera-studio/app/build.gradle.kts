@@ -5,17 +5,22 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// Release version: passed by the GitHub release workflow (-PblazecamVersion=1.2.3); local builds use the default.
+val blazecamVersion: String = (findProperty("blazecamVersion") as String?) ?: "0.2.0"
+val blazecamVersionCode: Int = blazecamVersion.split(".").map { it.toInt() }.let { (it.getOrElse(0) { 0 } * 10000) + (it.getOrElse(1) { 0 } * 100) + it.getOrElse(2) { 0 } }
+
 android {
     namespace = "com.example.aicamerastudio"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.aicamerastudio"
+        // Permanent app ID. Never change it after release: a new ID installs as a different app.
+        applicationId = "com.blazecam.app"
         // API 29: scoped storage is the baseline, so the app needs no broad storage permission.
         minSdk = 29
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = blazecamVersionCode
+        versionName = blazecamVersion
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -29,6 +34,18 @@ android {
         }
     }
 
+    // Release signing comes only from environment variables set by the GitHub workflow from encrypted
+    // repository secrets. No key or password is stored in this project.
+    val ksFile = System.getenv("BLAZECAM_KEYSTORE_FILE")
+    signingConfigs {
+        if (ksFile != null && file(ksFile).exists()) create("release") {
+            storeFile = file(ksFile)
+            storePassword = System.getenv("BLAZECAM_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("BLAZECAM_KEY_ALIAS")
+            keyPassword = System.getenv("BLAZECAM_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -37,8 +54,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signing is intentionally not configured: no credentials are invented.
-            // Supply your own signingConfig via local, uncommitted properties before publishing.
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
     compileOptions {
@@ -46,7 +62,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     lint {
         abortOnError = true
         warningsAsErrors = false

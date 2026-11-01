@@ -107,6 +107,7 @@ fun SettingsScreen(prefs: UserPreferences, onCapabilities: () -> Unit, onPrivacy
                     }
                 }
             }
+            Section("Updates") { com.example.aicamerastudio.core.update.UpdateSettings() }
             Section("About") {
                 val ctx = LocalContext.current
                 val version = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull() ?: "?" }
@@ -175,6 +176,7 @@ val PRIVACY_SECTIONS = listOf(
     "Location" to "The app does not read your location and never writes it into files. Enhanced and edited copies keep camera details such as date, make, model and exposure, and drop location and orientation tags.",
     "Originals" to "Your original photo is kept by default. Enhancement and editing always create a new file. The original is deleted only if you turn off Keep original photos or delete it yourself.",
     "Stored app data" to "A small local database remembers which enhanced copy belongs to which original and your saved edit settings. It contains file addresses and numbers, never pictures. Backups of this data are turned off.",
+    "Updates" to "BlazeCam checks its public release list on GitHub (api.github.com) at most once a day, and when you tap Check for updates. Only the request for that list and, if you choose to update, the download are made. You can turn automatic checks off in Settings.",
     "Analytics" to "There is no analytics, tracking or advertising.",
 )
 

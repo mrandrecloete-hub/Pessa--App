@@ -33,4 +33,5 @@ class AppGraph(app: Application) {
     val media = MediaStoreRepository(app)
     val models = com.example.aicamerastudio.photo.ai.AiModels(app)
     val projectFiles = com.example.aicamerastudio.editor.history.ProjectFiles(app.filesDir)
+    val updater = com.example.aicamerastudio.core.update.Updater(app)
 }
