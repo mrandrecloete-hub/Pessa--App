@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.RenderEffect
-import android.media.MediaActionSound
 import android.net.Uri
 import android.os.Build
 import androidx.camera.core.ImageCapture
@@ -95,7 +94,7 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
     val haptic = LocalHapticFeedback.current
     val engine = remember { CameraEngine(context, graph.media) }
     val previewView = remember { PreviewView(context).apply { implementationMode = PreviewView.ImplementationMode.COMPATIBLE } }
-    val sound = remember { MediaActionSound().apply { load(MediaActionSound.SHUTTER_CLICK) } }
+    val sound = remember { ShutterSound(context) }
     DisposableEffect(Unit) { onDispose { sound.release() } }
 
     var front by rememberSaveable { mutableStateOf(false) }
@@ -258,8 +257,7 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
 
     fun shutterFeedback() {
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        val mustPlay = Build.VERSION.SDK_INT >= 33 && MediaActionSound.mustPlayShutterSound()
-        if (prefs.shutterSound || mustPlay) sound.play(MediaActionSound.SHUTTER_CLICK)
+        sound.play(prefs.shutterSound)
         flashTrigger++
     }
 

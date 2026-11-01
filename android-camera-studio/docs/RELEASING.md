@@ -27,7 +27,9 @@ No key or password is stored in this repository.
 
 ## Publishing a release
 
-Either:
+Releases are automatic: every change to BlazeCam merged into `main` (outside `docs/` and `.md` files) publishes the next patch version (0.2.0 -> 0.2.1 -> 0.2.2) with notes from the commit messages.
+
+By hand, either:
 1. GitHub > Actions > **Release BlazeCam** > Run workflow > enter the version (e.g. `0.3.0`) and what changed.
    The button appears once `.github/workflows/blazecam-release.yml` is on the default branch (`main`).
 2. Or push a tag from any branch: `git tag blazecam-v0.3.0 && git push origin blazecam-v0.3.0`.
