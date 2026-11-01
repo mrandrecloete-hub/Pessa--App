@@ -1,0 +1,43 @@
+# Feature status
+
+## BlazeCam upgrade (2026-11-01, in progress: emulator testing not finished)
+Built and unit tested, not yet verified on the emulator or a phone: BlazeCam name and stand-alone icon (crown, frame and lettering removed from the supplied artwork), black / royal blue / gold design, startup logo reveal, camera modes Night, Portrait, Photo, Video, Pro, Zoom; HDR (phone extension or 3-exposure fusion), Night (phone extension or 5-frame merge), Portrait (face finding, subject focus, background blur, 5 lighting looks, or phone bokeh extension), Pro (ISO, shutter, EV, white balance, manual focus, RAW+DNG, histogram, only where supported), photo resolution, AI toggle, gallery thumbnail, shutter / focus / mode animations, video pause and resume; 10 filters with live preview (Android 12+) and intensity in camera and editor; gallery favourites, albums, recycle bin with restore (Android 11+); settings for resolution, video quality, timer, shutter sound, watermark, save location, storage and permissions. CameraX 1.5.1. 92 unit tests pass, lint 0 errors.
+
+
+Legend: Done = implemented and compiles, logic unit tested where marked. "Not run on a device" applies to everything: no device or emulator was available.
+
+## Done
+- Camera preview, photo capture to MediaStore, video recording with audio (or without, if microphone is denied)
+- Front/back switching, pinch zoom and zoom stops limited to the reported zoom range (not labelled optical), tap to focus and meter, exposure compensation (only when supported), flash modes / torch (only if a flash exists), 3 s and 10 s timer, grid, 4:3 and 16:9
+- Video: quality choices from `getSupportedQualities`, 24/30/60 fps only if a reported range contains it (labelled as requested), stabilisation only if supported, recording timer, recorded size, remaining space estimate from the actual bitrate, error mapping on finalize
+- Permission flow with explanation, settings shortcut, re-check on resume
+- Automatic enhancement after capture (WorkManager, real progress, cancel), six profiles, strength, Quick / Balanced / Maximum, thermal and battery saver adjustment, validation with honest notes (unit tested)
+- Gallery: paging, thumbnails via `loadThumbnail`, search, filters, sort, multi select, share, delete with confirmation, details
+- Before and after: slider and side by side, pinch zoom and pan, dimensions and size of both files
+- Photo editor: 12 adjustments, rotate, flip, aspect crops, hold to compare, undo/redo/reset, save as new photo at full resolution with progress and cancel, edit settings saved per photo in Room and restored on reopen (codec unit tested)
+- Video trim: range slider over real frame thumbnails, preview playback of the selection, remove sound, Media3 Transformer export with progress and cancel, temp file cleanup, integrity check
+- Settings, Device capabilities (Camera2), Privacy, and "What works" pages
+- Structured errors that say what happened, what to do, whether the original is safe and whether retry helps (unit tested)
+
+- AI image studio (Studio > Create an image):
+  - Online: OpenAI Images API (`/v1/images/generations`, default model `gpt-image-1`, editable), user's own key encrypted with Android Keystore, consent dialog before first use, sizes 1024x1024 / 1536x1024 / 1024x1536, quality, 1 to 4 images, elapsed time shown (no fake progress), cancel disconnects the request. Request and response handling unit tested with a fake transport. **Not tested against the real API** (no key in the build environment).
+  - On device: MediaPipe Image Generator 0.10.26.1 (Stable Diffusion 1.5 weights converted by MediaPipe's script, imported by the user from a folder, about 2 GB, not bundled). Real per step progress and cancel between steps. arm64-v8a only. **Not run** (no ARM device available).
+  - Results are saved as `_gen` JPEGs with EXIF Software and ImageDescription marking them AI generated; gallery filter "AI generated".
+
+- **Ultra zoom (camera ZOOM mode)**: lens catalogue from Camera2 (focal length, sensor size, logical and separate cameras); zoom planner labels every level optical, digital or extended from real lens data and never calls digital optical; automatic binding of a separate telephoto / ultra wide camera after the user pauses; log slider, quick stops limited to reachable levels, pinch zoom; preview enlargement for extended levels (labelled); gyroscope steadiness indicator and wait-for-steady capture at 5x and beyond; focus lock, exposure lock (Camera2 interop), manual focus where the camera reports manual sensor support; 1, 3 or 5 full resolution frames captured to cache files and processed by `UltraZoomWorker` (region decoding, burst merge with blur rejection, alignment, ghost rejection, gentle correction, AI or standard upscaling, honest notes); the untouched reference frame is saved as the original and linked for before and after.
+- **AI super resolution**: Real-ESRGAN General x4v3 bundled (BSD-3-Clause), ONNX Runtime with XNNPACK when available, tiled, 2x/3x/4x, strength, blur/noise gating with a non AI fallback.
+- **AI Composite Studio** (Studio > Open Composite Studio):
+  - Remove a person: automatic people finding (MediaPipe multiclass segmentation, Apache 2.0), tap to select (MediaPipe MagicTouch, Apache 2.0), brush add / erase, refine edges (guided filter, hair aware), expand, zoom and pan while editing, mask undo/redo, preview, hold to compare, full resolution save from the untouched original, saved projects.
+  - Place a person: cut out with the same tools and a transparent preview; drag, pinch resize, twist rotate, flip, perspective, lean, opacity, layer order; distance scale guide with horizon; auto match (brightness, contrast, colour temperature, focus blur) with manual sliders; contact and cast shadows with direction, length, softness and a scene estimate; foreground occlusion by tap or brush; undo/redo with history saved in the project; full resolution export (scene capped at 16 MP).
+- Projects reopen from the Composite Studio list or from the result in the gallery (Edit removal / Edit composite).
+
+## Partial
+- Zoom on hardware: all camera behaviour is untested on a device. Whether a phone switches lenses inside its logical camera is decided by the phone.
+- Multi-frame merge is translation only (no rotation); merging is done at half resolution when the zoom region exceeds 3 MP.
+- AI super resolution input is limited to 4 MP and output to 24 MP; large inputs fall back to standard upscaling.
+- Removal quality depends on how much background is visible; large removals show artefacts (see QA_TEST_PLAN.md).
+- Light direction estimate is a rough left/right brightness comparison with a confidence value.
+
+## Not started (not shown in the app)
+AI inpainting model, automatic depth estimation, automatic ground plane / horizon detection,
+AI enhancement models (neural denoise, super resolution, segmentation, inpainting), prompt based editing of existing photos, image to image, face aware processing, Pro manual ISO/shutter/focus, histogram, focus peaking, RAW, Night and HDR multi frame, Burst, Document, Macro, Portrait blur, slow motion, timelapse, HDR/HEVC video options, automatic video enhancement, multi clip timeline, text, music, transitions, curves, HSL, vignette, grain, filters, straighten, perspective, albums, favourites, instrumentation tests.
