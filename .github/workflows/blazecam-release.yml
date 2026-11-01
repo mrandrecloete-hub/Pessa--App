@@ -159,8 +159,13 @@ jobs:
           V=${{ steps.v.outputs.version }}
           TAG="blazecam-v$V"
           { cat "$RUNNER_TEMP/body.md"; printf '\nInstall: download the APK for your phone (almost all phones: arm64-v8a). Installed BlazeCam apps offer this update themselves.\n'; } > "$RUNNER_TEMP/notes.md"
-          if gh release view "$TAG" > /dev/null 2>&1; then
-            gh release upload "$TAG" "$RUNNER_TEMP"/out/* --clobber
-          else
-            gh release create "$TAG" "$RUNNER_TEMP"/out/* --title "BlazeCam $V" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA"
-          fi
+          # Up to 3 tries: GitHub sometimes answers a short lived 403 or 5xx.
+          for try in 1 2 3; do
+            if gh release view "$TAG" > /dev/null 2>&1; then
+              gh release upload "$TAG" "$RUNNER_TEMP"/out/* --clobber && exit 0
+            else
+              gh release create "$TAG" "$RUNNER_TEMP"/out/* --title "BlazeCam $V" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA" && exit 0
+            fi
+            echo "Publish try $try failed; waiting before the next try."; sleep $((try * 20))
+          done
+          exit 1
