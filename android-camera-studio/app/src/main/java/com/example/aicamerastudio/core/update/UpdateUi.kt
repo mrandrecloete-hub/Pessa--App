@@ -14,7 +14,7 @@ import com.example.aicamerastudio.app.App
 import com.example.aicamerastudio.core.design.Tokens
 import kotlinx.coroutines.launch
 
-/** Shows an available update and its progress. Nothing is downloaded until the user taps Update. */
+/** Shows an available or downloaded update and its progress. */
 @Composable
 fun UpdateDialog() {
     val context = LocalContext.current
@@ -23,6 +23,14 @@ fun UpdateDialog() {
     val result by Updater.lastResult.collectAsState()
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    // Android 13+: ask once for notifications so a background update can say "ready" (optional).
+    val notify = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
+    fun askNotificationsOnce() {
+        val prefs = context.getSharedPreferences("updates", android.content.Context.MODE_PRIVATE)
+        if (android.os.Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("askedNotify", false)) {
+            prefs.edit().putBoolean("askedNotify", true).apply(); notify.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     LaunchedEffect(Unit) { updater.checkIfDue() }
 
     result?.let { r ->
@@ -34,7 +42,8 @@ fun UpdateDialog() {
             title = { Text("BlazeCam ${s.release.version} is available") },
             text = {
                 Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("You have ${updater.currentVersion}. Download: ${"%.1f".format(s.release.apkSize / 1e6)} MB.", style = MaterialTheme.typography.bodySmall)
+                    Text("You have ${updater.currentVersion}. Download: ${size(s.release.downloadSize)}" +
+                        (if (s.release.patchUrl != null) " (only the changes, instead of ${size(s.release.apkSize)})." else "."), style = MaterialTheme.typography.bodySmall)
                     if (s.release.notes.isNotBlank()) Text(s.release.notes, style = MaterialTheme.typography.bodyMedium)
                     if (updater.needsInstallPermission()) Text("Android will first ask you to allow BlazeCam to install updates. Turn it on, then come back and tap Update again.",
                         color = Tokens.warning, style = MaterialTheme.typography.bodySmall)
@@ -42,12 +51,30 @@ fun UpdateDialog() {
             },
             confirmButton = { TextButton({
                 if (updater.needsInstallPermission()) context.startActivity(updater.installPermissionIntent())
-                else job = scope.launch { updater.downloadAndInstall(s.release) }
+                else { askNotificationsOnce(); job = scope.launch { updater.downloadAndInstall(s.release) } }
             }) { Text("Update") } },
             dismissButton = { Row { TextButton({ updater.skip(s.release) }) { Text("Skip this version") }; TextButton({ updater.dismiss() }) { Text("Later") } } })
-        is UpdateState.Downloading -> AlertDialog(onDismissRequest = {}, title = { Text("Downloading ${s.release.version}") },
-            text = { Column { LinearProgressIndicator(progress = { s.progress }, Modifier.fillMaxWidth()); Text("${(s.progress * 100).toInt()}%") } },
-            confirmButton = { TextButton({ job?.cancel() }) { Text("Cancel") } })
+        is UpdateState.Downloading -> AlertDialog(onDismissRequest = {}, title = { Text(if (s.small) "Updating to ${s.release.version}" else "Downloading ${s.release.version}") },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                LinearProgressIndicator(progress = { s.progress }, Modifier.fillMaxWidth())
+                Text("${(s.progress * 100).toInt()}%" + if (s.small) "  ·  ${size(s.release.patchSize)} of changes" else "  ·  ${size(s.release.apkSize)}")
+            } },
+            confirmButton = { if (job != null) TextButton({ job?.cancel() }) { Text("Cancel") } })
+        is UpdateState.Ready -> AlertDialog(onDismissRequest = { updater.dismiss() },
+            title = { Text("BlazeCam ${s.release.version} is ready") },
+            text = {
+                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Already downloaded and checked. Installing takes a few seconds; BlazeCam closes and opens again.", style = MaterialTheme.typography.bodySmall)
+                    if (s.release.notes.isNotBlank()) Text(s.release.notes, style = MaterialTheme.typography.bodyMedium)
+                    if (updater.needsInstallPermission()) Text("Android will first ask you to allow BlazeCam to install updates. Turn it on, then come back and tap Install again.",
+                        color = Tokens.warning, style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = { TextButton({
+                if (updater.needsInstallPermission()) context.startActivity(updater.installPermissionIntent())
+                else { askNotificationsOnce(); job = null; scope.launch { updater.downloadAndInstall(s.release) } }
+            }) { Text("Install now") } },
+            dismissButton = { TextButton({ updater.dismiss() }) { Text("Later") } })
         UpdateState.Installing -> AlertDialog(onDismissRequest = {}, title = { Text("Installing") }, text = { Text("Checksum verified. Android is installing the update; BlazeCam will close and restart.") },
             confirmButton = {})
         else -> {}
@@ -66,8 +93,8 @@ fun UpdateSettings() {
         Text("Installed version: ${updater.currentVersion}", style = MaterialTheme.typography.bodyMedium)
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Check for updates automatically", style = MaterialTheme.typography.bodyLarge)
-                Text("Once a day, BlazeCam reads its public release list on GitHub. Nothing about you or your photos is sent. Updates install only when you tap Update.",
+                Text("Update automatically", style = MaterialTheme.typography.bodyLarge)
+                Text("BlazeCam checks its public release list on GitHub when it opens (at most once an hour) and every few hours in the background, and downloads only the changes (usually under 1 MB; a full download waits for Wi-Fi). On Android 12 and newer it then installs the update by itself while you are not using BlazeCam. The very first update after installing from a browser still asks you once. Nothing about you or your photos is sent.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Switch(auto, { auto = it; updater.autoCheck = it })
@@ -85,3 +112,5 @@ fun UpdateSettings() {
         if (!updater.canInstall) Text("This is a development build, so updates must be installed from the GitHub release page.", style = MaterialTheme.typography.bodySmall, color = Tokens.warning)
     }
 }
+
+private fun size(bytes: Long): String = if (bytes < 1_000_000) "${maxOf(1, bytes / 1000)} KB" else "%.1f MB".format(bytes / 1e6)

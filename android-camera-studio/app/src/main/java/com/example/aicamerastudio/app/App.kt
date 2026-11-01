@@ -13,6 +13,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         graph = AppGraph(this)
+        if (graph.updater.canInstall) com.example.aicamerastudio.core.update.UpdateWorker.schedule(this, graph.updater.autoCheck)
         // Remove captured burst frames older than a day (left behind if the app was force stopped mid job).
         Thread {
             val cutoff = System.currentTimeMillis() - 24L * 3600_000

@@ -126,6 +126,32 @@ jobs:
           done
           cd "$RUNNER_TEMP/out" && sha256sum BlazeCam-*.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
 
+      - name: Make small update patches from the last 3 releases
+        # Installed apps download only the changes (usually under 1 MB instead of about 70 MB).
+        # A patch that cannot be made is skipped; the app then downloads the full APK.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${{ steps.v.outputs.version }}
+          python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install -q bsdiff4
+          mkdir -p "$RUNNER_TEMP/old"
+          PREV=$(git tag --list 'blazecam-v*' --sort=-v:refname | grep -vx "blazecam-v$V" | head -3)
+          for tag in $PREV; do
+            gh release download "$tag" --dir "$RUNNER_TEMP/old" --pattern 'BlazeCam-*.apk' --clobber || echo "No APKs in $tag"
+          done
+          ls -l "$RUNNER_TEMP/old" || true
+          jobs=""
+          for old in "$RUNNER_TEMP"/old/BlazeCam-*.apk; do
+            [ -e "$old" ] || continue
+            name=$(basename "$old" .apk)              # BlazeCam-0.2.3-arm64-v8a
+            rest=${name#BlazeCam-}; from=${rest%%-*}; abi=${rest#*-}
+            new="$RUNNER_TEMP/out/BlazeCam-$V-$abi.apk"
+            [ -e "$new" ] || continue
+            jobs="$jobs$old|$new|$RUNNER_TEMP/out/BlazeCam-$from-to-$V-$abi.patch"$'\n'
+          done
+          printf '%s' "$jobs" | grep . | xargs -P 3 -I{} sh -c 'IFS="|"; set -- $(echo "{}"); "$0" tools/update/make_patch.py "$1" "$2" "$3" || rm -f "$3"' "$RUNNER_TEMP/py/bin/python" || true
+          ls -l "$RUNNER_TEMP/out"
+
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

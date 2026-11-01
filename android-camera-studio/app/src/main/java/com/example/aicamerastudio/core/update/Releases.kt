@@ -20,7 +20,13 @@ data class ReleaseInfo(
     val apkSize: Long,
     val sumsUrl: String?,
     val pageUrl: String,
-)
+    /** Small patch from the installed version to this one (same CPU type), if the release has one. */
+    val patchUrl: String? = null,
+    val patchSize: Long = 0,
+) {
+    /** What the phone will actually download: the patch when there is one, otherwise the full APK. */
+    val downloadSize: Long get() = if (patchUrl != null) patchSize else apkSize
+}
 
 object ReleaseParser {
     /** "1.2.3" or "blazecam-v1.2.3" -> [1, 2, 3]; null if not a plain version. */
@@ -59,12 +65,18 @@ object ReleaseParser {
             val list = (0 until assets.length()).map { assets.getJSONObject(it) }
             val apk = abis.firstNotNullOfOrNull { abi -> list.firstOrNull { it.optString("name").endsWith("-$abi.apk") } } ?: continue
             val sums = list.firstOrNull { it.optString("name") == UpdateSource.SUMS_FILE }
+            val abi = apk.optString("name").removePrefix("BlazeCam-$version-").removeSuffix(".apk")
+            val patch = list.firstOrNull { it.optString("name") == patchName(current, version, abi) }
             val info = ReleaseInfo(version, tag, r.optString("body").take(4000), apk.optString("name"), apk.optString("browser_download_url"),
-                apk.optLong("size"), sums?.optString("browser_download_url"), r.optString("html_url"))
+                apk.optLong("size"), sums?.optString("browser_download_url"), r.optString("html_url"),
+                patch?.optString("browser_download_url"), patch?.optLong("size") ?: 0)
             if (best == null || compare(info.version, best.version) > 0) best = info
         }
         return best
     }
+
+    /** Patch asset name, as written by the release workflow: BlazeCam-0.2.1-to-0.2.2-arm64-v8a.patch */
+    fun patchName(from: String, to: String, abi: String) = "BlazeCam-$from-to-$to-$abi.patch"
 
     /** Finds the SHA-256 for [fileName] in a sha256sum style file ("<hex>  <name>"). */
     fun checksumFor(sums: String, fileName: String): String? = sums.lineSequence().map { it.trim() }.mapNotNull { line ->

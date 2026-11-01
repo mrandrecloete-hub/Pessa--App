@@ -191,7 +191,7 @@ val PRIVACY_SECTIONS = listOf(
     "Location" to "The app does not read your location and never writes it into files. Enhanced and edited copies keep camera details such as date, make, model and exposure, and drop location and orientation tags.",
     "Originals" to "Your original photo is kept by default. Enhancement and editing always create a new file. The original is deleted only if you turn off Keep original photos or delete it yourself.",
     "Stored app data" to "A small local database remembers which enhanced copy belongs to which original and your saved edit settings. It contains file addresses and numbers, never pictures. Backups of this data are turned off.",
-    "Updates" to "BlazeCam checks its public release list on GitHub (api.github.com) at most once a day, and when you tap Check for updates. Only the request for that list and, if you choose to update, the download are made. You can turn automatic checks off in Settings.",
+    "Updates" to "BlazeCam checks its public release list on GitHub (api.github.com) when it opens (at most once an hour), every few hours in the background, and when you tap Check for updates. Only the request for that list and the update download from GitHub are made. Every update is checked against its published SHA-256 checksum, and Android only accepts it if it is signed with the same key. You can turn automatic updates off in Settings.",
     "Analytics" to "There is no analytics, tracking or advertising.",
 )
 
