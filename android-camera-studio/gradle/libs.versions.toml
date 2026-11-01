@@ -20,6 +20,7 @@ androidxTestRunner = "1.6.2"
 mediapipeImageGen = "0.10.26.1"
 orgJson = "20250517"
 documentfile = "1.0.1"
+onnxruntime = "1.31.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -62,6 +63,9 @@ mediapipe-image-generator = { module = "com.google.mediapipe:tasks-vision-image-
 org-json = { module = "org.json:json", version.ref = "orgJson" }
 
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
+
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
+onnxruntime-jvm = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -44,6 +44,12 @@ android {
     }
     testOptions { unitTests.isReturnDefaultValues = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    androidResources { noCompress += "onnx" }
+}
+
+// The Android ONNX Runtime cannot load on a desktop JVM; unit tests use the desktop build instead.
+configurations.matching { it.name.contains("UnitTest", ignoreCase = true) }.configureEach {
+    exclude(group = "com.microsoft.onnxruntime", module = "onnxruntime-android")
 }
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
@@ -79,6 +85,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.mediapipe.image.generator)
     implementation(libs.androidx.documentfile)
+    // On-device AI inference (super resolution, person segmentation, tap to select).
+    implementation(libs.onnxruntime.android)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
@@ -87,6 +95,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     // Android ships org.json; unit tests on the JVM need the real implementation.
     testImplementation(libs.org.json)
+    // Desktop ONNX Runtime, so unit tests run the real bundled models on the JVM.
+    testImplementation(libs.onnxruntime.jvm)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
