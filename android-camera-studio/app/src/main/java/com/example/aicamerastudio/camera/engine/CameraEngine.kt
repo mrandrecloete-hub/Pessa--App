@@ -23,7 +23,7 @@ import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-enum class CaptureMode { PHOTO, VIDEO }
+enum class CaptureMode { PHOTO, ZOOM, VIDEO }
 
 enum class AspectChoice(val label: String, val cameraxRatio: Int) {
     R4_3("4:3", AspectRatio.RATIO_4_3), R16_9("16:9", AspectRatio.RATIO_16_9)
@@ -31,6 +31,8 @@ enum class AspectChoice(val label: String, val cameraxRatio: Int) {
 
 data class BindConfig(
     val frontCamera: Boolean,
+    /** In zoom mode, a specific back camera id to bind (a separate telephoto or ultra wide). Null = default. */
+    val cameraId: String? = null,
     val mode: CaptureMode,
     val aspect: AspectChoice,
     val videoQuality: Quality?,
@@ -53,6 +55,10 @@ data class CameraSupport(
     val stabilisationSupported: Boolean,
     val hasFront: Boolean,
     val hasBack: Boolean,
+    /** Camera2 id of the bound camera, and of the default back camera, plus all back ids CameraX can bind. */
+    val boundCameraId: String?,
+    val defaultBackId: String?,
+    val bindableBackIds: Set<String>,
 )
 
 class CameraEngine(private val context: Context, private val media: MediaStoreRepository) {
@@ -80,8 +86,13 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
         val p = provider ?: ProcessCameraProvider.getInstance(context).await().also { provider = it }
         val hasBack = p.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)
         val hasFront = p.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)
+        val backInfos = p.availableCameraInfos.filter { it.lensFacing == CameraSelector.LENS_FACING_BACK }
+        val bindable = backInfos.mapNotNull { idOf(it) }.toSet()
+        val defaultBack = if (hasBack) runCatching { idOf(p.getCameraInfo(CameraSelector.DEFAULT_BACK_CAMERA)) }.getOrNull() else null
         val selector = when {
-            cfg.frontCamera && hasFront -> CameraSelector.DEFAULT_FRONT_CAMERA
+            cfg.mode == CaptureMode.ZOOM && cfg.cameraId != null && cfg.cameraId in bindable ->
+                CameraSelector.Builder().addCameraFilter { infos -> infos.filter { idOf(it) == cfg.cameraId } }.build()
+            cfg.frontCamera && hasFront && cfg.mode != CaptureMode.ZOOM -> CameraSelector.DEFAULT_FRONT_CAMERA
             hasBack -> CameraSelector.DEFAULT_BACK_CAMERA
             hasFront -> CameraSelector.DEFAULT_FRONT_CAMERA
             else -> throw AppException(Errors.cameraUnavailable())
@@ -89,6 +100,7 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
         stopRecording()
         unobserveZoom()
         p.unbindAll()
+        aeLock = false; manualFocusDiopters = null
 
         val info = p.getCameraInfo(selector)
         val caps = Recorder.getVideoCapabilities(info)
@@ -105,7 +117,7 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
             .also { it.surfaceProvider = view.surfaceProvider }
 
         val useCase: UseCase = when (cfg.mode) {
-            CaptureMode.PHOTO -> ImageCapture.Builder()
+            CaptureMode.PHOTO, CaptureMode.ZOOM -> ImageCapture.Builder()
                 .setResolutionSelector(resolution)
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .setFlashMode(cfg.flashMode)
@@ -141,7 +153,75 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
             evStep = ev.exposureCompensationStep.toFloat(),
             videoQualities = qualities, fpsOptions = fpsOptions, stabilisationSupported = stabSupported,
             hasFront = hasFront, hasBack = hasBack,
+            boundCameraId = idOf(cam.cameraInfo), defaultBackId = defaultBack, bindableBackIds = bindable,
         )
+    }
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    private fun idOf(info: CameraInfo): String? = runCatching { androidx.camera.camera2.interop.Camera2CameraInfo.from(info).cameraId }.getOrNull()
+
+    // ---- focus and exposure controls -------------------------------------------------------------
+
+    private var aeLock = false
+    private var manualFocusDiopters: Float? = null
+
+    @androidx.annotation.OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    private fun applyRequestOptions() {
+        val c = camera ?: return
+        val b = androidx.camera.camera2.interop.CaptureRequestOptions.Builder()
+            .setCaptureRequestOption(android.hardware.camera2.CaptureRequest.CONTROL_AE_LOCK, aeLock)
+        manualFocusDiopters?.let { d ->
+            b.setCaptureRequestOption(android.hardware.camera2.CaptureRequest.CONTROL_AF_MODE, android.hardware.camera2.CameraMetadata.CONTROL_AF_MODE_OFF)
+            b.setCaptureRequestOption(android.hardware.camera2.CaptureRequest.LENS_FOCUS_DISTANCE, d)
+        }
+        androidx.camera.camera2.interop.Camera2CameraControl.from(c.cameraControl).setCaptureRequestOptions(b.build())
+    }
+
+    /** Locks or unlocks auto exposure (the camera keeps the current exposure). */
+    fun setExposureLock(locked: Boolean) { aeLock = locked; applyRequestOptions() }
+
+    /** Manual focus distance in diopters (0 = infinity), or null for autofocus. Only on cameras that support it. */
+    fun setManualFocus(diopters: Float?) { manualFocusDiopters = diopters; applyRequestOptions() }
+
+    /** Focuses on a point and keeps that focus until [unlockFocus]. */
+    fun lockFocusAt(view: PreviewView, x: Float, y: Float) {
+        val c = camera ?: return
+        c.cameraControl.startFocusAndMetering(
+            FocusMeteringAction.Builder(view.meteringPointFactory.createPoint(x, y), FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE)
+                .disableAutoCancel().build(),
+        )
+    }
+
+    fun unlockFocus() { camera?.cameraControl?.cancelFocusAndMetering() }
+
+    /**
+     * Captures [count] full resolution JPEG frames back to back into [dir] (as files, so memory stays low).
+     * Calls [onDone] with the files and the rotation needed to make them upright.
+     */
+    fun captureFrames(count: Int, dir: java.io.File, onProgress: (Int) -> Unit, onDone: (List<java.io.File>, Int) -> Unit, onError: (Throwable) -> Unit) {
+        val ic = imageCapture ?: return onError(AppException(Errors.cameraUnavailable()))
+        try { media.requireFree(MediaStoreRepository.MIN_PHOTO_FREE * 2) } catch (t: Throwable) { return onError(t) }
+        dir.mkdirs()
+        val files = ArrayList<java.io.File>()
+        var rotation = 0
+        fun next(i: Int) {
+            if (i == count) { onDone(files, rotation); return }
+            ic.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    try {
+                        rotation = image.imageInfo.rotationDegrees
+                        val buf = image.planes[0].buffer
+                        val bytes = ByteArray(buf.remaining()); buf.get(bytes)
+                        val f = java.io.File(dir, "frame_$i.jpg"); f.writeBytes(bytes); files += f
+                    } catch (t: Throwable) { image.close(); return onError(t) }
+                    image.close()
+                    onProgress(i + 1)
+                    next(i + 1)
+                }
+                override fun onError(exception: ImageCaptureException) = onError(AppException(Errors.captureFailed(), exception))
+            })
+        }
+        next(0)
     }
 
     private fun unobserveZoom() {

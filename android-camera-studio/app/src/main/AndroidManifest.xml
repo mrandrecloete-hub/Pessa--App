@@ -14,6 +14,7 @@
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <application
+        android:largeHeap="true"
         android:name=".app.App"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"

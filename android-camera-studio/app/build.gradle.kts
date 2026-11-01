@@ -19,6 +19,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // One APK per CPU type for side loading. (An App Bundle, ./gradlew bundleRelease, splits automatically on Google Play.)
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = false
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -43,7 +53,13 @@ android {
         checkReleaseBuilds = true
     }
     testOptions { unitTests.isReturnDefaultValues = true }
-    packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        // Compress native libraries in the APK (smaller download; extracted once at install).
+        jniLibs.useLegacyPackaging = true
+        // 32 bit x86 is effectively unused by phones; x86_64 stays for emulators.
+        jniLibs.excludes += "lib/x86/**"
+    }
     androidResources { noCompress += "onnx" }
 }
 

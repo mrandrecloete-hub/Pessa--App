@@ -14,10 +14,18 @@ class App : Application() {
         super.onCreate()
         graph = AppGraph(this)
     }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Free the AI models (tens of MB) when Android asks for memory; they reload on next use.
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) graph.models.release()
+    }
 }
 
 class AppGraph(app: Application) {
     val database: AppDatabase by lazy { AppDatabase.create(app) }
     val preferences = PreferencesRepository(app)
     val media = MediaStoreRepository(app)
+    val models = com.example.aicamerastudio.photo.ai.AiModels(app)
+    val projectFiles = com.example.aicamerastudio.editor.history.ProjectFiles(app.filesDir)
 }

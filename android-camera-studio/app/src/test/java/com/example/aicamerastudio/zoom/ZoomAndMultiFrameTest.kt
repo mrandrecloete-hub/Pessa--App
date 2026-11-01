@@ -10,50 +10,53 @@ import org.junit.Test
 import java.util.Random
 
 class ZoomAndMultiFrameTest {
-    // Lens data shaped like a phone with ultra wide, main and 3x telephoto (values in mm).
-    private val ultra = LensSpec("2", 2.2f, 5.6f, 4.2f, true)
-    private val main = LensSpec("0", 6.0f, 7.4f, 5.55f, true)
-    private val tele = LensSpec("3", 9.0f, 3.7f, 2.775f, true) // 9 mm on a sensor half the size = 3x
+    // Lens data shaped like a phone with ultra wide, main and 3x telephoto inside one logical camera (values in mm).
+    private val ultra = LensSpec("2", 2.2f, 5.6f, 4.2f, false)
+    private val main = LensSpec("0", 6.0f, 7.4f, 5.55f, false)
+    private val tele = LensSpec("3", 9.0f, 3.7f, 2.775f, false) // 9 mm on a sensor half the size = 3x
 
     @Test fun lensFactorsComeFromFocalLengthAndSensorSize() {
-        val z = ZoomPlanner(listOf(ultra, main, tele), main, 0.6f, 30f)
-        val f = z.opticalFactors
-        assertEquals(3, f.size)
-        assertEquals(1f, f[1], 0.01f)
-        assertEquals(3f, f[2], 0.05f)
-        assertTrue(f[0] < 0.7f)
+        val f = ZoomPlanner(listOf(ultra, tele), main, 0.6f, 30f).opticalFactors
+        assertEquals(3, f.size); assertEquals(1f, f[1], 0.01f); assertEquals(3f, f[2], 0.05f); assertTrue(f[0] < 0.7f)
     }
 
     @Test fun opticalOnlyAtRealLensFactors() {
-        val z = ZoomPlanner(listOf(ultra, main, tele), main, 0.6f, 30f)
+        val z = ZoomPlanner(listOf(ultra, tele), main, 0.6f, 30f)
         assertEquals(ZoomKind.OPTICAL, z.plan(1f).kind)
         assertEquals(ZoomKind.OPTICAL, z.plan(3f).kind)
         assertEquals(ZoomKind.DIGITAL, z.plan(2f).kind)
-        assertEquals(ZoomKind.DIGITAL, z.plan(10f).kind)
-        assertTrue(z.plan(10f).label.contains("digital"))
-        assertFalse(z.plan(10f).label.contains("optical"))
-        assertEquals("3", z.plan(10f).lens?.cameraId)
-        assertNotNull(z.plan(10f).warning)
+        val ten = z.plan(10f)
+        assertEquals(ZoomKind.DIGITAL, ten.kind); assertTrue(ten.label.contains("digital")); assertFalse(ten.label.contains("optical"))
+        assertEquals("3", ten.route.lens?.cameraId); assertNotNull(ten.warning)
+        assertNull(ten.route.bindCameraId) // logical camera switches lenses by itself
     }
 
     @Test fun beyondCameraMaximumIsExtendedNotOptical() {
-        val z = ZoomPlanner(listOf(main), main, 1f, 8f)
+        val z = ZoomPlanner(emptyList(), main, 1f, 8f)
         val p = z.plan(20f)
-        assertEquals(ZoomKind.EXTENDED, p.kind)
-        assertEquals(8f, p.cameraRatio, 0.001f)
-        assertEquals(2.5f, p.extendedCrop, 0.001f)
-        assertTrue(p.warning!!.contains("generated"))
-        assertEquals(32f, z.maxZoom, 0.001f) // 4x extended limit
+        assertEquals(ZoomKind.EXTENDED, p.kind); assertEquals(8f, p.route.cameraRatio, 0.001f); assertEquals(2.5f, p.route.extendedCrop, 0.001f)
+        assertTrue(p.warning!!.contains("generated")); assertEquals(32f, z.maxZoom, 0.001f)
+    }
+
+    @Test fun separateTelephotoCameraIsBoundWhenItHelps() {
+        val sepTele = tele.copy(cameraId = "5", separateCamera = true)
+        val sepUltra = ultra.copy(cameraId = "6", separateCamera = true)
+        val z = ZoomPlanner(listOf(sepTele, sepUltra), main, 1f, 8f, separateMaxRatio = mapOf("5" to 10f))
+        assertEquals("5", z.route(3f).bindCameraId); assertEquals(1f, z.route(3f).cameraRatio, 0.02f)
+        assertEquals(ZoomKind.OPTICAL, z.plan(3f).kind)
+        val r = z.route(20f); assertEquals("5", r.bindCameraId); assertEquals(20f / 3f, r.cameraRatio, 0.1f); assertEquals(1f, r.extendedCrop, 0.01f)
+        assertNull(z.route(2f).bindCameraId) // main camera digital zoom is better than nothing below 3x
+        assertEquals("6", z.route(0.6f).bindCameraId)
+        // Unknown maximum of an unbound camera is treated as 1x: the rest becomes an honest extended crop.
+        val unknown = ZoomPlanner(listOf(sepTele), main, 1f, 2f)
+        assertEquals(ZoomKind.EXTENDED, unknown.plan(6f).kind)
     }
 
     @Test fun quickStopsOnlyIncludeReachableLevels() {
-        val small = ZoomPlanner(listOf(main), main, 1f, 8f)
-        assertEquals(listOf(1f, 3f, 10f, 20f, 30f), small.quickStops())
-        val big = ZoomPlanner(listOf(ultra, main, tele), main, 0.6f, 30f)
-        val stops = big.quickStops()
+        assertEquals(listOf(1f, 3f, 10f, 20f, 30f), ZoomPlanner(emptyList(), main, 1f, 8f).quickStops())
+        val stops = ZoomPlanner(listOf(ultra, tele), main, 0.6f, 30f).quickStops()
         assertTrue(stops.first() < 0.7f); assertTrue(100f in stops); assertTrue(stops.any { kotlin.math.abs(it - 3f) < 0.1f })
-        val noTele = ZoomPlanner(emptyList(), null, 1f, 4f)
-        assertEquals(listOf(1f, 3f, 10f), noTele.quickStops())
+        assertEquals(listOf(1f, 3f, 10f), ZoomPlanner(emptyList(), null, 1f, 4f).quickStops())
     }
 
     @Test fun sliderMappingIsLogarithmicAndInvertible() {

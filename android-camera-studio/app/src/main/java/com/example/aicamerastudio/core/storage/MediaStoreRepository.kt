@@ -27,8 +27,10 @@ data class MediaItem(
     val height: Int,
 ) {
     val isEnhanced: Boolean get() = name.contains("_enh")
-    val isEdited: Boolean get() = name.contains("_edit") || name.contains("_trim")
+    val isEdited: Boolean get() = name.contains("_edit") || name.contains("_trim") || name.contains("_composite") || name.contains("_removed")
     val isGenerated: Boolean get() = name.contains("_gen")
+    val isZoom: Boolean get() = name.contains("_zoom")
+    val isComposite: Boolean get() = name.contains("_composite") || name.contains("_removed")
 }
 
 /** All app media lives in MediaStore folders owned by this app, so no storage permission is needed. */

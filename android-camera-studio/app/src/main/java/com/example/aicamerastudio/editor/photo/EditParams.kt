@@ -112,6 +112,14 @@ class EditHistory<T>(initial: T, private val limit: Int = 100) {
     fun undo(): T { if (canUndo) index--; return current }
     fun redo(): T { if (canRedo) index++; return current }
     fun reset(initial: T) { states.clear(); states.add(initial); index = 0 }
+
+    /** All states and the current position, for saving a project. */
+    fun snapshot(): Pair<List<T>, Int> = states.toList() to index
+
+    fun restore(list: List<T>, position: Int) {
+        if (list.isEmpty()) return
+        states.clear(); states.addAll(list.takeLast(limit)); index = position.coerceIn(0, states.lastIndex)
+    }
 }
 
 /** Crop and rotation geometry shared by the preview and the full resolution export. */

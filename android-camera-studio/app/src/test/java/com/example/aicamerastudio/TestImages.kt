@@ -13,7 +13,23 @@ object TestImages {
         return Img(px, 512, 512)
     }
 
+    /** NASA rocket launch photo from scikit-image (public domain), raw RGB. */
+    fun rocket(): Img {
+        val f = java.io.File("src/test/resources").listFiles()!!.first { it.name.startsWith("rocket_") }
+        val (w, h) = Regex("rocket_(\\d+)x(\\d+)").find(f.name)!!.destructured.let { it.component1().toInt() to it.component2().toInt() }
+        val b = f.readBytes()
+        return Img(IntArray(w * h) { i -> (0xFF shl 24) or ((b[3 * i].toInt() and 255) shl 16) or ((b[3 * i + 1].toInt() and 255) shl 8) or (b[3 * i + 2].toInt() and 255) }, w, h)
+    }
+
     fun model(name: String): ByteArray = File("src/main/assets/$name").readBytes()
+
+    /** Writes raw RGB to build/test-output so results can be inspected visually. */
+    fun save(name: String, px: IntArray, w: Int, h: Int) {
+        val d = java.io.File("build/test-output").apply { mkdirs() }
+        val b = ByteArray(w * h * 3)
+        for (i in 0 until w * h) { b[3 * i] = (px[i] shr 16).toByte(); b[3 * i + 1] = (px[i] shr 8).toByte(); b[3 * i + 2] = px[i].toByte() }
+        java.io.File(d, "${name}_${w}x$h.rgb").writeBytes(b)
+    }
 
     fun psnr(a: IntArray, b: IntArray, mask: BooleanArray? = null): Double {
         var s = 0.0; var n = 0

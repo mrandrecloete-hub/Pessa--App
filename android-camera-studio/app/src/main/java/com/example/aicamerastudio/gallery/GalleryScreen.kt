@@ -82,7 +82,7 @@ fun GalleryScreen(onOpen: (MediaItem) -> Unit) {
         (query.isBlank() || it.name.contains(query, true)) && when (filter) {
             Filter.ALL -> true; Filter.PHOTOS -> !it.isVideo; Filter.VIDEOS -> it.isVideo
             Filter.ENHANCED -> it.isEnhanced; Filter.EDITED -> it.isEdited; Filter.GENERATED -> it.isGenerated
-            Filter.ORIGINALS -> !it.isEnhanced && !it.isEdited && !it.isGenerated
+            Filter.ORIGINALS -> !it.isEnhanced && !it.isEdited && !it.isGenerated && !it.isZoom
         }
     }.let { l -> when (sort) { SortBy.NEWEST -> l; SortBy.OLDEST -> l.reversed(); SortBy.LARGEST -> l.sortedByDescending { it.sizeBytes } } }
 
@@ -124,7 +124,9 @@ fun GalleryScreen(onOpen: (MediaItem) -> Unit) {
                     ).semantics { contentDescription = (if (item.isVideo) "Video " else "Photo ") + item.name + if (sel) ", selected" else "" }) {
                         Thumb(item.uri, Modifier.fillMaxSize())
                         if (item.isVideo) Icon(Icons.Default.PlayCircle, null, Modifier.align(Alignment.Center), tint = Color.White)
-                        if (item.isGenerated) Text("AI generated", Modifier.align(Alignment.BottomStart).background(Color(0xAA000000)).padding(horizontal = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        if (item.isZoom) Text("Ultra zoom", Modifier.align(Alignment.BottomStart).background(Color(0xAA000000)).padding(horizontal = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        else if (item.isComposite) Text("Composite", Modifier.align(Alignment.BottomStart).background(Color(0xAA000000)).padding(horizontal = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
+                        else if (item.isGenerated) Text("AI generated", Modifier.align(Alignment.BottomStart).background(Color(0xAA000000)).padding(horizontal = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         else if (item.isEnhanced) Text("Enhanced", Modifier.align(Alignment.BottomStart).background(Color(0xAA000000)).padding(horizontal = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         else if (item.isEdited) Text("Edited", Modifier.align(Alignment.BottomStart).background(Color(0xAA000000)).padding(horizontal = 4.dp), color = Color.White, style = MaterialTheme.typography.labelSmall)
                         if (sel) Icon(Icons.Default.CheckCircle, "Selected", Modifier.align(Alignment.TopEnd).padding(4.dp), tint = Tokens.accent)

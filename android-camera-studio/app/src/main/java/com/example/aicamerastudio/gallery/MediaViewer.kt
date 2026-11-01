@@ -44,6 +44,7 @@ import kotlinx.coroutines.withContext
 fun MediaViewer(
     uri: Uri, isVideo: Boolean, prefs: UserPreferences,
     onBack: () -> Unit, onEdit: (Uri) -> Unit, onTrim: (Uri) -> Unit,
+    onEditProject: (String, String) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     val graph = (context.applicationContext as App).graph
@@ -113,6 +114,8 @@ fun MediaViewer(
                 if (!isVideo) {
                     if (originalUri != null && processedUri != null) AppButton(if (comparing) "Close compare" else "Before and after", { comparing = !comparing }, primary = false)
                     if (pair == null) AppButton("Enhance", { EnhanceWorker.enqueue(context, uri, prefs) }, enabled = !running)
+                    if (pair?.kind == "removed") pair?.editSessionId?.let { pid -> AppButton("Edit removal", { onEditProject("remove", pid) }, primary = false) }
+                    if (pair?.kind == "composite") pair?.editSessionId?.let { pid -> AppButton("Edit composite", { onEditProject("place", pid) }, primary = false) }
                     AppButton("Edit", { onEdit(uri) }, primary = false)
                 } else AppButton("Trim", { onTrim(uri) })
             }

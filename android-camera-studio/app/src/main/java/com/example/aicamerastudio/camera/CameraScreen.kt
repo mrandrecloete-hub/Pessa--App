@@ -22,6 +22,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -90,13 +93,41 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
     var recBytes by remember { mutableLongStateOf(0L) }
     var notice by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(front, mode, aspect, quality, fps, stabilise) {
+    // ---- ultra zoom state ----
+    var zoomBindId by remember { mutableStateOf<String?>(null) }
+    var zoomTarget by rememberSaveable { mutableFloatStateOf(1f) }
+    var catalog by remember { mutableStateOf<com.example.aicamerastudio.camera.capabilities.LensCatalog.Catalog?>(null) }
+    var mainRange by remember { mutableStateOf(1f to 1f) }
+    val separateMax = remember { mutableStateMapOf<String, Float>() }
+    var zoomFrames by rememberSaveable { mutableIntStateOf(3) }
+    var zoomAi by rememberSaveable { mutableStateOf(true) }
+    var aeLocked by remember { mutableStateOf(false) }
+    var afLocked by remember { mutableStateOf(false) }
+    var manualFocus by remember { mutableStateOf<Float?>(null) }
+    var zoomJob by remember { mutableStateOf<String?>(null) }
+    var framesTaken by remember { mutableIntStateOf(-1) }
+    val planner = remember(catalog, mainRange, separateMax.toMap()) {
+        com.example.aicamerastudio.camera.zoom.ZoomPlanner(catalog?.others.orEmpty(), catalog?.main, mainRange.first, mainRange.second, separateMax.toMap())
+    }
+    val plan = planner.plan(zoomTarget)
+    val steadiness = com.example.aicamerastudio.camera.stabilisation.rememberSteadiness(plan.requested, mode == CaptureMode.ZOOM)
+    val steadyNow by rememberUpdatedState(steadiness)
+
+    LaunchedEffect(front, mode, aspect, quality, fps, stabilise, zoomBindId) {
         try {
-            val s = engine.bind(owner, previewView, BindConfig(front, mode, aspect, quality, fps, stabilise, flash)) { zoom = it }
+            val s = engine.bind(owner, previewView, BindConfig(front, zoomBindId.takeIf { mode == CaptureMode.ZOOM }, mode, aspect, quality, fps, stabilise, flash)) { zoom = it }
             support = s
             evIndex = 0
             error = null
             if (!s.hasFront && front) front = false
+            aeLocked = false; afLocked = false; manualFocus = null
+            if (mode == CaptureMode.ZOOM) {
+                if (s.boundCameraId == s.defaultBackId) mainRange = s.minZoom to s.maxZoom
+                else s.boundCameraId?.let { separateMax[it] = s.maxZoom }
+                if (catalog == null && s.defaultBackId != null) catalog = withContext(Dispatchers.IO) {
+                    runCatching { com.example.aicamerastudio.camera.capabilities.LensCatalog.read(context, s.defaultBackId, s.bindableBackIds) }.getOrNull()
+                }
+            }
         } catch (t: Throwable) {
             if (t is kotlinx.coroutines.CancellationException) throw t
             error = ErrorMapper.map(t)
@@ -107,7 +138,29 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
         owner.lifecycle.addObserver(obs)
         onDispose { owner.lifecycle.removeObserver(obs); engine.unbind() }
     }
-    LaunchedEffect(focusPoint) { if (focusPoint != null) { delay(1200); focusPoint = null } }
+    LaunchedEffect(focusPoint) { if (focusPoint != null && !afLocked) { delay(1200); focusPoint = null } }
+
+    // Zoom routing: adjust the bound camera at once; switch to another lens only after the user pauses.
+    LaunchedEffect(zoomTarget, planner, mode, support) {
+        if (mode != CaptureMode.ZOOM || support == null) return@LaunchedEffect
+        val r = planner.route(zoomTarget)
+        if (r.bindCameraId == zoomBindId) engine.setZoomRatio(r.cameraRatio)
+        else { delay(350); zoomBindId = r.bindCameraId }
+    }
+    val zoomRoute = planner.route(zoomTarget)
+    val previewScale = if (mode == CaptureMode.ZOOM && zoomRoute.bindCameraId == zoomBindId) zoomRoute.extendedCrop else 1f
+
+    val zoomWork by (zoomJob?.let { WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(it) } ?: kotlinx.coroutines.flow.flowOf(emptyList()))
+        .collectAsState(initial = emptyList())
+    val zoomStatus = zoomWork.firstOrNull()?.let { w ->
+        when (w.state) {
+            WorkInfo.State.RUNNING -> "Processing ultra zoom ${(w.progress.getFloat(com.example.aicamerastudio.camera.zoom.UltraZoomWorker.K_PROGRESS, 0f) * 100).toInt()}%"
+            WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> "Ultra zoom queued"
+            WorkInfo.State.SUCCEEDED -> "Ultra zoom photo saved with its original. " + w.outputData.getString(com.example.aicamerastudio.camera.zoom.UltraZoomWorker.K_NOTES).orEmpty()
+            WorkInfo.State.FAILED -> w.outputData.getString(com.example.aicamerastudio.camera.zoom.UltraZoomWorker.K_ERROR) ?: "Ultra zoom processing failed."
+            WorkInfo.State.CANCELLED -> "Ultra zoom processing cancelled."
+        }
+    }
 
     // Show real progress of the background enhancement of the last photo.
     val work = lastSaved?.let { WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(EnhanceWorker.uniqueName(it)) }
@@ -138,6 +191,30 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
                 busy = false; lastSaved = uri; notice = "Photo saved"
                 if (prefs.autoEnhance) EnhanceWorker.enqueue(context, uri, prefs)
             }, onError = { busy = false; error = ErrorMapper.map(it).takeIf { e -> e.code != com.example.aicamerastudio.core.errors.ErrorCode.UNKNOWN } ?: Errors.captureFailed() })
+        }
+    }
+
+    fun captureZoom() {
+        if (busy) return
+        scope.launch {
+            if (timer > 0) { for (t in timer downTo 1) { countdown = t; delay(1000) }; countdown = 0 }
+            // At long zoom, wait up to 2 seconds for the phone to be steady (if a gyroscope exists).
+            if (plan.requested >= 5f && steadyNow != null) {
+                val until = System.currentTimeMillis() + 2000
+                while (steadyNow != com.example.aicamerastudio.camera.stabilisation.Steadiness.STEADY && System.currentTimeMillis() < until) delay(40)
+            }
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            busy = true; framesTaken = 0
+            val name = "zoom_${System.currentTimeMillis()}"
+            val dir = java.io.File(context.cacheDir, "zoom/$name")
+            val route = planner.route(zoomTarget)
+            val crop = if (route.bindCameraId == zoomBindId) route.extendedCrop else 1f
+            val label = plan.label
+            engine.captureFrames(zoomFrames, dir, onProgress = { framesTaken = it }, onDone = { files, rot ->
+                busy = false; framesTaken = -1
+                com.example.aicamerastudio.camera.zoom.UltraZoomWorker.enqueue(context, name, dir, files.size, crop, rot, zoomAi, prefs.strength, label)
+                zoomJob = name
+            }, onError = { busy = false; framesTaken = -1; dir.deleteRecursively(); error = ErrorMapper.map(it) })
         }
     }
 
@@ -172,14 +249,24 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
     }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize().pointerInput(support) {
-            detectTapGestures(onTap = { o -> focusPoint = o; engine.focusAt(previewView, o.x, o.y) })
-        }.pointerInput(support) {
-            detectTransformGestures { _, _, z, _ ->
-                val s = support ?: return@detectTransformGestures
-                if (z != 1f) { val n = (zoom * z).coerceIn(s.minZoom, s.maxZoom); zoom = n; engine.setZoomRatio(n) }
-            }
-        })
+        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize()
+            .graphicsLayer(scaleX = previewScale, scaleY = previewScale)
+            .pointerInput(support, mode, afLocked) {
+                detectTapGestures(onTap = { o ->
+                    focusPoint = o
+                    if (mode == CaptureMode.ZOOM && afLocked) engine.lockFocusAt(previewView, o.x, o.y) else engine.focusAt(previewView, o.x, o.y)
+                })
+            }.pointerInput(support, mode) {
+                detectTransformGestures { _, _, z, _ ->
+                    val s = support ?: return@detectTransformGestures
+                    if (z == 1f) return@detectTransformGestures
+                    if (mode == CaptureMode.ZOOM) zoomTarget = (zoomTarget * z).coerceIn(planner.minZoom, planner.maxZoom)
+                    else { val n = (zoom * z).coerceIn(s.minZoom, s.maxZoom); zoom = n; engine.setZoomRatio(n) }
+                }
+            })
+        if (previewScale > 1.01f) Text("Preview enlarged ${"%.1f".format(previewScale)}×. Final detail comes from processing after capture.",
+            Modifier.align(Alignment.Center).padding(top = 120.dp).clip(RoundedCornerShape(12.dp)).background(Tokens.glass).padding(8.dp),
+            color = Color.White, style = MaterialTheme.typography.labelSmall)
 
         if (prefs.grid) Canvas(Modifier.fillMaxSize()) {
             val c = Color.White.copy(alpha = 0.35f)
@@ -198,11 +285,11 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                 val s = support
                 if (s?.hasFlash == true) {
-                    if (mode == CaptureMode.PHOTO) GlassButton(Icons.Default.FlashOn, flashLabel(flash), flash != ImageCapture.FLASH_MODE_OFF) {
+                    if (mode != CaptureMode.VIDEO) GlassButton(Icons.Default.FlashOn, flashLabel(flash), flash != ImageCapture.FLASH_MODE_OFF) {
                         flash = FLASH_MODES[(FLASH_MODES.indexOf(flash) + 1) % FLASH_MODES.size]; engine.setFlashMode(flash)
                     } else GlassButton(Icons.Default.FlashlightOn, if (torch) "Torch on" else "Torch off", torch) { torch = !torch; engine.setTorch(torch) }
                 }
-                if (mode == CaptureMode.PHOTO) {
+                if (mode != CaptureMode.VIDEO) {
                     GlassButton(Icons.Default.Timer, if (timer == 0) "Timer off" else "Timer ${timer} seconds", timer != 0, label = if (timer == 0) null else "${timer}s") {
                         timer = when (timer) { 0 -> 3; 3 -> 10; else -> 0 }
                     }
@@ -238,14 +325,23 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Tokens.spaceSm),
         ) {
             error?.let { ErrorCard(it, Modifier.padding(horizontal = Tokens.spaceMd), onRetry = { error = null; front = front }, onDismiss = { error = null }) }
-            (enhanceStatus ?: notice)?.let { Text(it, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Tokens.glassStrong).padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium) }
+            if (framesTaken >= 0) Text("Capturing frame ${framesTaken + 1} of $zoomFrames. Hold still.", color = Color.White,
+                modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Tokens.glassStrong).padding(horizontal = 12.dp, vertical = 6.dp))
+            (zoomStatus.takeIf { mode == CaptureMode.ZOOM } ?: enhanceStatus ?: notice)?.let { Text(it, color = Color.White, modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Tokens.glassStrong).padding(horizontal = 12.dp, vertical = 6.dp), style = MaterialTheme.typography.labelMedium) }
             if (recording) {
                 val bps = if (recSeconds >= 3) recBytes / recSeconds else 0L
                 val left = if (bps > 0) (graph.media.freeBytes() / bps / 60) else null
                 Text("● %02d:%02d  %.1f MB".format(recSeconds / 60, recSeconds % 60, recBytes / 1_048_576f) + (left?.let { "  ~$it min of space left" } ?: ""),
                     color = Color.White, modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(Tokens.danger.copy(alpha = 0.85f)).padding(horizontal = 12.dp, vertical = 6.dp))
             }
-            support?.takeIf { it.maxZoom > it.minZoom + 0.01f }?.let { s ->
+            if (mode == CaptureMode.ZOOM && support != null) com.example.aicamerastudio.camera.zoom.ZoomPanel(
+                plan, planner, steadiness, { zoomTarget = it.coerceIn(planner.minZoom, planner.maxZoom) },
+                zoomFrames, { zoomFrames = it }, zoomAi, { zoomAi = it },
+                aeLocked, { aeLocked = it; engine.setExposureLock(it) },
+                afLocked, { on -> afLocked = on; if (on) engine.lockFocusAt(previewView, previewView.width / 2f, previewView.height / 2f) else engine.unlockFocus() },
+                catalog?.manualFocus == true && zoomBindId == null, catalog?.minFocusDiopters ?: 0f, manualFocus, { manualFocus = it; engine.setManualFocus(it) },
+            )
+            support?.takeIf { mode != CaptureMode.ZOOM && it.maxZoom > it.minZoom + 0.01f }?.let { s ->
                 val stops = buildList {
                     if (s.minZoom < 0.95f) add(s.minZoom)
                     add(1f)
@@ -273,14 +369,14 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: androidx.compose.ui.unit.Dp
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = Tokens.spaceLg), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Spacer(Modifier.size(Tokens.minTouch))
-                val shutterDesc = when { mode == CaptureMode.PHOTO -> "Take photo"; recording -> "Stop recording"; else -> "Start recording" }
+                val shutterDesc = when { mode == CaptureMode.PHOTO -> "Take photo"; mode == CaptureMode.ZOOM -> "Take ultra zoom photo"; recording -> "Stop recording"; else -> "Start recording" }
                 Box(
                     Modifier.size(Tokens.shutterSize).clip(CircleShape).border(4.dp, Color.White, CircleShape).padding(7.dp).clip(CircleShape)
                         .background(if (mode == CaptureMode.VIDEO) Tokens.danger else Color.White)
-                        .clickable(enabled = !busy && support != null) { if (mode == CaptureMode.PHOTO) capture() else toggleRecording() }
+                        .clickable(enabled = !busy && support != null) { when (mode) { CaptureMode.PHOTO -> capture(); CaptureMode.ZOOM -> captureZoom(); CaptureMode.VIDEO -> toggleRecording() } }
                         .semantics { contentDescription = shutterDesc },
                 )
-                IconButton(onClick = { front = !front }, enabled = !recording && (support?.let { it.hasFront && it.hasBack } ?: false),
+                IconButton(onClick = { front = !front }, enabled = !recording && mode != CaptureMode.ZOOM && (support?.let { it.hasFront && it.hasBack } ?: false),
                     modifier = Modifier.size(Tokens.minTouch).clip(CircleShape).background(Tokens.glass)) {
                     Icon(Icons.Default.FlipCameraAndroid, "Switch camera", tint = Color.White)
                 }

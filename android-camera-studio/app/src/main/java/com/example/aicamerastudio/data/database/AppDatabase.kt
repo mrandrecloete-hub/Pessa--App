@@ -47,13 +47,51 @@ interface EditSessionDao {
     @Query("SELECT * FROM edit_session WHERE id = :id") suspend fun get(id: String): EditSession?
 }
 
-@Database(entities = [MediaAsset::class, EditSession::class], version = 1, exportSchema = true)
+/**
+ * A removal or placement project. Masks are stored as files (see ProjectFiles), never in the database.
+ * [params] is the current LayerCodec text, [history] the undo states (one LayerCodec text per line).
+ */
+@Entity(tableName = "composite_project")
+data class CompositeProject(
+    @PrimaryKey val id: String,
+    val kind: String,              // "remove" | "place"
+    val sourceUri: String,
+    val destUri: String?,
+    val params: String?,
+    val history: String?,
+    val maskFile: String?,
+    val occluderFile: String?,
+    val sourceCrop: String?,       // normalised x,y,w,h of the person in the source photo
+    val createdAt: Long,
+    val updatedAt: Long,
+    val lastExportUri: String?,
+)
+
+@Dao
+interface CompositeProjectDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(p: CompositeProject)
+    @Query("SELECT * FROM composite_project WHERE id = :id") suspend fun get(id: String): CompositeProject?
+    @Query("SELECT * FROM composite_project ORDER BY updatedAt DESC LIMIT 50") fun recent(): Flow<List<CompositeProject>>
+    @Query("DELETE FROM composite_project WHERE id = :id") suspend fun delete(id: String)
+}
+
+@Database(entities = [MediaAsset::class, EditSession::class, CompositeProject::class], version = 2, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun assets(): MediaAssetDao
     abstract fun sessions(): EditSessionDao
+    abstract fun projects(): CompositeProjectDao
 
     companion object {
+        /** Exact SQL Room generates for composite_project (checked against schemas/2.json by a unit test). */
+        const val CREATE_COMPOSITE_PROJECT = "CREATE TABLE IF NOT EXISTS `composite_project` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, " +
+            "`sourceUri` TEXT NOT NULL, `destUri` TEXT, `params` TEXT, `history` TEXT, `maskFile` TEXT, `occluderFile` TEXT, " +
+            "`sourceCrop` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `lastExportUri` TEXT, PRIMARY KEY(`id`))"
+
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) { db.execSQL(CREATE_COMPOSITE_PROJECT) }
+        }
+
         fun create(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, "aicamerastudio.db").build()
+            Room.databaseBuilder(context, AppDatabase::class.java, "aicamerastudio.db").addMigrations(MIGRATION_1_2).build()
     }
 }

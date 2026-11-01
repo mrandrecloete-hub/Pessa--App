@@ -15,8 +15,17 @@ class SuperResolver(private val model: OnnxModel) {
     val scale = 4
 
     fun upscale4x(src: IntArray, w: Int, h: Int, tile: Int = 128, overlap: Int = 16,
-                  progress: (Float) -> Unit = {}, isCancelled: () -> Boolean = { false }): IntArray {
-        val ow = w * scale; val oh = h * scale
+                  progress: (Float) -> Unit = {}, isCancelled: () -> Boolean = { false }): IntArray =
+        upscale(src, w, h, 4, tile, overlap, progress, isCancelled)
+
+    /**
+     * Runs the 4x model per tile and immediately reduces each tile to [factor] (2, 3 or 4), so memory is
+     * proportional to the requested output, not to a full 4x image.
+     */
+    fun upscale(src: IntArray, w: Int, h: Int, factor: Int, tile: Int = 128, overlap: Int = 16,
+                progress: (Float) -> Unit = {}, isCancelled: () -> Boolean = { false }): IntArray {
+        require(factor in 2..4)
+        val ow = w * factor; val oh = h * factor
         val out = IntArray(ow * oh)
         val tilesX = (w + tile - 1) / tile; val tilesY = (h + tile - 1) / tile
         var done = 0
@@ -37,11 +46,17 @@ class SuperResolver(private val model: OnnxModel) {
             }
             val (res, _) = model.run(input, longArrayOf(1, 3, th.toLong(), tw.toLong()))
             val rw = tw * scale; val rplane = rw * th * scale
-            for (y in (y0 - ey0) * scale until (y1 - ey0) * scale) for (x in (x0 - ex0) * scale until (x1 - ex0) * scale) {
-                val i = y * rw + x
+            // Inner (non overlap) part of the 4x tile.
+            val iw = (x1 - x0) * scale; val ih = (y1 - y0) * scale
+            val inner = IntArray(iw * ih)
+            for (y in 0 until ih) for (x in 0 until iw) {
+                val i = (y + (y0 - ey0) * scale) * rw + x + (x0 - ex0) * scale
                 val r = Resample.clamp8(res[i] * 255f); val g = Resample.clamp8(res[rplane + i] * 255f); val b = Resample.clamp8(res[2 * rplane + i] * 255f)
-                out[(ey0 * scale + y) * ow + ex0 * scale + x] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
+                inner[y * iw + x] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
             }
+            val fw = (x1 - x0) * factor; val fh = (y1 - y0) * factor
+            val part = if (factor == scale) inner else Resample.area(inner, iw, ih, fw, fh)
+            for (y in 0 until fh) System.arraycopy(part, y * fw, out, (y0 * factor + y) * ow + x0 * factor, fw)
             done++
             progress(done.toFloat() / (tilesX * tilesY))
         }
@@ -57,7 +72,7 @@ enum class SrMethod { AI, CLASSIC }
 data class SrResult(val pixels: IntArray, val width: Int, val height: Int, val method: SrMethod, val notes: List<String>)
 
 object SuperResolutionPipeline {
-    const val MAX_INPUT_PIXELS = 1_500_000
+    const val MAX_INPUT_PIXELS = 4_000_000
     const val MAX_OUTPUT_PIXELS = 24_000_000
 
     fun assess(src: IntArray, w: Int, h: Int): SrAssessment {
@@ -99,8 +114,7 @@ object SuperResolutionPipeline {
             return SrResult(classic, nw, nh, SrMethod.CLASSIC, notes)
         }
         if (!a.suitable) notes += "Warning: ${a.reason}"
-        val x4 = ai.upscale4x(src, w, h, progress = progress, isCancelled = isCancelled)
-        val aiOut = if (factor == 4) x4 else Resample.area(x4, w * 4, h * 4, nw, nh)
+        val aiOut = ai.upscale(src, w, h, factor, progress = progress, isCancelled = isCancelled)
         val k = strength.coerceIn(0f, 1f)
         val out = IntArray(nw * nh) { i ->
             val p = classic[i]; val q = aiOut[i]

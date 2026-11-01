@@ -16,12 +16,19 @@ import com.example.aicamerastudio.core.design.AppToolbar
 import com.example.aicamerastudio.core.design.Tokens
 
 @Composable
-fun StudioScreen(onEditPhoto: (Uri) -> Unit, onTrimVideo: (Uri) -> Unit, onCreate: () -> Unit) {
+fun StudioScreen(onEditPhoto: (Uri) -> Unit, onTrimVideo: (Uri) -> Unit, onCreate: () -> Unit, onComposite: () -> Unit) {
     val photo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { it?.let(onEditPhoto) }
     val video = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { it?.let(onTrimVideo) }
     Column(Modifier.fillMaxSize()) {
         AppToolbar("Studio")
         Column(Modifier.verticalScroll(rememberScrollState()).padding(Tokens.spaceMd), verticalArrangement = Arrangement.spacedBy(Tokens.spaceMd)) {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(Tokens.spaceMd), verticalArrangement = Arrangement.spacedBy(Tokens.spaceSm)) {
+                    Text("AI Composite Studio", style = MaterialTheme.typography.titleMedium)
+                    Text("Remove a person from a photo, or place a person from one photo into another, on this phone.", style = MaterialTheme.typography.bodyMedium)
+                    AppButton("Open Composite Studio", onComposite, Modifier.fillMaxWidth())
+                }
+            }
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(Tokens.spaceMd), verticalArrangement = Arrangement.spacedBy(Tokens.spaceSm)) {
                     Text("AI image studio", style = MaterialTheme.typography.titleMedium)

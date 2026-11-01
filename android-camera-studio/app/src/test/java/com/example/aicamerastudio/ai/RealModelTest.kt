@@ -76,6 +76,11 @@ class RealModelTest {
             // Tiled processing gives the same image size and no failure on odd sizes.
             val odd = SuperResolver(m).upscale4x(Resample.crop(img.px, img.w, 0, 0, 70, 45), 70, 45, tile = 32, overlap = 8)
             assertEquals(280 * 180, odd.size)
+            // Per tile reduction to 2x matches reducing the full 4x result (area averaging is exact on aligned tiles).
+            val src = Resample.crop(img.px, img.w, 200, 100, 64, 48)
+            val full4 = SuperResolver(m).upscale4x(src, 64, 48, tile = 32, overlap = 8)
+            val direct2 = SuperResolver(m).upscale(src, 64, 48, 2, tile = 32, overlap = 8)
+            assertArrayEquals(Resample.area(full4, 256, 192, 128, 96), direct2)
         }
     }
 
