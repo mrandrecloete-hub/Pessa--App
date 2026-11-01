@@ -2,6 +2,7 @@
 
 | Configuration | Status |
 |---|---|
+| Android 11 emulator (x86_64, software emulation without KVM, virtual 3D room camera, about 1 MP) | **Run 2026-11-01.** BlazeCam launches and shows the live preview. Photo mode top bar (HDR, AI, resolution 1M, timer, 4:3, grid, filters), six mode selector, zoom stops, gold shutter and last photo thumbnail rendered. Pro: emulator camera has no manual sensor, so only EV and white balance were offered with an explanation; live histogram worked. Portrait: lighting looks, blur slider and live face analysis ran (no person in the scene). Night: no maker extension, BlazeCam 5 frame merge offered, gyroscope steadiness shown. Ultra zoom: 20x labelled extended with warning and preview enlargement; a capture found the 10 minute background limit bug (fixed). Not yet exercised on the emulator: video recording, filters on capture, gallery tabs, settings, startup animation screenshot (too slow to capture). |
 | Physical Android device | **Not tested.** None was connected. |
 | Emulator | **Not tested.** The build machine has no KVM, so no emulator could run. |
 | AI studio, online | Request/response logic unit tested; **never called against the real OpenAI API**. |
