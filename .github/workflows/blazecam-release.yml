@@ -1,9 +1,11 @@
 # Builds, signs and publishes a BlazeCam release. Installed BlazeCam apps find it through their update check.
 #
-# Start a release either way:
-#   1. GitHub > Actions > "Release BlazeCam" > Run workflow, enter a version such as 0.3.0
-#      (the button appears once this file is on the default branch, main).
-#   2. Push a tag:  git tag blazecam-v0.3.0 && git push origin blazecam-v0.3.0
+# Releases start automatically:
+#   - Every push to main that changes BlazeCam (android-camera-studio/, except docs) publishes the next
+#     patch version (0.2.0 -> 0.2.1) with notes from the commit messages since the last release.
+# Or by hand:
+#   - GitHub > Actions > "Release BlazeCam" > Run workflow, enter a version such as 0.3.0.
+#   - Push a tag:  git tag blazecam-v0.3.0 && git push origin blazecam-v0.3.0
 #
 # Needs repository secrets (Settings > Secrets and variables > Actions):
 #   BLAZECAM_KEYSTORE_BASE64, BLAZECAM_KEYSTORE_PASSWORD, BLAZECAM_KEY_ALIAS, BLAZECAM_KEY_PASSWORD
@@ -22,6 +24,13 @@ on:
   push:
     tags:
       - "blazecam-v*"
+    branches:
+      - main
+    paths:
+      - "android-camera-studio/**"
+      - "!android-camera-studio/docs/**"
+      - "!android-camera-studio/**/*.md"
+      - ".github/workflows/blazecam-release.yml"
 
 permissions:
   contents: write
@@ -37,19 +46,40 @@ jobs:
       run:
         working-directory: android-camera-studio
     steps:
-      - name: Work out the version
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags and history, to find the last release and write notes
+
+      - name: Work out the version and notes
         id: v
         working-directory: .
         env:
           INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_NOTES: ${{ github.event.inputs.notes }}
         run: |
-          if [ -n "$INPUT_VERSION" ]; then V="$INPUT_VERSION"; else V="${GITHUB_REF_NAME#blazecam-v}"; fi
+          LAST=$(git tag --list 'blazecam-v*' --sort=-v:refname | head -1)
+          if [ -n "$INPUT_VERSION" ]; then V="$INPUT_VERSION"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then V="${GITHUB_REF_NAME#blazecam-v}"
+          else
+            # Automatic release from main: next patch version after the last release.
+            if [ -z "$LAST" ]; then V="0.2.0"; else
+              IFS=. read -r MA MI PA <<< "${LAST#blazecam-v}"
+              if [ "$PA" -ge 99 ]; then MI=$((MI+1)); PA=0; else PA=$((PA+1)); fi
+              V="$MA.$MI.$PA"
+            fi
+          fi
           if ! echo "$V" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,2}\.[0-9]{1,2}$'; then
             echo "::error::Version must look like 1.2.3 (minor and patch at most 99). Got: $V"; exit 1
           fi
+          # Notes: what was typed, otherwise the commit subjects since the last release (merges and noise left out).
+          if [ -n "$INPUT_NOTES" ]; then printf '%s\n' "$INPUT_NOTES" > "$RUNNER_TEMP/body.md"
+          else
+            RANGE=${LAST:+$LAST..}HEAD
+            git log --no-merges --format='- %s' $RANGE -- android-camera-studio | grep -viE 'version bump|^- Merge' | head -20 > "$RUNNER_TEMP/body.md" || true
+            [ -s "$RUNNER_TEMP/body.md" ] || echo "Improvements and fixes." > "$RUNNER_TEMP/body.md"
+          fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/checkout@v4
+          echo "Releasing BlazeCam $V (last release: ${LAST:-none})"; cat "$RUNNER_TEMP/body.md"
 
       - uses: actions/setup-java@v4
         with:
@@ -99,12 +129,10 @@ jobs:
       - name: Publish the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          NOTES: ${{ github.event.inputs.notes }}
         run: |
           V=${{ steps.v.outputs.version }}
           TAG="blazecam-v$V"
-          BODY="${NOTES:-BlazeCam $V}"
-          printf '%s\n\nInstall: download the APK for your phone (almost all phones: arm64-v8a). Installed BlazeCam apps offer this update themselves.\n' "$BODY" > "$RUNNER_TEMP/notes.md"
+          { cat "$RUNNER_TEMP/body.md"; printf '\nInstall: download the APK for your phone (almost all phones: arm64-v8a). Installed BlazeCam apps offer this update themselves.\n'; } > "$RUNNER_TEMP/notes.md"
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" "$RUNNER_TEMP"/out/* --clobber
           else
