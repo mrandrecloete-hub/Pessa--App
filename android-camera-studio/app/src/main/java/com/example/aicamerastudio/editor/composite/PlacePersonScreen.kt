@@ -256,7 +256,7 @@ fun PlacePersonScreen(projectId: String?, onBack: () -> Unit, onOpenResult: (Uri
                     val occFull = occ?.let { Resample.bilinear(it.data, it.width, it.height, dw, dh) }
                     val out = Compositor.render(dpx, dw, dh, crop, alpha, needW, needH, params, occFull).pixels
                     val bmp = bitmapOf(out, dw, dh)
-                    val uri = graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_composite"), bmp, 95) { u -> ExifCopy.copy(context, d.uri, u, "AI Camera Studio (composite of two photos)") }
+                    val uri = graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_composite"), bmp, 95) { u -> ExifCopy.copy(context, d.uri, u, "BlazeCam (composite of two photos)") }
                     bmp.recycle()
                     graph.database.assets().upsert(MediaAsset(UUID.randomUUID().toString(), "composite", d.uri.toString(), uri.toString(), System.currentTimeMillis(),
                         dw, dh, 0, JobState.SUCCEEDED.name, null, (notes + "Composite of two photos. The person was not regenerated; only cut out, transformed and blended.").joinToString(" "), 0, id))

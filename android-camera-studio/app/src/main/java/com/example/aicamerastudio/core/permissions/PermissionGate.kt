@@ -50,7 +50,7 @@ fun CameraPermissionGate(content: @Composable (audioGranted: Boolean) -> Unit) {
     } else {
         EmptyState(
             title = if (asked) "Camera access is turned off" else "Allow the camera",
-            body = "AI Camera Studio uses the camera to take photos and record video, and the microphone to record sound with video. " +
+            body = "BlazeCam uses the camera to take photos and record video, and the microphone to record sound with video. " +
                 "Everything is processed on this device and nothing is uploaded. " +
                 "The microphone is optional: without it, videos are recorded without sound.",
             action = {

@@ -40,9 +40,21 @@ import com.example.aicamerastudio.photo.enhancement.ExifCopy
 import com.example.aicamerastudio.photo.enhancement.ImageLoader
 import com.example.aicamerastudio.photo.pipeline.Enhancer
 import com.example.aicamerastudio.photo.pipeline.EnhancementCancelled
+import com.example.aicamerastudio.photo.filters.Filters
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.*
 import java.security.MessageDigest
 import java.util.UUID
+
+/** Applies a creative filter (colour, vignette, grain) to a bitmap in place. */
+fun applyFilter(b: Bitmap, f: com.example.aicamerastudio.photo.filters.Filter, k: Float) {
+    val px = IntArray(b.width * b.height); b.getPixels(px, 0, b.width, 0, 0, b.width, b.height)
+    b.setPixels(Filters.render(px, b.width, b.height, f, k), 0, b.width, 0, 0, b.width, b.height)
+}
 
 /** Applies flip, rotation and crop. Always returns a new bitmap or the input when nothing changes. */
 fun applyGeometry(src: Bitmap, p: EditParams): Bitmap {
@@ -121,12 +133,14 @@ fun PhotoEditorScreen(uri: Uri, onBack: () -> Unit, onSaved: (Uri) -> Unit) {
         val out = withContext(Dispatchers.Default) {
             val job = coroutineContext.job
             val geom = applyGeometry(src, p)
-            if (p.validated().let { it.toEnhancement(1).isIdentity() }) return@withContext geom
+            val filter = Filters.byId(p.filterId)
+            if (p.validated().let { it.toEnhancement(1).isIdentity() } && filter == Filters.NATURAL) return@withContext geom
             val dst = Bitmap.createBitmap(geom.width, geom.height, Bitmap.Config.ARGB_8888)
             try {
                 Enhancer(400_000).enhance(BitmapPixels(geom), BitmapPixels(dst), p.toEnhancement(1), isCancelled = { !job.isActive })
             } catch (e: EnhancementCancelled) { return@withContext null }
             if (geom !== src) geom.recycle()
+            if (filter != Filters.NATURAL) applyFilter(dst, filter, p.filterIntensity)
             dst
         }
         if (out != null) rendered = out
@@ -153,9 +167,10 @@ fun PhotoEditorScreen(uri: Uri, onBack: () -> Unit, onSaved: (Uri) -> Unit) {
                     if (geom !== src) src.recycle()
                     val dst = Bitmap.createBitmap(geom.width, geom.height, Bitmap.Config.ARGB_8888)
                     try {
-                        Enhancer().enhance(BitmapPixels(geom), BitmapPixels(dst), p.toEnhancement(2), { progress = it * 0.9f }, { !job.isActive })
+                        Enhancer().enhance(BitmapPixels(geom), BitmapPixels(dst), p.toEnhancement(2), { progress = it * 0.85f }, { !job.isActive })
+                        Filters.byId(p.filterId).takeIf { it != Filters.NATURAL }?.let { applyFilter(dst, it, p.filterIntensity) }
                         val out = graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_edit"), dst, graph.preferences.flow.first().jpegQuality) {
-                            ExifCopy.copy(context, uri, it, "AI Camera Studio (edit)")
+                            ExifCopy.copy(context, uri, it, "BlazeCam (edit)")
                         }
                         graph.database.assets().upsert(MediaAsset(UUID.randomUUID().toString(), "edited", uri.toString(), out.toString(),
                             System.currentTimeMillis(), dst.width, dst.height, 0, JobState.SUCCEEDED.name, null, note, (System.nanoTime() - started) / 1_000_000, id))
@@ -193,9 +208,29 @@ fun PhotoEditorScreen(uri: Uri, onBack: () -> Unit, onSaved: (Uri) -> Unit) {
         }
         message?.let { Text(it, Modifier.padding(horizontal = Tokens.spaceMd), style = MaterialTheme.typography.bodySmall) }
         Column(Modifier.padding(horizontal = Tokens.spaceMd)) {
-            val adj = ADJUSTMENTS[selected]
-            LabeledSlider(adj.label, adj.get(params), adj.range, adj.fmt(adj.get(params)), { params = adj.set(params, it) }, { commit() })
+            if (selected >= 0) {
+                val adj = ADJUSTMENTS[selected]
+                LabeledSlider(adj.label, adj.get(params), adj.range, adj.fmt(adj.get(params)), { params = adj.set(params, it) }, { commit() })
+            } else {
+                val thumbs = remember(preview) { preview?.let { p ->
+                    val small = Bitmap.createScaledBitmap(p, 96, (96f * p.height / p.width).toInt().coerceAtLeast(1), true)
+                    val sp = IntArray(small.width * small.height); small.getPixels(sp, 0, small.width, 0, 0, small.width, small.height)
+                    Filters.ALL.associate { f -> f.id to Bitmap.createBitmap(Filters.render(sp, small.width, small.height, f, 1f), small.width, small.height, Bitmap.Config.ARGB_8888) }
+                } ?: emptyMap() }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(Tokens.spaceSm)) {
+                    items(Filters.ALL.size) { i -> val f = Filters.ALL[i]; val sel = params.filterId == f.id
+                        Column(Modifier.width(72.dp).clickable { params = params.copy(filterId = f.id); commit() }, horizontalAlignment = Alignment.CenterHorizontally) {
+                            thumbs[f.id]?.let { Image(it.asImageBitmap(), "${f.label} filter", Modifier.size(64.dp).clip(RoundedCornerShape(10.dp))
+                                .border(if (sel) 2.dp else 0.dp, if (sel) Tokens.gold else Color.Transparent, RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop) }
+                            Text(f.label, style = MaterialTheme.typography.labelSmall, color = if (sel) Tokens.gold else MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                        }
+                    }
+                }
+                if (params.filterId != Filters.NATURAL.id) LabeledSlider("Filter intensity", params.filterIntensity, 0f..1f, "${(params.filterIntensity * 100).toInt()}%",
+                    { params = params.copy(filterIntensity = it) }, { commit() })
+            }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(Tokens.spaceSm)) {
+                item { FilterChip(selected == -1, { selected = -1 }, { Text("Filters") }) }
                 items(ADJUSTMENTS.size) { i -> FilterChip(selected == i, { selected = i }, { Text(ADJUSTMENTS[i].label) }) }
             }
             Row(Modifier.fillMaxWidth().horizontalScrollRow(), horizontalArrangement = Arrangement.spacedBy(Tokens.spaceSm), verticalAlignment = Alignment.CenterVertically) {

@@ -7,7 +7,7 @@ import kotlin.math.exp
 import kotlin.math.max
 
 /** Person probability and hair probability at the input resolution. */
-class PersonMasks(val width: Int, val height: Int, val person: FloatArray, val hair: FloatArray)
+class PersonMasks(val width: Int, val height: Int, val person: FloatArray, val hair: FloatArray, val face: FloatArray = FloatArray(0))
 
 /** MediaPipe multiclass selfie segmentation (Apache 2.0), run through ONNX Runtime. */
 class PersonSegmenter(private val model: OnnxModel) {
@@ -26,7 +26,7 @@ class PersonSegmenter(private val model: OnnxModel) {
         }
         val (logits, shape) = model.run(input, longArrayOf(1, n.toLong(), n.toLong(), 3))
         val classes = shape.last().toInt()
-        val person = FloatArray(n * n); val hair = FloatArray(n * n)
+        val person = FloatArray(n * n); val hair = FloatArray(n * n); val face = FloatArray(n * n)
         val e = FloatArray(classes)
         for (i in 0 until n * n) {
             var m = Float.NEGATIVE_INFINITY
@@ -37,8 +37,9 @@ class PersonSegmenter(private val model: OnnxModel) {
             // background, which would show as a faint ghost of the whole frame. Ramp so clear background is 0.
             person[i] = ramp(1f - e[0] / s)
             hair[i] = ramp(e[1] / s)
+            face[i] = ramp(e[3] / s)
         }
-        return PersonMasks(w, h, Resample.bilinear(person, n, n, w, h), Resample.bilinear(hair, n, n, w, h))
+        return PersonMasks(w, h, Resample.bilinear(person, n, n, w, h), Resample.bilinear(hair, n, n, w, h), Resample.bilinear(face, n, n, w, h))
     }
 }
 

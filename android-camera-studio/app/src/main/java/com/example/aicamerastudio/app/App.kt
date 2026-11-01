@@ -13,6 +13,11 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         graph = AppGraph(this)
+        // Remove captured burst frames older than a day (left behind if the app was force stopped mid job).
+        Thread {
+            val cutoff = System.currentTimeMillis() - 24L * 3600_000
+            java.io.File(cacheDir, "zoom").listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.deleteRecursively() }
+        }.start()
     }
 
     override fun onTrimMemory(level: Int) {

@@ -54,17 +54,23 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
         var useAi = inputData.getBoolean(K_AI, true)
         val strength = inputData.getFloat(K_STRENGTH, 0.7f)
         val label = inputData.getString(K_LABEL).orEmpty()
+        val kind = inputData.getString(K_KIND) ?: KIND_ZOOM
+        val watermark = inputData.getString(K_WATERMARK)
         val active = currentCoroutineContext()
         val cancelled = { !active.isActive }
         val notes = ArrayList<String>()
         val started = System.nanoTime()
+        // Long merges and AI upscaling can exceed the 10 minute background limit: run as a visible foreground job.
+        runCatching { setForeground(foregroundInfo()) }
         try {
             if (files.isEmpty()) return fail("No frames were captured.")
             val (level, thermal) = ThermalGuard.effectiveLevel(applicationContext, ProcessingLevel.BALANCED, true)
             if (thermal != null) { notes += thermal; if (level == ProcessingLevel.QUICK && useAi) { useAi = false; notes += "AI upscaling was skipped because the device is warm." } }
 
             // 1. Keep the untouched reference frame as the original photo (no recompression, orientation tag set).
-            val originalUri = saveOriginal(files[0], rotation)
+            // For HDR the reference is the normally exposed middle frame.
+            val refFile = if (kind == KIND_HDR) files[files.size / 2] else files[0]
+            val originalUri = saveOriginal(refFile, rotation)
             progress(0.05f)
 
             // 2. Decode the same centre region from every frame.
@@ -74,7 +80,12 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
             val rw = (fw / crop).roundToInt(); val rh = (fh / crop).roundToInt()
             val rect = Rect((fw - rw) / 2, (fh - rh) / 2, (fw - rw) / 2 + rw, (fh - rh) / 2 + rh)
             var sample = 1
-            if (files.size > 1 && rw.toLong() * rh > 3_000_000L) { sample = 2; notes += "Frames were merged at half resolution to fit in memory." }
+            // Memory needed: every frame as 4 bytes per pixel plus about the same again for analysis.
+            val budget = Runtime.getRuntime().maxMemory() * 0.55
+            val pxCount = rw.toLong() * rh
+            val maxPixels = if (kind == KIND_HDR) 4_000_000L else Long.MAX_VALUE
+            while (files.size > 1 && (pxCount / (sample * sample) * files.size * 9 > budget || pxCount / (sample * sample) > maxPixels)) sample *= 2
+            if (sample > 1) notes += "Frames were combined at 1/$sample resolution in each direction to fit in memory."
             val frames = ArrayList<IntArray>(); var w = 0; var h = 0
             for ((i, f) in files.withIndex()) {
                 if (cancelled()) throw EnhancementCancelled()
@@ -85,9 +96,22 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
                 progress(0.05f + 0.15f * (i + 1) / files.size)
             }
 
-            // 3. Merge the burst (blur rejection, alignment, ghost rejection), or use the single frame.
+            // 3. Merge the burst (blur rejection, alignment, ghost rejection), fuse an HDR bracket, or use the single frame.
             var px: IntArray
-            if (frames.size > 1) {
+            if (kind == KIND_HDR && frames.size > 1) {
+                val ref = frames.size / 2
+                val refL = Resample.luma(frames[ref])
+                val aligned = frames.mapIndexed { i, f ->
+                    if (i == ref) f else {
+                        // Align on brightness-normalised luma, since the frames are exposed differently.
+                        val l = Resample.luma(f); val k = (refL.average() / l.average().coerceAtLeast(1e-3)).toFloat()
+                        val (dx, dy) = com.example.aicamerastudio.photo.multiframe.FrameAligner.estimateShift(refL, FloatArray(l.size) { l[it] * k }, w, h)
+                        IntArray(w * h) { j -> val x = (j % w + dx).coerceIn(0, w - 1); val y = (j / w + dy).coerceIn(0, h - 1); f[y * w + x] }
+                    }
+                }
+                px = com.example.aicamerastudio.photo.hdr.ExposureFusion.fuse(aligned, w, h, reference = ref)
+                notes += "HDR: ${frames.size} exposures aligned and fused by BlazeCam."
+            } else if (frames.size > 1) {
                 val sigma = ImageAnalyzer.analyze(ArrayPixels(w, h, frames[0])).noiseSigma
                 val (merged, rep) = FrameMerger.merge(frames, w, h, sigma, isCancelled = cancelled)
                 px = merged
@@ -100,14 +124,14 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
 
             // 4. Gentle correction before upscaling (denoise, exposure, white balance, sharpening).
             val stats = ImageAnalyzer.analyze(ArrayPixels(w, h, px), cancelled)
-            val ep = EnhancementPlanner.plan(stats, EnhancementProfile.NATURAL, 0.6f, level)
+            val ep = EnhancementPlanner.plan(stats, if (kind == KIND_NIGHT) EnhancementProfile.NIGHT else EnhancementProfile.NATURAL, if (kind == KIND_NIGHT) 0.85f else 0.6f, level)
             val corrected = ArrayPixels(w, h)
             Enhancer().enhance(ArrayPixels(w, h, px), corrected, ep, isCancelled = cancelled)
             px = corrected.pixels
             progress(0.45f)
 
             // 5. Upscale the crop back toward the original framing resolution.
-            val targetScale = crop * sample
+            val targetScale = if (kind == KIND_ZOOM) crop * sample else 1f
             var outW = w; var outH = h
             if (targetScale > 1.05f) {
                 val maxF = sqrt(SuperResolutionPipeline.MAX_OUTPUT_PIXELS.toDouble() / (w.toLong() * h)).toInt()
@@ -127,18 +151,19 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
             // 6. Save the result as a new photo, labelled honestly, and link it to the original.
             val bmp = Bitmap.createBitmap(outW, outH, Bitmap.Config.ARGB_8888)
             BitmapPixels(bmp).writeRows(0, outH, px)
+            watermark?.takeIf { it.isNotBlank() }?.let { com.example.aicamerastudio.photo.enhancement.Watermark.draw(bmp, it) }
             val note = notes.joinToString(" ")
-            val out = graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_zoom"), bmp, 95) { uri ->
+            val out = graph.media.saveJpeg(MediaStoreRepository.timestampName("BC_", "_$kind"), bmp, 95) { uri ->
                 applicationContext.contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
                     val ex = ExifInterface(pfd.fileDescriptor)
-                    ex.setAttribute(ExifInterface.TAG_SOFTWARE, "AI Camera Studio ultra zoom")
+                    ex.setAttribute(ExifInterface.TAG_SOFTWARE, "BlazeCam $kind")
                     ex.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, "$label. ${note.take(400)}")
                     ex.saveAttributes()
                 }
             }
             bmp.recycle()
             val ms = (System.nanoTime() - started) / 1_000_000
-            graph.database.assets().upsert(MediaAsset(UUID.randomUUID().toString(), "zoom", originalUri.toString(), out.toString(),
+            graph.database.assets().upsert(MediaAsset(UUID.randomUUID().toString(), kind, originalUri.toString(), out.toString(),
                 System.currentTimeMillis(), outW, outH, 0, JobState.SUCCEEDED.name, null, "$label. $note", ms, null))
             progress(1f)
             return Result.success(workDataOf(K_OUT to out.toString(), K_NOTES to note, K_MS to ms))
@@ -149,8 +174,27 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
         } catch (t: Throwable) {
             return fail(ErrorMapper.map(t).asMessage())
         } finally {
-            dir.deleteRecursively() // never leave captured frames behind
+            // If Android paused the job (time limit, low memory) it will be retried: keep the frames for that retry.
+            // Delete them on success, failure, or when the user cancelled.
+            // The stop reason is only known on Android 12+; earlier, keep the frames (start up removes ones older than a day).
+            val pausedForRetry = isStopped && (android.os.Build.VERSION.SDK_INT < 31 || stopReason != WorkInfo.STOP_REASON_CANCELLED_BY_APP)
+            if (!pausedForRetry) dir.deleteRecursively()
         }
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo = foregroundInfo()
+
+    private fun foregroundInfo(): ForegroundInfo {
+        val nm = applicationContext.getSystemService(android.app.NotificationManager::class.java)
+        if (nm.getNotificationChannel(CHANNEL) == null) {
+            nm.createNotificationChannel(android.app.NotificationChannel(CHANNEL, "Photo processing", android.app.NotificationManager.IMPORTANCE_LOW))
+        }
+        val n = androidx.core.app.NotificationCompat.Builder(applicationContext, CHANNEL)
+            .setSmallIcon(com.example.aicamerastudio.R.drawable.ic_stat_processing)
+            .setContentTitle("BlazeCam is processing your photo").setOngoing(true).setSilent(true).build()
+        val type = if (android.os.Build.VERSION.SDK_INT >= 35) android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROCESSING
+            else android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+        return ForegroundInfo(NOTIFICATION_ID, n, type)
     }
 
     private suspend fun progress(f: Float) = setProgress(workDataOf(K_PROGRESS to f))
@@ -189,12 +233,17 @@ class UltraZoomWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(
     private fun fail(msg: String) = Result.failure(workDataOf(K_ERROR to msg))
 
     companion object {
+        private const val CHANNEL = "processing"; private const val NOTIFICATION_ID = 4101
+        const val K_KIND = "kind"; const val K_WATERMARK = "wm"
+        const val KIND_ZOOM = "zoom"; const val KIND_NIGHT = "night"; const val KIND_HDR = "hdr"
         const val K_DIR = "dir"; const val K_COUNT = "count"; const val K_CROP = "crop"; const val K_ROTATION = "rotation"
         const val K_AI = "ai"; const val K_STRENGTH = "strength"; const val K_LABEL = "label"
         const val K_PROGRESS = "progress"; const val K_OUT = "out"; const val K_NOTES = "notes"; const val K_MS = "ms"; const val K_ERROR = "error"
 
-        fun enqueue(context: Context, name: String, dir: File, count: Int, crop: Float, rotation: Int, ai: Boolean, strength: Float, label: String) {
-            val data = workDataOf(K_DIR to dir.path, K_COUNT to count, K_CROP to crop, K_ROTATION to rotation, K_AI to ai, K_STRENGTH to strength, K_LABEL to label)
+        fun enqueue(context: Context, name: String, dir: File, count: Int, crop: Float, rotation: Int, ai: Boolean, strength: Float, label: String,
+                    kind: String = KIND_ZOOM, watermark: String? = null) {
+            val data = workDataOf(K_DIR to dir.path, K_COUNT to count, K_CROP to crop, K_ROTATION to rotation, K_AI to ai, K_STRENGTH to strength, K_LABEL to label,
+                K_KIND to kind, K_WATERMARK to watermark)
             WorkManager.getInstance(context).enqueueUniqueWork(name, ExistingWorkPolicy.KEEP,
                 OneTimeWorkRequestBuilder<UltraZoomWorker>().setInputData(data).addTag("zoom").build())
         }

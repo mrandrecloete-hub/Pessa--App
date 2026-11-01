@@ -114,7 +114,7 @@ class EnhancePhoto(private val context: Context, private val media: MediaStoreRe
     }
 
     private fun copyExif(from: Uri, to: Uri, profile: EnhancementProfile) =
-        ExifCopy.copy(context, from, to, "AI Camera Studio (${profile.label})")
+        ExifCopy.copy(context, from, to, "BlazeCam (${profile.label})")
 }
 
 object ExifCopy {

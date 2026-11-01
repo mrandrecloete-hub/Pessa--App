@@ -24,6 +24,8 @@ data class EditParams(
     val quarterTurns: Int = 0,
     val flipHorizontal: Boolean = false,
     val crop: CropAspect = CropAspect.ORIGINAL,
+    val filterId: String = "natural",
+    val filterIntensity: Float = 1f,
 ) {
     fun validated() = copy(
         exposureEv = exposureEv.coerceIn(-3f, 3f), contrast = contrast.coerceIn(-1f, 0.8f),
@@ -33,6 +35,8 @@ data class EditParams(
         temperature = temperature.coerceIn(-1f, 1f), tint = tint.coerceIn(-1f, 1f),
         sharpen = sharpen.coerceIn(0f, 1f), denoise = denoise.coerceIn(0f, 1f),
         quarterTurns = ((quarterTurns % 4) + 4) % 4,
+        filterId = com.example.aicamerastudio.photo.filters.Filters.byId(filterId).id,
+        filterIntensity = filterIntensity.coerceIn(0f, 1f),
     )
 
     fun toEnhancement(denoiseRadius: Int = 2): EnhancementParams = validated().let {
@@ -60,6 +64,7 @@ object EditParamsCodec {
             "bp=${v.blackPoint}", "wp=${v.whitePoint}", "sa=${v.saturation}", "vi=${v.vibrance}",
             "tp=${v.temperature}", "tn=${v.tint}", "sp=${v.sharpen}", "dn=${v.denoise}",
             "rt=${v.quarterTurns}", "fl=${if (v.flipHorizontal) 1 else 0}", "cr=${v.crop.name}",
+            "fi=${v.filterId}", "fk=${v.filterIntensity}",
         ).joinToString(";")
     }
 
@@ -87,6 +92,7 @@ object EditParamsCodec {
                 quarterTurns = map["rt"]?.toIntOrNull() ?: 0,
                 flipHorizontal = map["fl"] == "1",
                 crop = map["cr"]?.let { n -> CropAspect.values().firstOrNull { it.name == n } } ?: CropAspect.ORIGINAL,
+                filterId = map["fi"] ?: "natural", filterIntensity = f("fk", 1f)!!,
             ).validated()
         } catch (e: NullPointerException) {
             null

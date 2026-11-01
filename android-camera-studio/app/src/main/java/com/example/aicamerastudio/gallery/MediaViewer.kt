@@ -37,6 +37,7 @@ import com.example.aicamerastudio.photo.enhancement.EnhanceWorker
 import com.example.aicamerastudio.photo.enhancement.ImageLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +49,7 @@ fun MediaViewer(
 ) {
     val context = LocalContext.current
     val graph = (context.applicationContext as App).graph
+    val scope = rememberCoroutineScope()
     val info = remember(uri) { queryInfo(context, uri) }
     var pair by remember { mutableStateOf<MediaAsset?>(null) }       // asset where this is the processed file
     var counterpart by remember { mutableStateOf<MediaAsset?>(null) } // asset where this is the original
@@ -78,6 +80,11 @@ fun MediaViewer(
     Scaffold(topBar = {
         TopAppBar(title = { Text(info?.name ?: "Viewer", maxLines = 1) }, navigationIcon = { IconButton(onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
             actions = {
+                val isFav by graph.database.library().isFavourite(uri.toString()).collectAsState(initial = 0)
+                IconButton({ scope.launch { if (isFav > 0) graph.database.library().removeFavourite(uri.toString())
+                    else graph.database.library().addFavourite(com.example.aicamerastudio.data.database.Favourite(uri.toString(), System.currentTimeMillis())) } }) {
+                    Icon(if (isFav > 0) Icons.Default.Favorite else Icons.Default.FavoriteBorder, if (isFav > 0) "Remove from favourites" else "Add to favourites", tint = Tokens.gold)
+                }
                 IconButton({ showInfo = true }) { Icon(Icons.Default.Info, "Details") }
                 IconButton({
                     val send = Intent(Intent.ACTION_SEND).apply { type = if (isVideo) "video/*" else "image/*"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }
@@ -121,8 +128,19 @@ fun MediaViewer(
             }
         }
     }
-    if (confirmDelete) ConfirmDialog("Delete this ${if (isVideo) "video" else "photo"}?", "It will be removed from this device. This cannot be undone.", "Delete",
-        onConfirm = { graph.media.delete(uri); confirmDelete = false; onBack() }, onDismiss = { confirmDelete = false })
+    val trashSender = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult()) { onBack() }
+    if (confirmDelete) ConfirmDialog(
+        if (graph.media.trashSupported) "Move this ${if (isVideo) "video" else "photo"} to the recycle bin?" else "Delete this ${if (isVideo) "video" else "photo"}?",
+        if (graph.media.trashSupported) "You can restore it from Gallery > Recycle bin for 30 days." else "It will be removed from this device. This cannot be undone.",
+        if (graph.media.trashSupported) "Move" else "Delete",
+        onConfirm = {
+            confirmDelete = false
+            if (graph.media.trashSupported) {
+                val refused = graph.media.setTrashed(listOf(uri), true)
+                val req = graph.media.trashRequest(refused, true)
+                if (req != null) trashSender.launch(androidx.activity.result.IntentSenderRequest.Builder(req.intentSender).build()) else onBack()
+            } else { graph.media.delete(uri); onBack() }
+        }, onDismiss = { confirmDelete = false })
     if (showInfo) AlertDialog(onDismissRequest = { showInfo = false }, confirmButton = { TextButton({ showInfo = false }) { Text("Close") } },
         title = { Text("Details") }, text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

@@ -149,7 +149,7 @@ fun RemovePersonScreen(projectId: String?, onBack: () -> Unit, onOpenResult: (Ur
                     val expandPx = (expand * minOf(fw, fh)).toInt()
                     val r = InpaintPipeline.remove(fpx, fw, fh, fullMask, expandPx, maxWorkPixels = 700_000, progress = { progress = it * 0.95f }, isCancelled = { !active.isActive })
                     val bmp = bitmapOf(r.pixels, fw, fh)
-                    val uri = graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_removed"), bmp, 95) { u -> ExifCopy.copy(context, w.uri, u, "AI Camera Studio (person removed, area reconstructed)") }
+                    val uri = graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_removed"), bmp, 95) { u -> ExifCopy.copy(context, w.uri, u, "BlazeCam (person removed, area reconstructed)") }
                     bmp.recycle()
                     graph.database.assets().upsert(MediaAsset(UUID.randomUUID().toString(), "removed", w.uri.toString(), uri.toString(), System.currentTimeMillis(),
                         fw, fh, 0, JobState.SUCCEEDED.name, null, r.notes.joinToString(" "), 0, id))

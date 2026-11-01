@@ -6,6 +6,10 @@
          INTERNET is used only by the optional online engine of the AI image studio, to send a text
          description to OpenAI after the user agrees. Photos and videos are never uploaded. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Long photo processing (ultra zoom merge and AI upscaling) runs as a visible foreground job. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
@@ -37,5 +41,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync|mediaProcessing"
+            tools:node="merge" />
     </application>
 </manifest>

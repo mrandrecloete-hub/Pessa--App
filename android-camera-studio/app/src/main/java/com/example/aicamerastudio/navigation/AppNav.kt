@@ -59,8 +59,12 @@ fun AppNav(prefs: UserPreferences, nav: NavHostController = rememberNavControlle
                 }
             },
         ) { pad ->
-            NavHost(nav, startDestination = Top.CAMERA.route, modifier = Modifier.padding(pad)) {
-                composable(Top.CAMERA.route) { CameraPermissionGate { audio -> CameraScreen(audio, androidx.compose.ui.unit.Dp(0f), prefs) } }
+            NavHost(nav, startDestination = Top.CAMERA.route, modifier = Modifier.padding(pad),
+                enterTransition = { androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) + androidx.compose.animation.scaleIn(androidx.compose.animation.core.tween(220), initialScale = 0.97f) },
+                exitTransition = { androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(160)) },
+                popEnterTransition = { androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(220)) },
+                popExitTransition = { androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(160)) + androidx.compose.animation.scaleOut(androidx.compose.animation.core.tween(160), targetScale = 0.97f) }) {
+                composable(Top.CAMERA.route) { CameraPermissionGate { audio -> CameraScreen(audio, androidx.compose.ui.unit.Dp(0f), prefs) { u, v -> nav.navigate("viewer?uri=${enc(u)}&video=$v") } } }
                 composable(Top.GALLERY.route) {
                     GalleryScreen { item -> nav.navigate("viewer?uri=${enc(item.uri)}&video=${item.isVideo}") }
                 }

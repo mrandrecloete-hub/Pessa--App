@@ -51,3 +51,30 @@ class HistoryPersistenceTest {
         assertEquals(0.2f, back.undo().cx, 1e-6f); assertEquals(0.5f, back.undo().cx, 1e-6f); assertFalse(back.canUndo)
     }
 }
+
+class Version3Test {
+    @Test fun migration2to3MatchesRoomSchema() {
+        val json = JSONObject(File("schemas/com.example.aicamerastudio.data.database.AppDatabase/3.json").readText())
+        val entities = json.getJSONObject("database").getJSONArray("entities")
+        val expected = ArrayList<String>()
+        for (i in 0 until entities.length()) {
+            val e = entities.getJSONObject(i); val t = e.getString("tableName")
+            if (t !in listOf("album", "album_item", "favourite")) continue
+            expected += e.getString("createSql").replace("\${TABLE_NAME}", t)
+            val idx = e.optJSONArray("indices"); if (idx != null) for (j in 0 until idx.length()) expected += idx.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}", t)
+        }
+        assertEquals(expected.sorted(), AppDatabase.CREATE_V3.sorted())
+        // Version 2 tables are unchanged.
+        val v2 = JSONObject(File("schemas/com.example.aicamerastudio.data.database.AppDatabase/2.json").readText()).getJSONObject("database").getJSONArray("entities")
+        val v3 = (0 until entities.length()).associate { entities.getJSONObject(it).let { e -> e.getString("tableName") to e.getString("createSql") } }
+        for (i in 0 until v2.length()) { val e = v2.getJSONObject(i); assertEquals(e.getString("createSql"), v3[e.getString("tableName")]) }
+    }
+
+    @Test fun editSettingsKeepTheFilterAndOldSavesStillOpen() {
+        val p = com.example.aicamerastudio.editor.photo.EditParams(exposureEv = 0.3f, filterId = "cinematic", filterIntensity = 0.4f)
+        assertEquals(p.validated(), com.example.aicamerastudio.editor.photo.EditParamsCodec.decode(com.example.aicamerastudio.editor.photo.EditParamsCodec.encode(p)))
+        val old = com.example.aicamerastudio.editor.photo.EditParamsCodec.decode("v=1;ev=0.5;ct=0.1")!!
+        assertEquals("natural", old.filterId); assertEquals(1f, old.filterIntensity, 0f)
+        assertEquals("natural", com.example.aicamerastudio.editor.photo.EditParamsCodec.decode("v=1;fi=does-not-exist")!!.filterId)
+    }
+}

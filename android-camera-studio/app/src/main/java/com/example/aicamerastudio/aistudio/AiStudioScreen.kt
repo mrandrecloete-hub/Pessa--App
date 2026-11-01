@@ -82,7 +82,7 @@ fun AiStudioScreen(onBack: () -> Unit, onEdit: (Uri) -> Unit) {
         graph.media.saveJpeg(MediaStoreRepository.timestampName("AICS_", "_gen"), b, 95) { uri ->
             context.contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
                 val ex = ExifInterface(pfd.fileDescriptor)
-                ex.setAttribute(ExifInterface.TAG_SOFTWARE, "AI Camera Studio, AI generated ($label)")
+                ex.setAttribute(ExifInterface.TAG_SOFTWARE, "BlazeCam, AI generated ($label)")
                 ex.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, "AI generated image. Prompt: ${fullPrompt.take(500)}")
                 ex.saveAttributes()
             }
