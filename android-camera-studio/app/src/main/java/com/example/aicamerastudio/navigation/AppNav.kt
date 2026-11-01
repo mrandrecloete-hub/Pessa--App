@@ -14,6 +14,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.example.aicamerastudio.aistudio.AiStudioScreen
 import com.example.aicamerastudio.camera.CameraScreen
 import com.example.aicamerastudio.core.permissions.CameraPermissionGate
 import com.example.aicamerastudio.data.preferences.UserPreferences
@@ -64,7 +65,7 @@ fun AppNav(prefs: UserPreferences, nav: NavHostController = rememberNavControlle
                     GalleryScreen { item -> nav.navigate("viewer?uri=${enc(item.uri)}&video=${item.isVideo}") }
                 }
                 composable(Top.STUDIO.route) {
-                    StudioScreen(onEditPhoto = { nav.navigate("editor?uri=${enc(it)}") }, onTrimVideo = { nav.navigate("trim?uri=${enc(it)}") })
+                    StudioScreen(onEditPhoto = { nav.navigate("editor?uri=${enc(it)}") }, onTrimVideo = { nav.navigate("trim?uri=${enc(it)}") }, onCreate = { nav.navigate("create") })
                 }
                 composable(Top.SETTINGS.route) {
                     SettingsScreen(prefs, { nav.navigate("capabilities") }, { nav.navigate("privacy") }, { nav.navigate("about") })
@@ -80,6 +81,7 @@ fun AppNav(prefs: UserPreferences, nav: NavHostController = rememberNavControlle
                 composable("trim?uri={uri}", listOf(navArgument("uri") { type = NavType.StringType })) { e ->
                     VideoTrimScreen(Uri.parse(e.arguments!!.getString("uri")!!), { nav.popBackStack() }, { })
                 }
+                composable("create") { AiStudioScreen({ nav.popBackStack() }, { nav.navigate("editor?uri=${enc(it)}") }) }
                 composable("capabilities") { CapabilitiesScreen { nav.popBackStack() } }
                 composable("privacy") { InfoScreen("Privacy", PRIVACY_SECTIONS) { nav.popBackStack() } }
                 composable("about") { InfoScreen("What works and what does not yet", ABOUT_SECTIONS) { nav.popBackStack() } }

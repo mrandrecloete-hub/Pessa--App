@@ -14,6 +14,7 @@ Single `app` module, packages by feature. Manual dependency container in `app/Ap
 | `editor.video` | `TrimConfig` validation, `VideoTrimScreen` (Media3 Transformer clipping, progress, cancel, integrity check). |
 | `data.database` | Room: `MediaAsset` (original <-> processed link, status, notes, timing), `EditSession` (saved edit parameters). Schema exported to `app/schemas`. |
 | `data.preferences` | DataStore user preferences. |
+| `aistudio` | AI image generation. Pure, tested: `GenerationModels` (engines, options, `PromptRules`, `ModelFolderCheck`), `OpenAiImageClient` (request JSON, response and error parsing, behind an `HttpTransport`). Android: `UrlConnectionTransport` (HTTPS only), `SecretStore` (Keystore AES-GCM), `AiSettings`, `OnDeviceGenerator` (MediaPipe, folder import into private storage), `AiStudioScreen`. |
 | `core.*` | Design tokens and shared components, structured `AppError` + `ErrorMapper`, `JobState`, MediaStore repository, permission gate. |
 
 ## Key decisions
@@ -21,4 +22,4 @@ Single `app` module, packages by feature. Manual dependency container in `app/Ap
 - **Banding**: images are processed in bands of about 1 million pixels with halo rows, so peak memory is the source and destination bitmaps plus small buffers. A unit test proves banded output equals whole image output bit for bit.
 - **Linear light**: exposure, white balance, tone and saturation are computed on linear RGB. Tone is a luminance gain, which keeps hue.
 - **Originals are never modified**. Every result is a new MediaStore item written with `IS_PENDING` so partial files are never visible.
-- **No network permission**.
+- **Network**: the INTERNET permission is used only by the optional online engine of the AI image studio, which sends just the typed prompt to OpenAI after consent. Cleartext traffic is disabled.

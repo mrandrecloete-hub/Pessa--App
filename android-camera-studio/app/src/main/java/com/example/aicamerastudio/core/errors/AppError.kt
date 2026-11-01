@@ -7,7 +7,7 @@ import java.util.concurrent.CancellationException
 enum class ErrorCode {
     CAMERA_PERMISSION_DENIED, CAMERA_UNAVAILABLE, UNSUPPORTED_RESOLUTION, UNSUPPORTED_FRAME_RATE,
     INSUFFICIENT_STORAGE, INSUFFICIENT_MEMORY, MODEL_UNAVAILABLE, INFERENCE_FAILED, INVALID_MEDIA,
-    CORRUPTED_MEDIA, EXPORT_FAILED, INTERRUPTED, UNSUPPORTED_CODEC, MEDIA_PROVIDER, CAPTURE_FAILED, UNKNOWN,
+    CORRUPTED_MEDIA, EXPORT_FAILED, INTERRUPTED, UNSUPPORTED_CODEC, MEDIA_PROVIDER, CAPTURE_FAILED, NETWORK, ACCOUNT, CONTENT_POLICY, UNKNOWN,
 }
 
 /** User facing error: what happened, what to do, whether the original is safe, whether retrying can help. */
@@ -15,12 +15,17 @@ data class AppError(
     val code: ErrorCode,
     val what: String,
     val whatToDo: String,
-    val originalSafe: Boolean,
+    /** Null when no original file is involved (e.g. generating a new image). */
+    val originalSafe: Boolean?,
     val retryable: Boolean,
 ) {
     fun asMessage(): String = buildString {
         append(what).append(' ').append(whatToDo).append(' ')
-        append(if (originalSafe) "Your original file is safe." else "Check your original file before continuing.")
+        when (originalSafe) {
+            true -> append("Your original file is safe.")
+            false -> append("Check your original file before continuing.")
+            null -> {}
+        }
         if (retryable) append(" You can try again.")
     }
 }

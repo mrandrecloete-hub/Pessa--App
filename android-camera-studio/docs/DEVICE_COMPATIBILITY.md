@@ -4,7 +4,9 @@
 |---|---|
 | Physical Android device | **Not tested.** None was connected. |
 | Emulator | **Not tested.** The build machine has no KVM, so no emulator could run. |
-| JVM unit tests | 41 tests pass (pipeline, planner, analyser, validator, codec, history, geometry, trim validation, job states, errors). |
+| AI studio, online | Request/response logic unit tested; **never called against the real OpenAI API**. |
+| AI studio, on device | **Not run.** Needs an arm64 phone (the MediaPipe native library ships only arm64-v8a), a capable GPU and an imported model of about 2 GB. |
+| JVM unit tests | 50 tests pass (pipeline, planner, analyser, validator, codec, history, geometry, trim validation, job states, errors). |
 | Build | Debug APK and minified release APK build with compileSdk 35. Lint: 0 errors. |
 
 Minimum Android 10 (API 29). Camera behaviour depends on each phone's CameraX support; quality, frame rate, stabilisation, flash, zoom range and exposure compensation are all read from the device at runtime and hidden when absent.

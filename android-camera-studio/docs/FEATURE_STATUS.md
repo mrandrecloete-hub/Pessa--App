@@ -15,5 +15,10 @@ Legend: Done = implemented and compiles, logic unit tested where marked. "Not ru
 - Settings, Device capabilities (Camera2), Privacy, and "What works" pages
 - Structured errors that say what happened, what to do, whether the original is safe and whether retry helps (unit tested)
 
+- AI image studio (Studio > Create an image):
+  - Online: OpenAI Images API (`/v1/images/generations`, default model `gpt-image-1`, editable), user's own key encrypted with Android Keystore, consent dialog before first use, sizes 1024x1024 / 1536x1024 / 1024x1536, quality, 1 to 4 images, elapsed time shown (no fake progress), cancel disconnects the request. Request and response handling unit tested with a fake transport. **Not tested against the real API** (no key in the build environment).
+  - On device: MediaPipe Image Generator 0.10.26.1 (Stable Diffusion 1.5 weights converted by MediaPipe's script, imported by the user from a folder, about 2 GB, not bundled). Real per step progress and cancel between steps. arm64-v8a only. **Not run** (no ARM device available).
+  - Results are saved as `_gen` JPEGs with EXIF Software and ImageDescription marking them AI generated; gallery filter "AI generated".
+
 ## Not started (not shown in the app)
-AI models of any kind (neural denoise, super resolution, segmentation, inpainting), AI image generation, face aware processing, Pro manual ISO/shutter/focus, histogram, focus peaking, RAW, Night and HDR multi frame, Burst, Document, Macro, Portrait blur, slow motion, timelapse, HDR/HEVC video options, automatic video enhancement, multi clip timeline, text, music, transitions, curves, HSL, vignette, grain, filters, straighten, perspective, albums, favourites, instrumentation tests.
+AI enhancement models (neural denoise, super resolution, segmentation, inpainting), prompt based editing of existing photos, image to image, face aware processing, Pro manual ISO/shutter/focus, histogram, focus peaking, RAW, Night and HDR multi frame, Burst, Document, Macro, Portrait blur, slow motion, timelapse, HDR/HEVC video options, automatic video enhancement, multi clip timeline, text, music, transitions, curves, HSL, vignette, grain, filters, straighten, perspective, albums, favourites, instrumentation tests.

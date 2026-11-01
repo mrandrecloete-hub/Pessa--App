@@ -16,12 +16,19 @@ import com.example.aicamerastudio.core.design.AppToolbar
 import com.example.aicamerastudio.core.design.Tokens
 
 @Composable
-fun StudioScreen(onEditPhoto: (Uri) -> Unit, onTrimVideo: (Uri) -> Unit) {
+fun StudioScreen(onEditPhoto: (Uri) -> Unit, onTrimVideo: (Uri) -> Unit, onCreate: () -> Unit) {
     val photo = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { it?.let(onEditPhoto) }
     val video = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { it?.let(onTrimVideo) }
     Column(Modifier.fillMaxSize()) {
         AppToolbar("Studio")
         Column(Modifier.verticalScroll(rememberScrollState()).padding(Tokens.spaceMd), verticalArrangement = Arrangement.spacedBy(Tokens.spaceMd)) {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(Tokens.spaceMd), verticalArrangement = Arrangement.spacedBy(Tokens.spaceSm)) {
+                    Text("AI image studio", style = MaterialTheme.typography.titleMedium)
+                    Text("Describe an image and create it. Choose online (OpenAI, highest quality, your own API key) or on device (free, private, offline, needs an imported model).", style = MaterialTheme.typography.bodyMedium)
+                    AppButton("Create an image", onCreate, Modifier.fillMaxWidth())
+                }
+            }
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(Tokens.spaceMd), verticalArrangement = Arrangement.spacedBy(Tokens.spaceSm)) {
                     Text("Photo editor", style = MaterialTheme.typography.titleMedium)

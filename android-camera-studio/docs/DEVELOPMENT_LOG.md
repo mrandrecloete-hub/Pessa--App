@@ -8,3 +8,10 @@
 - Added Android layers: storage, Room, DataStore, CameraX engine, camera screen, enhancement worker, gallery, compare view, photo editor, video trim, settings, navigation.
 - Lint: fixed opt in annotations for CameraX `getCameraInfo` and Media3 `ExportException` codes, and a `produceState` pattern. 0 errors remain; 78 warnings (mostly newer dependency versions available, and style).
 - Result: 41 unit tests pass; debug APK and unsigned minified release APK build. Nothing has run on a phone yet.
+
+## 2026-11-01: AI image studio (user request)
+- User asked for an image generation studio like ChatGPT's image tool and chose to support both an online and an on device engine.
+- Online: OpenAI Images API with the user's own key (Keystore encrypted), consent dialog, HTTPS only. No key exists in this environment, so it is unit tested with a fake transport but has not been called for real.
+- On device: MediaPipe `tasks-vision-image-generator` 0.10.26.1. The API was read from the AAR with `javap` (`createFromOptions`, `setInputs`, `execute`). Native code is arm64 only (about 44 MB uncompressed), so the debug APK grew. The Stable Diffusion model is not bundled or downloaded; the user imports a converted folder. No public download URL was invented.
+- Added INTERNET permission (used only by the online engine) and updated the in app privacy text.
+- 50 unit tests pass.
