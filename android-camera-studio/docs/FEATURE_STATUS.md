@@ -1,6 +1,8 @@
 # Feature status
 
 ## BlazeCam upgrade (2026-11-01, in progress: emulator testing not finished)
+In-app updates download only the changes (patch, usually under 1 MB) and install automatically in the background on Android 12+ (see RELEASING.md); patch rebuild tested against the real 0.2.0 and 0.2.1 APKs.
+
 Built and unit tested, not yet verified on the emulator or a phone: BlazeCam name and stand-alone icon (crown, frame and lettering removed from the supplied artwork), black / royal blue / gold design, startup logo reveal, camera modes Night, Portrait, Photo, Video, Pro, Zoom; HDR (phone extension or 3-exposure fusion), Night (phone extension or 5-frame merge), Portrait (face finding, subject focus, background blur, 5 lighting looks, or phone bokeh extension), Pro (ISO, shutter, EV, white balance, manual focus, RAW+DNG, histogram, only where supported), photo resolution, AI toggle, gallery thumbnail, shutter / focus / mode animations, video pause and resume; 10 filters with live preview (Android 12+) and intensity in camera and editor; gallery favourites, albums, recycle bin with restore (Android 11+); settings for resolution, video quality, timer, shutter sound, watermark, save location, storage and permissions. CameraX 1.5.1. 92 unit tests pass, lint 0 errors.
 
 

@@ -10,6 +10,10 @@
     <!-- Long photo processing (ultra zoom merge and AI upscaling) runs as a visible foreground job. -->
     <!-- Lets BlazeCam install its own updates from GitHub releases (Android asks the user once). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 12+: BlazeCam may update itself without a confirmation screen once it installed itself. -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <!-- Android 13+: "Update ready" notification, only if the user allows notifications. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />

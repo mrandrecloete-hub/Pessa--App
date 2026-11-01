@@ -34,6 +34,15 @@ class ReleaseParserTest {
         assertNull(ReleaseParser.newest("[]", "0.1.0", listOf("arm64-v8a")))
     }
 
+    @Test fun findsThePatchFromTheInstalledVersion() {
+        val json = JSONArray(listOf(release("blazecam-v0.3.0", listOf("BlazeCam-0.3.0-arm64-v8a.apk", "BlazeCam-0.3.0-x86_64.apk", "SHA256SUMS.txt",
+            "BlazeCam-0.2.9-to-0.3.0-arm64-v8a.patch", "BlazeCam-0.2.8-to-0.3.0-arm64-v8a.patch", "BlazeCam-0.2.9-to-0.3.0-x86_64.patch")))).toString()
+        val r = ReleaseParser.newest(json, "0.2.8", listOf("arm64-v8a"))!!
+        assertEquals("https://github.com/dl/BlazeCam-0.2.8-to-0.3.0-arm64-v8a.patch", r.patchUrl); assertEquals(123L, r.downloadSize)
+        assertEquals("https://github.com/dl/BlazeCam-0.2.9-to-0.3.0-x86_64.patch", ReleaseParser.newest(json, "0.2.9", listOf("x86_64"))!!.patchUrl)
+        assertNull("no patch from 0.2.5: full APK", ReleaseParser.newest(json, "0.2.5", listOf("arm64-v8a"))!!.patchUrl)
+    }
+
     @Test fun readsChecksumsFile() {
         val sums = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  BlazeCam-0.3.0-arm64-v8a.apk\n" +
             "aaaa  broken-line\n" + "D4735E3A265E16EEE03F59718B9B5D03019C07D8B6C51F90DA3A666EEC13AB35 *BlazeCam-0.3.0-x86_64.apk\n"

@@ -47,3 +47,19 @@ The earlier test builds used the ID `com.example.aicamerastudio` and a temporary
 - Google Play does not allow apps that install their own updates (`REQUEST_INSTALL_PACKAGES`). If BlazeCam moves
   to Play later, remove the updater for that build and let Play update it.
 - Debug builds (`com.blazecam.app.debug`) cannot be updated by release APKs.
+
+## Fast updates (patches) and automatic installs
+
+- Each release also carries patches such as `BlazeCam-0.2.4-to-0.2.5-arm64-v8a.patch`, made by
+  `tools/update/make_patch.py` (bsdiff with zlib) from the APKs of the last 3 releases. A typical patch
+  is under 1 MB instead of about 70 MB (0.2.0 to 0.2.1: 588 KB, 0.8%).
+- The app (`core/update/DeltaPatch.kt`) rebuilds the new APK from the installed one and installs it only
+  if its SHA-256 matches `SHA256SUMS.txt`. If there is no patch for the installed version, or the result
+  does not match, it downloads the full APK and checks that instead.
+- `UpdateWorker` runs every 6 hours when online: it prepares the update (patch on any network, full APK
+  only on Wi-Fi or another unmetered network). On Android 12 and newer, once BlazeCam has installed an
+  update of itself, Android lets it install later updates without a confirmation screen; BlazeCam does
+  that only while it is not on screen. Otherwise it shows "BlazeCam X is ready" (notification if allowed,
+  and a dialog the next time the app opens; installing then takes a few seconds).
+- Limits: versions before 0.2.5 do not have this code, so the update to 0.2.5 is a full download one last
+  time. The first update after installing from a browser or file manager asks for confirmation once.
