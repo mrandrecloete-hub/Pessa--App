@@ -2,7 +2,7 @@
 
 Two soft mechanical transients ("tk" then a quieter "chk" 75 ms later), each made of band-limited noise
 with a very fast decay plus a short low "body" tone, a faint room tail, and a gentle overall level
-(peak about -14 dBFS). Writes app/src/main/res/raw/shutter_soft.wav (44.1 kHz, 16 bit, mono).
+(peak about -14 dBFS). Writes app/src/main/res/raw/shutter_click.wav (44.1 kHz, 16 bit, mono).
 Run: python tools/sound/make_shutter.py  (needs numpy)
 """
 import wave, numpy as np, os
@@ -44,7 +44,7 @@ out *= np.clip((0.20 - t) / 0.04, 0, 1)
 peak_db = -14.0
 out = out / np.max(np.abs(out)) * 10 ** (peak_db / 20)
 
-path = os.path.join(os.path.dirname(__file__), "..", "..", "app", "src", "main", "res", "raw", "shutter_soft.wav")
+path = os.path.join(os.path.dirname(__file__), "..", "..", "app", "src", "main", "res", "raw", "shutter_click.wav")
 with wave.open(path, "wb") as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
     w.writeframes((out * 32767).astype("<i2").tobytes())
