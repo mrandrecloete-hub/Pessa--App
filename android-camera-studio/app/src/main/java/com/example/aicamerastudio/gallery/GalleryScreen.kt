@@ -20,6 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -130,7 +133,8 @@ fun GalleryScreen(onOpen: (MediaItem) -> Unit) {
         val page = withContext(Dispatchers.IO) { media.page(items.size, pageSize) }
         items.addAll(page); if (page.size < pageSize) end = true; loading = false
     }
-    LaunchedEffect(reload) { items.clear(); end = false; loading = true; selected.clear(); loadMore() }
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(reload) { items.clear(); end = false; loading = true; selected.clear(); loadMore(); refreshing = false }
     val albumUris by (albumOpen?.let { lib.albumItems(it.first) } ?: kotlinx.coroutines.flow.flowOf(emptyList())).collectAsState(initial = emptyList())
     LaunchedEffect(tab, favourites, albumUris, reload, albumOpen) {
         tabItems = withContext(Dispatchers.IO) {
@@ -196,6 +200,12 @@ fun GalleryScreen(onOpen: (MediaItem) -> Unit) {
                 })
         }
         message?.let { Text(it, Modifier.fillMaxWidth().padding(horizontal = Tokens.spaceMd, vertical = 4.dp), style = MaterialTheme.typography.bodySmall, color = Tokens.goldLight) }
+        // Pull down to refresh: reloads photos, favourites, albums and the recycle bin.
+        val pullState = rememberPullToRefreshState()
+        PullToRefreshBox(refreshing, { refreshing = true; message = null; reload++ }, Modifier.weight(1f).fillMaxWidth(), state = pullState,
+            indicator = { PullToRefreshDefaults.Indicator(state = pullState, isRefreshing = refreshing, modifier = Modifier.align(Alignment.TopCenter),
+                color = Tokens.gold, containerColor = Tokens.panel) }) {
+        Column(Modifier.fillMaxSize()) {
         when (tab) {
             Tab.LIBRARY -> {
                 if (selected.isEmpty()) {
@@ -235,6 +245,8 @@ fun GalleryScreen(onOpen: (MediaItem) -> Unit) {
             }
             Tab.TRASH -> if (tabItems.isEmpty()) EmptyState("The recycle bin is empty", "Deleted items stay here for 30 days, then Android removes them.")
                 else MediaGrid(tabItems, selected, favSet, onOpen = { selected.add(it.uri) }, onToggle = toggle)
+        }
+        }
         }
     }
 

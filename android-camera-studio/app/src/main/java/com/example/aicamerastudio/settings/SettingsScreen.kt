@@ -41,9 +41,21 @@ fun SettingsScreen(prefs: UserPreferences, onCapabilities: () -> Unit, onPrivacy
     fun set(f: (UserPreferences) -> UserPreferences) { scope.launch { repo.update(f) } }
     var profileMenu by remember { mutableStateOf(false) }
 
+    var refreshing by remember { mutableStateOf(false) }
+    var refreshKey by remember { mutableIntStateOf(0) }
+    val updater = (LocalContext.current.applicationContext as App).graph.updater
+    val pullState = androidx.compose.material3.pulltorefresh.rememberPullToRefreshState()
     Column(Modifier.fillMaxSize()) {
         AppToolbar("Settings")
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = Tokens.spaceMd).padding(bottom = Tokens.spaceLg)) {
+        // Pull down to refresh: storage, permissions and an update check.
+        androidx.compose.material3.pulltorefresh.PullToRefreshBox(refreshing, {
+            refreshing = true; refreshKey++
+            scope.launch { updater.check(); refreshing = false }
+        }, Modifier.fillMaxSize(), state = pullState, indicator = {
+            androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator(state = pullState, isRefreshing = refreshing,
+                modifier = Modifier.align(androidx.compose.ui.Alignment.TopCenter), color = Tokens.gold, containerColor = Tokens.panel)
+        }) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Tokens.spaceMd).padding(bottom = Tokens.spaceLg)) {
             Section("Photo enhancement") {
                 SwitchRow("Enhance after capture", "Saves a separate enhanced copy in the background. The original is kept.", prefs.autoEnhance) { v -> set { it.copy(autoEnhance = v) } }
                 ExposedDropdownMenuBox(profileMenu, { profileMenu = it }) {
@@ -98,8 +110,10 @@ fun SettingsScreen(prefs: UserPreferences, onCapabilities: () -> Unit, onPrivacy
                 if (prefs.watermark) OutlinedTextField(prefs.watermarkText, { t -> set { it.copy(watermarkText = t.take(40)) } }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Watermark text") })
                 SwitchRow("Keep the untouched photo", "When a filter, portrait effect or watermark is applied, also keep the photo exactly as the camera took it.", prefs.keepUntouched) { v -> set { it.copy(keepUntouched = v) } }
             }
-            Section("Storage") { StorageInfo() }
-            Section("Permissions") { PermissionInfo() }
+            key(refreshKey) {
+                Section("Storage") { StorageInfo() }
+                Section("Permissions") { PermissionInfo() }
+            }
             Section("Appearance") {
                 ThemeMode.values().forEach { m ->
                     Row(Modifier.fillMaxWidth().heightIn(min = Tokens.minTouch), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -117,6 +131,7 @@ fun SettingsScreen(prefs: UserPreferences, onCapabilities: () -> Unit, onPrivacy
                 TextButton(onAbout) { Text("What works and what does not yet") }
             }
         }
+    }
     }
 }
 
