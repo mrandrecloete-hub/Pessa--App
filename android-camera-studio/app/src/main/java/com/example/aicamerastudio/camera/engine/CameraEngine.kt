@@ -219,9 +219,12 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
         when (cfg.mode) {
             CaptureMode.VIDEO -> {
                 var q = cfg.videoQuality?.takeIf { it in qualities } ?: qualities.firstOrNull() ?: Quality.HIGHEST
-                // Live beauty processes every frame on the GPU: 4K would be too heavy for most phones, so it records at 1080p.
-                if (cfg.effect != null && (q == Quality.UHD || q == Quality.HIGHEST) && Quality.FHD in qualities) q = Quality.FHD
-                val recorder = Recorder.Builder().setQualitySelector(QualitySelector.from(q, FallbackStrategy.lowerQualityOrHigherThan(q))).build()
+                // Live beauty processes every frame on the GPU. When the user has not chosen a quality, start at 1080p
+                // (4K is still available by choosing it: it needs a fast phone).
+                if (cfg.effect != null && cfg.videoQuality == null && (q == Quality.UHD || q == Quality.HIGHEST) && Quality.FHD in qualities) q = Quality.FHD
+                val height = when (q) { Quality.UHD -> 2160; Quality.FHD -> 1080; Quality.HD -> 720; Quality.SD -> 480; else -> 2160 }
+                val recorder = Recorder.Builder().setQualitySelector(QualitySelector.from(q, FallbackStrategy.lowerQualityOrHigherThan(q)))
+                    .setTargetVideoEncodingBitRate(VideoBitrates.target(height, cfg.fps)).build()
                 val b = VideoCapture.Builder(recorder)
                 if (cfg.fps != null && cfg.fps in fpsOptions) b.setTargetFrameRate(Range(cfg.fps, cfg.fps))
                 if (cfg.stabilise && stabSupported) b.setVideoStabilizationEnabled(true)
