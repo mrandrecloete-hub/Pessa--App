@@ -20,3 +20,8 @@ Release APK per CPU type: arm64-v8a 70.8 MB, armeabi-v7a 53.4 MB, x86_64 56.8 MB
 
 ## Speed (measured on the build machine's JVM, not a phone)
 Segmentation of a 512x512 photo about 0.1 s; removal of the whole astronaut (about 45% of a 512x512 frame) 2.5 s; 640x427 composite render 15 ms; Real-ESRGAN 48x48 -> 192x192 about 0.07 s. Phone timings will differ and have not been measured.
+
+## Beauty camera
+- Needs OpenGL ES 3.0 and the phone's support for a CameraX effect on preview (and on video). Where a phone refuses, BlazeCam uses the plain camera and says so.
+- Tested: the GPU renderer on the Android emulator (x86_64, software GL, API 30) through the photo path; face tracking on the JVM (about 16 ms per frame on a build server with 2 threads; a phone will differ).
+- Not tested: any real phone, the live preview, video recording. The emulator available here (no hardware acceleration) was too slow to run the live camera: Android's own watchdog kept restarting it.

@@ -49,3 +49,13 @@ Note on the super resolution numbers: Real-ESRGAN is trained for perceived detai
 | Undo / redo history survives project save and reopen | Automated, passed | `HistoryPersistenceTest`, `ProjectPersistenceTest` |
 | Database migration 1 -> 2 matches Room's schema | Automated, passed (SQL compared with exported schema; not run on a device database) | `migrationSqlMatchesTheSchemaRoomExported` |
 | Indoor / outdoor / different lighting / complex hair on real phone photos, touch gestures, export on a phone | **Needs device, not run** | |
+
+## Beauty camera (device tests not yet run)
+- Photo mode, front and back: Beauty on, a face is found, the preset thumbnails change the live picture; Off restores the plain picture at once.
+- Move the head left, right, up, down, tilt and turn: the effects stay on the face and do not jump; cover the camera: they fade out; uncover: they return.
+- Two faces in view: both are smoothed.
+- Hold Compare: the plain picture shows.
+- Take a photo: two files (original and `_beauty`); the original has no effect applied.
+- Video: record 30 s with sound at 1080p; the saved video shows the effects; audio is in sync; frame rate stays near the chosen rate; phone does not get hot within a few minutes. Try a mid range phone and a flagship.
+- Low light: effects still run; the picture is not blotchy.
+- Phone without OpenGL ES 3, or one that refuses the effect: the plain camera is used and a message says so.
