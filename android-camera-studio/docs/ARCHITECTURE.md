@@ -39,3 +39,10 @@ All AI runs through ONNX Runtime so the same inference code is exercised by JVM 
 - **Linear light**: exposure, white balance, tone and saturation are computed on linear RGB. Tone is a luminance gain, which keeps hue.
 - **Originals are never modified**. Every result is a new MediaStore item written with `IS_PENDING` so partial files are never visible.
 - **Network**: the INTERNET permission is used only by the optional online engine of the AI image studio, which sends just the typed prompt to OpenAI after consent. Cleartext traffic is disabled.
+
+## Beauty camera (`camera.beauty`)
+- `FaceTracker` runs BlazeFace and Face Mesh (ONNX Runtime) on a small copy of the camera frame, on its own thread, and smooths the 468 points. Frame to frame it only runs the mesh model on a crop placed from the previous points.
+- `BeautyProcessor` is a CameraX `SurfaceProcessor` (`BeautyEffect` for PREVIEW and VIDEO_CAPTURE). CameraX hands every camera frame to it; `gl/BeautyRenderer` draws the result into every output surface, so preview and recording match. A frame is read back (pixel buffers, one frame late) for the tracker only.
+- `gl/BeautyShaders` holds the GLSL: face masks, edge preserving smoothing, blemish and tone, makeup, eyes and teeth, colour grade. `BeautySettings` holds the amounts, the 12 presets and their grades (the same grade maths exists in Kotlin for thumbnails and tests).
+- `BeautyStill` runs the same renderer for a photo on a background thread with its own EGL context.
+- Privacy: nothing about faces is stored or sent; only the slider values are saved (`BeautyStore`).

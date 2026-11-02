@@ -71,6 +71,8 @@ data class BindConfig(
     val analysis: AnalysisKind = AnalysisKind.NONE,
     /** Read live ISO and shutter speed from the camera (Pro mode). */
     val liveExposure: Boolean = false,
+    /** A GPU effect applied to the preview and video recording (the beauty camera). */
+    val effect: CameraEffect? = null,
 )
 
 /** What the bound camera really supports. The UI only offers what is listed here. */
@@ -104,6 +106,8 @@ data class CameraSupport(
     val photoSizes: List<Size> = emptyList(),
     val photoSize: Size? = null,
     val analysisActive: Boolean = false,
+    /** True when [BindConfig.effect] is really applied. False if this camera refused it (then the plain camera runs). */
+    val effectActive: Boolean = false,
 )
 
 data class LiveExposure(val iso: Int?, val exposureNs: Long?, val focusDiopters: Float?)
@@ -214,7 +218,9 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
         rawActive = false
         when (cfg.mode) {
             CaptureMode.VIDEO -> {
-                val q = cfg.videoQuality?.takeIf { it in qualities } ?: qualities.firstOrNull() ?: Quality.HIGHEST
+                var q = cfg.videoQuality?.takeIf { it in qualities } ?: qualities.firstOrNull() ?: Quality.HIGHEST
+                // Live beauty processes every frame on the GPU: 4K would be too heavy for most phones, so it records at 1080p.
+                if (cfg.effect != null && (q == Quality.UHD || q == Quality.HIGHEST) && Quality.FHD in qualities) q = Quality.FHD
                 val recorder = Recorder.Builder().setQualitySelector(QualitySelector.from(q, FallbackStrategy.lowerQualityOrHigherThan(q))).build()
                 val b = VideoCapture.Builder(recorder)
                 if (cfg.fps != null && cfg.fps in fpsOptions) b.setTargetFrameRate(Range(cfg.fps, cfg.fps))
@@ -237,7 +243,17 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
             a.setAnalyzer(analysisExecutor) { img -> val f = analyzer; if (f != null) f(img) else img.close() }
             useCases += a; analysisOn = true
         }
-        camera = try {
+        var effectOn = false
+        if (cfg.effect != null && useExt == ExtensionMode.NONE) {
+            camera = try {
+                val group = UseCaseGroup.Builder().apply { useCases.forEach { addUseCase(it) }; addEffect(cfg.effect) }.build()
+                p.bindToLifecycle(owner, selector, group).also { effectOn = true }
+            } catch (e: IllegalArgumentException) {
+                // This camera cannot run the effect next to these use cases: fall back to the plain camera.
+                p.unbindAll(); null
+            }
+        }
+        if (!effectOn) camera = try {
             p.bindToLifecycle(owner, selector, *useCases.toTypedArray())
         } catch (e: IllegalArgumentException) {
             // Some cameras cannot run frame analysis next to capture: retry without it rather than fail.
@@ -272,6 +288,7 @@ class CameraEngine(private val context: Context, private val media: MediaStoreRe
             minFocusDiopters = chars?.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE) ?: 0f,
             photoSizes = sizes, photoSize = imageCapture?.resolutionInfo?.resolution,
             analysisActive = analysisOn,
+            effectActive = effectOn,
         )
     }
 

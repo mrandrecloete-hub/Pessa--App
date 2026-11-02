@@ -41,6 +41,18 @@ class OnnxModel(bytes: ByteArray, threads: Int = 4, tryXnnpack: Boolean = false)
         }
     }
 
+    /** Runs the model and returns every output in the model's declared order. */
+    fun runAll(data: FloatArray, shape: LongArray): List<FloatArray> {
+        OnnxTensor.createTensor(env, FloatBuffer.wrap(data), shape).use { input ->
+            session.run(mapOf(inputName to input)).use { result ->
+                return session.outputNames.map { name ->
+                    val buf = (result.get(name).get() as OnnxTensor).floatBuffer
+                    FloatArray(buf.remaining()).also { buf.get(it) }
+                }
+            }
+        }
+    }
+
     override fun close() { session.close() }
 }
 
@@ -51,4 +63,6 @@ object ModelNames {
     const val SUPER_RES = "models/realesr_general_x4v3.onnx"
     const val PERSON_SEG = "models/selfie_multiclass_256x256.onnx"
     const val TAP_SELECT = "models/magic_touch.onnx"
+    const val FACE_DETECT = "models/face_detection_short_range.onnx"
+    const val FACE_MESH = "models/face_landmark.onnx"
 }

@@ -83,7 +83,7 @@ private fun flashLabel(m: Int) = when (m) { ImageCapture.FLASH_MODE_AUTO -> "Fla
 private fun qualityLabel(q: Quality) = when (q) { Quality.UHD -> "4K"; Quality.FHD -> "1080p"; Quality.HD -> "720p"; Quality.SD -> "480p"; else -> "Auto" }
 private fun qualityOf(name: String) = when (name) { "UHD" -> Quality.UHD; "FHD" -> Quality.FHD; "HD" -> Quality.HD; "SD" -> Quality.SD; else -> null }
 
-private enum class Sheet { NONE, FILTERS, RESOLUTION }
+private enum class Sheet { NONE, FILTERS, RESOLUTION, BEAUTY }
 
 @Composable
 fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences, onOpenMedia: (Uri, Boolean) -> Unit = { _, _ -> }) {
@@ -126,6 +126,17 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
     var lastMedia by remember { mutableStateOf<Pair<Uri, Boolean>?>(null) }
     val live by engine.liveExposure.collectAsState()
 
+    // ---- beauty camera ----
+    val beautyStore = remember { com.example.aicamerastudio.camera.beauty.BeautyStore(context) }
+    var beauty by remember { mutableStateOf(beautyStore.load()) }
+    val beautyProc = remember { lazy { com.example.aicamerastudio.camera.beauty.BeautyProcessor(context.applicationContext) } }
+    DisposableEffect(Unit) { onDispose { if (beautyProc.isInitialized()) beautyProc.value.release() } }
+    val beautyMode = mode == CaptureMode.PHOTO || mode == CaptureMode.VIDEO
+    val beautyActive = beauty.enabled && beautyMode
+    LaunchedEffect(beauty) { beautyStore.save(beauty); if (beautyProc.isInitialized()) beautyProc.value.state = beauty }
+    val beautyStatus by (if (beautyActive) beautyProc.value.status else kotlinx.coroutines.flow.flowOf(com.example.aicamerastudio.camera.beauty.BeautyStatus()))
+        .collectAsState(com.example.aicamerastudio.camera.beauty.BeautyStatus())
+
     var support by remember { mutableStateOf<CameraSupport?>(null) }
     var zoom by remember { mutableFloatStateOf(1f) }
     var error by remember { mutableStateOf<AppError?>(null) }
@@ -161,9 +172,10 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
     val steadyNow by rememberUpdatedState(steadiness)
 
     val filter = Filters.byId(filterId)
-    val filterModes = mode == CaptureMode.PHOTO || mode == CaptureMode.PORTRAIT || mode == CaptureMode.PRO
+    // While Beauty is on in Photo mode, its presets replace the older colour filters (they would apply twice).
+    val filterModes = (mode == CaptureMode.PHOTO && !beautyActive) || mode == CaptureMode.PORTRAIT || mode == CaptureMode.PRO
     val wantExtension = when {
-        mode == CaptureMode.PHOTO && hdr -> ExtensionMode.HDR
+        mode == CaptureMode.PHOTO && hdr && !beautyActive -> ExtensionMode.HDR
         mode == CaptureMode.NIGHT -> ExtensionMode.NIGHT
         mode == CaptureMode.PORTRAIT && phoneBokeh -> ExtensionMode.BOKEH
         else -> ExtensionMode.NONE
@@ -179,11 +191,16 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
         face = null; hist = null
     }
 
-    LaunchedEffect(front, mode, aspect, quality, fps, stabilise, zoomBindId, wantExtension, megapixels, raw) {
+    LaunchedEffect(front, mode, aspect, quality, fps, stabilise, zoomBindId, wantExtension, megapixels, raw, beautyActive) {
         try {
+            val effect = if (beautyActive) beautyProc.value.let { proc ->
+                proc.state = beauty
+                com.example.aicamerastudio.camera.beauty.BeautyEffect(proc,
+                    if (mode == CaptureMode.VIDEO) androidx.camera.core.CameraEffect.PREVIEW or androidx.camera.core.CameraEffect.VIDEO_CAPTURE else androidx.camera.core.CameraEffect.PREVIEW)
+            } else null
             val s = engine.bind(owner, previewView, BindConfig(front, zoomBindId.takeIf { mode == CaptureMode.ZOOM }, mode, aspect, quality, fps, stabilise, flash,
                 extension = wantExtension, photoMegapixels = megapixels, raw = raw && mode == CaptureMode.PRO,
-                analysis = if (analysisWanted) AnalysisKind.FRAMES else AnalysisKind.NONE, liveExposure = mode == CaptureMode.PRO)) { zoom = it }
+                analysis = if (analysisWanted) AnalysisKind.FRAMES else AnalysisKind.NONE, liveExposure = mode == CaptureMode.PRO, effect = effect)) { zoom = it }
             support = s
             evIndex = 0; manual = ManualSettings()
             error = null
@@ -265,6 +282,27 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
 
     fun afterPhoto(uri: Uri) {
         lastSaved = uri
+        // Beauty: the photo just saved is the untouched original; an enhanced copy is made with the same GPU renderer as the preview.
+        if (beautyActive && support?.effectActive == true && !beauty.isNeutral) {
+            val look = beauty
+            notice = "Applying beauty to a copy..."
+            scope.launch {
+                notice = try {
+                    val copy = withContext(Dispatchers.Default) {
+                        val photo = com.example.aicamerastudio.photo.enhancement.ImageLoader.decode(context.contentResolver, uri)
+                        val r = com.example.aicamerastudio.camera.beauty.BeautyStill.process(context, photo, look)
+                        photo.recycle()
+                        graph.media.saveJpeg(MediaStoreRepository.timestampName("BC_", "_beauty"), r.bitmap, prefs.jpegQuality).also { r.bitmap.recycle() }
+                    }
+                    lastSaved = copy
+                    "Beauty copy saved. Original kept."
+                } catch (t: Throwable) {
+                    if (t is kotlinx.coroutines.CancellationException) throw t
+                    "Could not make the beauty copy. Your original photo is saved."
+                }
+            }
+            return
+        }
         val look = FinishPhotoWorker.Look(
             enhance = prefs.autoEnhance && mode != CaptureMode.PRO, profile = prefs.profile, strength = prefs.strength,
             light = if (mode == CaptureMode.PORTRAIT && support?.extensionActive != ExtensionMode.BOKEH) light else if (mode == CaptureMode.PORTRAIT && light != PortraitLight.NATURAL) light else null,
@@ -305,7 +343,7 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
                     burst(UltraZoomWorker.KIND_ZOOM, zoomFrames, crop = if (route.bindCameraId == zoomBindId) route.extendedCrop else 1f, ai = zoomAi, label = plan.label)
                 }
                 mode == CaptureMode.NIGHT && s.extensionActive != ExtensionMode.NIGHT -> { shutterFeedback(); burst(UltraZoomWorker.KIND_NIGHT, 5, label = "Night, 5 frames merged by BlazeCam") }
-                mode == CaptureMode.PHOTO && hdr && s.extensionActive != ExtensionMode.HDR -> {
+                mode == CaptureMode.PHOTO && hdr && !beautyActive && s.extensionActive != ExtensionMode.HDR -> {
                     val k = (2f / s.evStep).roundToInt().coerceIn(1, minOf(-s.evMin, s.evMax))
                     shutterFeedback(); burst(UltraZoomWorker.KIND_HDR, 3, evSteps = listOf(-k, 0, k), label = "HDR, 3 exposures fused by BlazeCam")
                 }
@@ -390,9 +428,14 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
                         flash = FLASH_MODES[(FLASH_MODES.indexOf(flash) + 1) % FLASH_MODES.size]; engine.setFlashMode(flash)
                     } else GlassButton(Icons.Default.FlashlightOn, if (torch) "Torch on" else "Torch off", torch) { torch = !torch; engine.setTorch(torch) }
                 }
-                if (mode == CaptureMode.PHOTO && s != null && (ExtensionMode.HDR in s.extensions || s.evSupported))
+                if (beautyMode) GlassButton(Icons.Default.Face, if (beauty.enabled) "Beauty on. Open beauty settings" else "Beauty off. Turn on", beauty.enabled, label = "Beauty") {
+                    if (!beauty.enabled) { beauty = beauty.copy(enabled = true); sheet = Sheet.BEAUTY }
+                    else sheet = if (sheet == Sheet.BEAUTY) Sheet.NONE else Sheet.BEAUTY
+                    if (sheet == Sheet.BEAUTY) sample = previewView.bitmap?.let { b -> Bitmap.createScaledBitmap(b, 72, (72f * b.height / b.width).toInt().coerceAtLeast(1), true) }
+                }
+                if (mode == CaptureMode.PHOTO && !beautyActive && s != null && (ExtensionMode.HDR in s.extensions || s.evSupported))
                     GlassButton(null, if (hdr) "HDR on" else "HDR off", hdr, label = "HDR") { hdr = !hdr }
-                if (mode != CaptureMode.VIDEO && mode != CaptureMode.PRO) GlassButton(Icons.Default.AutoAwesome, if (prefs.autoEnhance) "AI enhancement on" else "AI enhancement off", prefs.autoEnhance, label = "AI") {
+                if (mode != CaptureMode.VIDEO && mode != CaptureMode.PRO && !beautyActive) GlassButton(Icons.Default.AutoAwesome, if (prefs.autoEnhance) "AI enhancement on" else "AI enhancement off", prefs.autoEnhance, label = "AI") {
                     scope.launch { graph.preferences.update { it.copy(autoEnhance = !it.autoEnhance) } }
                 }
                 if (mode != CaptureMode.VIDEO && s != null && s.photoSizes.isNotEmpty()) {
@@ -419,6 +462,13 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
                         steps = (s.evMax - s.evMin - 1).coerceAtLeast(0), modifier = Modifier.weight(1f).padding(start = Tokens.spaceSm).semantics { contentDescription = "Exposure compensation" })
                 }
             }
+            if (beautyActive && sheet != Sheet.BEAUTY && !recording) Row(Modifier.align(Alignment.CenterHorizontally).clip(RoundedCornerShape(16.dp))
+                .background(com.example.aicamerastudio.camera.ui.BeautyColors.panel).clickable { beauty = beauty.copy(enabled = false) }
+                .semantics { contentDescription = "Beauty ${beauty.preset.label} is on. Tap to turn every beauty effect off" }
+                .padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Beauty: ${beauty.preset.label}", color = com.example.aicamerastudio.camera.ui.BeautyColors.silver, style = MaterialTheme.typography.labelMedium)
+                Icon(Icons.Default.Close, null, tint = com.example.aicamerastudio.camera.ui.BeautyColors.silver, modifier = Modifier.padding(start = 6.dp).size(16.dp))
+            }
             if (sheet == Sheet.RESOLUTION && s != null) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Chip("Max", megapixels == 0) { megapixels = 0; scope.launch { graph.preferences.update { it.copy(photoMegapixels = 0) } } }
                 s.photoSizes.take(6).forEach { sz ->
@@ -428,7 +478,8 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
             }
             if (mode == CaptureMode.VIDEO && !recording) s?.let { sup ->
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Tokens.spaceSm, Alignment.CenterHorizontally)) {
-                    sup.videoQualities.forEach { q -> Chip(qualityLabel(q), (quality ?: sup.videoQualities.firstOrNull()) == q) { quality = q } }
+                    val shown = sup.videoQualities.filter { !(beautyActive && it == Quality.UHD) }
+                    shown.forEach { q -> Chip(qualityLabel(q), (quality?.takeIf { it in shown } ?: shown.firstOrNull()) == q) { quality = q } }
                     sup.fpsOptions.forEach { f -> Chip("$f fps", fps == f) { fps = if (fps == f) null else f } }
                     if (sup.stabilisationSupported) Chip("Stabilise", stabilise) { stabilise = !stabilise }
                 }
@@ -458,6 +509,8 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
                 modifier = Modifier.padding(horizontal = Tokens.spaceSm)) { (m, sh, _) ->
                 val s = support
                 when {
+                    sh == Sheet.BEAUTY && beautyMode -> com.example.aicamerastudio.camera.ui.BeautyPanel(beauty, { beauty = it }, beautyStatus, support?.effectActive == true || !beautyActive,
+                        m == CaptureMode.VIDEO, sample, { held -> if (beautyProc.isInitialized()) beautyProc.value.compare = held })
                     sh == Sheet.FILTERS && filterModes -> FilterPanel(sample, filter, { filterId = it.id }, filterK, { filterK = it }, Build.VERSION.SDK_INT >= 31)
                     m == CaptureMode.ZOOM && s != null -> com.example.aicamerastudio.camera.zoom.ZoomPanel(
                         plan, planner, steadiness, { zoomTarget = it.coerceIn(planner.minZoom, planner.maxZoom) },
