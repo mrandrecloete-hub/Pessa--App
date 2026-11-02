@@ -484,11 +484,14 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
             }
             if (mode == CaptureMode.VIDEO && !recording) s?.let { sup ->
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Tokens.spaceSm, Alignment.CenterHorizontally)) {
-                    val shown = sup.videoQualities.filter { !(beautyActive && it == Quality.UHD) }
-                    shown.forEach { q -> Chip(qualityLabel(q), (quality?.takeIf { it in shown } ?: shown.firstOrNull()) == q) { quality = q } }
+                    // With Beauty on and no choice made yet, recording starts at 1080p; 4K stays selectable.
+                    val shown = sup.videoQualities
+                    val chosen = quality?.takeIf { it in shown } ?: (if (beautyActive && Quality.FHD in shown) Quality.FHD else shown.firstOrNull())
+                    shown.forEach { q -> Chip(qualityLabel(q), chosen == q) { quality = q } }
                     sup.fpsOptions.forEach { f -> Chip("$f fps", fps == f) { fps = if (fps == f) null else f } }
                     if (sup.stabilisationSupported) Chip("Stabilise", stabilise) { stabilise = !stabilise }
                 }
+                if (beautyActive && quality == Quality.UHD) Text("4K with Beauty needs a fast phone. If the picture stutters, choose 1080p.", color = Tokens.warning, style = MaterialTheme.typography.labelSmall)
                 if (fps != null) Text("Frame rate is requested; the device may choose the nearest it supports.", color = Color.White.copy(0.8f), style = MaterialTheme.typography.labelSmall)
                 if (!audioGranted) Text("Microphone is off: videos will have no sound.", color = Tokens.warning, style = MaterialTheme.typography.labelSmall)
             }

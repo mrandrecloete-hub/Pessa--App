@@ -1,6 +1,9 @@
 # Feature status
 
 ## BlazeCam upgrade (2026-11-01, in progress: emulator testing not finished)
+### Video quality (0.2.7)
+All video recording now asks the encoder for about double CameraX's default bitrate: 24 Mbps at 1080p, 50 Mbps at 4K, 12 Mbps at 720p, more at 50 or 60 fps (`camera/engine/VideoBitrates.kt`, unit tested). The phone's encoder may still limit it. Not yet compared on a phone.
+
 ### Beauty camera (live, Photo and Video modes)
 **Verified**: face tracking (real models, real face photo, JVM tests); colour presets and settings (unit tests); the GPU renderer itself, run through the photo path on the Android emulator's software GL (6 tests: every effect, all 12 presets, GPU colour equals the Kotlin reference, nothing outside the face changes); screenshots reviewed by eye.
 **Not verified (no working device or emulator was available for it)**: the live camera preview with the effect (CameraX effect path), video recording with the effect, frame rate, audio sync, heat and battery, and behaviour on real phones (mid range or flagship). Treat live preview and video as untested until you try them on a phone. Beauty is off until the user turns it on. A crash guard switches it off again by itself if the app closed while it was running.
@@ -9,7 +12,7 @@
 - **12 presets** with real colour grades (Natural Beauty, Glass Skin, Soft Glam, Golden Hour, Studio Portrait, Clean Girl, Cinematic, Luxury Portrait, Warm Glow, Cool Tone, Vintage Film, Original). Tests: every preset except Original changes the picture, no two are alike, and the GPU colour matches the Kotlin reference within 3 of 255.
 - **Controls**: Beauty button on the camera, switch for Beauty, preset carousel with live thumbnails, master intensity, per-effect sliders, Makeup tab, Filter strength, hold to compare with the original, reset, and a one tap chip to turn every effect off.
 - **Photo**: the photo is saved untouched; a separate `_beauty` copy is made with the same renderer (up to 4096 px on the long side). If the copy fails the original is kept.
-- **Video** (designed, untested): the effect is applied to the frames the encoder receives, so the saved video should match the preview. Recording is limited to 1080p while Beauty is on (4K would be too heavy). Audio is recorded by CameraX as before. Not yet measured for frame rate or audio sync on a phone.
+- **Video** (designed, untested): the effect is applied to the frames the encoder receives, so the saved video should match the preview. With Beauty on, recording starts at 1080p unless you choose 4K (4K with Beauty needs a fast phone; untested). Audio is recorded by CameraX as before. Not yet measured for frame rate or audio sync on a phone.
 - **Limits**: phones that do not offer OpenGL ES 3 or refuse the effect fall back to the plain camera and say so. If the phone cannot keep up, quality steps down by itself. Beauty replaces the older colour filters and HDR while it is on in Photo mode. Not available in Portrait, Night, Pro or Zoom modes. No tracking of faces in low light below what the face model can see.
 
 Fixed in 0.2.5: release builds closed when Studio AI features loaded a model (R8 removed ONNX Runtime classes); verified on the emulator with a release build.
