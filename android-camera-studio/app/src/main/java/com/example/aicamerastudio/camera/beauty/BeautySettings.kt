@@ -149,8 +149,27 @@ data class BeautyState(
 class BeautyStore(context: Context) {
     private val prefs = context.getSharedPreferences("beauty", Context.MODE_PRIVATE)
 
-    fun load(): BeautyState = runCatching { fromJson(JSONObject(prefs.getString("state", null) ?: return BeautyState())) }.getOrDefault(BeautyState())
+    /**
+     * Crash guard: [markStarting] is written (and committed to disk) when the live effect starts and cleared by
+     * [markHealthy] once frames have been processed. If the app was closed by a failure in between, the next
+     * [load] returns Beauty switched off and [lastRunFailed] is true, so a problem can never trap the camera in a crash loop.
+     */
+    var lastRunFailed: Boolean = false
+        private set
+
+    fun load(): BeautyState {
+        val state = runCatching { fromJson(JSONObject(prefs.getString("state", null) ?: return BeautyState())) }.getOrDefault(BeautyState())
+        if (prefs.getBoolean("starting", false)) {
+            prefs.edit().putBoolean("starting", false).commit()
+            lastRunFailed = state.enabled
+            return state.copy(enabled = false)
+        }
+        return state
+    }
+
     fun save(s: BeautyState) { prefs.edit().putString("state", toJson(s).toString()).apply() }
+    fun markStarting() { prefs.edit().putBoolean("starting", true).commit() }
+    fun markHealthy() { prefs.edit().putBoolean("starting", false).apply() }
 
     companion object {
         fun toJson(s: BeautyState): JSONObject = JSONObject().put("enabled", s.enabled).put("preset", s.preset.id).put("master", s.master.toDouble())

@@ -134,8 +134,11 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
     val beautyMode = mode == CaptureMode.PHOTO || mode == CaptureMode.VIDEO
     val beautyActive = beauty.enabled && beautyMode
     LaunchedEffect(beauty) { beautyStore.save(beauty); if (beautyProc.isInitialized()) beautyProc.value.state = beauty }
+    // Crash guard: remember that the live effect is starting; clear it once frames are really being processed.
+    LaunchedEffect(beautyActive) { if (beautyActive) beautyStore.markStarting() else beautyStore.markHealthy() }
     val beautyStatus by (if (beautyActive) beautyProc.value.status else kotlinx.coroutines.flow.flowOf(com.example.aicamerastudio.camera.beauty.BeautyStatus()))
         .collectAsState(com.example.aicamerastudio.camera.beauty.BeautyStatus())
+    LaunchedEffect(beautyStatus.fps) { if (beautyActive && beautyStatus.fps > 0f) beautyStore.markHealthy() }
 
     var support by remember { mutableStateOf<CameraSupport?>(null) }
     var zoom by remember { mutableFloatStateOf(1f) }
@@ -149,6 +152,9 @@ fun CameraScreen(audioGranted: Boolean, bottomInset: Dp, prefs: UserPreferences,
     var recSeconds by remember { mutableLongStateOf(0L) }
     var recBytes by remember { mutableLongStateOf(0L) }
     var notice by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        if (beautyStore.lastRunFailed) notice = "Beauty was turned off because the camera closed the last time it ran. You can turn it on again from the Beauty button."
+    }
 
     // ---- ultra zoom state (unchanged behaviour) ----
     var zoomBindId by remember { mutableStateOf<String?>(null) }
