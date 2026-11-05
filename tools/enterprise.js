@@ -430,6 +430,35 @@ function shopPutInCart(match){
   });
   renderCartBar();
 }
+/* Demo products for trying Pesa Shop. They are real products (so they can be listed and published) marked demo:true and named "(demo)", and they can be removed in one go. */
+var SHOP_DEMO = [
+  ['Maize Meal 10kg', 'Groceries', 89.99, 68, 40, 'bag'], ['Maize Meal 2.5kg', 'Groceries', 29.99, 22, 60, 'bag'], ['White Sugar 2kg', 'Groceries', 42.99, 34, 35, 'bag'], ['Cooking Oil 750ml', 'Groceries', 37.99, 29, 30, 'bottle'],
+  ['Rice 2kg', 'Groceries', 49.99, 38, 25, 'bag'], ['Spaghetti 500g', 'Groceries', 14.99, 10, 48, 'pack'], ['Salt 1kg', 'Groceries', 10.99, 7, 40, 'pack'], ['Tinned Pilchards 400g', 'Groceries', 21.99, 16, 3, 'tin'],
+  ['Fresh Milk 1L', 'Dairy', 21.99, 16, 24, 'bottle'], ['Eggs 30s', 'Dairy', 79.99, 64, 12, 'tray'], ['Butter 500g', 'Dairy', 64.99, 52, 10, 'pack'], ['Brown Bread', 'Bakery', 15.00, 9, 20, 'loaf'],
+  ['White Bread', 'Bakery', 14.00, 8.5, 25, 'loaf'], ['Cola 2L', 'Drinks', 24.99, 18, 36, 'bottle'], ['Orange Juice 1L', 'Drinks', 27.99, 20, 18, 'bottle'], ['Still Water 500ml', 'Drinks', 8.99, 5, 60, 'bottle'],
+  ['Bath Soap', 'Toiletries', 9.99, 6, 50, 'bar'], ['Toothpaste 100ml', 'Toiletries', 22.99, 16, 30, 'tube'], ['Washing Powder 2kg', 'Cleaning', 69.99, 52, 14, 'bag'], ['Dish Liquid 750ml', 'Cleaning', 26.99, 19, 0, 'bottle'],
+  ['Potato Chips 125g', 'Snacks', 12.99, 8, 45, 'pack'], ['Chocolate Bar 80g', 'Snacks', 14.99, 10, 40, 'bar'], ['Biltong 200g', 'Meat', 89.99, 70, 8, 'pack'], ['Boerewors 1kg', 'Meat', 99.99, 78, 6, 'pack']
+];
+function shopDemoItems(){ return (State.products || []).filter(function(p){ return p && p.demo === true; }); }
+function shopDemoAdd(){
+  var have = {}; shopDemoItems().forEach(function(p){ have[p.id] = 1; });
+  var now = new Date().toISOString(), list = [];
+  SHOP_DEMO.forEach(function(d, i){
+    var id = 'demo-shop-' + (i + 1); if(have[id]) return;
+    list.push({ id:id, data:{ name:d[0] + ' (demo)', category:d[1], unit:d[5], sellPrice:d[2], costPrice:d[3], stockQty:d[4], lowStock:5, demo:true, createdAt:now, updatedAt:now } });
+  });
+  if(!list.length) return Promise.resolve(0);
+  return refs.products.setMany(list).then(function(){ try{ logAudit('create', 'product', 'demo', 'Added ' + list.length + ' demo products for Pesa Shop'); }catch(e){} return list.length; });
+}
+function shopDemoRemoveNow(){
+  var ids = shopDemoItems().map(function(p){ return p.id; });
+  if(ids.length) refs.products.deleteMany(ids);
+  return ids.length;
+}
+function shopDemoRemove(done){
+  var n = shopDemoItems().length; if(!n){ if(done) done(0); return; }
+  withRemoval(n + ' ' + tr('demo products'), function(){ var k = shopDemoRemoveNow(); toast(k + ' ' + tr('demo products removed')); if(done) done(k); });
+}
 function openShopSheet(){
   if(entNeedManager()) return;
   var c = shopCfg(), rows = shopRows(c.all);
@@ -449,30 +478,36 @@ function openShopSheet(){
     '<div class="field"><label>' + tr('Welcome line (optional)') + '</label><input id="psIntro" placeholder="' + esc(tr('Fresh stock every day')) + '" value="' + esc(c.intro) + '"></div>' +
     '<div class="field"><label>' + tr('Collection or delivery note (optional)') + '</label><input id="psHow" placeholder="' + esc(tr('Collect in store or delivery in town')) + '" value="' + esc(c.how) + '"></div>' +
     '<div class="field"><label><input type="checkbox" id="psAll" style="width:auto;margin-right:8px;"' + (c.all ? ' checked' : '') + '>' + tr('Also list items that are out of stock') + '</label></div>' +
-    '<div class="banner" style="display:block;">' + rows.length + ' ' + tr('products will be on the page. Only names, prices, categories and whether an item is in stock are published. Never your costs or customers.') + '</div>' + live +
+    (rows.length ? '<div class="banner" style="display:block;">' + rows.length + ' ' + tr('products will be on the page. Only names, prices, categories and whether an item is in stock are published. Never your costs or customers.') + '</div>'
+      : '<div class="banner" style="display:block;">' + ICONS.warn + ' <b>' + tr('There is nothing to list yet.') + '</b> ' + tr('A product is listed when it has a selling price and is in stock. Items that are out of stock are left out unless you tick the box above. Test products from the sample stock are never listed. Add your real products in Stock first, or add demo products below to try Pesa Shop.') + '</div>') + live +
     '<div class="section-title" style="margin-top:12px;">' + tr('Share without a live page') + '</div>' +
     '<div class="actions" style="display:grid;gap:8px;"><button class="btn btn-ghost" id="psFile" type="button">' + tr('Download my order page') + '</button>' +
     '<button class="btn btn-ghost" id="psWa" type="button">' + tr('Share my price list on WhatsApp') + '</button>' +
     '<button class="btn btn-ghost" id="psCopy" type="button">' + tr('Copy my price list') + '</button></div>' +
+    '<div class="section-title" style="margin-top:12px;">' + tr('Try it with demo products') + '</div>' +
+    '<div class="actions" style="display:grid;gap:8px;">' + (shopDemoItems().length ? '<button class="btn btn-ghost" id="psDemoDel" type="button">' + tr('Remove the demo products') + ' (' + shopDemoItems().length + ')</button>' : '<button class="btn btn-ghost" id="psDemoAdd" type="button">' + tr('Add demo products to try this') + '</button>') + '</div>' +
     '<div class="section-title" style="margin-top:12px;">' + tr('Orders') + '</div>' +
     '<div class="actions"><button class="btn btn-primary btn-block" id="psRecv" type="button">' + tr('Receive an order') + '</button></div>' +
     '<div class="actions"><button class="btn btn-ghost" id="psClose" type="button">' + tr('Close') + '</button></div>';
   var ov = openSheet(html);
   function save(){ var cfg = { phone:ov.querySelector('#psPhone').value.trim(), intro:ov.querySelector('#psIntro').value.trim(), how:ov.querySelector('#psHow').value.trim(), all:ov.querySelector('#psAll').checked }; shopSave(cfg); return Object.assign(shopCfg(), cfg); }
   ov.querySelector('#psClose').addEventListener('click', function(){ save(); closeModal(); });
+  function nothing(cfg){ if(shopRows(cfg.all).length) return false; toast(tr('There is nothing to list yet. Add products with a selling price and stock first.')); return true; }
   ov.querySelector('#psFile').addEventListener('click', function(){
-    var cfg = save();
+    var cfg = save(); if(nothing(cfg)) return;
     if(!normalizeNamPhone(cfg.phone)){ toast(tr('Enter your WhatsApp number first')); return; }
     var name = 'pesa-order-page-' + todayKey() + '.html';
     if(browserDownload(name, new Blob([shopBuildHtml(cfg)], { type:'text/html;charset=utf-8' }))) toast(tr('Order page downloaded'));
     else toast(tr('Could not save the file here'));
   });
-  ov.querySelector('#psWa').addEventListener('click', function(){ var cfg = save(); window.open('https://wa.me/?text=' + encodeURIComponent(shopTextList(cfg)), '_blank'); });
-  ov.querySelector('#psCopy').addEventListener('click', function(){ var cfg = save(); copyText(shopTextList(cfg), tr('Price list copied')); });
+  ov.querySelector('#psWa').addEventListener('click', function(){ var cfg = save(); if(nothing(cfg)) return; window.open('https://wa.me/?text=' + encodeURIComponent(shopTextList(cfg)), '_blank'); });
+  ov.querySelector('#psCopy').addEventListener('click', function(){ var cfg = save(); if(nothing(cfg)) return; copyText(shopTextList(cfg), tr('Price list copied')); });
   ov.querySelector('#psRecv').addEventListener('click', function(){ save(); closeModal(); openShopReceiveSheet(); });
+  var dAdd = ov.querySelector('#psDemoAdd'); if(dAdd) dAdd.addEventListener('click', function(){ save(); dAdd.disabled = true; shopDemoAdd().then(function(k){ toast(k + ' ' + tr('demo products added. They are named (demo) so you can tell them apart.')); closeModal(); openShopSheet(); }); });
+  var dDel = ov.querySelector('#psDemoDel'); if(dDel) dDel.addEventListener('click', function(){ save(); closeModal(); shopDemoRemove(function(){ openShopSheet(); }); });
   var pub = ov.querySelector('#psPub');
   if(pub) pub.addEventListener('click', function(){
-    var cfg = save();
+    var cfg = save(); if(nothing(cfg)) return;
     if(!normalizeNamPhone(cfg.phone)){ toast(tr('Enter your WhatsApp number first')); return; }
     var sl = ov.querySelector('#psSlug').value.trim().toLowerCase(); cfg.slug = cfg.published ? cfg.slug : sl;
     pub.disabled = true; var old = pub.textContent; pub.textContent = tr('Publishing') + '…';

@@ -1,6 +1,6 @@
 // Pesa Shop: the order page is built from stock, a customer can order from it on WhatsApp, and the order is read back into the cart at the shop's prices.
 const { chromium } = require('playwright');
-let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') + n + (c ? '' : '  -> ' + JSON.stringify(x).slice(0, 400))); if (!c) fail++; };
+let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') + n + (c ? '' : '  -> ' + String(JSON.stringify(x)).slice(0, 400))); if (!c) fail++; };
 (async () => {
   const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 390, height: 900 }, serviceWorkers: 'block', acceptDownloads: true });
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
@@ -49,6 +49,13 @@ let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') 
   const t3 = await p.evaluate(async m => { const T = window.__t; await T.refs.products.doc('p3').update({ stockQty: 1 }); T.State.cart = []; const mt = T.shopMatchOrder(T.shopParseOrder(m)); T.shopPutInCart(mt); return { cart: T.State.cart.map(i => i.name + ':' + i.qty), short: mt.short }; }, msg);
   ck('short stock is limited and reported', t3.cart.includes('Rice 2kg:1') && t3.short.length === 1, t3);
   ck('a message that is not an order is refused', (await p.evaluate(() => window.__t.shopParseOrder('hello'))) === null);
+  // an empty shop gets a clear message and no empty page or list
+  await p.evaluate(() => { window.__keep = window.__t.State.products; window.__t.State.products = []; });
+  await p.evaluate(() => window.__t.openShopSheet()); await p.waitForSelector('#psFile');
+  ck('an empty shop is told there is nothing to list', /nothing to list yet/i.test(await p.innerText('#modalRoot')));
+  await p.fill('#psPhone', '0812345678'); await p.click('#psCopy'); await p.waitForTimeout(200);
+  ck('the price list is not copied empty', /nothing to list/i.test(await p.evaluate(() => (document.querySelector('.toast') || {}).textContent || '')));
+  await p.evaluate(() => { window.__t.closeModal(); window.__t.State.products = window.__keep; });
   await p.evaluate(() => window.__t.openShopSheet()); await p.waitForSelector('#psFile');
   await p.fill('#psPhone', '0812345678'); await p.fill('#psIntro', 'Fresh daily');
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#psFile')]);
@@ -61,6 +68,22 @@ let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') 
   await p.evaluate(() => { window.__t.State.cart = []; });
   await p.click('#psCart'); await p.waitForTimeout(500);
   ck('Put in the cart fills the cart and opens Sell', (await p.evaluate(() => window.__t.State.cart.length)) === 3 && (await p.evaluate(() => window.__t.State.tab)) === 'sell');
+  // demo products: real, listed, clearly marked, removable
+  await p.evaluate(() => { window.__keep = window.__t.State.products; window.__t.State.products = []; window.__t.State.cart = []; window.__t.closeModal(); window.__t.openShopSheet(); }); await p.waitForSelector('#psDemoAdd');
+  ck('an empty shop is offered demo products', /demo products below/i.test(await p.innerText('#modalRoot')));
+  await p.evaluate(() => { window.__t.State.products = window.__keep; window.__t.closeModal(); window.__t.openShopSheet(); }); await p.waitForSelector('#psDemoAdd');
+  await p.click('#psDemoAdd'); await p.waitForSelector('#psDemoDel', { timeout: 8000 });
+  const demo = await p.evaluate(() => { const T = window.__t; const d = T.shopDemoItems(); const isD = r => /\(demo\)$/.test(r.n); return { n: d.length, named: d.every(x => /\(demo\)$/.test(x.name)), real: d.every(x => !String(x.id).startsWith('mock_')), listed: T.shopRows(false).filter(isD).length, all: T.shopRows(true).filter(isD).length }; });
+  ck('24 demo products are added, marked (demo) and are real products', demo.n === 24 && demo.named && demo.real, demo);
+  ck('the ones in stock are listed, the sold out one is not', demo.listed === 23 && demo.all === 24, demo);
+  const again = await p.evaluate(() => window.__t.shopDemoAdd());
+  ck('adding again makes no copies', again === 0 && (await p.evaluate(() => window.__t.shopDemoItems().length)) === 24);
+  const html2 = await p.evaluate(() => window.__t.shopBuildHtml({ phone: '0812345678', intro: '', how: '', all: false }));
+  ck('the order page now has the demo items', /Maize Meal 10kg \(demo\)/.test(html2) && !/Dish Liquid/.test(html2));
+  await p.click('#psDemoDel'); await p.waitForSelector('#rmPass', { timeout: 8000 });
+  ck('removing demo products asks for a manager or owner approval first', (await p.evaluate(() => window.__t.shopDemoItems().length)) === 24);
+  await p.fill('#rmPass', 'aaaa1111'); await p.click('#rmOk'); await p.waitForTimeout(900);
+  ck('after approval the demo products are gone and the real ones stay', (await p.evaluate(() => window.__t.shopDemoItems().length)) === 0 && (await p.evaluate(() => window.__t.State.products.length)) >= 4);
   await p.evaluate(() => window.__t.openEnterpriseSheet()); await p.waitForSelector('[data-ent=shop]');
   ck('Pesa Shop is in Enterprise tools', true);
   ck('no page errors', errs.length === 0, errs);

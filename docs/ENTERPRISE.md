@@ -35,7 +35,7 @@ Sell, till and cash up, point of sale terminal, branches (records belong to a br
 | Price list | Pesa Shop | Plain text by category, to share on WhatsApp or copy |
 | Receive an order | Pesa Shop | Paste the message. Items are matched by product id, then exact name, and put in the cart at the shop's own current prices. Prices typed into a message are ignored and flagged. Short stock is limited and reported |
 
-With live pages (2026.10.205, setup in `docs/provisioning/SHOP.md`) Pesa hosts the page: the owner taps Publish my page and gets a link on the Pesa website, kept in step with stock and prices. Without that, the page is a file the owner sends, or puts on any web hosting to get a link. There is no online card payment: the shop confirms the order and takes payment in the normal Charge sheet. Spec: `shop_t`.
+With live pages (2026.10.205, setup in `docs/provisioning/SHOP.md`) Pesa hosts the page: the owner taps Publish my page and gets a link on the Pesa website, kept in step with stock and prices. Without that, the page is a file the owner sends, or puts on any web hosting to get a link. There is no online card payment: the shop confirms the order and takes payment in the normal Charge sheet. Demo products: Pesa Shop can add 24 real products marked `demo:true` and named `(demo)` to try a page, and remove them with the removal approval. Spec: `shop_t`.
 
 ## Split payments and discounts (2026.10.203)
 
