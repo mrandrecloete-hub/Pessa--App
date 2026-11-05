@@ -122,7 +122,7 @@ function blazeToolRun(name, input){
   }
   if(name === 'payment_methods'){
     var pp = bzPeriod(input.period), pm = {};
-    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; pm[k] = (pm[k] || 0) + salePaidAmt(s); var vA = saleVoucherAmt(s); if(vA && k !== 'voucher') pm.voucher = (pm.voucher || 0) + vA; });
+    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; salePayParts(s).forEach(function(q){ pm[q.method] = (pm[q.method] || 0) + q.amount; }); var vA = saleVoucherAmt(s); if(vA && k !== 'voucher') pm.voucher = (pm.voucher || 0) + vA; });
     var o = { period:pp.label }; Object.keys(pm).forEach(function(k){ o[k] = bzMoney(pm[k]); });
     return bzOut(Object.keys(pm).length ? o : { result:'no sales in that time' }, Object.keys(pm).map(function(k){ return bzMoney(pm[k]); }));
   }

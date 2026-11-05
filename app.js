@@ -4563,7 +4563,7 @@ function btEodFigures(day){
   var by = { cash:0, card:0, wallet:0, credit:0, voucher:0 }, revenue = 0, cost = 0, items = {};
   sales.forEach(function(s){
     var t = Number(s.total)||0; revenue += t; cost += Number(s.cost)||0;
-    var vA = saleVoucherAmt(s); by[by[s.paymentMethod] != null ? s.paymentMethod : 'cash'] += t - vA; by.voucher += vA;
+    var vA = saleVoucherAmt(s); salePayParts(s).forEach(function(q){ by[by[q.method] != null ? q.method : 'cash'] += q.amount; }); by.voucher += vA;
     (s.items||[]).forEach(function(it){ var k = it.productId || it.name; var m = items[k] || (items[k] = { name:it.name, qty:0, revenue:0 }); m.qty += it.qty||0; m.revenue += it.lineTotal||0; });
   });
   var expTotal = exps.reduce(function(a,x){ return a + (Number(x.amount)||0); }, 0);
@@ -4651,7 +4651,7 @@ function btProfitFigures(from, to){
     var t = Number(s.total)||0; rev += t; cost += Number(s.cost)||0;
     var d = new Date(s.createdAt); hours[d.getHours()] += t; wd[d.getDay()] += t;
     (s.items||[]).forEach(function(it){
-      if(String(it.productId||'').indexOf('loyalty-') === 0) return;
+      if(/^(loyalty|discount)-/.test(String(it.productId||''))) return;
       var line = Number(it.lineTotal) || ((Number(it.unitPrice)||0) * (Number(it.qty)||0)), pr = line - (Number(it.cost)||0)*(Number(it.qty)||0);
       var k = it.productId || it.name, m = prod[k] || (prod[k] = { name:it.name, qty:0, revenue:0, profit:0, below:0 });
       m.qty += Number(it.qty)||0; m.revenue += line; m.profit += pr;
@@ -5000,12 +5000,12 @@ function openMomoSheet(day0){
   var ov = openSheet(html); btWireBack(ov);
   function run(){
     var d = ov.querySelector('#mmDay').value || todayKey();
-    var sales = State.sales.filter(function(s){ return s.paymentMethod === 'wallet' && todayKey(new Date(s.createdAt)) === d; });
+    var sales = State.sales.filter(function(s){ return salePayParts(s).some(function(q){ return q.method === 'wallet'; }) && todayKey(new Date(s.createdAt)) === d; });
     var parts = mmSplit(ov.querySelector('#mmText').value);
     var msgs = parts.map(mmParse).filter(Boolean), skipped = parts.length - msgs.length;
     var out = ov.querySelector('#mmOut');
     if(!sales.length && !msgs.length){ out.innerHTML = '<div class="empty"><div class="t">'+tr('No wallet sales on this day and no payment messages pasted')+'</div></div>'; return; }
-    var r = mmReconcile(sales.map(function(s){ return { id:s.id, total:Number(s.total)||0, payRef:s.payRef, walletProvider:s.walletProvider, at:s.createdAt }; }), msgs);
+    var r = mmReconcile(sales.map(function(s){ var wp = salePayParts(s).filter(function(q){ return q.method === 'wallet'; })[0]; return { id:s.id, total:saleIsSplit(s) && wp ? wp.amount : (Number(s.total)||0), payRef:s.payRef, walletProvider:s.walletProvider, at:s.createdAt }; }), msgs);
     var chip = { ok:['Matched','background:var(--success-bg);color:var(--success);'], differs:['Amount differs','background:var(--danger-bg);color:var(--danger);'], unmatched:['No message found','background:var(--danger-bg);color:var(--danger);'] };
     var okN = r.rows.filter(function(x){ return x.status==='ok'; }).length;
     out.innerHTML = '<div class="banner" style="display:block;margin-top:10px;"><strong>'+okN+'</strong> '+tr('of')+' <strong>'+r.rows.length+'</strong> '+tr('wallet sales matched a message')+(r.extra.length ? ' · <strong>'+r.extra.length+'</strong> '+tr('message(s) with no sale') : '')+'</div>' +
@@ -6416,7 +6416,7 @@ function renderMe(){
   // cashier
   var all = State.sales.filter(function(s){ return s.cashierName === State.session.name; });
   var mine = all.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk; });
-  var by = { cash:0, card:0, wallet:0, credit:0 }; mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + salePaidAmt(s); });
+  var by = { cash:0, card:0, wallet:0, credit:0 }; mine.forEach(function(s){ salePayParts(s).forEach(function(q){ by[q.method] = (by[q.method]||0) + q.amount; }); });
   var till = State.till.current, tt = till ? tillTotals(till.id) : null;
   out += '<div class="me-actions">'+(me.posAccess === false ? '' : '<button class="me-act" data-me="pos">'+ICONS.till+tr('Point of sale')+'</button>')+'<button class="me-act" data-me="sell">'+ICONS.cart+tr('New sale')+'</button>' +
     '<button class="me-act" data-me="'+(till?'till-close':'till-open')+'">'+ICONS.clock+(till?tr('Close till'):tr('Open till'))+'</button><button class="me-act" data-me="profile">'+ICONS.people+tr('My profile')+'</button></div>';
@@ -6547,7 +6547,7 @@ function inRange(iso, from, to){ var t = new Date(iso).getTime(); return (!from 
 function staffStats(u, from, to){
   var sales = State.sales.filter(function(s){ return (s.cashierName === u.name) && inRange(s.createdAt, from, to); });
   var by = { cash:{n:0,t:0}, card:{n:0,t:0}, wallet:{n:0,t:0}, credit:{n:0,t:0} }, items = 0, cashBack = 0, pos = 0;
-  sales.forEach(function(s){ var m = by[s.paymentMethod||'cash'] || (by[s.paymentMethod] = {n:0,t:0}); m.n++; m.t += salePaidAmt(s); cashBack += s.cashBack||0; if(s.viaPos) pos++; (s.items||[]).forEach(function(i){ items += i.qty||0; }); });
+  sales.forEach(function(s){ salePayParts(s).forEach(function(q, qi){ var m = by[q.method] || (by[q.method] = {n:0,t:0}); if(!qi) m.n++; m.t += q.amount; }); cashBack += s.cashBack||0; if(s.viaPos) pos++; (s.items||[]).forEach(function(i){ items += i.qty||0; }); });
   var total = sales.reduce(function(a,s){ return a + s.total; }, 0);
   var tills = State.tillSessions.filter(function(t){ return t.cashierId === u.id && inRange(t.openedAt, from, to); });
   var closed = tills.filter(function(t){ return t.status === 'closed'; });
@@ -7358,9 +7358,9 @@ function openWorkReportSheet(uid){
 var REC = { sec:'reports' };
 function saleReceiptDraft(s){
   return { servedBy: s.cashierName || '', number:s.receiptNo || ('R-'+String(s.id||'').slice(-6).toUpperCase()), saleReceipt:true, taxSnap:s.tax || null, billToName: s.customerName || s.payerName || 'Customer', billToContact:'', dateStr: todayKey(new Date(s.createdAt)), dueDateStr:'', notes:(s.type === 'refund' || s.type === 'void') ? ((s.type === 'void' ? 'Void' : 'Refund') + ' of ' + (s.refundOfReceipt || 'a sale') + '. Reason: ' + (s.reason || '')) : '',
-    at:s.createdAt, payMethod:s.paymentMethod, fiscalKey:s.fiscalId||null, walletProvider:s.walletProvider||'', cashBack:s.cashBack||0,
+    at:s.createdAt, payMethod:s.paymentMethod, payments:saleIsSplit(s) ? s.payments : null, fiscalKey:s.fiscalId||null, walletProvider:s.walletProvider||'', cashBack:s.cashBack||0,
     voucher: s.voucher ? { platform:s.voucher.platform, amount:Math.abs(s.voucher.amount) } : null,
-    received: s.paymentMethod === 'voucher' ? null : (s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : salePaidAmt(s))),
+    received: saleIsSplit(s) ? null : s.paymentMethod === 'voucher' ? null : (s.paymentMethod === 'cash' ? (s.cashReceived != null ? s.cashReceived : s.total) : (s.paymentMethod === 'credit' ? 0 : salePaidAmt(s))),
     items:(s.items||[]).map(function(it){ return { desc:it.name, qty:it.qty, unitPrice:it.unitPrice, cat:it.taxCategory, productId:it.productId }; }) };
 }
 function renderMyRecords(){
@@ -7417,7 +7417,7 @@ function wireMyRecords(root){
   }); });
   root.querySelectorAll('[data-recinv]').forEach(function(b){ b.addEventListener('click', function(){
     var r = State.invoices.find(function(x){ return x.id === b.getAttribute('data-recinv'); }); if(!r) return;
-    var d = { servedBy:r.servedBy||r.cashierName||'', number:r.number, billToName:r.billToName, billToContact:r.billToContact||'', dateStr:r.dateStr, dueDateStr:r.dueDateStr||'', notes:r.notes||'', at:r.at||'', payMethod:r.payMethod||'', walletProvider:r.walletProvider||'', received:r.received, items:r.items||[] };
+    var d = { servedBy:r.servedBy||r.cashierName||'', number:r.number, billToName:r.billToName, billToContact:r.billToContact||'', dateStr:r.dateStr, dueDateStr:r.dueDateStr||'', notes:r.notes||'', at:r.at||'', payMethod:r.payMethod||'', payments:r.payments||null, walletProvider:r.walletProvider||'', received:r.received, items:r.items||[] };
     openRecordDocSheet((r.type==='receipt'?tr('Receipt'):tr('Invoice'))+' '+(r.number||''), (r.billToName||'')+' · '+fmtMoney(r.total||0), function(){ return r.type==='receipt' ? buildReceiptPdf(d) : buildInvoicePdf(d); }, (r.type||'invoice')+'-'+(r.number||'')+'.pdf');
   }); });
   root.querySelectorAll('[data-rectill]').forEach(function(b){ b.addEventListener('click', function(){
@@ -7803,7 +7803,7 @@ function tillTotals(tillId){
   var items = {cash:0, card:0, wallet:0, credit:0};
   sales.forEach(function(s){
     var m = s.paymentMethod || 'cash';
-    totals[m] = mRound2((totals[m]||0) + salePaidAmt(s));
+    salePayParts(s).forEach(function(q){ totals[q.method] = mRound2((totals[q.method]||0) + q.amount); });
     var vA = saleVoucherAmt(s); if(vA && m !== 'voucher') totals.voucher = mRound2((totals.voucher||0) + vA);
     cashBack = mRound2(cashBack + (s.cashBack || 0));
     var qty = (s.items||[]).reduce(function(a,it){ return a+it.qty; }, 0);
@@ -8515,25 +8515,71 @@ function openCartSheet(){
 }
 
 var WALLET_PROVIDERS = ['PayToday','Blue Wallet','e@syWallet','MTC Maris','Bank transfer (EFT)','Other wallet'];
+/* ---- discount at the till ----
+   A discount is a negative line in the cart (the same way loyalty points are), so VAT, the till, the books and the receipt already
+   handle it. Owners and managers apply it themselves; a cashier needs a manager or the owner to type their password. */
+function cartDiscountLine(){ return State.cart.find(function(i){ return i.discount; }) || null; }
+function cartPositiveTotal(){ var c = 0; State.cart.forEach(function(i){ if(!i.discount && Number(i.unitPrice) > 0) c += mMul(i.unitPrice, i.qty); }); return c / 100; }
+function dscApply(kind, value, approver){
+  var base = cartPositiveTotal(), amt = kind === 'pct' ? mRound2(base * Math.min(100, value) / 100) : mRound2(value);
+  amt = Math.min(amt, base);
+  if(!(amt > 0)) return false;
+  State.cart = State.cart.filter(function(i){ return !i.discount; });
+  State.cart.push({ productId:'discount-' + Date.now().toString(36), name:tr('Discount') + (kind === 'pct' ? ' (' + (Math.round(value * 100) / 100) + '%)' : ''), unitPrice:-amt, cost:0, qty:1, unit:'', maxQty:1, discount:true, discountBy:approver ? approver.name : (State.session ? State.session.name : '') });
+  try{ logAudit('other', 'sale', null, 'Discount of ' + fmtMoney(amt) + ' on a sale of ' + fmtMoney(base) + (approver ? ' (approved by ' + approver.name + ')' : '')); }catch(e){}
+  return true;
+}
+function dscWire(ov){
+  var box = ov.querySelector('#dscBox'); if(!box) return;
+  var cur = cartDiscountLine(), open = false, kind = 'pct';
+  function paint(){
+    if(cur){
+      box.innerHTML = '<div class="banner" style="display:block;"><b>' + esc(cur.name) + '</b> · ' + fmtMoney(Math.abs(cur.unitPrice)) + (cur.discountBy ? ' · ' + tr('approved by') + ' ' + esc(cur.discountBy) : '') + '</div>' +
+        '<div class="field"><button class="btn btn-ghost btn-block" id="dscRemove" type="button">' + tr('Remove discount') + '</button></div>';
+      box.querySelector('#dscRemove').addEventListener('click', function(){ State.cart = State.cart.filter(function(i){ return !i.discount; }); closeModal(); renderCartBar(); try{ if(POS.open) posRender(); }catch(e){} openChargeSheet(); });
+    } else if(open){
+      box.innerHTML = '<div class="field"><label>' + tr('Discount') + '</label><div class="segbtns"><button class="segbtn' + (kind === 'pct' ? ' active' : '') + '" data-dk="pct" type="button">' + tr('Percent') + '</button><button class="segbtn' + (kind === 'amt' ? ' active' : '') + '" data-dk="amt" type="button">' + tr('Amount') + '</button></div></div>' +
+        '<div class="field"><input id="dscVal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="' + (kind === 'pct' ? '10' : '5.00') + '"><div id="dscPrev" style="font-size:12.5px;color:var(--text-muted);margin-top:4px;"></div></div>' +
+        (isManagerOrOwner() ? '' : '<div class="banner" style="display:block;">' + tr('A manager or the owner must approve a discount.') + '</div>') +
+        '<div class="actions"><button class="btn btn-primary btn-block" id="dscGo" type="button">' + tr('Apply discount') + '</button><button class="btn btn-ghost btn-block" id="dscNo" type="button" style="margin-top:8px;">' + tr('Cancel') + '</button></div>';
+      var inp = box.querySelector('#dscVal'), prev = box.querySelector('#dscPrev');
+      function pv(){ var v = parseFloat(inp.value), base = cartPositiveTotal(); if(!(v > 0)){ prev.textContent = ''; return; } var a = Math.min(base, kind === 'pct' ? mRound2(base * Math.min(100, v) / 100) : mRound2(v)); prev.textContent = tr('Takes off') + ' ' + fmtMoney(a) + ' · ' + tr('New total') + ' ' + fmtMoney(base - a); }
+      inp.addEventListener('input', pv);
+      box.querySelectorAll('[data-dk]').forEach(function(b){ b.addEventListener('click', function(){ kind = b.getAttribute('data-dk'); paint(); }); });
+      box.querySelector('#dscNo').addEventListener('click', function(){ open = false; paint(); });
+      box.querySelector('#dscGo').addEventListener('click', function(){
+        var v = parseFloat(inp.value); if(!(v > 0)){ toast(tr('Enter the discount')); return; }
+        if(kind === 'pct' && v > 100){ toast(tr('A discount cannot be more than 100%')); return; }
+        function done(approver){ if(!dscApply(kind, v, approver)){ toast(tr('Enter the discount')); return; } closeModal(); renderCartBar(); try{ if(POS.open) posRender(); }catch(e){} openChargeSheet(); }
+        if(isManagerOrOwner()) done(State.session ? { name:State.session.name } : null); else askApprovalSheet(tr('Approve this discount'), done);
+      });
+    } else {
+      box.innerHTML = cartPositiveTotal() > 0 ? '<div class="field"><button class="btn btn-ghost btn-block" id="dscOpen" type="button">' + tr('Give a discount') + '</button></div>' : '';
+      var b0 = box.querySelector('#dscOpen'); if(b0) b0.addEventListener('click', function(){ open = true; paint(); });
+    }
+  }
+  paint();
+}
 function openChargeSheet(){
   if(cartHasMock()){ toast(tr('Test products cannot be sold. Remove them from the cart first.')); return; }
   var total = cartTotal();
   var custOptions = State.customers.map(function(c){ return '<option value="'+c.id+'">'+esc(c.name)+', owes '+fmtMoney(c.balance||0)+'</option>'; }).join('');
   var html =
     '<div class="sheet-head"><h2>Charge '+fmtMoney(total)+'</h2></div>' + btFxChargeHtml(total) + eliteAuditHtml() +
-    '<div id="vchBox"></div>' +
+    '<div id="vchBox"></div><div id="dscBox"></div>' +
     '<div class="field" id="pmField"><label>'+tr('Payment method')+'</label>' +
       '<div class="segbtns">' +
         '<button class="segbtn active" data-pm="cash">'+tr('Cash')+'</button>' +
         '<button class="segbtn" data-pm="card">'+tr('Card')+'</button>' +
         '<button class="segbtn" data-pm="wallet">'+tr('Mobile wallet')+'</button>' +
         '<button class="segbtn" data-pm="credit">'+tr('Credit')+'</button>' +
+        '<button class="segbtn" data-pm="split">'+tr('Split')+'</button>' +
       '</div>' +
     '</div>' +
     '<div id="pmExtra"></div>' + loyaltyBoxHtml() +
     '<div class="actions"><button class="btn btn-primary btn-block" id="confirmChargeBtn">'+tr('Confirm sale')+'</button></div>';
   var ov = openSheet(html, {center:true});
-  loyaltyWire(ov);
+  loyaltyWire(ov); dscWire(ov);
   var pm = 'cash';
   var cardSt = { devId:null, mode:'Chip', override:null };
   // A voucher (Sanlam, BestHome and so on) pays all or part of the sale. total below is then what is still to be paid by the customer.
@@ -8615,6 +8661,21 @@ function openChargeSheet(){
         WALLET_PROVIDERS.map(function(w){ return '<option value="'+esc(w)+'">'+esc(w)+'</option>'; }).join('') + '</select></div>' +
         '<div class="field"><label>'+tr('Reference or transaction number (optional)')+'</label><input id="walletRef" placeholder="e.g. TXN123456"></div>' + '<div class="field"><label>'+tr('Paid by (name, optional)')+'</label><input id="payerName" placeholder="'+tr('Who is paying?')+'"></div>' +
         '<div class="banner">Record once the payment has been confirmed on your phone or in your bank app.</div>';
+    } else if(pm === 'split'){
+      var spN = function(id){ var e = extra.querySelector('#'+id); return e ? Math.max(0, mRound2(parseFloat(e.value) || 0)) : 0; };
+      extra.innerHTML = '<div class="banner" style="display:block;">'+tr('Enter how much is paid each way. The parts must add up to')+' <b>'+fmtMoney(total)+'</b>.</div>' +
+        '<div class="field"><label>'+tr('Cash')+'</label><input id="spCash" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>' +
+        '<div class="field"><label>'+tr('Card')+'</label><input id="spCard" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>' +
+        '<div class="field"><label>'+tr('Mobile wallet')+'</label><input id="spWallet" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0.00"></div>' +
+        '<div class="field" id="spWF" style="display:none;"><label>'+tr('Wallet or transfer type')+'</label><select id="walletProv">'+WALLET_PROVIDERS.map(function(w){ return '<option value="'+esc(w)+'">'+esc(w)+'</option>'; }).join('')+'</select></div>' +
+        '<div id="spLeft" class="banner" style="display:block;"></div>';
+      var spPaint = function(){
+        var c = spN('spCash'), k = spN('spCard'), w = spN('spWallet'), left = mRound2(total - c - k - w), el = extra.querySelector('#spLeft');
+        extra.querySelector('#spWF').style.display = w > 0 ? '' : 'none';
+        el.innerHTML = Math.abs(left) < 0.005 ? '<span style="color:var(--success);">'+tr('The parts add up')+'</span>' : (left > 0 ? tr('Still to enter')+' <b>'+fmtMoney(left)+'</b>' : tr('Too much by')+' <b>'+fmtMoney(-left)+'</b>');
+      };
+      ['spCash','spCard','spWallet'].forEach(function(id){ extra.querySelector('#'+id).addEventListener('input', spPaint); });
+      spPaint();
     } else if(pm === 'voucher'){
       extra.innerHTML = '<div class="banner">'+tr('The voucher covers the whole sale. There is nothing more to collect.')+'</div>';
     } else {
@@ -8639,6 +8700,19 @@ function openChargeSheet(){
   vchPaint();
   ov.querySelector('#confirmChargeBtn').addEventListener('click', function(){
     if(pm === 'voucher'){ chargeFinal('voucher', null, {}); return; }
+    if(pm === 'split'){
+      var gv = function(id){ var e = ov.querySelector('#'+id); return e ? Math.max(0, mRound2(parseFloat(e.value) || 0)) : 0; };
+      var sc = gv('spCash'), sk = gv('spCard'), sw = gv('spWallet'), parts = [];
+      if(Math.abs(mRound2(total - sc - sk - sw)) >= 0.005){ toast(tr('The parts must add up to') + ' ' + fmtMoney(total)); return; }
+      var wpv = ov.querySelector('#walletProv'), wprov = wpv ? wpv.value : '';
+      if(sc > 0) parts.push({ method:'cash', amount:sc });
+      if(sk > 0) parts.push({ method:'card', amount:sk });
+      if(sw > 0) parts.push({ method:'wallet', amount:sw, walletProvider:wprov });
+      if(parts.length < 2){ toast(tr('Use two or more ways to pay, or pick one payment method')); return; }
+      var main = parts.slice().sort(function(a, b){ return b.amount - a.amount; })[0];
+      chargeFinal(main.method, null, { payments:parts, cashReceived: sc || undefined, changeGiven: sc ? 0 : undefined, walletProvider: sw > 0 ? wprov : undefined });
+      return;
+    }
     if(pm === 'credit'){
       if(State.customers.length === 0){ toast('Add a customer first'); return; }
       var sel = ov.querySelector('#custSelect');
@@ -8682,6 +8756,7 @@ function finalizeSale(method, customer, extra){
   var items = State.cart.map(function(i){ var tp = State.products.find(function(x){ return x.id===i.productId; }); return { productId:i.productId, name:i.name, qty:i.qty, unitPrice:i.unitPrice, cost:i.cost||0, lineTotal:mMul(i.unitPrice, i.qty) / 100, taxCategory:(tp && tp.taxCategory) || 'STANDARD' }; });
   var total = cartTotal();
   var cost = cartCost();
+  var dscL = cartDiscountLine();
   var sale = {
     items: items,
     total: total,
@@ -8697,6 +8772,8 @@ function finalizeSale(method, customer, extra){
     createdAt: new Date().toISOString()
   };
   if(extra) Object.assign(sale, extra);
+  Object.keys(sale).forEach(function(k){ if(sale[k] === undefined) delete sale[k]; });
+  if(dscL) sale.discount = { amount:Math.abs(dscL.unitPrice), approvedBy:dscL.discountBy || '' };
   var _vm = null; try{ _vm = entSaleMeta(); if(_vm) Object.assign(sale, _vm.extra); }catch(e){}
   saleStamp(sale, items);
   loyaltyStamp(sale, customer);
@@ -8724,7 +8801,7 @@ function finalizeSale(method, customer, extra){
     refs.customers.doc(customer.id).update({ balance: newBal });
     refs.customers.doc(customer.id).collection('ledger').add({ type:'charge', amount: owedNow, note:'Sale on credit', createdAt:new Date().toISOString(), balanceAfter:newBal });
   }
-  if(method === 'cash' || sale.cashBack > 0) openCashDrawer(false);
+  if(method === 'cash' || sale.cashBack > 0 || (saleIsSplit(sale) && salePayParts(sale).some(function(q){ return q.method === 'cash'; }))) openCashDrawer(false);
   State.cart = [];
   closeModal();
   renderCartBar();
@@ -8746,11 +8823,12 @@ function offerSaleReceipt(sale, customer){
     notes: loyaltyNote(sale),
     at: sale.createdAt,
     payMethod: sale.paymentMethod,
+    payments: saleIsSplit(sale) ? sale.payments : null,
     fiscalKey: sale.fiscalId || null,
     walletProvider: sale.walletProvider || '',
     cashBack: sale.cashBack || 0,
     voucher: sale.voucher ? { platform:sale.voucher.platform, amount:Math.abs(sale.voucher.amount) } : null,
-    received: sale.paymentMethod === 'voucher' ? null : (sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : salePaidAmt(sale))),
+    received: saleIsSplit(sale) ? null : sale.paymentMethod === 'voucher' ? null : (sale.paymentMethod === 'cash' ? (sale.cashReceived != null ? sale.cashReceived : sale.total) : (sale.paymentMethod === 'credit' ? 0 : salePaidAmt(sale))),
     items: (sale.items||[]).map(function(it){ return { desc: it.name, qty: it.qty, unitPrice: it.unitPrice, cat: it.taxCategory, productId: it.productId }; })
   };
   if(sale.__fiscal) sale.__fiscal.then(function(r){ if(r && r.record) draft.fiscalKey = r.record.id; });
@@ -9267,7 +9345,7 @@ function posTabHtml(d){
   var till = State.till.current, tk = todayKey();
   var mine = State.sales.filter(function(s){ return todayKey(new Date(s.createdAt)) === tk && s.cashierName === POS.user.name; });
   var by = { cash:0, card:0, wallet:0, credit:0 };
-  mine.forEach(function(s){ by[s.paymentMethod||'cash'] = (by[s.paymentMethod||'cash']||0) + salePaidAmt(s); });
+  mine.forEach(function(s){ salePayParts(s).forEach(function(q){ by[q.method] = (by[q.method]||0) + q.amount; }); });
   function line(a,b){ return '<div class="sumline"><span>'+a+'</span><span class="num">'+b+'</span></div>'; }
   var h2 = '<div class="section-title" style="margin-top:0;">'+tr('Your sales today')+'</div>' + line(tr('Sales'), mine.length) + line(tr('Cash'), fmtMoney(by.cash)) + line(tr('Card'), fmtMoney(by.card)) + line(tr('Mobile wallet'), fmtMoney(by.wallet)) + line(tr('Credit'), fmtMoney(by.credit)) +
     '<div class="sumline total"><span>'+tr('Total')+'</span><span class="num">'+fmtMoney(posSum(mine))+'</span></div>' +
@@ -10131,6 +10209,14 @@ function voucherPlatforms(){ var l = State.settings && State.settings.voucherPla
 function voucherClaims(){ var l = State.settings && State.settings.voucherClaims; return Array.isArray(l) ? l : []; }
 function saleVoucherAmt(s){ var v = s && s.voucher; if(!v) return 0; var a = Math.abs(Number(v.amount) || 0); return (Number(s.total) || 0) < 0 ? -a : a; }
 function salePaidAmt(s){ return mRound2((Number(s && s.total) || 0) - saleVoucherAmt(s)); }
+/* Split payments. A sale paid in more than one way keeps sale.paymentMethod as its main way (so older code still works) and
+   sale.payments = [{ method, amount, walletProvider }], which add up to what the customer paid (the total less any voucher).
+   Everything that adds money up by payment method reads salePayParts, so a normal sale comes back as one part. */
+function saleIsSplit(s){ return !!(s && Array.isArray(s.payments) && s.payments.length > 1); }
+function salePayParts(s){
+  if(saleIsSplit(s)) return s.payments.map(function(x){ return { method:x.method || 'cash', amount:mRound2(Number(x.amount) || 0), walletProvider:x.walletProvider || '' }; });
+  return [{ method:(s && s.paymentMethod) || 'cash', amount:salePaidAmt(s), walletProvider:(s && s.walletProvider) || '' }];
+}
 function voucherCodeUsed(platform, code){
   var c = String(code || '').trim().toLowerCase(), p = String(platform || '').trim().toLowerCase();
   return State.sales.find(function(s){ return s.voucher && s.type !== 'refund' && s.type !== 'void' && String(s.voucher.code || '').trim().toLowerCase() === c && String(s.voucher.platform || '').trim().toLowerCase() === p; }) || null;
@@ -10199,7 +10285,9 @@ function openVoucherClaimSheet(platform){
 function payRows(draft, total){
   var rows = [];
   var vA = draft.voucher ? Math.abs(Number(draft.voucher.amount) || 0) : 0, due = total >= 0 ? Math.max(0, mRound2(total - vA)) : total;
-  if(draft.payMethod && draft.payMethod !== 'voucher'){
+  if(Array.isArray(draft.payments) && draft.payments.length > 1){
+    draft.payments.forEach(function(q){ rows.push(['Paid by ' + (q.method === 'wallet' && q.walletProvider ? q.walletProvider : (PAY_LABELS[q.method] || q.method)), fmtMoney(q.amount)]); });
+  } else if(draft.payMethod && draft.payMethod !== 'voucher'){
     var lbl = PAY_LABELS[draft.payMethod] || draft.payMethod;
     if(draft.payMethod === 'wallet' && draft.walletProvider) lbl = draft.walletProvider;
     rows.push(['Paid by', lbl]);
@@ -11716,6 +11804,7 @@ function saveInvoiceRecord(draft, kind, customerId){
       notes: draft.notes || '',
       at: draftAt(draft) || '',
       payMethod: draft.payMethod || '',
+      payments: Array.isArray(draft.payments) ? draft.payments : null,
       walletProvider: draft.walletProvider || '',
       received: (draft.received != null && draft.received !== '') ? Number(draft.received) : null,
       items: (draft.items||[]).map(function(it){ return { desc: it.desc||'', qty: Number(it.qty)||0, unitPrice: Number(it.unitPrice)||0 }; }),
@@ -12815,7 +12904,7 @@ function computeReportFigures(start, end, opts){
   fig.salesCount = salesIn.filter(function(s){ return s.type !== 'refund' && s.type !== 'void'; }).length;
   fig.refundCount = salesIn.length - fig.salesCount;
   var pay = { cash:0, card:0, wallet:0, credit:0 };
-  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; pay[m] = mRound2((pay[m]||0) + salePaidAmt(s)); var vA = saleVoucherAmt(s); if(vA && m !== 'voucher') pay.voucher = mRound2((pay.voucher||0) + vA); });
+  salesIn.forEach(function(s){ var m = s.paymentMethod || 'cash'; salePayParts(s).forEach(function(q){ pay[q.method] = mRound2((pay[q.method]||0) + q.amount); }); var vA = saleVoucherAmt(s); if(vA && m !== 'voucher') pay.voucher = mRound2((pay.voucher||0) + vA); });
   fig.payments = pay;
   var taxP = taxPeriod(salesIn), rateNow = taxRateAt(todayKey());
   fig.vat = { rate:rateNow.rate, version:rateNow.v, output: taxP.vat, input: taxInputVat(expensesIn), zero:taxP.zero, exempt:taxP.exempt, nonVat:taxP.non, registered:taxRegisteredOn(todayKey()) };
@@ -14007,7 +14096,7 @@ function renderDashboard(){
   var totalOwed = State.customers.reduce(function(s,c){return s+(c.balance||0);},0);
 
   var pmTotals = {cash:0, card:0, wallet:0, credit:0};
-  todaySales.forEach(function(s){ pmTotals[s.paymentMethod] = (pmTotals[s.paymentMethod]||0) + salePaidAmt(s); });
+  todaySales.forEach(function(s){ salePayParts(s).forEach(function(q){ pmTotals[q.method] = (pmTotals[q.method]||0) + q.amount; }); });
 
   var lowStockProducts = State.products.filter(function(p){ return p.stockQty!=null && p.stockQty <= (p.lowStock!=null?p.lowStock:State.settings.lowStockDefault); })
     .sort(function(a,b){ return a.stockQty-b.stockQty; });
@@ -14094,7 +14183,7 @@ function renderDashboard(){
     html += '<div class="card pad" style="color:var(--text-muted);font-size:13px;">No sales recorded yet.</div>';
   } else {
     html += '<div class="rowlist">' + State.sales.slice(0,5).map(function(s){
-      var pmLabel = s.paymentMethod==='cash'?tr('Cash'):(s.paymentMethod==='card'?tr('Card'):(s.paymentMethod==='wallet'?(s.walletProvider||tr('Mobile wallet')):(s.paymentMethod==='voucher'?tr('Voucher')+(s.voucher?' · '+s.voucher.platform:''):tr('Credit'))));
+      var pmLabel = saleIsSplit(s)?tr('Split payment'):s.paymentMethod==='cash'?tr('Cash'):(s.paymentMethod==='card'?tr('Card'):(s.paymentMethod==='wallet'?(s.walletProvider||tr('Mobile wallet')):(s.paymentMethod==='voucher'?tr('Voucher')+(s.voucher?' · '+s.voucher.platform:''):tr('Credit'))));
       var itemCount = (s.items||[]).reduce(function(a,i){return a+i.qty;},0);
       return '<div class="row" style="cursor:default;">' +
         '<div class="avatar">'+ICONS.cart.replace(/width="26" height="26"/,'width="16" height="16"')+'</div>' +
@@ -16143,7 +16232,7 @@ function acctSaleMemo(s, isRef, method){
     return acctQtyText(it.qty) + ' x ' + nm;
   });
   if(its.length > 4) parts.push('and ' + (its.length - 4) + ' more');
-  var how = method === 'credit' ? 'on credit' : method === 'wallet' ? 'wallet' + (s.walletProvider ? ': ' + s.walletProvider : '') : method;
+  var how = saleIsSplit(s) ? 'split: ' + salePayParts(s).map(function(q){ return q.method; }).join(' and ') : method === 'credit' ? 'on credit' : method === 'wallet' ? 'wallet' + (s.walletProvider ? ': ' + s.walletProvider : '') : method;
   if(s.voucher && s.voucher.platform) how = method === 'voucher' ? 'voucher: ' + s.voucher.platform : how + ' and voucher: ' + s.voucher.platform;
   var out = head + (parts.length ? ': ' + parts.join(', ') : '') + ' (' + how + ')';
   if(isRef && s.reason) out += '. Reason: ' + String(s.reason).replace(/\s+/g, ' ').trim().slice(0, 80);
@@ -16169,13 +16258,14 @@ function acctSaleJournal(s, ctx){
   }
   var debit = method === 'card' ? '1030' : method === 'wallet' ? '1010' : method === 'credit' ? '1300' : '1000';
   var vOff = s.voucher ? Math.min(T, Math.abs(acctC(s.voucher.amount))) : 0;   // the part a platform will pay the shop later
-  var lines = acctKeep([
-    acctLine(debit, T - vOff + (method === 'card' ? cb : 0), 0),
+  var payAcct = function(m){ return m === 'card' ? '1030' : m === 'wallet' ? '1010' : m === 'credit' ? '1300' : '1000'; };
+  var payLines = saleIsSplit(s) ? salePayParts(s).map(function(q){ return acctLine(payAcct(q.method), Math.abs(acctC(q.amount)), 0); }) : [acctLine(debit, T - vOff + (method === 'card' ? cb : 0), 0)];
+  var lines = acctKeep(payLines.concat([
     acctLine('1350', vOff, 0),
     acctLine('4000', 0, std - vat), acctLine('4010', 0, zero), acctLine('4020', 0, ex), acctLine('4030', 0, non), acctLine('2150', 0, vat),
     acctLine('1000', 0, method === 'card' ? cb : 0),
     acctLine('5000', cost, 0), acctLine('1200', 0, cost)
-  ]);
+  ]));
   if(isRef) lines = lines.map(function(l){ return { account:l.account, dr:l.cr, cr:l.dr }; });
   if(cost === 0 && T > 0 && !isRef) flags.push('NO_COST_RECORDED');
   return { id:(isRef ? 'REF-' : 'SALE-') + s.id, date:dk, kind:isRef ? 'REFUND' : 'SALE', ref:String(s.receiptNo || '').trim() || s.id, memo:acctSaleMemo(s, isRef, method), lines:lines, flags:flags };
@@ -19441,8 +19531,10 @@ function openReconcileSheet(day0){
     var ex = {};
     State.sales.forEach(function(s){
       if(todayKey(new Date(s.createdAt)) !== d) return;
-      var k = s.paymentMethod === 'wallet' ? (s.walletProvider || 'Mobile wallet') : (s.paymentMethod === 'cash' ? 'Cash' : (s.paymentMethod === 'card' ? 'Card' : 'Credit'));
-      ex[k] = (ex[k]||0) + salePaidAmt(s);
+      salePayParts(s).forEach(function(q){
+        var k = q.method === 'wallet' ? (q.walletProvider || 'Mobile wallet') : (q.method === 'cash' ? 'Cash' : (q.method === 'card' ? 'Card' : 'Credit'));
+        ex[k] = (ex[k]||0) + q.amount;
+      });
     });
     return ex;
   }
@@ -19593,7 +19685,7 @@ function rcSalesData(r){
   State.sales.forEach(function(s){
     if(!rcIn(s.createdAt, r)) return;
     var d = day(todayKey(new Date(s.createdAt))), m = s.paymentMethod || 'cash';
-    d[m] = (d[m]||0) + salePaidAmt(s); if(saleVoucherAmt(s) && m !== 'voucher') d.voucher = (d.voucher||0) + saleVoucherAmt(s); d.total += Number(s.total)||0; d.n++;
+    salePayParts(s).forEach(function(q){ d[q.method] = (d[q.method]||0) + q.amount; }); if(saleVoucherAmt(s) && m !== 'voucher') d.voucher = (d.voucher||0) + saleVoucherAmt(s); d.total += Number(s.total)||0; d.n++;
   });
   State.tillSessions.forEach(function(t){ if(t.status === 'closed' && rcIn(t.closedAt, r)){ var d = day(todayKey(new Date(t.closedAt))); d.tillVar += Number(t.variance)||0; d.tills++; } });
   State.posBatches.forEach(function(b){ if(rcIn(b.settledAt, r)){ var d = day(todayKey(new Date(b.settledAt))); d.cardVar += Number(b.variance)||0; d.batches++; } });
@@ -20137,7 +20229,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.202';
+var APP_VERSION = '2026.10.203';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20446,6 +20538,10 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.203', items:[
+    'Split payments: a sale can now be paid partly in cash, partly by card and partly by mobile wallet. Choose Split when charging and enter each part. The till, end of day, reports, the books and the receipt all follow each part, and a refund goes back the same ways',
+    'Discounts at the till: give a percent or an amount off a sale when charging. Owners and managers apply it themselves, a cashier needs a manager or the owner to type their password. VAT, the till and the receipt follow, and a refund gives back only what was paid'
+  ] },
   { v:'2026.10.202', items:[
     'Select all (and Deselect all) is now at the top of the Stock page, next to Cancel, as soon as you tap Select'
   ] },
@@ -22376,9 +22472,13 @@ function saleRefundable(sale){
 }
 function refundBuild(sale, picks, reason, kind, approver){
   var items = [], cost = 0, lines = [];
+  // a sale that had a discount or loyalty points taken off gives back the same share of each item, never more than was paid
+  var posTot = 0, allSum = 0;
+  (sale.items || []).forEach(function(x){ var lt = Number(x.lineTotal != null ? x.lineTotal : (Number(x.qty) || 0) * (Number(x.unitPrice) || 0)) || 0; allSum += lt; if(lt > 0) posTot += lt; });
+  var shareR = (posTot > 0 && allSum < posTot - 0.004) ? allSum / posTot : 1;
   picks.forEach(function(p){
     var it = p.item, q = p.qty; if(!(q > 0)) return;
-    var gross = mMul(it.unitPrice, q);
+    var gross = mMul(it.unitPrice, q); if(shareR !== 1) gross = Math.round(gross * shareR);
     items.push({ productId:it.productId, name:it.name, qty:-q, unitPrice:it.unitPrice, cost:it.cost || 0, lineTotal:-gross / 100, taxCategory:it.taxCategory || taxItemCat(it), restock:p.restock !== false });
     cost += mMul(it.cost || 0, q);
     lines.push({ gross:gross / 100, cat:it.taxCategory || taxItemCat(it) });
@@ -22398,6 +22498,14 @@ function refundBuild(sale, picks, reason, kind, approver){
     approvedBy:approver ? approver.name : '', approvedById:approver ? approver.id : '', approvedAt:new Date().toISOString(),
     tax:taxNegate(taxSnap(tx)), createdAt:new Date().toISOString(), deviceId:Dev.id(), syncStatus:'pending'
   };
+  if(saleIsSplit(sale)){   // money goes back the way it came, in the same shares
+    var parts = salePayParts(sale), paidT = parts.reduce(function(a, q){ return a + q.amount; }, 0), back = Math.abs(rec.total) - Math.abs(saleVoucherAmt(rec));
+    var left = mRound2(back), pays = parts.map(function(q, i){
+      var v = i === parts.length - 1 ? left : mRound2(paidT > 0 ? back * q.amount / paidT : 0); left = mRound2(left - v);
+      return { method:q.method, amount:-v, walletProvider:q.walletProvider };
+    });
+    rec.payments = pays;
+  }
   if(sale.voucher && Number(sale.total) > 0){   // the voucher part is taken back in the same proportion as the sale
     var vr = Math.min(1, Math.abs(total / 100) / Number(sale.total)), vFull = Math.abs(Number(sale.voucher.amount) || 0);
     rec.voucher = { platform:sale.voucher.platform, code:sale.voucher.code, amount:-(vr >= 0.9999 ? vFull : mRound2(vFull * vr)) };
@@ -22478,7 +22586,7 @@ function openRefundSheet(saleId, kind){
     var rec = refundBuild(sale, p, '', kind, null);
     box.innerHTML = '<div class="tillcard"><div class="tillrow"><span class="l">' + tr('Money back to the customer') + '</span><span class="v num">' + fmtMoney(Math.abs(rec.total)) + '</span></div>' +
       (rec.tax && rec.tax.registered && rec.tax.vat ? '<div class="tillrow"><span class="l">' + tr('VAT reversed') + '</span><span class="v num">' + fmtMoney(Math.abs(rec.tax.vat)) + '</span></div>' : '') +
-      '<div class="tillrow"><span class="l">' + tr('Paid back by') + '</span><span class="v">' + esc(tr({ cash:'Cash', card:'Card', wallet:'Wallet', voucher:'Voucher', credit:'Reduces what they owe' }[sale.paymentMethod] || sale.paymentMethod)) + '</span></div></div>';
+      '<div class="tillrow"><span class="l">' + tr('Paid back by') + '</span><span class="v">' + (saleIsSplit(sale) ? esc(tr('The same ways it was paid')) : '') + (saleIsSplit(sale) ? '' : esc(tr({ cash:'Cash', card:'Card', wallet:'Wallet', voucher:'Voucher', credit:'Reduces what they owe' }[sale.paymentMethod] || sale.paymentMethod))) + '</span></div></div>';
   }
   ov.querySelectorAll('[data-rq]').forEach(function(e){ e.addEventListener('input', sum); }); sum();
   ov.querySelector('#rfNo').addEventListener('click', closeModal);
@@ -23238,7 +23346,7 @@ var EXT_COURSES = [
     if (sale.total != null && Math.abs(toCents(sale.total) - gross) > cfg.totalToleranceCents) throw new Error('TOTAL_MISMATCH');   // the receipt and the tax record must agree
     var at = new Date(sale.createdAt || Date.now());
     var seq = ctx.sequence, number = s.terminalId + '-' + ('000000' + seq).slice(-6);
-    var pay = PAY_MAP[sale.paymentMethod] || 'OTHER';
+    var pay = (Array.isArray(sale.payments) && sale.payments.length > 1) ? 'OTHER' : (PAY_MAP[sale.paymentMethod] || 'OTHER');
     return {
       schema: SCHEMA,
       seller: { tin: s.tin, vatNumber: s.vatNumber || null, name: s.name || '', branchCode: s.branchCode, terminalId: s.terminalId },
@@ -24234,7 +24342,7 @@ function blazeToolRun(name, input){
   }
   if(name === 'payment_methods'){
     var pp = bzPeriod(input.period), pm = {};
-    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; pm[k] = (pm[k] || 0) + salePaidAmt(s); var vA = saleVoucherAmt(s); if(vA && k !== 'voucher') pm.voucher = (pm.voucher || 0) + vA; });
+    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; salePayParts(s).forEach(function(q){ pm[q.method] = (pm[q.method] || 0) + q.amount; }); var vA = saleVoucherAmt(s); if(vA && k !== 'voucher') pm.voucher = (pm.voucher || 0) + vA; });
     var o = { period:pp.label }; Object.keys(pm).forEach(function(k){ o[k] = bzMoney(pm[k]); });
     return bzOut(Object.keys(pm).length ? o : { result:'no sales in that time' }, Object.keys(pm).map(function(k){ return bzMoney(pm[k]); }));
   }
