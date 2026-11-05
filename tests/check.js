@@ -22,5 +22,10 @@ console.log('index.html app.js version',hv,hv===ver?'ok':'MISMATCH','sw APPJS',s
 { const t=cp.spawnSync('node',['tools/blaze_training/sync_tools.mjs','--check'],{encoding:'utf8'}); const okT=t.status===0; console.log('blaze tools:',okT?'in sync':'OUT OF SYNC '+(t.stderr||'').slice(0,200)); ok=ok&&okT;
   const m=s.match(/\/\*BLAZE:START[^\n]*\n([\s\S]*?)\n\/\*BLAZE:END\*\//), src=fs.readFileSync('tools/blaze.js','utf8').trimEnd(); const okE=!!m&&m[1].trimEnd()===src; console.log('blaze block in app.js:',okE?'ok':'OUT OF DATE (run python3 tools/embed_block.py BLAZE blaze.js)'); ok=ok&&okE;
   for(const f of ['vendor/wllama/index.min.js','vendor/wllama/wllama.wasm','tools/blaze_training/tools.json']){ const ex=fs.existsSync(f); console.log(f+':',ex?'ok':'MISSING'); ok=ok&&ex; } }
+{ // Pesa Shop: the template block in app.js and the live page on the site must both match tools/shop_page.js
+  const app=fs.readFileSync('app.js','utf8'), m=app.match(/\/\*SHOPPAGE:START[^\n]*\n([\s\S]*?)\n\/\*SHOPPAGE:END\*\//), src=fs.readFileSync('tools/shop_page.js','utf8').trimEnd();
+  const okB=!!m&&m[1].trimEnd()===src; console.log('shop page block in app.js:',okB?'ok':'OUT OF DATE (run python3 tools/embed_block.py SHOPPAGE shop_page.js)'); ok=ok&&okB;
+  let okV=false; try{ okV=fs.readFileSync('site/shop.html','utf8')===require('../tools/build_shop_viewer.js').build(); }catch(e){}
+  console.log('site/shop.html:',okV?'ok':'OUT OF DATE (run node tools/build_shop_viewer.js)'); ok=ok&&okV; }
 console.log('sw cache',fs.readFileSync('sw.js','utf8').match(/var CACHE = '([^']+)'/)[1]);
 console.log(ok?'CHECK OK':'CHECK FAILED'); process.exit(ok?0:1);
