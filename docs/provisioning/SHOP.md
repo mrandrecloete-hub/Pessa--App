@@ -17,6 +17,13 @@ Pesa Shop can publish a shop's products as a live order page that customers open
    - `tools/shop_api.txt` (one line), then `node tools/build_shop_viewer.js` to rebuild `site/shop.html`.
 5. Release as usual (version, changelog, `node tests/check.js`, push). Until `SHOP_API` is set, the app says live pages are not switched on and only the download, price list and order reading work.
 
+## Set up with no command line (dashboard only)
+1. supabase.com, sign in, **New project** (any name, a strong database password, a region near you). Wait until it is ready.
+2. **SQL Editor**, New query, paste all of `04_pesa_shops.sql`, press Run. Table Editor then shows a table called `pesa_shops`.
+3. **Edge Functions**, **Deploy a new function** (via the editor), name it exactly `shop`, paste all of `docs/provisioning/shop-function-paste.ts`, Deploy. Open the function's settings and turn **Verify JWT** off.
+4. Project Settings, Edge Functions (or the function page) shows the address, `https://<project>.supabase.co/functions/v1/shop`. Send that address to the developer to put in `SHOP_API` (see step 4 above).
+The pasted version does not check licence keys. To require them later, use the command line steps above.
+
 ## Taking a page down
 `curl -X POST '<function address>?a=disable' -H 'x-admin-token: <ADMIN_TOKEN>' -H 'content-type: application/json' -d '{"slug":"the-shop-name"}'` hides it for everyone and the owner cannot republish it. Use `?a=enable` to allow it again, and `?a=list` (GET) to see every page.
 
