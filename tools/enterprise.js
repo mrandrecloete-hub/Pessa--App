@@ -25,7 +25,8 @@ function openEnterpriseSheet(){
     ['families', 'Product families (colour, size and more)', 'One item with many variants, stock for each'],
     ['branchdash', 'Branch dashboard', 'Sales, profit and stock for every branch side by side'],
     ['transfers', 'Stock transfers between branches', 'Send stock, track it on the way, receive it'],
-    ['channels', 'Sales channels and online shop', 'Online orders and a stock file for WooCommerce, Shopify or BigCommerce']
+    ['channels', 'Sales channels and online shop', 'Online orders and a stock file for WooCommerce, Shopify or BigCommerce'],
+    ['shop', 'Pesa Shop: order page for customers', 'A page customers order from on WhatsApp, a price list to share, and orders read into the cart']
   ];
   var html = '<div class="sheet-head"><h2>' + tr('Enterprise tools') + '</h2></div>' +
     '<div class="banner" style="display:block;">' + tr('For bigger operations with many items, branches and staff. Everything here works with your normal stock, sales and books.') + '</div>' +
@@ -37,7 +38,7 @@ function openEnterpriseSheet(){
 }
 function entOpen(k){
   if(k === 'families') openFamiliesSheet(); else if(k === 'branchdash') openBranchDashSheet('month'); else if(k === 'transfers') openTransfersSheet();
-  else if(k === 'channels') openChannelsSheet();
+  else if(k === 'channels') openChannelsSheet(); else if(k === 'shop') openShopSheet();
 }
 
 /* ---------------- product families (matrix inventory) ---------------- */
@@ -314,4 +315,147 @@ function entToggleBreak(u){
   if(entOnBreak(open)){ br[br.length - 1].to = now; toast(tr('Break ended')); logAudit('update', 'clock', u.id, u.name + ' ended a break'); }
   else { br.push({ from:now, to:null }); toast(tr('Break started')); logAudit('update', 'clock', u.id, u.name + ' started a break'); }
   refs.clockLogs.doc(open.id).update({ breaks:br }); open.breaks = br;
+}
+
+/* ---------------- Pesa Shop: a catalogue page customers can order from, and orders read back into the cart ----------------
+ * No server is needed. The catalogue is one self contained web page file built from the shop's own stock. A customer opens it, picks items and
+ * taps Send order on WhatsApp, which opens a message to the shop in a fixed format. The owner pastes that message into Receive an order and Pesa
+ * puts the same items in the cart at the shop's current prices, to be charged like any other sale. Pesa does not host the page: the owner sends
+ * the file or puts it on any web hosting. Prices are always read from Pesa again when the order is received, never from the customer's message. */
+function shopCfg(){ var c = (State.settings && State.settings.pesaShop) || {}; return { phone:String(c.phone || ''), intro:String(c.intro || ''), how:String(c.how || ''), all:!!c.all }; }
+function shopRows(all){
+  var rows = (State.products || []).filter(function(p){ return p && p.name && !isMockId(p.id) && Number(p.sellPrice) > 0 && (all || p.stockQty == null || Number(p.stockQty) > 0); });
+  rows.sort(function(a, b){ return String(a.category || '').localeCompare(String(b.category || '')) || String(a.name).localeCompare(String(b.name)); });
+  return rows.map(function(p){
+    var q = p.stockQty == null ? null : Number(p.stockQty), low = p.lowStock != null ? Number(p.lowStock) : Number(State.settings.lowStockDefault || 0);
+    return { id:p.id, n:String(p.name), c:String(p.category || ''), p:Math.round(Number(p.sellPrice) * 100) / 100, u:String(p.unit || ''), s:(q != null && q <= 0) ? 0 : ((q != null && q <= low) ? 1 : 2), m:q };
+  });
+}
+function shopMoney(n){ return 'N$' + (Math.round(Number(n) * 100) / 100).toFixed(2); }
+function shopTextList(cfg){
+  var rows = shopRows(cfg.all), name = btShop(), out = [name + ' price list', ''], cat = null;
+  rows.slice(0, 200).forEach(function(r){
+    if(r.c !== cat){ cat = r.c; out.push(''); out.push((cat || tr('Other')).toUpperCase()); }
+    out.push(r.n + (r.u ? ' (' + r.u + ')' : '') + ' ' + shopMoney(r.p) + (r.s === 0 ? ' (out of stock)' : ''));
+  });
+  if(rows.length > 200) out.push('', tr('and more. Ask us for the full list.'));
+  if(cfg.intro) out.push('', cfg.intro);
+  out.push('', tr('To order, reply with what you want and the amounts.'));
+  return out.join('\n');
+}
+function shopBuildHtml(cfg){
+  var data = JSON.stringify({ shop:btShop(), phone:String(normalizeNamPhone(cfg.phone) || ''), intro:cfg.intro, how:cfg.how, rows:shopRows(cfg.all) }).replace(/</g, '\\u003c');
+  var css = 'body{margin:0;background:#EEF4F1;color:#14261F;font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}header{background:#0B4A38;color:#fff;padding:18px 16px}h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:14px}' +
+    '.w{max-width:760px;margin:0 auto;padding:12px 12px 120px}input,select,textarea{width:100%;box-sizing:border-box;font:inherit;padding:11px 12px;border:1px solid #CFE3D8;border-radius:10px;background:#fff}' +
+    '.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0}.chip{flex:0 0 auto;padding:7px 12px;border-radius:99px;border:1px solid #CFE3D8;background:#fff;font-size:14px;cursor:pointer}.chip.on{background:#0B7A5C;color:#fff;border-color:#0B7A5C}' +
+    '.it{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #D2E3DA;border-radius:12px;padding:10px 12px;margin:8px 0}.it .t{flex:1;min-width:0}.it b{display:block}.it small{color:#486}.pr{font-weight:700;white-space:nowrap}' +
+    '.q{display:flex;align-items:center;gap:6px}.q button{width:34px;height:34px;border-radius:10px;border:1px solid #0B7A5C;background:#fff;color:#0B7A5C;font-size:20px;line-height:1;cursor:pointer}.q span{min-width:22px;text-align:center;font-weight:700}' +
+    '.out{opacity:.55}.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #CFE3D8;padding:10px 12px}.bar button,.go{width:100%;padding:13px;border:0;border-radius:12px;background:#0B7A5C;color:#fff;font:inherit;font-weight:700;cursor:pointer}' +
+    '.sheet{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:5}.sheet>div{position:absolute;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:#fff;border-radius:16px 16px 0 0;padding:16px}.sheet label{display:block;margin:10px 0 4px;font-weight:600;font-size:14px}.ln{display:flex;justify-content:space-between;gap:8px;padding:4px 0}.muted{color:#486;font-size:13px}';
+  var js = 'var D=JSON.parse(document.getElementById("d").textContent),cart={},cat="",q="";function $(i){return document.getElementById(i)}function m(n){return "N$"+(Math.round(n*100)/100).toFixed(2)}function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]})}' +
+    'function cats(){var s={};D.rows.forEach(function(r){s[r.c||"Other"]=1});return Object.keys(s).sort()}' +
+    'function paintChips(){var h=\'<span class="chip\'+(cat?"":" on")+\'" data-c="">All</span>\';cats().forEach(function(c){h+=\'<span class="chip\'+(cat===c?" on":"")+\'" data-c="\'+esc(c)+\'">\'+esc(c)+"</span>"});$("chips").innerHTML=h;[].forEach.call($("chips").children,function(e){e.onclick=function(){cat=e.getAttribute("data-c");paintChips();paint()}})}' +
+    'function paint(){var h="";D.rows.forEach(function(r,i){if(cat&&(r.c||"Other")!==cat)return;if(q&&r.n.toLowerCase().indexOf(q)<0)return;var n=cart[r.id]||0;h+=\'<div class="it\'+(r.s===0?" out":"")+\'"><div class="t"><b>\'+esc(r.n)+"</b><small>"+esc(r.c)+(r.s===1?" · running low":"")+(r.s===0?" · out of stock":"")+\'</small></div><div class="pr">\'+m(r.p)+"</div>"+(r.s===0?"":\'<div class="q"><button data-i="\'+i+\'" data-d="-1">&minus;</button><span>\'+n+\'</span><button data-i="\'+i+\'" data-d="1">+</button></div>\')+"</div>"});$("list").innerHTML=h||\'<p class="muted">Nothing found.</p>\';[].forEach.call($("list").querySelectorAll("button"),function(b){b.onclick=function(){var r=D.rows[b.getAttribute("data-i")],d=+b.getAttribute("data-d"),n=(cart[r.id]||0)+d;if(r.m!=null&&n>r.m){n=r.m}if(n<=0)delete cart[r.id];else cart[r.id]=n;paint();bar()}});bar()}' +
+    'function tot(){var t=0,c=0;D.rows.forEach(function(r){var n=cart[r.id]||0;t+=n*r.p;c+=n});return{t:t,c:c}}function bar(){var x=tot();$("bar").style.display=x.c?"block":"none";$("bt").textContent="Review order ("+x.c+" items) · "+m(x.t)}' +
+    'function review(){var h="";D.rows.forEach(function(r){var n=cart[r.id]||0;if(n)h+=\'<div class="ln"><span>\'+n+" x "+esc(r.n)+"</span><span>"+m(n*r.p)+"</span></div>"});$("rv").innerHTML=h+\'<div class="ln"><b>Total</b><b>\'+m(tot().t)+"</b></div>";$("sh").style.display="block"}' +
+    'function send(){var x=tot();if(!x.c)return;var nm=$("nm").value.trim(),ph=$("ph").value.trim();if(!nm||!ph){alert("Please enter your name and phone number.");return}var L=["PESA ORDER","Shop: "+D.shop,"Name: "+nm,"Phone: "+ph,"Get it: "+$("hw").value,"Address or note: "+$("nt").value.trim(),"Items:"];D.rows.forEach(function(r){var n=cart[r.id]||0;if(n)L.push(n+" x "+r.n+" @ "+m(r.p)+" [#"+r.id+"]")});L.push("Total: "+m(x.t));window.open("https://wa.me/"+D.phone+"?text="+encodeURIComponent(L.join("\\n")),"_blank")}' +
+    '$("sn").textContent=D.shop;$("in").textContent=D.intro||"Choose what you want, then send your order on WhatsApp.";$("se").oninput=function(){q=this.value.toLowerCase();paint()};$("bt").onclick=review;$("cl").onclick=function(){$("sh").style.display="none"};$("go").onclick=send;if(D.how)$("hn").textContent=D.how;paintChips();paint();';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(btShop()) + ' order page</title><style>' + css + '</style></head><body>' +
+    '<header><h1 id="sn"></h1><p id="in"></p></header><div class="w"><input id="se" placeholder="Search" aria-label="Search"><div class="chips" id="chips"></div><div id="list"></div></div>' +
+    '<div class="bar" id="bar" style="display:none"><button id="bt"></button></div>' +
+    '<div class="sheet" id="sh"><div><h2 style="margin:0 0 6px">Your order</h2><div id="rv"></div><label>Your name</label><input id="nm" autocomplete="name"><label>Your phone number</label><input id="ph" type="tel" autocomplete="tel"><label>Collect or delivery</label><select id="hw"><option>Collect</option><option>Deliver</option></select><p class="muted" id="hn"></p><label>Address or note</label><textarea id="nt" rows="2"></textarea><p class="muted">Your order opens in WhatsApp. The shop confirms the price and stock and tells you how to pay.</p><button class="go" id="go" type="button">Send order on WhatsApp</button><p style="text-align:center"><a href="#" id="cl">Back to the list</a></p></div></div>' +
+    '<script type="application/json" id="d">' + data + '<\/script><script>' + js + '<\/script></body></html>';
+}
+/** Reads an order message made by the page above. Prices in the message are ignored later, the shop's own price is used. */
+function shopParseOrder(text){
+  var t = String(text || ''), o = { name:'', phone:'', how:'', note:'', lines:[], total:null };
+  if(!/PESA ORDER/i.test(t)) return null;
+  t.split(/\r?\n/).forEach(function(line){
+    var m;
+    if((m = /^\s*Name:\s*(.*)$/i.exec(line))) o.name = m[1].trim();
+    else if((m = /^\s*Phone:\s*(.*)$/i.exec(line))) o.phone = m[1].trim();
+    else if((m = /^\s*Get it:\s*(.*)$/i.exec(line))) o.how = m[1].trim();
+    else if((m = /^\s*Address or note:\s*(.*)$/i.exec(line))) o.note = m[1].trim();
+    else if((m = /^\s*Total:\s*N?\$?\s*([\d.,]+)/i.exec(line))) o.total = parseFloat(m[1].replace(',', '.'));
+    else if((m = /^\s*(\d+(?:[.,]\d+)?)\s*[xX*]\s*(.+?)\s*@\s*N?\$?\s*([\d.,]+)\s*(?:\[#([^\]]+)\])?\s*$/.exec(line))) o.lines.push({ qty:parseFloat(m[1].replace(',', '.')), name:m[2].trim(), price:parseFloat(m[3].replace(',', '.')), id:m[4] || '' });
+  });
+  return o;
+}
+/** Matches each line to a product (by id, then exact name) and works out what can be put in the cart now. */
+function shopMatchOrder(o){
+  var res = { items:[], missing:[], short:[], priceChanged:[] };
+  (o.lines || []).forEach(function(l){
+    var p = (l.id && State.products.find(function(x){ return x.id === l.id; })) || State.products.find(function(x){ return String(x.name).trim().toLowerCase() === String(l.name).trim().toLowerCase(); });
+    if(!p || isMockId(p.id)){ res.missing.push(l.name); return; }
+    var have = p.stockQty == null ? Infinity : Number(p.stockQty), q = Math.min(l.qty, have);
+    if(q <= 0){ res.short.push(l.name + ' (' + tr('out of stock') + ')'); return; }
+    if(q < l.qty) res.short.push(l.name + ' (' + tr('only') + ' ' + have + ')');
+    if(Math.abs(Number(p.sellPrice) - l.price) > 0.004) res.priceChanged.push(p.name + ': ' + shopMoney(l.price) + ' ' + tr('is now') + ' ' + shopMoney(p.sellPrice));
+    res.items.push({ p:p, qty:q });
+  });
+  return res;
+}
+function shopPutInCart(match){
+  match.items.forEach(function(x){
+    var p = x.p, ex = State.cart.find(function(i){ return i.productId === p.id; }), maxQty = p.stockQty == null ? Infinity : Number(p.stockQty);
+    if(ex) ex.qty = Math.min(maxQty, ex.qty + x.qty);
+    else State.cart.push({ productId:p.id, name:p.name, unitPrice:p.sellPrice, cost:p.costPrice || 0, qty:x.qty, unit:p.unit || '', maxQty:maxQty });
+  });
+  renderCartBar();
+}
+function openShopSheet(){
+  if(entNeedManager()) return;
+  var c = shopCfg(), rows = shopRows(c.all);
+  var html = '<div class="sheet-head"><h2>' + tr('Pesa Shop') + '</h2></div>' +
+    '<div class="banner" style="display:block;">' + tr('Make an order page from your stock. Customers pick items and send their order to your WhatsApp. Paste the order here and Pesa fills the cart at your own prices.') + '</div>' +
+    '<div class="field"><label>' + tr('Your WhatsApp number for orders') + '</label><input id="psPhone" type="tel" placeholder="081 234 5678" value="' + esc(c.phone) + '"></div>' +
+    '<div class="field"><label>' + tr('Welcome line (optional)') + '</label><input id="psIntro" placeholder="' + esc(tr('Fresh stock every day')) + '" value="' + esc(c.intro) + '"></div>' +
+    '<div class="field"><label>' + tr('Collection or delivery note (optional)') + '</label><input id="psHow" placeholder="' + esc(tr('Collect in store or delivery in town')) + '" value="' + esc(c.how) + '"></div>' +
+    '<div class="field"><label><input type="checkbox" id="psAll" style="width:auto;margin-right:8px;"' + (c.all ? ' checked' : '') + '>' + tr('Also list items that are out of stock') + '</label></div>' +
+    '<div class="banner" style="display:block;">' + rows.length + ' ' + tr('products will be on the page') + '</div>' +
+    '<div class="actions" style="display:grid;gap:8px;"><button class="btn btn-primary" id="psFile" type="button">' + tr('Download my order page') + '</button>' +
+    '<button class="btn btn-ghost" id="psWa" type="button">' + tr('Share my price list on WhatsApp') + '</button>' +
+    '<button class="btn btn-ghost" id="psCopy" type="button">' + tr('Copy my price list') + '</button>' +
+    '<button class="btn btn-ghost" id="psRecv" type="button">' + tr('Receive an order') + '</button></div>' +
+    '<div class="banner" style="display:block;margin-top:10px;font-size:12.5px;">' + tr('The order page is one file. Send it to customers, or put it on any web hosting to get a link. Pesa does not host it yet. Prices and stock are as they are when you download it, so download it again after you change them.') + '</div>' +
+    '<div class="actions"><button class="btn btn-ghost" id="psClose" type="button">' + tr('Close') + '</button></div>';
+  var ov = openSheet(html);
+  function save(){ var cfg = { phone:ov.querySelector('#psPhone').value.trim(), intro:ov.querySelector('#psIntro').value.trim(), how:ov.querySelector('#psHow').value.trim(), all:ov.querySelector('#psAll').checked }; btSave({ pesaShop:cfg }); return cfg; }
+  ov.querySelector('#psClose').addEventListener('click', function(){ save(); closeModal(); });
+  ov.querySelector('#psFile').addEventListener('click', function(){
+    var cfg = save();
+    if(!normalizeNamPhone(cfg.phone)){ toast(tr('Enter your WhatsApp number first')); return; }
+    var name = 'pesa-order-page-' + todayKey() + '.html';
+    if(browserDownload(name, new Blob([shopBuildHtml(cfg)], { type:'text/html;charset=utf-8' }))) toast(tr('Order page downloaded'));
+    else toast(tr('Could not save the file here'));
+  });
+  ov.querySelector('#psWa').addEventListener('click', function(){ var cfg = save(); window.open('https://wa.me/?text=' + encodeURIComponent(shopTextList(cfg)), '_blank'); });
+  ov.querySelector('#psCopy').addEventListener('click', function(){ var cfg = save(); copyText(shopTextList(cfg), tr('Price list copied')); });
+  ov.querySelector('#psRecv').addEventListener('click', function(){ save(); closeModal(); openShopReceiveSheet(); });
+}
+function openShopReceiveSheet(){
+  var html = '<div class="sheet-head"><h2>' + tr('Receive an order') + '</h2></div>' +
+    '<div class="field"><label>' + tr('Paste the order message from WhatsApp') + '</label><textarea id="psText" rows="8" placeholder="PESA ORDER"></textarea></div>' +
+    '<div id="psOut"></div>' +
+    '<div class="actions"><button class="btn btn-primary btn-block" id="psRead" type="button">' + tr('Read the order') + '</button><button class="btn btn-ghost btn-block" id="psBack" type="button" style="margin-top:8px;">' + tr('Back') + '</button></div>';
+  var ov = openSheet(html), out = ov.querySelector('#psOut');
+  ov.querySelector('#psBack').addEventListener('click', function(){ closeModal(); openShopSheet(); });
+  ov.querySelector('#psRead').addEventListener('click', function(){
+    var o = shopParseOrder(ov.querySelector('#psText').value);
+    if(!o || !o.lines.length){ out.innerHTML = '<div class="banner">' + ICONS.warn + '<span>' + tr('That does not look like a Pesa order. Paste the whole message, starting with PESA ORDER.') + '</span></div>'; return; }
+    var m = shopMatchOrder(o), sum = 0; m.items.forEach(function(x){ sum += Math.round(Number(x.p.sellPrice) * x.qty * 100) / 100; });
+    out.innerHTML = '<div class="banner" style="display:block;"><b>' + esc(o.name || tr('Customer')) + '</b>' + (o.phone ? ' · ' + esc(o.phone) : '') + (o.how ? ' · ' + esc(o.how) : '') + (o.note ? '<br>' + esc(o.note) : '') + '</div>' +
+      '<div class="rowlist">' + m.items.map(function(x){ return '<div class="row" style="cursor:default;"><div class="main"><div class="title">' + esc(x.p.name) + '</div><div class="sub">' + x.qty + ' x ' + fmtMoney(x.p.sellPrice) + '</div></div><div class="num">' + fmtMoney(x.p.sellPrice * x.qty) + '</div></div>'; }).join('') + '</div>' +
+      '<div class="tillcard"><div class="tillrow"><span class="l">' + tr('Total at your prices') + '</span><span class="v num">' + fmtMoney(sum) + '</span></div></div>' +
+      (m.missing.length ? '<div class="banner" style="display:block;">' + tr('Not found in your stock') + ': ' + esc(m.missing.join(', ')) + '</div>' : '') +
+      (m.short.length ? '<div class="banner" style="display:block;">' + tr('Not enough stock') + ': ' + esc(m.short.join(', ')) + '</div>' : '') +
+      (m.priceChanged.length ? '<div class="banner" style="display:block;">' + tr('Your prices have changed since the order page was made') + ': ' + esc(m.priceChanged.join('; ')) + '</div>' : '') +
+      (m.items.length ? '<div class="actions"><button class="btn btn-primary btn-block" id="psCart" type="button">' + tr('Put in the cart') + '</button></div>' : '');
+    var cb = out.querySelector('#psCart');
+    if(cb) cb.addEventListener('click', function(){
+      shopPutInCart(m);
+      try{ logAudit('other', 'sale', null, 'Order received from the order page: ' + (o.name || 'customer') + ', ' + m.items.length + ' item(s)'); }catch(e){}
+      closeModal(); setTab('sell'); toast(tr('Order is in the cart. Charge it when the customer pays.'));
+    });
+  });
 }

@@ -27,12 +27,26 @@ Sell, till and cash up, point of sale terminal, branches (records belong to a br
 | Online shop and sales channels | Enterprise tools, Sales channels | WooCommerce, Shopify, BigCommerce or CSV orders are read, matched to products by barcode (used as the SKU) or exact name, and recorded through the normal Charge sheet so receipts, VAT, the till and the books apply. The same online order cannot be recorded twice. A stock file (CSV) and a stock queue keep the online shop in step |
 | Breaks on shifts | My shift card | Start and end a break. Break time is taken off the hours worked, so it also lowers hourly pay runs. Clocking out ends an open break |
 
+## Pesa Shop (2026.10.204)
+
+| Need | Where | Notes |
+|---|---|---|
+| Order page for customers | Enterprise tools, Pesa Shop | One self contained web page built from the shop's stock. A customer picks items (never more than is in stock) and taps Send order on WhatsApp, which opens a message to the shop number in a fixed format starting with PESA ORDER |
+| Price list | Pesa Shop | Plain text by category, to share on WhatsApp or copy |
+| Receive an order | Pesa Shop | Paste the message. Items are matched by product id, then exact name, and put in the cart at the shop's own current prices. Prices typed into a message are ignored and flagged. Short stock is limited and reported |
+
+Pesa does not host the page. It is a file the owner sends, or puts on any web hosting to get a link. There is no online card payment: the shop confirms the order and takes payment in the normal Charge sheet. Spec: `shop_t`.
+
+## Split payments and discounts (2026.10.203)
+
+A sale can be paid in more than one way (`sale.payments`, parts of cash, card and wallet that add up to what was paid) and can carry a discount (a negative cart line, approved by a manager or the owner). The till, reports, the books, receipts and refunds follow each part. Specs: `split_t`, `disc_t`.
+
 ## What is not built yet
 
 Be clear with a customer about these before they buy for a large operation.
 
 - **Live connection to an online shop.** Pesa does not log in to WooCommerce, Shopify or BigCommerce and does not receive their webhooks, because the app has no server of its own. Orders are pasted or loaded as JSON or CSV. Stock updates are sent only to a web address (https) that the owner types in, for example their own small service or an automation tool, and are kept in a queue when it cannot be reached. A built in connector needs a server component (see `supabase/functions`).
-- **Split bills.** Splitting one sale between payers is not built.
+- **Split bills between several people.** One sale paid in several ways is built, splitting a bill by person is not.
 - **Recipes and ingredient stock (bill of materials), modifiers.**
 - **Approval chains** such as purchase orders above a limit needing the owner. Refunds and removals already need a manager or owner password.
 - **Price lists** (wholesale and retail prices for different customers) and **layby**.
