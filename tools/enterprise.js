@@ -323,7 +323,7 @@ function entToggleBreak(u){
  * puts the same items in the cart at the shop's current prices, to be charged like any other sale. Pesa does not host the page: the owner sends
  * the file or puts it on any web hosting. Prices are always read from Pesa again when the order is received, never from the customer's message. */
 var SHOP_API = 'https://mvdkvakzrpowhxavuqcl.supabase.co/functions/v1/shop';   // the address of the Pesa shop function (supabase/functions/shop, see docs/provisioning/SHOP.md). Blank until it is deployed: live pages are then off and the buttons say so
-var SHOP_VIEWER = 'https://mrandrecloete-hub.github.io/Pessa--App/site/shop.html';   // the live page (site/shop.html), shown as ?s=<shop name>
+var SHOP_VIEWER = 'https://pesanamibia.abrdns.com/site/shop.html';   // the live page (site/shop.html), shown as ?s=<shop name>
 function shopCfg(){ var c = (State.settings && State.settings.pesaShop) || {}; return { phone:String(c.phone || ''), intro:String(c.intro || ''), how:String(c.how || ''), all:!!c.all, slug:String(c.slug || ''), token:String(c.token || ''), published:!!c.published, sig:String(c.sig || ''), at:String(c.at || '') }; }
 function shopSave(patch){ btSave({ pesaShop:Object.assign({}, (State.settings && State.settings.pesaShop) || {}, patch) }); }
 function shopLink(slug){ return SHOP_VIEWER + '?s=' + encodeURIComponent(slug); }

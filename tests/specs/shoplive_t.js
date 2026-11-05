@@ -78,7 +78,7 @@ let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') 
   await p.click('#psHide'); await p.waitForSelector('#psPub'); await p.waitForTimeout(300);
   ck('hiding the page makes it unavailable', !(await p.evaluate(() => window.__t.shopCfg().published)) && (await handleShop({ method: 'GET', action: 'get', query: { s: 'mama-ndapewa-shop' }, headers: {}, body: {} }, deps)).status === 404);
   const cp3 = await ctx.newPage(); await cp3.goto('https://viewer.test/shop.html?s=mama-ndapewa-shop'); await cp3.waitForTimeout(800);
-  ck('a customer then sees a clear message', /not found/.test(await cp3.innerText('#sn')), await cp3.innerText('#sn'));
+  ck('a customer then sees a clear message that names the page', /not found/.test(await cp3.innerText('#sn')) && /mama-ndapewa-shop/.test(await cp3.innerText('#in')), await cp3.innerText('#in'));
   const cp4 = await ctx.newPage(); await cp4.goto('https://viewer.test/shop.html'); await cp4.waitForTimeout(400);
   ck('a link with no shop name says so', /needs a shop name/.test(await cp4.innerText('#sn')));
   ck('no page errors', errs.length === 0, errs);

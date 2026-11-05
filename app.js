@@ -20229,7 +20229,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.206';
+var APP_VERSION = '2026.10.207';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20538,6 +20538,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.207', items:[
+    'Pesa Shop links now use the Pesa website address (https), and the order page says clearly when a shop page is not found or cannot load, naming the page it looked for'
+  ] },
   { v:'2026.10.206', items:[
     'Pesa Shop live pages are switched on: open Enterprise tools, Pesa Shop, enter your WhatsApp number and tap Publish my page to get a link customers can order from'
   ] },
@@ -25045,9 +25048,9 @@ function shopPageHtml(data, api){
     'function review(){var h="";D.rows.forEach(function(r){var n=cart[r.id]||0;if(n)h+=\'<div class="ln"><span>\'+n+" x "+esc(r.n)+"</span><span>"+m(n*r.p)+"</span></div>"});$("rv").innerHTML=h+\'<div class="ln"><b>Total</b><b>\'+m(tot().t)+"</b></div>";$("sh").style.display="block"}' +
     'function send(){var x=tot();if(!x.c)return;var nm=$("nm").value.trim(),ph=$("ph").value.trim();if(!nm||!ph){alert("Please enter your name and phone number.");return}var L=["PESA ORDER","Shop: "+D.shop,"Name: "+nm,"Phone: "+ph,"Get it: "+$("hw").value,"Address or note: "+$("nt").value.trim(),"Items:"];D.rows.forEach(function(r){var n=cart[r.id]||0;if(n)L.push(n+" x "+r.n+" @ "+m(r.p)+" [#"+r.id+"]")});L.push("Total: "+m(x.t));window.open("https://wa.me/"+D.phone+"?text="+encodeURIComponent(L.join("\\n")),"_blank")}' +
     'function start(d){D=d;document.title=D.shop+" order page";$("sn").textContent=D.shop;$("in").textContent=D.intro||"Choose what you want, then send your order on WhatsApp.";$("se").oninput=function(){q=this.value.toLowerCase();paint()};$("bt").onclick=review;$("cl").onclick=function(){$("sh").style.display="none"};$("go").onclick=send;if(D.how)$("hn").textContent=D.how;$("app").style.display="block";paintChips();paint()}' +
-    'function fail(t){$("sn").textContent=t;$("in").textContent=""}';
+    'function fail(t,u){$("sn").textContent=t;$("in").textContent=u||""}';
   if(data) js += ';start(JSON.parse($("d").textContent));';
-  else js += ';(function(){var s=(new URLSearchParams(location.search).get("s")||"").toLowerCase();if(!s){fail("This page needs a shop name");return}$("sn").textContent="Loading";fetch(' + JSON.stringify(String(api || '')) + '+"?a=get&s="+encodeURIComponent(s)).then(function(r){return r.json().then(function(j){if(!r.ok||!j||!j.rows)throw 0;return j})}).then(start,function(){fail("This shop page was not found")})})();';
+  else js += ';(function(){var s=(new URLSearchParams(location.search).get("s")||"").toLowerCase();if(!s){fail("This page needs a shop name","Open the link the shop sent you.");return}$("sn").textContent="Loading";fetch(' + JSON.stringify(String(api || '')) + '+"?a=get&s="+encodeURIComponent(s)).then(function(r){return r.json().then(function(j){if(r.status===404)throw 404;if(!r.ok||!j||!j.rows)throw 1;return j},function(){throw 1})}).then(start,function(c){if(c===404)fail("This shop page was not found","There is no live page called "+s+". Check the link, or ask the shop to publish its page.");else fail("Could not load this shop page","Check your internet connection and try again.")})})();';
   var title = data ? e(data.shop) + ' order page' : 'Order page';
   var json = data ? '<script type="application/json" id="d">' + JSON.stringify(data).replace(/</g, '\\u003c') + '<\/script>' : '';
   return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>' + title + '</title><style>' + css + '</style></head><body>' +
@@ -25383,7 +25386,7 @@ function entToggleBreak(u){
  * puts the same items in the cart at the shop's current prices, to be charged like any other sale. Pesa does not host the page: the owner sends
  * the file or puts it on any web hosting. Prices are always read from Pesa again when the order is received, never from the customer's message. */
 var SHOP_API = 'https://mvdkvakzrpowhxavuqcl.supabase.co/functions/v1/shop';   // the address of the Pesa shop function (supabase/functions/shop, see docs/provisioning/SHOP.md). Blank until it is deployed: live pages are then off and the buttons say so
-var SHOP_VIEWER = 'https://mrandrecloete-hub.github.io/Pessa--App/site/shop.html';   // the live page (site/shop.html), shown as ?s=<shop name>
+var SHOP_VIEWER = 'https://pesanamibia.abrdns.com/site/shop.html';   // the live page (site/shop.html), shown as ?s=<shop name>
 function shopCfg(){ var c = (State.settings && State.settings.pesaShop) || {}; return { phone:String(c.phone || ''), intro:String(c.intro || ''), how:String(c.how || ''), all:!!c.all, slug:String(c.slug || ''), token:String(c.token || ''), published:!!c.published, sig:String(c.sig || ''), at:String(c.at || '') }; }
 function shopSave(patch){ btSave({ pesaShop:Object.assign({}, (State.settings && State.settings.pesaShop) || {}, patch) }); }
 function shopLink(slug){ return SHOP_VIEWER + '?s=' + encodeURIComponent(slug); }
