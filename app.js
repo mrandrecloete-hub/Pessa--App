@@ -20229,7 +20229,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.205';
+var APP_VERSION = '2026.10.206';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20538,6 +20538,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.206', items:[
+    'Pesa Shop live pages are switched on: open Enterprise tools, Pesa Shop, enter your WhatsApp number and tap Publish my page to get a link customers can order from'
+  ] },
   { v:'2026.10.205', items:[
     'Pesa Shop live pages: publish your shop as a page on the Pesa website that customers open from a link, order from on WhatsApp, and that Pesa keeps in step with your stock and prices. Only names, prices, categories and in stock status are published, never your costs or customers. You can hide the page at any time. Live pages switch on when Pesa hosting is set up, until then the download and price list still work'
   ] },
@@ -25379,7 +25382,7 @@ function entToggleBreak(u){
  * taps Send order on WhatsApp, which opens a message to the shop in a fixed format. The owner pastes that message into Receive an order and Pesa
  * puts the same items in the cart at the shop's current prices, to be charged like any other sale. Pesa does not host the page: the owner sends
  * the file or puts it on any web hosting. Prices are always read from Pesa again when the order is received, never from the customer's message. */
-var SHOP_API = '';   // the address of the Pesa shop function (supabase/functions/shop, see docs/provisioning/SHOP.md). Blank until it is deployed: live pages are then off and the buttons say so
+var SHOP_API = 'https://mvdkvakzrpowhxavuqcl.supabase.co/functions/v1/shop';   // the address of the Pesa shop function (supabase/functions/shop, see docs/provisioning/SHOP.md). Blank until it is deployed: live pages are then off and the buttons say so
 var SHOP_VIEWER = 'https://mrandrecloete-hub.github.io/Pessa--App/site/shop.html';   // the live page (site/shop.html), shown as ?s=<shop name>
 function shopCfg(){ var c = (State.settings && State.settings.pesaShop) || {}; return { phone:String(c.phone || ''), intro:String(c.intro || ''), how:String(c.how || ''), all:!!c.all, slug:String(c.slug || ''), token:String(c.token || ''), published:!!c.published, sig:String(c.sig || ''), at:String(c.at || '') }; }
 function shopSave(patch){ btSave({ pesaShop:Object.assign({}, (State.settings && State.settings.pesaShop) || {}, patch) }); }

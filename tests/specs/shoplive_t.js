@@ -28,6 +28,8 @@ let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') 
     await r.doc('p1').set({ name: 'Milk 1L', category: 'Dairy', sellPrice: 22, costPrice: 15, stockQty: 50 });
     await r.doc('p3').set({ name: 'Rice 2kg', category: 'Groceries', sellPrice: 45, costPrice: 38, stockQty: 3, lowStock: 5 }); });
   await p.waitForTimeout(300);
+  ck('the real page service address is built in', await p.evaluate(() => /^https:\/\/[a-z0-9]+\.supabase\.co\/functions\/v1\/shop$/.test(window.__t.SHOP_API)));
+  await p.evaluate(() => window.__t.setShop({ api: '' }));
   await p.evaluate(() => window.__t.openShopSheet()); await p.waitForSelector('#psFile');
   ck('with no page service address it says live pages are off', /not switched on/.test(await p.innerText('#modalRoot')) && !(await p.$('#psPub')));
   await p.evaluate(() => window.__t.closeModal());
