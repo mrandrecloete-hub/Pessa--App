@@ -227,13 +227,21 @@ footer{background:#030B08;border-top:1px solid var(--line);padding:46px 0 30px;c
 .rv{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}
 .rv.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.band-in{animation:none}html{scroll-behavior:auto}.bub{opacity:1;transform:none}}
+.partner{background:var(--bg)}
+.pcard{display:grid;grid-template-columns:auto 1fr;gap:clamp(18px,4vw,40px);align-items:center;background:linear-gradient(135deg,rgba(36,87,230,.16),rgba(229,179,42,.10)),var(--card);border:1px solid var(--line);border-radius:26px;padding:clamp(22px,4vw,40px)}
+.pcard img{width:clamp(96px,16vw,168px);height:auto;border-radius:22px;background:rgba(255,255,255,.04);padding:8px}
+.pcard h3{font-size:clamp(24px,3.4vw,34px);margin:6px 0 8px}
+.pcard p{color:var(--muted);max-width:62ch;margin:0 0 16px}
+.ptags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding:0;list-style:none}
+.ptags li{font:600 13px/1 var(--f-body);padding:8px 12px;border-radius:99px;border:1px solid var(--line);color:var(--fg);background:rgba(255,255,255,.04)}
+@media(max-width:620px){.pcard{grid-template-columns:1fr;text-align:left}}
 </style>
 <!--BODY-->
 <header class="nav">
   <div class="wrap">
     <a class="brand" href="#top" aria-label="Pesa home"><img src="{{SITE}}img/pesa-icon.png" width="36" height="36" alt=""><span>PESA<small>Your Mula, Your Pride</small></span></a>
     <nav aria-label="Main">
-      <a href="#features">Features</a><a href="#watch">Watch</a><a href="#install">Install</a><a href="#prices">Prices</a><a href="#faq">Questions</a>
+      <a href="#features">Features</a><a href="#watch">Watch</a><a href="#install">Install</a><a href="#prices">Prices</a><a href="#partner">Partner</a><a href="#faq">Questions</a>
       <a class="btn btn-gold" href="{{APP}}">Open Pesa</a>
     </nav>
   </div>
@@ -469,6 +477,22 @@ footer{background:#030B08;border-top:1px solid var(--line);padding:46px 0 30px;c
 </section>
 
 <!-- FINAL -->
+<!-- PARTNER -->
+<section class="partner" id="partner">
+  <div class="wrap">
+    <div class="show-head rv"><span class="eyebrow">Our partner</span><h2 class="h2">Shop with Pesa. <em>Lodge with RoyalStay.</em></h2></div>
+    <div class="pcard rv">
+      <img src="{{SITE}}img/royalstay-logo.webp" width="168" height="168" alt="RoyalStay Intelligence logo" loading="lazy">
+      <div>
+        <h3>RoyalStay Intelligence</h3>
+        <p>From the same maker as Pesa. Pesa runs the shop. RoyalStay runs the lodge, guest house or hotel: reservations, front desk, restaurant, bar, housekeeping, stock and invoices in one app, with an AI assistant called Max. Made in Namibia.</p>
+        <ul class="ptags"><li>Reservations</li><li>Front desk</li><li>Restaurant and bar</li><li>Housekeeping</li><li>Invoices</li></ul>
+        <a class="btn btn-gold" href="https://royaltystay.abrdns.com/welcome/" target="_blank" rel="noopener">Visit RoyalStay</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="final">
   <div class="wrap">
     <img class="logo" src="{{SITE}}img/pesa-icon.png" width="96" height="96" alt="Pesa logo" loading="lazy">
@@ -484,7 +508,7 @@ footer{background:#030B08;border-top:1px solid var(--line);padding:46px 0 30px;c
     <div class="foot">
       <div><a class="brand" href="#top" style="padding:0"><img src="{{SITE}}img/pesa-icon.png" width="36" height="36" alt=""><span>PESA<small>Your Mula, Your Pride</small></span></a><p>(Retail Automated System)<br>Proudly Namibian product. Est. 2026, Windhoek, Namibia.</p></div>
       <div><h4>Read</h4><a href="{{SITE}}terms.html">Terms of service</a><a href="{{SITE}}privacy.html">Confidentiality and privacy</a><a href="{{SITE}}refunds.html">Refunds and cancellation</a><a href="{{SITE}}support.html">Support</a></div>
-      <div><h4>Pesa</h4><a href="{{APP}}">Open the app</a><a href="#install">Install</a><a href="#prices">Prices</a><p style="padding-top:8px">Pesa Representative Team<br>Developed by Björn Van Rensburg</p></div>
+      <div><h4>Pesa</h4><a href="{{APP}}">Open the app</a><a href="#install">Install</a><a href="#prices">Prices</a><a href="https://royaltystay.abrdns.com/welcome/" target="_blank" rel="noopener">Partner: RoyalStay</a><p style="padding-top:8px">Pesa Representative Team<br>Developed by Björn Van Rensburg</p></div>
     </div>
     <div class="fine"><span>© Pesa Representative Team. All rights reserved.</span><span>Prices and features are explained in our terms. Tax and records wording is to be confirmed with the relevant legal bodies, authorities and entities of Namibia.</span></div>
   </div>
