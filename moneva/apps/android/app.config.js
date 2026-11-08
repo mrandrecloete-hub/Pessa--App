@@ -8,7 +8,7 @@ const { withProjectBuildGradle } = require('expo/config-plugins');
 
 // The ML Kit document scanner module sets its Kotlin target with an old setting that current Kotlin ignores,
 // so Kotlin compiles for 21 while Java compiles for 17 and Gradle stops. Pin that module's Kotlin to 17.
-const PIN_MARKER = '// moneva: pin kotlin jvm target';
+const PIN_MARKER = '// moneva: pin kotlin jvm target v2';
 const pinScannerKotlinTarget = (config) =>
   withProjectBuildGradle(config, (c) => {
     if (!c.modResults.contents.includes(PIN_MARKER)) {
@@ -16,10 +16,10 @@ const pinScannerKotlinTarget = (config) =>
 ${PIN_MARKER}
 subprojects { p ->
   if (p.name == 'infinitered-react-native-mlkit-document-scanner') {
-    p.plugins.withId('org.jetbrains.kotlin.android') {
-      p.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-      }
+    // The module loads its own copy of the Kotlin plugin, so match tasks by name and use the task's own classes.
+    p.tasks.matching { it.name.startsWith('compile') && it.name.endsWith('Kotlin') }.configureEach { t ->
+      def target = t.compilerOptions.jvmTarget
+      target.set(target.get().getClass().fromTarget('17'))
     }
   }
 }
