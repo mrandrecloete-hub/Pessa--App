@@ -16,9 +16,10 @@ export function parseAmount(raw: string): ParsedAmount | null {
   let s = raw.trim();
   if (!s) return null;
   let sign: -1 | 0 | 1 = 0;
-  if (/\bDR\b|\bDEBIT\b/i.test(s)) sign = -1;
-  if (/\bCR\b|\bCREDIT\b/i.test(s)) sign = 1;
-  s = s.replace(/\b(DR|CR|DEBIT|CREDIT)\b/gi, '').trim();
+  // Markers may be attached to the number, as in "15,254.40Cr" (FNB style).
+  if (/(?<![A-Za-z])(DR|DEBIT)(?![A-Za-z])/i.test(s)) sign = -1;
+  if (/(?<![A-Za-z])(CR|CREDIT)(?![A-Za-z])/i.test(s)) sign = 1;
+  s = s.replace(/(?<![A-Za-z])(DR|CR|DEBIT|CREDIT)(?![A-Za-z])/gi, '').trim();
   if (/^\(.*\)$/.test(s)) {
     sign = -1;
     s = s.slice(1, -1);

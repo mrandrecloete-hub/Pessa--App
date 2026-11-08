@@ -75,7 +75,14 @@ export default function Scan() {
     try {
       const rows = await load();
       if (rows.length === 0) throw new Error('No text was found. Use a sharp, well lit photo with the whole page in view.');
-      setResult(interpret(kind, rows, base));
+      const r = interpret(kind, rows, base);
+      setResult(r);
+      // When nothing useful was found, show what the phone read so the person can see why (and send it to us).
+      setShowText(
+        (r.kind === 'bank_statement' && r.rows.length === 0) ||
+          (r.kind === 'receipt' && !r.receipt.total) ||
+          (r.kind === 'payslip' && !r.slip.net),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The document could not be read.');
     } finally {
@@ -225,7 +232,11 @@ export default function Scan() {
           />
           {showText && (
             <Card style={{ marginTop: space.sm }}>
-              <Text selectable style={[type.caption, { color: c.text, fontFamily: 'monospace' }]}>
+              <Caption>
+                This is exactly what the phone read. Press and hold to select and copy it. Sending it to the MONEVA team helps us read your
+                bank's layout.
+              </Caption>
+              <Text selectable style={[type.caption, { color: c.text, fontFamily: 'monospace', marginTop: space.sm }]}>
                 {result.text}
               </Text>
             </Card>

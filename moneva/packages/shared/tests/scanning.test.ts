@@ -121,3 +121,30 @@ describe('payslip', () => {
     expect(p.confidence).toBe(0);
   });
 });
+
+describe('real statement layouts', () => {
+  it('reads CR and DR markers attached to the number', () => {
+    expect(parseAmount('15,254.40Cr')).toEqual({ value: '15254.4', sign: 1 });
+    expect(parseAmount('245.60Dr')).toEqual({ value: '245.6', sign: -1 });
+  });
+  it('FNB style: day and month only, Cr balances, opening balance seeds the first line', () => {
+    const t = ['Opening Balance  15,500.00Cr', '01 Nov Magtape Credit Salary Acme  15,000.00Cr  30,500.00Cr', '02 Nov POS Purchase Shoprite Windhoek 4567*1234 01 Nov  245.60  30,254.40Cr', '03 Nov FNB App Payment To Rent  4,240.00  26,014.40Cr', 'Closing Balance  26,014.40Cr'].join('\n');
+    const { rows } = parseStatementText(t, 2026);
+    expect(rows.map((r) => [r.date, r.amount, r.direction])).toEqual([['2026-11-01', '15000', 'in'], ['2026-11-02', '245.6', 'out'], ['2026-11-03', '4240', 'out']]);
+    expect(rows[1]!.description).toContain('Shoprite');
+  });
+  it('date in a later column, amounts with a minus for debits', () => {
+    const t = ['Balance brought forward  1 000.00', 'SALARY ACME CC  05/11/2026  12 000.00  13 000.00', 'NAMPOWER PREPAID  06/11/2026  -500.00  12 500.00'].join('\n');
+    const { rows } = parseStatementText(t);
+    expect(rows.map((r) => [r.date, r.amount, r.direction])).toEqual([['2026-11-05', '12000', 'in'], ['2026-11-06', '500', 'out']]);
+    expect(rows[1]!.description).toBe('NAMPOWER PREPAID');
+  });
+  it('ignores headers and summaries that contain dates or amounts', () => {
+    const t = ['Statement period 01/11/2026 to 30/11/2026', 'Statement date 30/11/2026', 'Total debits 4,485.60', 'Available balance 26,014.40', 'Page 1 of 2'].join('\n');
+    expect(parseStatementText(t).rows).toEqual([]);
+  });
+  it('the balance change wins over a missing marker even without an opening line', () => {
+    const t = ['01/11/2026 A  100.00  1 100.00', '02/11/2026 B  50.00  1 050.00', '03/11/2026 C  25.00  1 075.00'].join('\n');
+    expect(parseStatementText(t).rows.map((r) => r.direction)).toEqual(['unknown', 'out', 'in']);
+  });
+});
