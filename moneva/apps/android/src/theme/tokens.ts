@@ -12,6 +12,7 @@ export const brand = {
 
 export interface Palette {
   bg: string;
+  glow: string;
   surface: string;
   surfaceAlt: string;
   border: string;
@@ -20,6 +21,7 @@ export interface Palette {
   primary: string;
   primaryText: string;
   accent: string;
+  accentText: string;
   positive: string;
   negative: string;
   warning: string;
@@ -27,8 +29,28 @@ export interface Palette {
   shadow: string;
 }
 
+/** Dark emerald and gold is the MONEVA look. Light mode is kept for people who prefer it. */
+export const dark: Palette = {
+  bg: '#04120F',
+  glow: '#0A4A36',
+  surface: '#0A241E',
+  surfaceAlt: '#103228',
+  border: '#17483B',
+  text: '#F2F7F5',
+  textMuted: '#8FB0A6',
+  primary: '#1ED08A',
+  primaryText: '#03231A',
+  accent: '#E2B04A',
+  accentText: '#2A1C00',
+  positive: '#27D98B',
+  negative: '#FF5A5F',
+  warning: '#E2B04A',
+  tabBar: '#071C17',
+  shadow: '#000000',
+};
 export const light: Palette = {
   bg: brand.softBg,
+  glow: '#DDEFE8',
   surface: brand.white,
   surfaceAlt: '#EAF0EE',
   border: '#DDE5E2',
@@ -36,28 +58,13 @@ export const light: Palette = {
   textMuted: '#5F6E6C',
   primary: brand.emerald,
   primaryText: brand.white,
-  accent: brand.gold,
+  accent: '#B8922F',
+  accentText: '#FFFFFF',
   positive: brand.emerald,
   negative: '#B3392F',
   warning: '#A9791A',
   tabBar: brand.white,
   shadow: '#101B2C',
-};
-export const dark: Palette = {
-  bg: '#0B1420',
-  surface: brand.navy,
-  surfaceAlt: '#18263A',
-  border: '#243449',
-  text: '#EEF3F1',
-  textMuted: '#9AA8A6',
-  primary: brand.emeraldBright,
-  primaryText: '#04281F',
-  accent: brand.gold,
-  positive: brand.emeraldBright,
-  negative: '#F08A80',
-  warning: '#E3C27A',
-  tabBar: brand.navy,
-  shadow: '#000000',
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;

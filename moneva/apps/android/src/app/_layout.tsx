@@ -4,6 +4,7 @@ import { useTheme } from '@/theme/useTheme';
 
 export default function RootLayout() {
   const { c, isDark } = useTheme();
+  const modal = (title: string) => ({ title, presentation: 'modal' as const });
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
@@ -16,8 +17,13 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="add" options={{ title: 'Add transaction', presentation: 'modal' }} />
-        <Stack.Screen name="import" options={{ title: 'Scan or import', presentation: 'modal' }} />
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ title: '' }} />
+        <Stack.Screen name="add" options={modal('Add transaction')} />
+        <Stack.Screen name="scan" options={modal('Scan or upload')} />
+        <Stack.Screen name="import" options={modal('Import')} />
+        <Stack.Screen name="goal-new" options={modal('New goal')} />
+        <Stack.Screen name="reports" options={{ title: 'Reports' }} />
       </Stack>
     </>
   );

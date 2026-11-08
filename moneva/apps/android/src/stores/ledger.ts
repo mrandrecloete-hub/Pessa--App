@@ -1,7 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { transactionInputSchema, type ImportCandidate, type Transaction, type TransactionInput } from '@moneva/shared';
+import {
+  add,
+  transactionInputSchema,
+  type ImportCandidate,
+  type Transaction,
+  type TransactionInput,
+  type TransactionSource,
+} from '@moneva/shared';
 
 export interface Account {
   id: string;
@@ -10,12 +17,35 @@ export interface Account {
   opening: string;
 }
 
+export interface Contribution {
+  id: string;
+  amount: string;
+  date: string;
+}
+/** A savings goal is the user's own tracking. Contributions are NOT bank transfers and never change account balances. */
+export interface Goal {
+  id: string;
+  name: string;
+  target: string;
+  saved: string;
+  targetDate?: string;
+  contributions: Contribution[];
+}
+
 interface Ledger {
   accounts: Account[];
   transactions: Transaction[];
   /** Fingerprints of imported rows, kept so the same statement can never be imported twice. */
   importedFingerprints: string[];
-  addTransaction: (input: TransactionInput, baseCurrency: string) => { ok: true; id: string } | { ok: false; error: string };
+  goals: Goal[];
+  addGoal: (g: { name: string; target: string; targetDate?: string }) => { ok: true } | { ok: false; error: string };
+  contribute: (goalId: string, amount: string, date: string) => { ok: true } | { ok: false; error: string };
+  deleteGoal: (id: string) => void;
+  addTransaction: (
+    input: TransactionInput,
+    baseCurrency: string,
+    source?: TransactionSource,
+  ) => { ok: true; id: string } | { ok: false; error: string };
   importCandidates: (accountId: string, rows: ImportCandidate[], baseCurrency: string) => { added: number; skippedDuplicates: number };
   addScannedIncome: (args: { accountId: string; amount: string; date: string; description: string; baseCurrency: string }) => string;
   deleteTransaction: (id: string) => void;
@@ -30,7 +60,28 @@ export const useLedger = create<Ledger>()(
       accounts: [DEFAULT_ACCOUNT],
       transactions: [],
       importedFingerprints: [],
-      addTransaction: (input, baseCurrency) => {
+      goals: [],
+      addGoal: ({ name, target, targetDate }) => {
+        if (!name.trim()) return { ok: false, error: 'Give the goal a name.' };
+        if (!/^\d+(\.\d{1,2})?$/.test(target) || Number(target) <= 0) return { ok: false, error: 'Enter a target amount above zero.' };
+        if (targetDate && !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) return { ok: false, error: 'Use the date format YYYY-MM-DD.' };
+        set((s) => ({
+          goals: [...s.goals, { id: uid(), name: name.trim(), target, saved: '0', targetDate: targetDate || undefined, contributions: [] }],
+        }));
+        return { ok: true };
+      },
+      contribute: (goalId, amount, date) => {
+        if (!/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) return { ok: false, error: 'Enter an amount above zero.' };
+        if (!get().goals.some((g) => g.id === goalId)) return { ok: false, error: 'Goal not found.' };
+        set((s) => ({
+          goals: s.goals.map((g) =>
+            g.id === goalId ? { ...g, saved: add(g.saved, amount), contributions: [{ id: uid(), amount, date }, ...g.contributions] } : g,
+          ),
+        }));
+        return { ok: true };
+      },
+      deleteGoal: (id) => set((s) => ({ goals: s.goals.filter((g) => g.id !== id) })),
+      addTransaction: (input, baseCurrency, source = 'manual') => {
         const parsed = transactionInputSchema.safeParse(input);
         if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid transaction' };
         const v = parsed.data;
@@ -50,7 +101,7 @@ export const useLedger = create<Ledger>()(
           merchant: v.merchant ?? null,
           date: v.date,
           status: 'settled',
-          source: 'manual',
+          source,
           description: v.description,
         };
         set((s) => ({ transactions: [t, ...s.transactions] }));

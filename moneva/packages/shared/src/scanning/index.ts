@@ -7,3 +7,4 @@ export * from './payslip';
 export * from './dedupe';
 export * from './importer';
 export type * from './types';
+export * from './extraction';

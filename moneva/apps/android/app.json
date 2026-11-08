@@ -10,11 +10,13 @@
     "android": {
       "package": "com.moneva.app",
       "adaptiveIcon": {
-        "backgroundColor": "#101B2C",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#031A14",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": true,
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -24,17 +26,24 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#101B2C",
+          "backgroundColor": "#031A14",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 160
+          "imageWidth": 220
         }
       ],
       "expo-secure-store",
-      "expo-document-picker"
+      "expo-document-picker",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "MONEVA uses the camera to photograph receipts, payslips and statements you choose to scan.",
+          "photosPermission": "MONEVA reads photos you choose to scan."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "backgroundColor": "#101B2C"
+    "backgroundColor": "#04120F"
   }
 }

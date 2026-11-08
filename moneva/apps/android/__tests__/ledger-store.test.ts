@@ -54,3 +54,44 @@ describe('ledger store', () => {
     expect(ins[0]).toContain('N$1,500.00');
   });
 });
+
+describe('savings goals', () => {
+  beforeEach(() => useLedger.setState({ transactions: [], goals: [], importedFingerprints: [] }));
+  it('contributions track progress without touching account balances', () => {
+    const s = useLedger.getState();
+    expect(s.addGoal({ name: 'Emergency fund', target: '20000' })).toEqual({ ok: true });
+    const id = useLedger.getState().goals[0]!.id;
+    expect(useLedger.getState().contribute(id, '2000', '2026-11-05')).toEqual({ ok: true });
+    expect(useLedger.getState().contribute(id, '500.50', '2026-11-06')).toEqual({ ok: true });
+    expect(useLedger.getState().goals[0]!.saved).toBe('2500.5');
+    expect(accountBalance('0', useLedger.getState().transactions, 'main')).toBe('0');
+    expect(periodSummary(useLedger.getState().transactions, '2026-11-01', '2026-11-30').expenses).toBe('0');
+  });
+  it('validates goals and contributions', () => {
+    const s = useLedger.getState();
+    expect(s.addGoal({ name: '', target: '100' }).ok).toBe(false);
+    expect(s.addGoal({ name: 'Car', target: '-5' }).ok).toBe(false);
+    expect(s.addGoal({ name: 'Car', target: '100', targetDate: 'tomorrow' }).ok).toBe(false);
+    expect(s.contribute('nope', '10', '2026-11-05').ok).toBe(false);
+    s.addGoal({ name: 'Car', target: '100' });
+    expect(useLedger.getState().contribute(useLedger.getState().goals[0]!.id, '0', '2026-11-05').ok).toBe(false);
+  });
+  it('scanned receipts are saved with source scan', () => {
+    useLedger
+      .getState()
+      .addTransaction(
+        {
+          type: 'expense',
+          amount: '245.60',
+          currency: 'NAD',
+          accountId: 'main',
+          categoryId: 'groceries',
+          date: '2026-11-05',
+          description: 'Shoprite',
+        },
+        'NAD',
+        'scan',
+      );
+    expect(useLedger.getState().transactions[0]).toMatchObject({ source: 'scan', amount: '245.60' });
+  });
+});

@@ -18,3 +18,17 @@ Code: `packages/shared/src/scanning`. UI: `apps/android/src/app/import.tsx`. Tes
 - Day-first dates. Currency symbols other than the listed ones are not stripped.
 - The category rules are keyword based and will be wrong sometimes, which is why low confidence rows need confirmation.
 - Tested on synthetic samples, not on real bank or payslip layouts. Real statements from each bank must be added as fixtures before relying on it.
+
+## Photos and PDFs (receipt, payslip, bank statement)
+Code: `apps/android/src/app/scan.tsx`, `apps/android/src/lib/extract.ts`, `supabase/functions/extract-document`, `packages/shared/src/scanning/extraction.ts`.
+
+Flow: the user photographs or picks a file, the app sends it to the `extract-document` Edge Function (signed in users only), the function asks a vision model for JSON, and the app validates that JSON again. Amounts and dates are re-parsed by our own parsers, payslip totals are re-checked, bank rows go through the same duplicate and review pipeline, and the user confirms everything before it is saved.
+
+To turn it on:
+```bash
+supabase functions deploy extract-document
+supabase secrets set ANTHROPIC_API_KEY=...      # server only, never in the app
+```
+and set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+
+Status: the handler and validation are unit tested with a mocked model (`packages/shared/tests/extract-handler.test.ts`, `extraction.test.ts`). It has NOT been run against the real model, deployed, or used with a real camera. Limits: about 5 MB per file, no rate limiting yet, receipts in a foreign currency must be converted by hand until Stage 6. Documents are sent to the AI provider, so a privacy notice and user consent screen are needed before release.
