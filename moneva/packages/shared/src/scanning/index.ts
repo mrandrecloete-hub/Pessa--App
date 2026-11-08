@@ -8,3 +8,5 @@ export * from './dedupe';
 export * from './importer';
 export type * from './types';
 export * from './extraction';
+export * from './ocrLayout';
+export * from './receipt';

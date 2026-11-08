@@ -32,3 +32,13 @@ supabase secrets set ANTHROPIC_API_KEY=...      # server only, never in the app
 and set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 
 Status: the handler and validation are unit tested with a mocked model (`packages/shared/tests/extract-handler.test.ts`, `extraction.test.ts`). It has NOT been run against the real model, deployed, or used with a real camera. Limits: about 5 MB per file, no rate limiting yet, receipts in a foreign currency must be converted by hand until Stage 6. Documents are sent to the AI provider, so a privacy notice and user consent screen are needed before release.
+
+## On this phone (default from 1.0.1)
+Photos and PDFs are read on the phone with Google ML Kit text recognition (`@infinitered/react-native-mlkit-text-recognition`). PDF pages are rendered to images first (`react-native-pdf-thumbnail`, up to 12 pages). Nothing is uploaded and no account or key is needed.
+- `rowsFromLines` rebuilds rows from where each piece of text sits on the page, so statement columns line up again.
+- `rowsToPairs` splits two column payslips and receipts into "label amount" lines.
+- `parseReceiptText` takes only a line labelled Total (or Totaal, Amount due, and so on), never the biggest number. Subtotal, VAT, cash and change are ignored.
+- The scan screen can show the exact text that was read, so you can see why a field was missed.
+- Tests: `packages/shared/tests/ocr.test.ts` with simulated OCR positions. Real recognition quality depends on the photo and has only been checked by building, not on real documents yet.
+
+The server reader (`extract-document`) stays in the code as an optional later upgrade for hard documents.

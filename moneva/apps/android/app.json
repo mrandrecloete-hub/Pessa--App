@@ -2,7 +2,7 @@
   "expo": {
     "name": "MONEVA",
     "slug": "moneva",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "moneva",
@@ -16,7 +16,8 @@
       "predictiveBackGestureEnabled": true,
       "permissions": [
         "CAMERA"
-      ]
+      ],
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
