@@ -2,7 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { budgetStatus, dailyBalanceSeries, format, periodSummary, ratioPct, spendingByCategory, sum, accountBalance } from '@moneva/shared';
+import {
+  budgetStatus,
+  dailyBalanceSeries,
+  forecastMonth,
+  format,
+  periodSummary,
+  ratioPct,
+  spendingByCategory,
+  sum,
+  accountBalance,
+} from '@moneva/shared';
 import { Donut, Ring, Sparkline } from '@/components/charts';
 import { Logo } from '@/components/Logo';
 import { Body, Button, Caption, Card, EmptyState, ProgressBar, Screen } from '@/components/ui';
@@ -104,6 +114,7 @@ export default function Home() {
     ...(Number(rest) > 0 ? [{ key: 'rest', name: 'Others', value: Number(rest), amount: rest, color: SLICE_COLORS[4]! }] : []),
   ];
   const bs = monthlyBudget ? budgetStatus(monthlyBudget, s.expenses) : null;
+  const fc = monthlyBudget ? forecastMonth(monthlyBudget, s.expenses, now.getDate(), monthRange(now).daysInMonth) : null;
   const whole = (v: string) => format(v, base).replace(/\.00$/, '');
   const mask = (v: string) => (hidden ? `${format('0', base).replace('0.00', '')}••••` : v);
 
@@ -228,8 +239,17 @@ export default function Home() {
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text style={[type.heading, { color: c.text }]}>Budget Progress</Text>
-                  <Text style={[type.caption, { color: bs.alert === 'none' || bs.alert === 'progress' ? c.positive : c.warning }]}>
-                    {bs.alert === 'exceeded' ? 'Over budget' : bs.alert === 'strong' || bs.alert === 'warning' ? 'Watch it' : 'On track'}
+                  <Text
+                    style={[
+                      type.caption,
+                      { color: (bs.alert === 'none' || bs.alert === 'progress') && !fc?.willExceed ? c.positive : c.warning },
+                    ]}
+                  >
+                    {bs.alert === 'exceeded'
+                      ? 'Over budget'
+                      : bs.alert === 'strong' || bs.alert === 'warning' || fc?.willExceed
+                        ? 'Watch it'
+                        : 'On track'}
                   </Text>
                 </View>
                 <Body muted style={{ marginVertical: 6 }}>

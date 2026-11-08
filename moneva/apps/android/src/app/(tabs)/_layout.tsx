@@ -62,7 +62,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="add-tab" options={{ title: 'Add', tabBarButton: () => <CenterAdd /> }} />
       <Tabs.Screen name="savings" options={tab('Savings', 'leaf-outline', 'leaf')} />
       <Tabs.Screen name="more" options={tab('More', 'grid-outline', 'grid')} />
-      <Tabs.Screen name="budget" options={{ href: null }} />
     </Tabs>
   );
 }

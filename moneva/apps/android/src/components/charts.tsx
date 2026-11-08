@@ -133,22 +133,26 @@ export function Bars({
     gap = width / data.length,
     bw = gap * 0.26;
   return (
-    <Svg width={width} height={height + 20} accessibilityLabel={label}>
+    <Svg width={width} height={height + 26} accessibilityLabel={label}>
       {data.map((d, i) => (
         <G key={d.label}>
-          <Path
-            d={`M${i * gap + gap * 0.3} ${height} v${-Math.max(2, (d.a / max) * height)}`}
-            stroke={a}
-            strokeWidth={bw}
-            strokeLinecap="round"
-          />
-          <Path
-            d={`M${i * gap + gap * 0.7} ${height} v${-Math.max(2, (d.b / max) * height)}`}
-            stroke={b}
-            strokeWidth={bw}
-            strokeLinecap="round"
-          />
-          <SvgText x={i * gap + gap * 0.5} y={height + 15} fontSize={10} fill="#8FB0A6" textAnchor="middle">
+          {d.a > 0 && (
+            <Path
+              d={`M${i * gap + gap * 0.3} ${height} v${-Math.max(2, (d.a / max) * height)}`}
+              stroke={a}
+              strokeWidth={bw}
+              strokeLinecap="round"
+            />
+          )}
+          {d.b > 0 && (
+            <Path
+              d={`M${i * gap + gap * 0.7} ${height} v${-Math.max(2, (d.b / max) * height)}`}
+              stroke={b}
+              strokeWidth={bw}
+              strokeLinecap="round"
+            />
+          )}
+          <SvgText x={i * gap + gap * 0.5} y={height + 16} fontSize={10} fontFamily="sans-serif" fill="#8FB0A6" textAnchor="middle">
             {d.label}
           </SvgText>
         </G>

@@ -11,7 +11,7 @@ import { View } from 'react-native';
 
 const ALERT_TEXT = {
   none: 'On track',
-  progress: 'Half of your budget is used',
+  progress: 'More than half of your budget is used',
   warning: 'Warning: 75% used',
   strong: 'Strong warning: 90% used',
   exceeded: 'Budget exceeded',

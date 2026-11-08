@@ -3,6 +3,7 @@ import { router, type Href } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { CURRENCIES } from '@moneva/shared';
 import { Body, Caption, Card, Chip, H1, Screen } from '@/components/ui';
+import { DEMO_ENABLED, loadDemoData } from '@/lib/demo';
 import { useSession } from '@/lib/session';
 import { supabase } from '@/lib/supabase';
 import type { IconName } from '@/lib/icons';
@@ -51,6 +52,15 @@ export default function More() {
       <Row icon="scan-outline" title="Scan or upload" sub="Receipts, payslips and bank statements" href="/scan" />
       <Row icon="bar-chart-outline" title="Financial reports" sub="Income, spending and categories" href="/reports" />
       <Row icon="pie-chart-outline" title="Budget" sub="Monthly limit, alerts and forecast" href="/budget" />
+      {DEMO_ENABLED && (
+        <Card>
+          <Caption>Preview build only</Caption>
+          <View style={{ marginTop: space.sm }}>
+            <Chip label="Load demo data" on={false} onPress={loadDemoData} />
+          </View>
+          <Caption>Adds sample records marked (demo). Not available in real builds.</Caption>
+        </Card>
+      )}
       <Card>
         <Caption>Account</Caption>
         {session ? (

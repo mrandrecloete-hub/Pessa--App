@@ -29,6 +29,7 @@ export default function RootLayout() {
         <Stack.Screen name="import" options={modal('Import')} />
         <Stack.Screen name="goal-new" options={modal('New goal')} />
         <Stack.Screen name="reports" options={{ title: 'Reports' }} />
+        <Stack.Screen name="budget" options={{ title: 'Budget' }} />
       </Stack>
     </>
   );

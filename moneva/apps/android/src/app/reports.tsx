@@ -60,7 +60,7 @@ export default function Reports() {
                 <View key={k} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6 }}>
                   <Ionicons name={categoryIcon(k)} size={18} color={c.primary} style={{ marginRight: 10 }} />
                   <Text style={[type.body, { color: c.text, flex: 1 }]}>{categoryName(k)}</Text>
-                  <Text style={[type.caption, { color: c.textMuted, marginRight: 10 }]}>{ratioPct(v, total)}%</Text>
+                  <Text style={[type.caption, { color: c.textMuted, marginRight: 10 }]}>{Math.round(Number(ratioPct(v, total)))}%</Text>
                   <Text style={[type.heading, { color: c.text }]}>{format(v, base)}</Text>
                 </View>
               ))
