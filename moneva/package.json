@@ -1,0 +1,19 @@
+{
+  "name": "moneva",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MONEVA - Take Control. Build Wealth.",
+  "workspaces": ["apps/android", "packages/shared"],
+  "scripts": {
+    "test": "npm run test -w @moneva/shared",
+    "test:app": "npm run test -w android",
+    "typecheck": "npm run typecheck -w @moneva/shared && npm run typecheck -w android",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.3.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

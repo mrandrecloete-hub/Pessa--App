@@ -1,0 +1,10 @@
+node_modules/
+.expo/
+dist/
+web-build/
+*.log
+.env
+.env.*
+!.env.example
+apps/android/android/
+apps/android/ios/
