@@ -9,13 +9,16 @@ Stage 1 (foundation) is done and verified. Stage 3 pieces needed for scanning (l
 ```bash
 cd moneva
 npm install
+npm run test:all         # everything below in one go
 npm test                 # shared engine: money, ledger, budget, scanners (vitest)
-npm run test:app         # app store + insight tests (jest-expo)
+npm run test:app         # app store, on-device SQLite and insight tests (jest-expo)
 npm run typecheck
 npm run lint
 tests/db/run.sh          # migration + Row Level Security tests on a throwaway Postgres 16 (needs local postgres)
 cd apps/android && npx expo start --android   # needs Android Studio emulator or a phone with Expo Go / dev build
 ```
+The app stores data in an on-device SQLite database. For a local backend (Docker) see [docs/local-setup.md](docs/local-setup.md).
+
 Supabase is optional for now: copy `.env.example` to `apps/android/.env` and fill the two public values. Apply `supabase/migrations/*.sql` then `supabase/seed.sql` with the Supabase CLI.
 
 ## Layout

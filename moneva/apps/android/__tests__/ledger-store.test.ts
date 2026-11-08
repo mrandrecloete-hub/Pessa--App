@@ -77,21 +77,19 @@ describe('savings goals', () => {
     expect(useLedger.getState().contribute(useLedger.getState().goals[0]!.id, '0', '2026-11-05').ok).toBe(false);
   });
   it('scanned receipts are saved with source scan', () => {
-    useLedger
-      .getState()
-      .addTransaction(
-        {
-          type: 'expense',
-          amount: '245.60',
-          currency: 'NAD',
-          accountId: 'main',
-          categoryId: 'groceries',
-          date: '2026-11-05',
-          description: 'Shoprite',
-        },
-        'NAD',
-        'scan',
-      );
+    useLedger.getState().addTransaction(
+      {
+        type: 'expense',
+        amount: '245.60',
+        currency: 'NAD',
+        accountId: 'main',
+        categoryId: 'groceries',
+        date: '2026-11-05',
+        description: 'Shoprite',
+      },
+      'NAD',
+      'scan',
+    );
     expect(useLedger.getState().transactions[0]).toMatchObject({ source: 'scan', amount: '245.60' });
   });
 });

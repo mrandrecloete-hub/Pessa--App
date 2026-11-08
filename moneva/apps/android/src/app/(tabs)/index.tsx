@@ -78,7 +78,7 @@ function Tile({
 
 export default function Home() {
   const { c } = useTheme();
-  const { accounts, transactions, goals } = useLedger();
+  const { accounts, transactions, goals, saveError } = useLedger();
   const { baseCurrency: base, monthlyBudget, userName } = usePrefs();
   const [hidden, setHidden] = useState(false);
   const now = new Date();
@@ -149,6 +149,14 @@ export default function Home() {
           <Text style={[type.heading, { color: c.primaryText }]}>{(userName.trim()[0] ?? 'M').toUpperCase()}</Text>
         </Pressable>
       </View>
+
+      {saveError && (
+        <Card>
+          <Body style={{ color: c.negative }}>
+            Your last change could not be saved to this phone and may be lost if you close the app. {saveError}
+          </Body>
+        </Card>
+      )}
 
       <Card style={{ overflow: 'hidden' }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

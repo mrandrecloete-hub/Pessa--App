@@ -39,7 +39,8 @@
           "cameraPermission": "MONEVA uses the camera to photograph receipts, payslips and statements you choose to scan.",
           "photosPermission": "MONEVA reads photos you choose to scan."
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true

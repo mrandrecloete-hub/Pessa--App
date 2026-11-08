@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, router, Tabs } from 'expo-router';
 import { Pressable, View, type ColorValue } from 'react-native';
+import { useLedger } from '@/stores/ledger';
 import { usePrefs, usePrefsHydrated } from '@/stores/preferences';
 import { useTheme } from '@/theme/useTheme';
 
@@ -42,8 +43,9 @@ function CenterAdd() {
 export default function TabsLayout() {
   const { c } = useTheme();
   const hydrated = usePrefsHydrated();
+  const ledgerReady = useLedger((s) => s.ready);
   const onboarded = usePrefs((s) => s.onboarded);
-  if (!hydrated) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
+  if (!hydrated || !ledgerReady) return <View style={{ flex: 1, backgroundColor: c.bg }} />;
   if (!onboarded) return <Redirect href="/welcome" />;
   return (
     <Tabs

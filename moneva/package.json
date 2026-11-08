@@ -3,13 +3,24 @@
   "private": true,
   "version": "0.1.0",
   "description": "MONEVA - Take Control. Build Wealth.",
-  "workspaces": ["apps/android", "packages/shared"],
+  "workspaces": [
+    "apps/android",
+    "packages/shared"
+  ],
   "scripts": {
     "test": "npm run test -w @moneva/shared",
     "test:app": "npm run test -w android",
     "typecheck": "npm run typecheck -w @moneva/shared && npm run typecheck -w android",
     "lint": "eslint . --max-warnings 0",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "local:start": "npx supabase start",
+    "local:stop": "npx supabase stop",
+    "local:reset": "npx supabase db reset",
+    "local:status": "npx supabase status",
+    "local:env": "tools/local-env.sh",
+    "local:functions": "npx supabase functions serve --env-file supabase/functions/.env",
+    "test:db": "tests/db/run.sh",
+    "test:all": "npm test && npm run test:app && npm run test:db"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

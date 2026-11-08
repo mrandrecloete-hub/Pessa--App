@@ -8,3 +8,6 @@ web-build/
 !.env.example
 apps/android/android/
 apps/android/ios/
+supabase/functions/.env
+supabase/.temp/
+supabase/.branches/

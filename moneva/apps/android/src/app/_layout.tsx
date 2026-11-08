@@ -1,9 +1,14 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { initLedger } from '@/stores/ledger';
 import { useTheme } from '@/theme/useTheme';
 
 export default function RootLayout() {
   const { c, isDark } = useTheme();
+  useEffect(() => {
+    void initLedger();
+  }, []);
   const modal = (title: string) => ({ title, presentation: 'modal' as const });
   return (
     <>

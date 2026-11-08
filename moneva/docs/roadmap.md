@@ -4,7 +4,7 @@
 |---|---|---|
 | 1 Foundation | Expo shell, routing, tokens, logo, Supabase client, lint/test setup | Done. Android bundle compiles; UI checked in a headless browser. Not run on a real Android device yet. |
 | 2 Auth and onboarding | Sign up, login, recovery, profile, currency, accounts | Partly done: Welcome, Login, Create account and Forgot password screens call Supabase Auth and work only once Supabase is configured (not tested against a real project). No email verification screen, profile, PIN or accounts setup. Google and Apple sign in are not built. |
-| 3 Accounts and transactions | Local ledger, add income/expense, history, search, delete | Partly done: single account, base currency only, stored on the device (AsyncStorage). No edit screen, no transfers screen, no cloud sync yet. |
+| 3 Accounts and transactions | Local ledger, add income/expense, history, search, delete | Partly done: single account, base currency only, stored in an on-device SQLite database (see local-setup.md). No edit screen, no transfers screen, no cloud sync yet. |
 | 4 Budgeting | Suggested split 50/30/20 and 60/20/20, status, alerts, forecast | Engine and tests done (`calculations/budget.ts`). UI shows the suggestion only. No saved budgets or notifications. |
 | 5 Savings and discipline | Goals, challenges, score | Goals and contributions work (local, tested, never counted as spending or as a bank transfer). Challenges, streaks and the discipline score are not built. |
 | 6 Multi-currency | Rates, conversions, cross-currency transfers | Money engine stores rate with each conversion (tested). No rate provider or UI. |
