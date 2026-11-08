@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -16,26 +17,32 @@ import {
 } from '@moneva/shared';
 import { PayslipReview, ReceiptReview, StatementReview } from '@/components/review';
 import { Body, Button, Caption, Card, H1, Screen } from '@/components/ui';
-import { readImageRows, readPdfRows } from '@/lib/ocr';
+import { readImageRows, readPdfRows, scanDocumentRows } from '@/lib/ocr';
 import { usePrefs } from '@/stores/preferences';
 import { space, type } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
 
-type Kind = 'receipt' | 'payslip' | 'bank_statement';
+type Kind = 'receipt' | 'payslip' | 'bank_statement' | 'text';
 type Result =
   | { kind: 'receipt'; receipt: ReceiptData; warnings: string[]; confidence: number; text: string }
   | { kind: 'payslip'; slip: PayslipResult; text: string }
-  | { kind: 'bank_statement'; rows: RawStatementRow[]; unread: number; text: string };
+  | { kind: 'bank_statement'; rows: RawStatementRow[]; unread: number; text: string }
+  | { kind: 'text'; text: string };
 
 const KINDS: Array<{ kind: Kind; title: string; sub: string; icon: React.ComponentProps<typeof Ionicons>['name'] }> = [
   { kind: 'receipt', title: 'Receipt', sub: 'Shop, date and total', icon: 'receipt-outline' },
   { kind: 'payslip', title: 'Payslip', sub: 'Net pay recorded as income', icon: 'document-text-outline' },
   { kind: 'bank_statement', title: 'Bank statement', sub: 'Every line, categorised', icon: 'card-outline' },
+  { kind: 'text', title: 'Any document to text', sub: 'Scan any page and copy its text', icon: 'scan-outline' },
 ];
+
+/** How many pages the scanner allows in one go, per document type. */
+const PAGE_LIMIT: Record<Kind, number> = { receipt: 2, payslip: 3, bank_statement: 12, text: 12 };
 
 /** Turns the rows read on the phone into reviewable data. Nothing is saved here. */
 function interpret(kind: Kind, rows: string[][], base: string): Result {
   const year = new Date().getFullYear();
+  if (kind === 'text') return { kind, text: rows.map((r) => r.join('  ')).join('\n') };
   if (kind === 'receipt') {
     const text = rowsToPairs(rows);
     const r = parseReceiptText(text, year);
@@ -65,15 +72,18 @@ export default function Scan() {
   const [result, setResult] = useState<Result | null>(null);
   const [showText, setShowText] = useState(false);
   const [done, setDone] = useState('');
+  const [copied, setCopied] = useState(false);
 
-  const read = async (load: () => Promise<string[][]>) => {
+  const read = async (load: () => Promise<string[][] | null>) => {
     if (!kind) return;
     setError('');
     setResult(null);
     setShowText(false);
+    setCopied(false);
     setBusy('Reading your document on this phone...');
     try {
       const rows = await load();
+      if (rows === null) return; // cancelled
       if (rows.length === 0) throw new Error('No text was found. Use a sharp, well lit photo with the whole page in view.');
       const r = interpret(kind, rows, base);
       setResult(r);
@@ -96,6 +106,20 @@ export default function Scan() {
     const r = await ImagePicker.launchCameraAsync({ quality: 0.9, mediaTypes: ['images'] });
     const a = r.canceled ? null : r.assets[0];
     if (a) await read(() => readImageRows(a.uri));
+  };
+  const scan = async () => {
+    if (!kind) return;
+    let scannerFailed = false;
+    await read(async () => {
+      try {
+        return await scanDocumentRows(PAGE_LIMIT[kind], (i, n) => setBusy(`Reading page ${i + 1} of ${n} on this phone...`));
+      } catch {
+        scannerFailed = true;
+        return null;
+      }
+    });
+    // Scanner unavailable on this phone (it needs Google Play services): use the plain camera instead.
+    if (scannerFailed) await fromCamera();
   };
   const fromLibrary = async () => {
     const r = await ImagePicker.launchImageLibraryAsync({ quality: 0.9, mediaTypes: ['images'] });
@@ -180,7 +204,8 @@ export default function Scan() {
             </Card>
           ) : (
             <View style={{ gap: space.sm }}>
-              <Button title="Take a photo" onPress={fromCamera} />
+              <Button title="Scan with camera" onPress={scan} />
+              <Caption>Finds the page edges, crops and straightens it. Several pages in one go.</Caption>
               <Button title="Choose a photo" variant="ghost" onPress={fromLibrary} />
               <Button title="Choose a PDF or file" variant="ghost" onPress={fromFile} />
               <Button
@@ -212,6 +237,14 @@ export default function Scan() {
             </>
           )}
           {result.kind === 'payslip' && <PayslipReview slip={result.slip} />}
+          {result.kind === 'text' && (
+            <Card>
+              <Caption>Text read on this phone. Press and hold to select part of it.</Caption>
+              <Text selectable style={[type.body, { color: c.text, marginTop: space.sm }]}>
+                {result.text}
+              </Text>
+            </Card>
+          )}
           {result.kind === 'bank_statement' && (
             <>
               {result.unread > 0 && (
@@ -226,10 +259,23 @@ export default function Scan() {
           )}
           <View style={{ height: space.md }} />
           <Button
-            title={showText ? 'Hide the text that was read' : 'Show the text that was read'}
+            title={copied ? 'Copied' : 'Copy all the text'}
             variant="ghost"
-            onPress={() => setShowText((v) => !v)}
+            onPress={async () => {
+              await Clipboard.setStringAsync(result.text);
+              setCopied(true);
+            }}
           />
+          {result.kind !== 'text' && (
+            <>
+              <View style={{ height: space.sm }} />
+              <Button
+                title={showText ? 'Hide the text that was read' : 'Show the text that was read'}
+                variant="ghost"
+                onPress={() => setShowText((v) => !v)}
+              />
+            </>
+          )}
           {showText && (
             <Card style={{ marginTop: space.sm }}>
               <Caption>

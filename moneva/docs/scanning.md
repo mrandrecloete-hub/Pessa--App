@@ -42,3 +42,9 @@ Photos and PDFs are read on the phone with Google ML Kit text recognition (`@inf
 - Tests: `packages/shared/tests/ocr.test.ts` with simulated OCR positions. Real recognition quality depends on the photo and has only been checked by building, not on real documents yet.
 
 The server reader (`extract-document`) stays in the code as an optional later upgrade for hard documents.
+
+## Document scanner (1.0.2)
+"Scan with camera" opens Google's ML Kit Document Scanner (`@infinitered/react-native-mlkit-document-scanner`): it finds the page edges, crops and straightens the page, cleans it up, and takes several pages in one go (receipt 2, payslip 3, statement and text 12). Each page is then read with ML Kit text recognition on the phone.
+- It needs Google Play services. On phones without them the app falls back to the plain camera.
+- "Any document to text" scans any page and shows its text with a Copy button.
+- Every result has "Copy all the text", so a reading problem can be reported with the exact text.

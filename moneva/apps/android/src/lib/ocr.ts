@@ -23,3 +23,26 @@ export async function readPdfRows(uri: string, onPage?: (done: number, total: nu
   }
   return rows;
 }
+
+/**
+ * Opens Google's document scanner (finds the page edges, crops, straightens and cleans each page, several pages
+ * in one go), then reads every page on the phone. Returns null when the person cancels.
+ * Needs Google Play services; callers fall back to the plain camera if it is missing.
+ */
+export async function scanDocumentRows(pageLimit: number, onPage?: (done: number, total: number) => void): Promise<string[][] | null> {
+  const { launchDocumentScannerAsync, ResultFormatOptions, ScannerModeOptions } =
+    await import('@infinitered/react-native-mlkit-document-scanner');
+  const r = await launchDocumentScannerAsync({
+    pageLimit,
+    galleryImportAllowed: true,
+    scannerMode: ScannerModeOptions.FULL,
+    resultFormats: ResultFormatOptions.JPEG,
+  });
+  if (r.canceled || !r.pages?.length) return null;
+  const rows: string[][] = [];
+  for (let i = 0; i < r.pages.length; i++) {
+    onPage?.(i, r.pages.length);
+    rows.push(...(await readImageRows(r.pages[i]!)));
+  }
+  return rows;
+}
