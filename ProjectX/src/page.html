@@ -108,6 +108,12 @@ h3{font-size:1.05rem;font-weight:600;color:var(--accent);margin:1.1rem 0 .5rem}
 body.swap #t-left{left:auto;right:calc(var(--gr) + 86px*var(--ts))}body.swap #t-right{left:auto;right:var(--gr)}
 body.swap #t-gas{right:auto;left:var(--gl)}body.swap #t-brake{right:auto;left:calc(var(--gl) + 104px*var(--ts))}body.swap #t-fire{right:auto;left:var(--gl)}body.swap #t-nitro{right:auto;left:calc(var(--gl) + 86px*var(--ts))}body.swap #t-drift{right:auto;left:calc(var(--gl) + 190px*var(--ts))}
 body.touch #h-bl{bottom:auto;top:8.2rem;width:min(12rem,36vw)}body.touch #h-br{bottom:auto;top:calc(3rem + env(safe-area-inset-top,0px));right:50%;transform:translateX(50%)}body.touch #h-speed{font-size:2.4rem}body.touch #h-feed{display:none}body.touch #h-board{display:none}body.touch #minimap{width:104px;height:104px}
+#h-feed:empty{display:none}
+#h-hint{left:50%;bottom:5.4rem;transform:translateX(-50%);font-size:1.15rem;font-weight:800;letter-spacing:.05em;color:#fff;background:rgba(6,7,10,.62);padding:.3rem 1rem;border:1px solid var(--line);white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}#h-hint:empty{display:none}
+#hud:not([data-mode="roam"]) #t-use{display:none}
+#t-use{left:var(--gl);bottom:calc(1.2rem + 90px*var(--ts));border-color:var(--accent)!important;width:calc(84px*var(--ts))!important;border-radius:calc(22px*var(--ts))!important;font-size:calc(.78rem*var(--ts))!important}
+body.swap #t-use{left:auto;right:var(--gr)}
+#hud[data-mode="roam"] #h-tl,#hud[data-mode="roam"] #h-bl,#hud[data-mode="roam"] #h-br,#hud[data-mode="roam"] #h-feed{background:rgba(6,7,10,.5);padding:.35rem .7rem}
 #nogl,#rotate{position:absolute;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;font-size:1.1rem}
 #nogl[hidden]{display:none}#rotate{display:none}
 @media (orientation:portrait) and (max-width:700px){body[data-screen="hud"] #rotate{display:flex;background:rgba(6,7,10,.9)}}
@@ -133,11 +139,11 @@ body.touch #h-bl{bottom:auto;top:8.2rem;width:min(12rem,36vw)}body.touch #h-br{b
     <div id="h-feed"></div>
     <div id="h-bl"><div id="h-wp"><span id="h-weapon"></span><span id="h-ammo"></span></div><div class="meter"><span>Armour</span><i><u id="h-health"></u></i></div><div class="meter"><span>Nitro</span><i><u id="h-nitro"></u></i></div></div>
     <div id="h-br"><span id="h-gear">1</span><span id="h-speed">0</span><small>km/h</small></div>
-    <div id="toast"></div><div id="count"></div><div id="h-state"></div>
+    <div id="toast"></div><div id="count"></div><div id="h-state"></div><div id="h-hint"></div>
     <button id="pausebtn" data-act="pause">Pause</button>
     <div id="touch">
       <button id="t-left" data-k="left" aria-label="Steer left">◀</button><button id="t-right" data-k="right" aria-label="Steer right">▶</button>
-      <button id="t-gas" data-k="gas">Gas</button><button id="t-brake" data-k="brake">Brake</button><button id="t-fire" data-k="fire">Fire</button><button id="t-nitro" data-k="nitro">Nitro</button><button id="t-drift" data-k="drift">Drift</button>
+      <button id="t-gas" data-k="gas">Gas</button><button id="t-brake" data-k="brake">Brake</button><button id="t-fire" data-k="fire">Fire</button><button id="t-nitro" data-k="nitro">Nitro</button><button id="t-drift" data-k="drift">Drift</button><button id="t-use" data-k="use">Enter / Exit</button>
     </div>
   </div>
   <section class="screen" id="scr-pause" hidden><div class="pausebox"><h2>Paused</h2><button class="btn big" data-act="resume">Resume</button><button class="btn ghost" data-act="restart">Restart</button><button class="btn ghost" data-act="psettings">Settings</button><button class="btn ghost" data-act="quit">Quit to menu</button></div></section>

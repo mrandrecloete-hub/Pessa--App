@@ -1,7 +1,10 @@
 // One race session: scene, cars, laps, damage, camera. Used by every game mode.
 import * as THREE from 'three';
-import { vehicleById, trackById, ARENA, DIFFICULTY, WEAPONS } from './data.js';
+import { vehicleById, trackById, ARENA, DIFFICULTY, WEAPONS, VEHICLES } from './data.js';
 import { buildTrack, buildArena, makeSky } from './track.js';
+import { buildRoam } from './roam.js';
+import { Walker } from './walker.js';
+import { Save } from './save.js';
 import { Car, wrap } from './car.js';
 import { FX, Combat, Skids } from './combat.js';
 import { makeAI, updateAI } from './ai.js';
@@ -13,9 +16,9 @@ export class Race {
   // cfg: { mode: 'race'|'trial'|'arena'|'boss', track, laps, diff, car, upgrades, paint, rim, startWeapon, field: [{name, car, skill, aggro, defend, hpMul}] }
   constructor(app, cfg) {
     this.app = app; this.cfg = cfg; this.audio = app.audio; this.mode = cfg.mode; this.diff = DIFFICULTY[cfg.diff] || DIFFICULTY.normal;
-    const q = app.q, arena = cfg.mode === 'arena';
+    const q = app.q, arena = cfg.mode === 'arena', roam = cfg.mode === 'roam';
     this.scene = new THREE.Scene();
-    this.track = arena ? buildArena(ARENA) : buildTrack(trackById(cfg.track), q);
+    this.track = roam ? buildRoam(q) : arena ? buildArena(ARENA) : buildTrack(trackById(cfg.track), q);
     const th = this.theme = this.track.theme;
     this.scene.fog = new THREE.FogExp2(th.fog, th.fogD); this.scene.add(this.track.group);
     this.scene.add(new THREE.HemisphereLight(th.sky[1], th.ground, th.amb * 1.4));
@@ -27,7 +30,7 @@ export class Race {
     this.camera = new THREE.PerspectiveCamera(65, 16 / 9, 0.3, 2400);
     this.fx = new FX(this.scene, q.particles); this.combat = new Combat(this); this.skids = new Skids(this.scene, q.particles < 0.6 ? 300 : 800); this.blur = 0;
     this.dustCol = new THREE.Color(th.dust); this.dusty = DUSTY[th.props] || 0;
-    this.laps = arena ? 0 : (cfg.laps || this.track.def.laps); this.timeLimit = arena ? 150 : 0;
+    this.laps = (arena || roam) ? 0 : (cfg.laps || this.track.def.laps); this.timeLimit = arena ? 150 : 0;
     this.noWeapons = cfg.mode === 'trial';
     // cars
     this.cars = [];
@@ -35,11 +38,13 @@ export class Race {
     field.forEach((f, i) => { const c = new Car(vehicleById(f.car), { name: f.name, ai: makeAI(f), hpMul: f.hpMul }); c.driver = f; c.speedMul = this.diff.spd * (0.93 + 0.07 * f.skill); c.baseMul = c.speedMul; this.cars.push(c); });
     const pc = this.player = new Car(vehicleById(cfg.car), { name: cfg.playerName || 'You', isPlayer: true, upgrades: cfg.upgrades, paint: cfg.paint, rim: cfg.rim });
     this.cars.push(pc);
+    if (roam) VEHICLES.filter(v => v.id !== cfg.car).forEach(v => { const c = new Car(v, { name: v.name }); c.parked = true; this.cars.push(c); }); // every other vehicle waits in the lot
     if (th.night) { const hl = new THREE.SpotLight(0xdfeaff, 900, 110, 0.5, 0.7, 1.4); hl.position.set(0, 0.9, 1.6); hl.target.position.set(0, -0.6, 30); pc.model.group.add(hl, hl.target); }
-    this.cars.forEach((c, i) => { c.place(this.track.grid(i)); this.scene.add(c.model.group); c.lastHitT = -99; });
+    this.cars.forEach((c, i) => { c.place(this.track.grid(i)); c.home = this.track.grid(i); this.scene.add(c.model.group); c.lastHitT = -99; });
     if (cfg.startWeapon && !this.noWeapons) { this.combat.give(pc, cfg.startWeapon); pc.ammo = Math.max(1, Math.ceil(pc.ammo / 2)); }
     this.combat.spawnPickups(this.track, this.noWeapons ? ['n'] : ['w', 'n', 'h']);
-    this.time = 0; this.raceTime = 0; this.state = 'countdown'; this.count = 3.6; this.lastCount = 4; this.locked = true; this.endT = 0;
+    this.time = 0; this.raceTime = 0; this.state = roam ? 'racing' : 'countdown'; this.count = roam ? 0 : 3.6; this.lastCount = 4; this.locked = !roam; this.endT = 0;
+    this.walker = new Walker(); this.scene.add(this.walker.group); this.walker.group.visible = false; this.onFoot = false; this.jumpBest = 0; this.edgeT = -9;
     this.order = []; this.feed = []; this.shake = 0; this.camH = pc.h; this.fov = 65; this.flash = 0; this.newRecord = false; this.done = false;
     this.camPos = new THREE.Vector3(pc.x - Math.sin(pc.h) * 9, pc.y + 4, pc.z - Math.cos(pc.h) * 9); this.camera.position.copy(this.camPos);
     this.best = app.save.bestLap[cfg.track] || 0;
@@ -80,7 +85,8 @@ export class Race {
   }
   respawn(c, soft) {
     const tr = this.track;
-    if (tr.isArena) { const a = Math.random() * 6.283, d = 30 + Math.random() * 45; c.x = Math.cos(a) * d; c.z = Math.sin(a) * d; c.h = Math.atan2(-c.x, -c.z); c.y = 0; }
+    if (tr.isRoam) { if (!soft) { const hm = c.home || tr.grid(0); c.x = hm.x; c.z = hm.z; c.h = hm.h; } c.y = tr.heightAt(c.x, c.z); }
+    else if (tr.isArena) { const a = Math.random() * 6.283, d = 30 + Math.random() * 45; c.x = Math.cos(a) * d; c.z = Math.sin(a) * d; c.h = Math.atan2(-c.x, -c.z); c.y = 0; }
     else { const i = c.idx, p = tr.pointAt(i, 0); c.x = p.x; c.z = p.z; c.y = p.y; c.h = tr.heading(i); }
     c.vx = c.vy = c.vz = 0; c.speed = 0; c.wrecked = 0; c.invuln = soft ? 1 : 2.5; c.model.group.rotation.x = 0;
     if (!soft) { c.health = c.stats.health; c.weapon = null; c.ammo = 0; c.nitro = Math.max(c.nitro, c.stats.nitroCap * 0.4); }
@@ -89,6 +95,31 @@ export class Race {
   landed(c, v) { for (let i = 0; i < 5; i++) this.fx.dust(c.x, c.y, c.z, this.dustCol, 0.4); if (c.isPlayer) { this.shake = Math.max(this.shake, Math.min(0.8, v / 25)); this.audio.crash(c, v * 0.5); } }
   shakeAt(x, z, s) { const d = Math.hypot(x - this.player.x, z - this.player.z); this.shake = Math.max(this.shake, Math.min(1, s * 14 / (d + 8))); }
   onPickup(type, c) { if (type === 'w') { this.app.ui.toast(WEAPONS[c.weapon].name); this.audio.voice('armed'); } }
+
+  award(id, name) { const a = Save.award(id, name); if (a) { this.app.ui.toast('Achievement: ' + name); this.app.persist(); } }
+  jumped(c) { // called by a car that lands after a long time in the air
+    if (!c.isPlayer || this.mode !== 'roam') return;
+    const d = Math.hypot(c.x - c.airX, c.z - c.airZ); if (d < 12) return; if (d > this.jumpBest) this.jumpBest = d;
+    this.app.ui.toast('Jump ' + Math.round(d) + ' m  ·  ' + c.airT.toFixed(1) + ' s in the air');
+    if (d >= 60) this.award('bigair', 'Big air: jump 60 m or more'); if (d >= 120) this.award('hugeair', 'Mega air: jump 120 m or more');
+  }
+  nearestCar(w, range) { let best = null, bd = range * range; for (const c of this.cars) { if (c.wrecked > 0) continue; const d = (c.x - w.x) ** 2 + (c.z - w.z) ** 2; if (d < bd) { bd = d; best = c; } } return best; }
+  // Get out of the car you are driving, or into the nearest one when on foot.
+  tryUse() {
+    if (this.mode !== 'roam' || this.state !== 'racing') return;
+    const ui = this.app.ui, w = this.walker;
+    if (!this.onFoot) {
+      const p = this.player; if (p.wrecked > 0) return;
+      if (Math.abs(p.speed) > 9 || p.air) { ui.toast('Slow down to get out'); return; }
+      const off = p.veh.shape.wid / 2 + 1.1, sx = p.x + Math.cos(p.h) * off, sz = p.z - Math.sin(p.h) * off;
+      w.place(sx, this.track.heightAt(sx, sz), sz, p.h);
+      p.isPlayer = false; p.parked = true; p.boosting = false; Object.assign(p.input, { thr: 0, steer: 0, hb: true, nitro: false, fire: false });
+      this.onFoot = true; w.group.visible = true; this.camH = p.h; this.audio.door(); this.award('onfoot', 'On foot: get out of your vehicle');
+    } else {
+      const c = this.nearestCar(w, 4.6); if (!c) { ui.toast('No vehicle nearby'); return; }
+      c.parked = false; c.isPlayer = true; this.player = c; this.onFoot = false; w.group.visible = false; this.camH = c.h; this.audio.door(); ui.toast('Driving ' + c.veh.name);
+    }
+  }
 
   collide() {
     const cs = this.cars;
@@ -113,12 +144,16 @@ export class Race {
       this.raceTime += dt;
       if (this.timeLimit && this.raceTime >= this.timeLimit) this.end();
     } else if (this.state === 'finished') { this.raceTime += dt; this.endT -= dt; if (this.endT <= 0 && !this.done) { this.done = true; this.app.onRaceEnd(this.results()); } }
+    const roam = this.mode === 'roam';
+    if (roam && inp.use) { inp.use = false; this.tryUse(); }
     // player input (autopilot after the finish, or in tests)
-    if (this.app.autopilot || (p.finished && !this.track.isArena)) { if (!p.ai) { p.ai = makeAI({ skill: 0.85, aggro: 0.7, defend: 0.5 }); } updateAI(p, dt, this); }
+    if (roam && this.onFoot) { this.walker.update(dt, inp, this); Object.assign(p.input, { thr: 0, steer: 0, hb: true, nitro: false, fire: false }); inp.reset = false; }
+    else if (this.app.autopilot || (p.finished && !this.track.isArena)) { if (!p.ai) { p.ai = makeAI({ skill: 0.85, aggro: 0.7, defend: 0.5 }); } updateAI(p, dt, this); }
     else { p.input.thr = inp.thr; p.input.steer = inp.steer; p.input.hb = inp.hb; p.input.nitro = inp.nitro; p.input.fire = inp.fire; if (inp.reset && this.state === 'racing' && p.wrecked <= 0) { inp.reset = false; this.respawn(p, true); } }
-    const pp = this.prog(p);
+    const pp = roam ? 0 : this.prog(p);
     for (const c of this.cars) {
-      if (c !== p) {
+      if (roam) { if (c.parked) Object.assign(c.input, { thr: 0, steer: 0, hb: true, nitro: false, fire: false }); }
+      else if (c !== p) {
         updateAI(c, dt, this);
         if (!this.track.isArena) { const gap = (pp - this.prog(c)) * 3; c.speedMul = c.baseMul * (1 + clamp(gap / 2500, -0.04, 0.05)); } // gentle catch up, capped
       }
@@ -127,6 +162,7 @@ export class Race {
       this.emit(c, dt);
     }
     this.collide(); this.combat.update(dt); this.fx.update(dt);
+    if (roam) { const s = this.onFoot ? this.walker : p; if (Math.hypot(s.x, s.z) > this.track.radius - 14 && this.time - this.edgeT > 4) { this.edgeT = this.time; this.app.ui.toast('Edge of the world: turn back'); } }
     for (const f of this.feed) f.t -= dt; while (this.feed.length && this.feed[this.feed.length - 1].t <= 0) this.feed.pop();
     if (this.flash > 0) this.flash -= dt;
   }
@@ -148,6 +184,16 @@ export class Race {
 
   updateCamera(dt) {
     const p = this.player, cam = this.camera, s = this.app.settings;
+    if (this.onFoot) { // third person camera behind the pilot
+      const w = this.walker, tr = this.track;
+      this.camH += wrap(w.h - this.camH) * (1 - Math.exp(-dt * 5));
+      const dist = 4.6 * (s.cam || 1), tx = w.x - Math.sin(this.camH) * dist, tz = w.z - Math.cos(this.camH) * dist, ty = Math.max(w.y + 2.1, tr.heightAt(tx, tz) + 1.0);
+      const k = 1 - Math.exp(-dt * 10); this.camPos.x += (tx - this.camPos.x) * k; this.camPos.z += (tz - this.camPos.z) * k; this.camPos.y += (ty - this.camPos.y) * (1 - Math.exp(-dt * 8));
+      cam.position.copy(this.camPos); cam.lookAt(w.x + Math.sin(w.h) * 2.5, w.y + 1.35, w.z + Math.cos(w.h) * 2.5);
+      this.blur += (0 - this.blur) * Math.min(1, dt * 5); this.fov += (64 - this.fov) * Math.min(1, dt * 4); if (Math.abs(cam.fov - this.fov) > 0.05) { cam.fov = this.fov; cam.updateProjectionMatrix(); }
+      this.sun.position.set(w.x + this.sunDir.x * 90, w.y + this.sunDir.y * 90, w.z + this.sunDir.z * 90); this.sun.target.position.set(w.x, w.y, w.z);
+      this.audio.ear.x = w.x; this.audio.ear.z = w.z; this.audio.setEngine(0, 0, 0, 0, false, false); return;
+    }
     const sp = Math.abs(p.speed), f = clamp(sp / p.stats.top, 0, 1.3);
     // follow the direction of travel a little so drifts swing the view
     const travel = sp > 6 ? Math.atan2(p.vx, p.vz) : p.h, aim = p.h + wrap(travel - p.h) * 0.35;
@@ -155,6 +201,7 @@ export class Race {
     const dist = (6.2 + f * 2.2) * (s.cam || 1), height = (2.5 + f * 0.5) * (0.8 + 0.2 * (s.cam || 1)) + (p.air ? 0.8 : 0);
     let tx = p.x - Math.sin(this.camH) * dist, tz = p.z - Math.cos(this.camH) * dist, ty = p.y + height;
     if (!this.track.isArena) { const i = this.track.locate(tx, tz, p.idx), gy = this.track.groundY(i, tx, tz); const lat = this.track.lateral(i, tx, tz), lim = this.track.halfW - 0.8; if (Math.abs(lat) > lim) { const sN = this.track.samples[i], o = (Math.abs(lat) - lim) * Math.sign(lat); tx -= sN.n.x * o; tz -= sN.n.z * o; } ty = Math.max(ty, gy + 1.3); if (this.track.inTunnel(i)) ty = Math.min(ty, gy + 5.6); }
+    else if (this.track.heightAt) ty = Math.max(ty, this.track.heightAt(tx, tz) + 1.3);
     const k = 1 - Math.exp(-dt * 9); this.camPos.x += (tx - this.camPos.x) * k; this.camPos.z += (tz - this.camPos.z) * k; this.camPos.y += (ty - this.camPos.y) * (1 - Math.exp(-dt * 6));
     cam.position.copy(this.camPos);
     if (this.shake > 0.01) { const a = this.shake * 0.45; cam.position.x += (Math.random() - 0.5) * a; cam.position.y += (Math.random() - 0.5) * a; cam.position.z += (Math.random() - 0.5) * a; this.shake *= Math.exp(-dt * 5); }

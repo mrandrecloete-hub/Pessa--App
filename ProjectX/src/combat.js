@@ -192,7 +192,7 @@ export class Combat {
       if (p.t > 0) { p.t -= dt; if (p.t <= 0) p.mesh.visible = true; continue; }
       p.mesh.rotation.y += dt * 2; p.mesh.position.y = p.y + 1.1 + Math.sin(g.time * 3 + p.x) * 0.15;
       for (const c of g.cars) {
-        if (c.wrecked > 0 || (c.x - p.x) ** 2 + (c.z - p.z) ** 2 > 7.3 || Math.abs(c.y - p.y) > 3) continue;
+        if (c.parked || c.wrecked > 0 || (c.x - p.x) ** 2 + (c.z - p.z) ** 2 > 7.3 || Math.abs(c.y - p.y) > 3) continue;
         if (p.type === 'w') { if (c.weapon && c.ammo > 0 && !c.isPlayer && Math.random() < 0.5) continue; this.give(c, g.rollWeapon()); }
         else if (p.type === 'n') c.nitro = Math.min(c.stats.nitroCap, c.nitro + 50);
         else { if (c.health >= c.stats.health) continue; c.health = Math.min(c.stats.health, c.health + c.stats.health * 0.35); }

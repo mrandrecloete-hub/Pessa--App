@@ -114,7 +114,7 @@ export class Car {
     if (opts.hpMul) this.stats.health *= opts.hpMul;
     this.speedMul = 1; this.input = { thr: 0, steer: 0, hb: false, nitro: false, fire: false };
     this.x = 0; this.y = 0; this.z = 0; this.vx = 0; this.vy = 0; this.vz = 0; this.h = 0;
-    this.speed = 0; this.side = 0; this.idx = 0; this.lap = 0; this.cp = 2; this.air = false;
+    this.speed = 0; this.side = 0; this.idx = 0; this.lap = 0; this.cp = 2; this.air = false; this.airT = 0; this.airX = 0; this.airZ = 0; this.parked = false;
     this.health = this.stats.health; this.nitro = this.stats.nitroCap * 0.6;
     this.weapon = null; this.ammo = 0; this.cd = 0; this.shield = 0; this.emp = 0; this.wrecked = 0; this.invuln = 0;
     this.kills = 0; this.deaths = 0; this.lastHit = null; this.finished = false; this.finishTime = 0;
@@ -149,6 +149,7 @@ export class Car {
       else if (thr < 0) { if (fwd > 1) fwd += 36 * thr * dt; else fwd = Math.max(-st.top * 0.3, fwd + st.accel * 0.7 * thr * dt); }
       fwd -= fwd * (0.1 + (hb ? 0.3 : 0) + (wet ? 0.5 : 0)) * dt + Math.sign(fwd) * Math.min(Math.abs(fwd), (thr === 0 ? 2.2 : 0.4) * dt);
       if (fwd > top) fwd -= (fwd - top) * 1.6 * dt;
+      if (this.parked) fwd *= Math.exp(-2.6 * dt);
       const v0 = Math.hypot(fwd, side), g = hb ? st.grip * 0.42 / st.drift : st.grip;
       side *= Math.exp(-g * dt);
       const v1 = Math.hypot(fwd, side); if (v1 > 0.5 && fwd > 0) fwd *= 1 + (v0 / v1 - 1) * 0.65;
@@ -165,11 +166,14 @@ export class Car {
       const dx = this.x - hzd.x, dz = this.z - hzd.z, d2 = dx * dx + dz * dz, rr = hzd.r + 1.3;
       if (d2 < rr * rr && d2 > 0.001) { const d = Math.sqrt(d2), nx = dx / d, nz = dz / d; this.x = hzd.x + nx * rr; this.z = hzd.z + nz * rr; const vn = this.vx * nx + this.vz * nz; if (vn < 0) { this.vx -= nx * vn * 1.5; this.vz -= nz * vn * 1.5; this.vx *= 0.8; this.vz *= 0.8; if (-vn > 2.5) game.wallHit(this, -vn * 1.3); } }
     }
+    // open world: the back of a tall ramp is a wall
+    if (tr.heightAt && tr.heightAt(this.x, this.z) - this.y > 1.1) { const v = Math.hypot(this.vx, this.vz); this.x -= this.vx * dt; this.z -= this.vz * dt; this.vx *= -0.2; this.vz *= -0.2; if (v > 4) game.wallHit(this, v * 0.6); }
     // vertical
     const gy = tr.groundY(this.idx, this.x, this.z);
     this.vy -= 30 * dt; this.y += this.vy * dt;
-    if (this.y <= gy) { if (this.air && this.vy < -9) game.landed(this, -this.vy); this.y = gy; this.vy = clamp((gy - lastY) / dt, -40, 14); this.air = false; }
-    else if (this.y > gy + 0.2) this.air = true;
+    if (this.air) this.airT += dt;
+    if (this.y <= gy) { if (this.air && this.vy < -9) game.landed(this, -this.vy); if (this.air && this.airT > 0.5 && game.jumped) game.jumped(this); this.y = gy; this.vy = clamp((gy - lastY) / dt, -40, tr.maxUp || 14); this.air = false; }
+    else if (this.y > gy + 0.2) { if (!this.air) { this.airX = this.x; this.airZ = this.z; this.airT = 0; } this.air = true; }
     this.syncModel(dt, tr);
   }
 
@@ -178,6 +182,7 @@ export class Car {
     g.position.set(this.x, this.y, this.z); g.rotation.order = 'YXZ'; g.rotation.y = this.h;
     let pitch = 0;
     if (tr && !tr.isArena) { const a = tr.samples[(this.idx + 1) % tr.N].p.y, b = tr.samples[(this.idx + tr.N - 1) % tr.N].p.y; pitch = -Math.atan((a - b) / 6); if (tr.jumps.some(j => Math.abs(j - this.idx) < 2)) pitch = g.rotation.x; }
+    if (tr && tr.heightAt && !this.air) { const fx = Math.sin(this.h), fz = Math.cos(this.h), Lh = this.veh.shape.len * 0.34; pitch = -Math.atan2(tr.heightAt(this.x + fx * Lh, this.z + fz * Lh) - tr.heightAt(this.x - fx * Lh, this.z - fz * Lh), 2 * Lh); }
     if (this.air) pitch = clamp(-this.vy * 0.02, -0.35, 0.35);
     g.rotation.x += (pitch - g.rotation.x) * Math.min(1, dt * 8 || 1);
     const f = this.speed / this.stats.top;

@@ -32,7 +32,7 @@ const FinalShader = {
       col += (hash(vUv * 900.0 + time) - 0.5) * grain * (0.3 + l);
       gl_FragColor = vec4(max(col, 0.0), 1.0); }`,
 };
-const GRADE = { desert: [1.06, 1.0, 0.9, 1.15], city: [0.94, 1.0, 1.1, 1.1], mountain: [0.98, 1.0, 1.05, 1.1], military: [1.04, 1.0, 0.93, 0.85], jungle: [0.97, 1.06, 0.95, 1.2], neon: [1.02, 0.95, 1.12, 1.25], arena: [1.08, 0.97, 0.92, 1.1] };
+const GRADE = { roam: [1.0, 1.0, 1.03, 1.12], desert: [1.06, 1.0, 0.9, 1.15], city: [0.94, 1.0, 1.1, 1.1], mountain: [0.98, 1.0, 1.05, 1.1], military: [1.04, 1.0, 0.93, 0.85], jungle: [0.97, 1.06, 0.95, 1.2], neon: [1.02, 0.95, 1.12, 1.25], arena: [1.08, 0.97, 0.92, 1.1] };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 const app = {
@@ -86,6 +86,7 @@ const app = {
       if (e.repeat) return;
       if ((e.code === 'Escape' || e.code === 'KeyP') && this.race) { if (this.ui.screen === 'hud') this.pause(true); else if (this.ui.screen === 'pause') this.pause(false); }
       if (e.code === 'KeyR') this.input.reset = true;
+      if (e.code === 'KeyE' && this.race) this.input.use = true;
       if (e.code === 'KeyC') { const s = this.settings; s.cam = s.cam < 0.9 ? 1 : s.cam < 1.2 ? 1.35 : 0.75; this.persist(); }
     });
     addEventListener('keyup', e => { K[e.code] = false; });
@@ -106,8 +107,9 @@ const app = {
       const ax = p.axes[0] || 0; if (Math.abs(ax) > 0.12) st = ax; if (b(7) > 0.05) thr = b(7); if (b(6) > 0.05) thr = -b(6);
       hb = hb || b(1) > 0.5; ni = ni || b(0) > 0.5; fi = fi || b(2) > 0.5;
       const start = b(9) > 0.5; if (start && !this.padStart && this.race) { if (this.ui.screen === 'hud') this.pause(true); else if (this.ui.screen === 'pause') this.pause(false); } this.padStart = start;
-      const y = b(3) > 0.5; if (y && !this.padY) I.reset = true; this.padY = y; break;
+      const y = b(3) > 0.5; if (y && !this.padY) { if (this.race && this.race.mode === 'roam') I.use = true; else I.reset = true; } this.padY = y; break;
     }
+    if (T.use && !this._tu) I.use = true; this._tu = !!T.use;
     const rate = 5.5 * (this.settings.sens || 1); I.steer += clamp(st - I.steer, -rate * dt, rate * dt); if (st === 0 && Math.abs(I.steer) < 0.05) I.steer = 0;
     I.thr = thr; I.hb = hb; I.nitro = ni; I.fire = fi;
   },
@@ -148,6 +150,7 @@ const app = {
     if (mode === 'quick') Object.assign(c, { mode: 'race', track: sel.track, laps: sel.laps, field: this.field(5, Math.floor(Math.random() * 7)) });
     else if (mode === 'trial') Object.assign(c, { mode: 'trial', track: sel.track, laps: 3, field: [] });
     else if (mode === 'arena') Object.assign(c, { mode: 'arena', field: this.field(5, 2) });
+    else if (mode === 'roam') Object.assign(c, { mode: 'roam', field: [] });
     else if (mode === 'boss') { const b = BOSSES.find(x => x.id === sel.boss); this.ctx.boss = b; Object.assign(c, { mode: 'boss', track: b.id === 'seraph' ? 'neon' : 'city', laps: 3, field: [Object.assign({ hpMul: b.hp }, b)] }); }
     this.launch(c);
   },
@@ -174,8 +177,8 @@ const app = {
     if (this.q.post) {
       const night = this.race.theme.night, rt = new THREE.WebGLRenderTarget(innerWidth, innerHeight, { type: THREE.HalfFloatType, samples: this.q.msaa || 0 });
       const c = this.composer = new EffectComposer(this.renderer, rt); c.addPass(new RenderPass(this.race.scene, this.race.camera));
-      if (this.q.bloom) c.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), night ? 0.85 : 0.3, 0.7, night ? 0.72 : 0.95));
-      const f = this.final = new ShaderPass(FinalShader), gr = GRADE[cfg.mode === 'arena' ? 'arena' : cfg.track] || [1, 1, 1, 1.1];
+      if (this.q.bloom) c.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), cfg.mode === 'roam' ? 0.18 : night ? 0.85 : 0.3, 0.7, cfg.mode === 'roam' ? 2.6 : night ? 0.72 : 0.95));
+      const f = this.final = new ShaderPass(FinalShader), gr = GRADE[cfg.mode === 'arena' || cfg.mode === 'roam' ? cfg.mode : cfg.track] || [1, 1, 1, 1.1];
       f.uniforms.tint.value.setRGB(gr[0], gr[1], gr[2]); f.uniforms.sat.value = gr[3]; c.addPass(f); c.addPass(new OutputPass());
     }
     this.resize(); this.audio.init(); this.audio.startEngine(); this.ui.hudStart(this.race);
@@ -240,7 +243,7 @@ const app = {
 };
 
 // Test hook: run a full session without rendering, with the autopilot driving the player.
-window.PX = { app, THREE,
+window.PX = { app, THREE, Race,
   simulate(cfg, seconds, step = 1 / 60) {
     app.audio.ctx = null; const base = Object.assign(app.baseCfg(), cfg); app.autopilot = cfg.autopilot !== false; let res = null; const keep = app.onRaceEnd, ui = app.ui;
     app.onRaceEnd = r => { res = r; }; const r = new Race(app, base); r.app = Object.assign(Object.create(app), { ui: { toast() {}, count() {} }, onRaceEnd: x => { res = x; } });

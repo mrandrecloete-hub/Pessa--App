@@ -1,0 +1,23 @@
+// Renders Free Roam from several viewpoints. Usage: node tests/roamshots.mjs <outDir>
+import { createRequire } from 'node:module';
+const { chromium, devices } = createRequire(import.meta.url)('playwright');
+const out = process.argv[2] || 'shots';
+const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] }), p = await b.newPage({ viewport: { width: 1280, height: 720 } });
+const errs = []; p.on('pageerror', e => errs.push(e.message));
+await p.goto('http://localhost:8377/index.html'); await p.waitForFunction(() => window.PX && PX.app.ui);
+await p.evaluate(() => { const a = PX.app; a.ui.sel.mode = 'roam'; a.ui.setup(); });
+await p.screenshot({ path: out + '/r0-setup.png' });
+await p.evaluate(() => PX.app.startMode('roam', {}));
+const shot = async (name, setup) => { await p.evaluate(setup); await p.waitForTimeout(2500); await p.screenshot({ path: `${out}/${name}.png`, timeout: 240000 }); };
+await shot('r1-spawn', () => { const r = PX.app.race; PX.app.paused = false; for (let i = 0; i < 90; i++) { r.step(1 / 60); r.updateCamera(1 / 60); } PX.app.paused = true; });
+await shot('r2-air', () => { const r = PX.app.race, c = r.player, I = PX.app.input; PX.app.paused = false; Object.assign(c, { x: 0, z: 255, h: 0, vz: 56, speed: 56 }); Object.assign(I, { thr: 1, nitro: true }); for (let i = 0; i < 400; i++) { r.step(1 / 60); r.updateCamera(1 / 60); if (c.air && c.y > 9) break; } PX.app.paused = true; });
+await shot('r3-onfoot', () => { const r = PX.app.race, I = PX.app.input; PX.app.paused = false; Object.assign(I, { thr: 0, nitro: false, hb: false }); Object.assign(r.player, { x: 0, z: -8, h: 0, vx: 0, vz: 0, vy: 0, speed: 0, y: 0, air: false }); r.tryUse(); r.walker.place(-3.5, 0, -9, 2.3); r.camH = 2.3; for (let i = 0; i < 80; i++) { r.step(1 / 60); r.updateCamera(1 / 60); } PX.app.paused = true; });
+await shot('r4-mega', () => { const r = PX.app.race, c = r.player, I = PX.app.input; PX.app.paused = false; if (r.onFoot) { r.walker.place(c.x + 2.5, 0, c.z, 0); r.tryUse(); } Object.assign(c, { x: 0, z: -140, h: Math.PI, vx: 0, vz: -50, speed: 50, y: 0 }); Object.assign(I, { thr: 1, nitro: true }); for (let i = 0; i < 240; i++) { r.step(1 / 60); r.updateCamera(1 / 60); if (c.z < -300) break; } PX.app.paused = true; });
+await p.close();
+const ph = await b.newPage({ ...devices['Pixel 7'], viewport: { width: 915, height: 412 }, isMobile: true, hasTouch: true });
+await ph.goto('http://localhost:8377/index.html'); await ph.waitForFunction(() => window.PX && PX.app.ui);
+await ph.evaluate(() => { PX.app.startMode('roam', {}); const r = PX.app.race; for (let i = 0; i < 90; i++) { r.step(1 / 60); r.updateCamera(1 / 60); } r.player.x = 0; });
+await ph.waitForTimeout(3000); await ph.screenshot({ path: out + '/r5-phone.png', timeout: 240000 });
+await ph.evaluate(() => { const r = PX.app.race, c = r.player; c.speed = 0; c.vx = c.vz = 0; r.tryUse(); for (let i = 0; i < 60; i++) { r.step(1 / 60); r.updateCamera(1 / 60); } PX.app.paused = true; });
+await ph.waitForTimeout(2500); await ph.screenshot({ path: out + '/r6-phone-onfoot.png', timeout: 240000 });
+console.log(errs.length ? 'ERRORS: ' + errs.join('|') : 'no errors'); await b.close();

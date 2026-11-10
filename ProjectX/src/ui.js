@@ -27,7 +27,7 @@ export class UI {
   // ---------- screens
   title() { $('scr-title').innerHTML = `<div class="titlebox">${LOGO}<p class="tag">Six circuits. Eight machines. Live weapons.</p><button class="btn big" data-act="start">Start</button><p class="fine">Sound starts when you press Start. Keyboard, controller and touch are supported.</p></div>`; this.show('title'); }
   menu() {
-    const ev = CAREER[this.s.career], items = [['play', 'Play', 'Choose a game mode'], ['career', 'Career', ev ? 'Next: ' + ev.title : 'Career complete'], ['quick', 'Quick Race', 'Any unlocked circuit'], ['champ', 'Championship', 'Six rounds for points'], ['garage', 'Garage', 'Vehicles, paint, wheels'], ['upgrades', 'Vehicle Upgrades', 'Engine, armour, weapons'], ['settings', 'Settings', 'Graphics, sound, controls'], ['exit', 'Exit', 'Back to the title screen']];
+    const ev = CAREER[this.s.career], items = [['play', 'Play', 'Choose a game mode'], ['career', 'Career', ev ? 'Next: ' + ev.title : 'Career complete'], ['quick', 'Quick Race', 'Any unlocked circuit'], ['roam', 'Free Roam', 'Open world, ramps, on foot'], ['champ', 'Championship', 'Six rounds for points'], ['garage', 'Garage', 'Vehicles, paint, wheels'], ['upgrades', 'Vehicle Upgrades', 'Engine, armour, weapons'], ['settings', 'Settings', 'Graphics, sound, controls'], ['exit', 'Exit', 'Back to the title screen']];
     $('scr-menu').innerHTML = `<div class="menucol">${LOGO}<nav>${items.map(i => `<button class="mi" data-act="menu" data-id="${i[0]}"><b>${i[1]}</b><span>${i[2]}</span></button>`).join('')}</nav></div>
       <div class="pilot"><b>${esc(PLAYER.name)}</b><span>${this.money()} · ${Object.keys(this.s.achievements).length} achievements</span>${this.app.saveNote ? `<span class="warn">${this.app.saveNote}</span>` : ''}</div>`;
     this.show('menu');
@@ -38,10 +38,11 @@ export class UI {
     const id = d.id;
     if (id === 'play') this.modes(); else if (id === 'career') this.career(); else if (id === 'quick') { this.sel.mode = 'quick'; this.setup(); }
     else if (id === 'champ') this.champ(); else if (id === 'garage') { this.gtab = 'paint'; this.garage(); } else if (id === 'upgrades') { this.gtab = 'upgrades'; this.garage(); }
+    else if (id === 'roam') { this.sel.mode = 'roam'; this.setup(); }
     else if (id === 'settings') this.settings(); else if (id === 'exit') this.title();
   }
   modes() {
-    const m = [['career', 'Career Mode', 'Rise through the ranks'], ['quick', 'Quick Race', 'Pick a circuit and race'], ['champ', 'Championship', 'Compete for glory'], ['trial', 'Time Trial', 'Beat your best time'], ['arena', 'Combat Arena', 'Fight and survive'], ['boss', 'Boss Battles', 'Take on the champions']];
+    const m = [['career', 'Career Mode', 'Rise through the ranks'], ['quick', 'Quick Race', 'Pick a circuit and race'], ['roam', 'Free Roam', 'Open world, ramps, on foot'], ['champ', 'Championship', 'Compete for glory'], ['trial', 'Time Trial', 'Beat your best time'], ['arena', 'Combat Arena', 'Fight and survive'], ['boss', 'Boss Battles', 'Take on the champions']];
     $('scr-modes').innerHTML = this.head('Play') + `<div class="grid modes">${m.map(x => `<button class="card" data-act="mode" data-id="${x[0]}"><b>${x[1]}</b><span>${x[2]}</span></button>`).join('')}</div>`;
     this.show('modes');
   }
@@ -51,14 +52,15 @@ export class UI {
   diffPick() { return `<h3>Difficulty</h3><div class="row">${Object.keys(DIFFICULTY).map(k => `<button class="chip ${k === this.s.settings.diff ? 'on' : ''}" data-act="diff" data-id="${k}">${DIFFICULTY[k].name}</button>`).join('')}</div>`; }
   setup() {
     const m = this.sel.mode, un = this.app.unlockedTracks(); if (!un.includes(this.sel.track)) this.sel.track = un[0];
-    const names = { quick: 'Quick Race', trial: 'Time Trial', arena: 'Combat Arena', boss: 'Boss Battles' };
+    const names = { quick: 'Quick Race', trial: 'Time Trial', arena: 'Combat Arena', boss: 'Boss Battles', roam: 'Free Roam' };
     let body = '';
     if (m === 'quick' || m === 'trial') body += `<h3>Circuit</h3><div class="grid tracks">${TRACKS.map(t => { const ok = un.includes(t.id); return `<button class="card trk ${t.id === this.sel.track ? 'on' : ''}" ${ok ? '' : 'disabled'} data-act="track" data-id="${t.id}"><em style="background:linear-gradient(135deg,${hex(t.theme.sky[0])},${hex(t.theme.sky[1])} 60%,${hex(t.theme.glow)})"></em><b>${t.name}</b><span>${ok ? t.blurb : 'Locked. Reach it in Career.'}</span><small>Best lap ${fmt(this.s.bestLap[t.id])}</small></button>`; }).join('')}</div>`;
     if (m === 'quick') body += `<h3>Laps</h3><div class="row">${[1, 2, 3, 5].map(n => `<button class="chip ${n === this.sel.laps ? 'on' : ''}" data-act="laps" data-id="${n}">${n}</button>`).join('')}</div>`;
     if (m === 'trial') body += `<p class="note">Three timed laps. No rivals and no weapons. Nitro pickups stay on the road.</p>`;
+    if (m === 'roam') body += `<p class="note">A huge open white world with no walls and 40 ramps: kickers, gap jumps, tabletops, whoops and a mega ramp. Every vehicle is parked in the lot behind you. Press E to get out and walk, and E again next to any vehicle to get in. Weapons and pickups work. Nothing here changes your Career.</p>`;
     if (m === 'arena') body += `<p class="note">The Crucible. Two and a half minutes, five rivals, score the most wrecks. Wrecked cars return after a few seconds.</p>`;
     if (m === 'boss') body += `<h3>Opponent</h3><div class="grid tracks">${BOSSES.map((b, i) => { const ok = this.app.bossOpen(b.id); return `<button class="card ${b.id === this.sel.boss ? 'on' : ''}" ${ok ? '' : 'disabled'} data-act="boss" data-id="${b.id}"><b>${b.name}</b><span>${ok ? '“' + b.line + '”' : 'Locked. Reach this battle in Career.'}</span><small>${b.team} · ${vehicleById(b.car).name}</small></button>`; }).join('')}</div>`;
-    if (m !== 'trial') body += this.diffPick();
+    if (m !== 'trial' && m !== 'roam') body += this.diffPick();
     body += this.carPick() + `<div class="foot"><button class="btn big" data-act="race">Start</button></div>`;
     $('scr-setup').innerHTML = this.head(names[m], 'modes') + `<div class="pane">${body}</div>`; this.show('setup');
   }
@@ -126,7 +128,7 @@ export class UI {
       <h3>Touch controls</h3>${opt('touch', [['auto', 'Auto'], ['on', 'Always show'], ['off', 'Hide']])}${sl('touchScale', 'Button size', 0.75, 1.4, 0.05)}${opt('touchSwap', [[false, 'Steer on the left'], [true, 'Steer on the right']])}
       <h3>Default difficulty</h3>${opt('diff', Object.keys(DIFFICULTY).map(k => [k, DIFFICULTY[k].name]))}
       <h3>Save data</h3><p class="note">Progress is stored on this device only.</p><div class="row"><button class="btn ghost" data-act="wipe" data-step="${this.wipeArm ? 2 : 1}">${this.wipeArm ? 'Press again to erase all progress' : 'Erase progress'}</button></div>
-      <h3>Controls</h3><p class="note">Keyboard: arrows or WASD drive, Space drift, Shift nitro, F or J fire, R reset to track, C camera, Esc pause. Controller: left stick steer, right trigger accelerate, left trigger brake, A nitro, X fire, B drift, Y reset, Start pause.</p></div>`;
+      <h3>Controls</h3><p class="note">Keyboard: arrows or WASD drive, Space drift, Shift nitro, F or J fire, R reset to track, C camera, Esc pause. Free Roam: E gets in or out of a vehicle; on foot W A S D walk, Shift runs, Space jumps. Controller: left stick steer, right trigger accelerate, left trigger brake, A nitro, X fire, B drift, Y reset, Start pause.</p></div>`;
     this.show('settings');
   }
   act_setback() { this.wipeArm = false; if (this.setBack === 'pause') this.show('pause'); else this.menu(); }
@@ -147,12 +149,45 @@ export class UI {
   toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); this.toastT = 2.2; }
   count(n) { const c = $('count'); c.textContent = n === 0 ? 'GO' : n; c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); this.countT = n === 0 ? 1 : 1.2; }
   hudStart(r) {
-    this.cache = {}; $('count').textContent = ''; $('toast').classList.remove('on'); $('hud').dataset.mode = r.mode;
+    this.cache = {}; $('count').textContent = ''; $('h-hint').textContent = ''; $('toast').classList.remove('on'); $('hud').dataset.mode = r.mode;
     const S = r.track.samples; let a = 1e9, b = -1e9, c = 1e9, d = -1e9; for (const s of S) { a = Math.min(a, s.p.x); b = Math.max(b, s.p.x); c = Math.min(c, s.p.z); d = Math.max(d, s.p.z); }
     const sc = 132 / Math.max(b - a, d - c); this.mmT = p => [8 + (p.x - a) * sc + (132 - (b - a) * sc) / 2, 8 + (p.z - c) * sc + (132 - (d - c) * sc) / 2];
     this.show('hud');
   }
+  roamMap(r) { // heading-up map of the area around you: ramps, pickups and vehicles
+    const g = this.mm, p = r.onFoot ? r.walker : r.player, sc = 0.42, ca = Math.cos(p.h), sa = Math.sin(p.h);
+    const P = (x, z) => { const dx = x - p.x, dz = z - p.z; return [75 - sc * (dx * ca - dz * sa), 75 - sc * (dx * sa + dz * ca)]; };
+    g.clearRect(0, 0, 150, 150); g.save(); g.beginPath(); g.arc(75, 75, 73, 0, 6.283); g.clip(); g.fillStyle = 'rgba(238,240,245,.88)'; g.fillRect(0, 0, 150, 150);
+    g.fillStyle = '#ff7a1a';
+    for (const q of r.track.ramps) {
+      if ((q.x - p.x) ** 2 + (q.z - p.z) ** 2 > 260 * 260) continue; const hw = q.wid / 2;
+      const a = P(q.x - q.nx * hw, q.z - q.nz * hw), b = P(q.x + q.nx * hw, q.z + q.nz * hw), c = P(q.x + q.dx * q.len + q.nx * hw, q.z + q.dz * q.len + q.nz * hw), d = P(q.x + q.dx * q.len - q.nx * hw, q.z + q.dz * q.len - q.nz * hw);
+      g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]); g.lineTo(d[0], d[1]); g.closePath(); g.fill();
+    }
+    const cols = { w: '#ff7a1a', n: '#2ea8ff', h: '#2fbf5a' };
+    for (const k of r.combat.pickups) { if (k.t > 0 || (k.x - p.x) ** 2 + (k.z - p.z) ** 2 > 200 * 200) continue; const q = P(k.x, k.z); g.fillStyle = cols[k.type]; g.fillRect(q[0] - 2, q[1] - 2, 4, 4); }
+    for (const c of r.cars) { if (c.wrecked > 0 || (c === r.player && !r.onFoot)) continue; const q = P(c.x, c.z); g.fillStyle = c.parked ? '#6b7280' : '#e3261b'; g.beginPath(); g.arc(q[0], q[1], 3.4, 0, 6.3); g.fill(); }
+    g.fillStyle = '#16181d'; g.beginPath(); g.moveTo(75, 66); g.lineTo(81, 82); g.lineTo(75, 78); g.lineTo(69, 82); g.closePath(); g.fill();
+    g.restore(); g.strokeStyle = 'rgba(20,22,28,.7)'; g.lineWidth = 2; g.beginPath(); g.arc(75, 75, 73, 0, 6.283); g.stroke();
+  }
+  hudRoam(r, dt) {
+    const p = r.player, w = r.walker, foot = r.onFoot, touch = document.body.classList.contains('touch');
+    this.set('h-speed', String(Math.round(Math.abs(foot ? w.speed : p.speed) * 3.6))); this.set('h-gear', foot ? 'ON FOOT' : p.gear());
+    this.css('h-nitro', 'width', (foot ? 0 : p.nitro / p.stats.nitroCap * 100).toFixed(0) + '%'); const hp = Math.max(0, p.health / p.stats.health);
+    this.css('h-health', 'width', (hp * 100).toFixed(0) + '%'); this.css('h-health', 'background', hp < 0.3 ? 'var(--bad)' : hp < 0.6 ? 'var(--warn)' : 'var(--good)');
+    this.set('h-weapon', foot ? 'No weapon on foot' : p.weapon ? WEAPONS[p.weapon].name : 'No weapon'); this.set('h-ammo', !foot && p.weapon ? '×' + p.ammo : '');
+    this.set('h-pos', 'Free roam'); this.set('h-lap', foot ? PLAYER.name + ' on foot' : p.veh.name); this.set('h-time', 'Best jump ' + (r.jumpBest ? Math.round(r.jumpBest) + ' m' : '--')); this.set('h-best', !foot && p.air ? 'Air ' + p.airT.toFixed(1) + ' s' : '');
+    this.set('h-state', !foot && p.wrecked > 0 ? 'WRECKED' : !foot && p.emp > 0 ? 'SYSTEMS DOWN' : !foot && p.shield > 0 ? 'SHIELD ' + p.shield.toFixed(1) : '');
+    const key = touch ? 'Tap Use' : 'Press E'; let hint = '';
+    if (foot) { const c = r.nearestCar(w, 4.6); hint = c ? key + ' to get in: ' + c.veh.name : touch ? 'Walk up to a vehicle to get in' : 'W A S D walk · Shift run · Space jump · walk up to a vehicle'; }
+    else if (Math.abs(p.speed) < 9 && !p.air && p.wrecked <= 0) hint = key + ' to get out';
+    this.set('h-hint', hint); this.set('h-board', ''); this.set('h-feed', r.feed.map(f => f.msg).join('\n'));
+    this.css('vign', 'opacity', r.flash > 0 ? (r.flash * 2).toFixed(2) : '0');
+    if (this.toastT > 0) { this.toastT -= dt; if (this.toastT <= 0) $('toast').classList.remove('on'); }
+    this.roamMap(r);
+  }
   hud(r, dt) {
+    if (r.mode === 'roam') return this.hudRoam(r, dt);
     const p = r.player, pos = r.position(p);
     this.set('h-speed', String(Math.round(Math.abs(p.speed) * 3.6))); this.set('h-gear', p.gear());
     this.css('h-nitro', 'width', (p.nitro / p.stats.nitroCap * 100).toFixed(0) + '%'); const hp = Math.max(0, p.health / p.stats.health);

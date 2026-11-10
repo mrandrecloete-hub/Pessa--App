@@ -10,7 +10,9 @@
     "serve": "cd dist && python3 -m http.server 8377",
     "test": "node tests/sim.mjs",
     "test:quick": "node tests/sim.mjs quick",
-    "shots": "mkdir -p shots && node tests/shots.mjs shots"
+    "shots": "mkdir -p shots && node tests/shots.mjs shots",
+    "test:roam": "node tests/roam.mjs",
+    "shots:roam": "mkdir -p shots && node tests/roamshots.mjs shots"
   },
   "author": "",
   "license": "ISC",

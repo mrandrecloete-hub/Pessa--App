@@ -54,6 +54,8 @@ export class AudioSys {
   }
   hit(car) { if (!this.ctx || this.throttle('hit', 0.05)) return; const v = car.isPlayer ? 0.5 : this.near(car.x, car.z) * 0.3; this.noise(0.05, v, 2500, 700, 'bandpass', 2); this.tone(300, 120, 0.05, 'triangle', v * 0.6); }
   crash(car, sp) { if (!this.ctx || this.throttle('crash' + car.name, 0.2)) return; const v = (car.isPlayer ? 1 : this.near(car.x, car.z) * 0.6) * Math.min(1, sp / 18); this.noise(0.3, 0.7 * v, 1400, 90); this.tone(110, 45, 0.18, 'square', 0.3 * v); }
+  step() { if (!this.ctx || this.throttle('step', 0.1)) return; this.noise(0.07, 0.14, 1700, 350, 'lowpass', 0.5); }
+  door() { if (!this.ctx) return; this.tone(190, 85, 0.09, 'square', 0.16); this.noise(0.14, 0.22, 1000, 180); this.tone(120, 70, 0.1, 'triangle', 0.18, 0.1); }
   pickup(car, type) { if (!car.isPlayer) return; const f = type === 'w' ? 520 : type === 'n' ? 700 : 440; this.tone(f, f, 0.08, 'square', 0.14); this.tone(f * 1.5, f * 1.5, 0.12, 'square', 0.14, 0.08); }
 
   startEngine() {

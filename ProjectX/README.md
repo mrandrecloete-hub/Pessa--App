@@ -8,6 +8,7 @@ An original 3D combat racer that runs in the browser on Windows PC and Android (
 - 6 circuits: Desert Canyon, Futuristic Industrial City, Mountain Highway, Abandoned Military Zone, Tropical Jungle, Neon Metropolis. Plus one combat arena, The Crucible.
 - 7 weapons plus nitro: machine guns, rockets, homing missiles, land mines, EMP, explosive shells, shield.
 - Game modes: Career (10 events with story, 2 boss races), Quick Race, Championship (6 rounds, points), Time Trial, Combat Arena, Boss Battles.
+- Free Roam: a huge open white world with no walls and 40 ramps (kickers, curved launch ramps, gap jump, tabletops, whoops, a 21 m mega ramp, a stunt park). All 8 vehicles are parked in a lot. Press E to get out and walk (W A S D, Shift run, Space jump) and E next to any vehicle to get in. Weapons, pickups and damage work; wrecked cars return to the lot. Longest jump is measured.
 - Garage: 3D showroom, buying, 8 upgrade types with 3 levels each, paint, wheel colour, starting weapon.
 - 7 AI rivals with their own skill, aggression and defence, plus 2 bosses. Difficulty: Easy, Normal, Hard, Extreme.
 - Damage: paint darkens, smoke then fire as armour drops, explosion and respawn when wrecked.
@@ -50,6 +51,7 @@ The APK is written to `android/app/build/outputs/apk/release/`. It is signed wit
 npm run serve &        # in one terminal
 npm test               # full: all 6 circuits, trial, arena, boss, difficulties (about 8 minutes)
 npm run test:quick     # one race
+npm run test:roam      # Free Roam: ramps, get out, walk, get in, respawn
 npm run shots          # screenshots of menus, garage, race, arena and a phone view into shots/
 ```
 
@@ -57,8 +59,8 @@ The simulation tests drive every car with the AI and fail on any script error, a
 
 ## Controls
 
-Keyboard: arrows or WASD drive, Space drift, Shift nitro, F or J fire, R back onto the track, C camera distance, Esc pause.
-Controller: left stick steer, right trigger accelerate, left trigger brake, A nitro, X fire, B drift, Y reset, Start pause.
+Keyboard: arrows or WASD drive, Space drift, Shift nitro, F or J fire, R back onto the track, C camera distance, E get in or out (Free Roam), Esc pause.
+Controller: left stick steer, right trigger accelerate, left trigger brake, A nitro, X fire, B drift, Y reset (get in or out in Free Roam), Start pause.
 Touch: on screen buttons. Size and side can be changed in Settings.
 
 ## Known issues and limits
@@ -73,6 +75,8 @@ Touch: on screen buttons. Size and side can be changed in Settings.
 - `src/data.js` vehicles, tracks, weapons, characters, career
 - `src/track.js` circuit and arena builder
 - `src/car.js` vehicle model and driving physics
+- `src/roam.js` Free Roam world and ramps
+- `src/walker.js` the on-foot pilot
 - `src/combat.js` particles, projectiles, weapons, pickups
 - `src/ai.js` opponent driving and combat
 - `src/game.js` race session, laps, damage, camera
