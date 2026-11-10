@@ -1,0 +1,16 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.projectx.combatracing'
+    compileSdk 34
+    defaultConfig { applicationId 'com.projectx.combatracing'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+    signingConfigs {
+        release {
+            // Sideload signing key. Make your own key before publishing to a store.
+            storeFile file('../projectx-release.jks'); storePassword 'projectx-sideload'; keyAlias 'projectx'; keyPassword 'projectx-sideload'
+        }
+    }
+    buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    androidResources { noCompress 'mp3', 'woff2', 'jpg', 'png' }
+}
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }

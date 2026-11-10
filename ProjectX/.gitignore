@@ -1,0 +1,9 @@
+node_modules/
+dist/
+shots/
+assets/raw/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/www/

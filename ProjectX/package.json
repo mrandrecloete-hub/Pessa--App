@@ -1,0 +1,25 @@
+{
+  "name": "project-x",
+  "version": "1.0.0",
+  "description": "Project X: Combat Racing",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "serve": "cd dist && python3 -m http.server 8377",
+    "test": "node tests/sim.mjs",
+    "test:quick": "node tests/sim.mjs quick",
+    "shots": "mkdir -p shots && node tests/shots.mjs shots"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.170.0"
+  },
+  "private": true,
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "1.56.1"
+  }
+}
