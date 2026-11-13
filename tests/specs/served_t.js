@@ -3,8 +3,9 @@ let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==u
 (async()=>{
  const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
- await p.fill('#rcCompanyName','Shop'); await p.fill('#rcOwnerName','Andre Cloete'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
- await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+ await p.fill('#rcCompanyName','Shop'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+ await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); // sign up no longer asks for a name or email, so the spec adds them in the profile
+ await p.evaluate(function(o){ var T = window.__t, u = T.State.users.find(function(x){ return x.role === 'owner'; }); var patch = {}; if(o.n) patch.name = o.n; if(o.e) patch.email = o.e; T.refs.users.doc(u.id).update(patch); Object.assign(u, patch); if(o.n && T.State.session) T.State.session.name = o.n; }, { n:'Andre Cloete', e:'' }); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
  await p.evaluate(()=>window.__t.ensureJsPDF()).catch(()=>{}); await p.waitForTimeout(500);
  const out=await p.evaluate(()=>{ const T=window.__t; const sale={id:'abc123',createdAt:new Date().toISOString(),total:60,paymentMethod:'cash',cashierName:'Maria Shikongo',cashReceived:100,items:[{name:'Bread',qty:2,unitPrice:30}]};
    const rd=T.saleReceiptDraft(sale); const rdoc=T.buildReceiptPdf(rd); const idoc=T.buildInvoicePdf(Object.assign({},rd,{number:'INV-1',dueDateStr:'2026-11-01'}));

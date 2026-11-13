@@ -6125,48 +6125,16 @@ function regHeroHtml(){
       '<path d="M0 20C90 -6 200 4 290 20S410 34 440 12" fill="none" stroke="#FFD96B" stroke-width="2" opacity=".9"/></svg>' +
   '</div>';
 }
-function regStepsHtml(){
-  return '<div class="reg-steps" aria-hidden="true">' +
-    '<div class="reg-step on"><span class="n">1</span><span class="l">'+tr('Business details')+'</span></div><i class="line"></i>' +
-    '<div class="reg-step"><span class="n">2</span><span class="l">'+tr('Owner account')+'</span></div><i class="line"></i>' +
-    '<div class="reg-step"><span class="n">3</span><span class="l">'+tr('Done')+'</span></div></div>';
-}
-
 function renderRegisterCompanyHtml(){
-  var regionOpts = NAMIBIA_REGIONS.map(function(r){ return '<option>'+esc(r)+'</option>'; }).join('');
-  var townOpts = REG_TOWNS.map(function(t){ return '<option value="'+esc(t)+'"></option>'; }).join('');
   return '<div class="authcard regpage">' +
     '<div class="reg-bg"></div><div class="reg-wm" aria-hidden="true"></div>' +
-    regHeroHtml() + regStepsHtml() +
+    regHeroHtml() +
     '<div class="reg-body">' +
       regOtherBusinessesHtml() +
       '<div id="regBizSec">' +
-      regSecHtml('building', tr('Business details')) +
-      '<div class="banner"><span class="bi">'+regIc('bulb')+'</span><span>'+tr('Only your business name is required to get started. Add the rest, registration number, VAT, address, whenever you have it; you can always fill it in later from Settings.')+'</span></div>' +
+      regSecHtml('building', tr('Register your business')) +
+      '<div class="banner"><span class="bi">'+regIc('bulb')+'</span><span>'+tr('Just your business name and a password to start. Add your registration number, VAT, address and contact details later in Settings.')+'</span></div>' +
       regF(tr('Business name'), 'building', '<input id="rcCompanyName" placeholder="e.g. Nangolo General Dealer">', false, true) +
-      regF(tr('Trading name (if different)'), 'store', '<input id="rcTradingName" placeholder="e.g. Nangolo Shop">', true) +
-      '<div class="field-row">' +
-        regF(tr('BIPA registration number'), 'shield', '<input id="rcRegNumber" placeholder="CC/2024/001">', true) +
-        regF(tr('NamRA VAT number'), 'doc', '<input id="rcVatNumber" placeholder="e.g. 123456789">', true) +
-      '</div>' +
-      regF(tr('Legal name on your BIPA certificate'), 'doc', '<input id="rcLegal" placeholder="e.g. Nangolo General Dealer CC">', true) +
-      '<div id="rcBipaHint" aria-live="polite" style="font-size:12.5px;line-height:1.55;color:var(--text-muted);margin:-4px 0 12px;"></div>' +
-      regF(tr('Physical address'), 'pin', '<input id="rcAddress" placeholder="Street, suburb">', true) +
-      '<div class="field-row">' +
-        regF(tr('Town'), 'pin', '<input id="rcTown" list="rcTownList" autocomplete="off" placeholder="e.g. Windhoek">'+regIc('chev','fchev')+'<datalist id="rcTownList">'+townOpts+'</datalist>', true) +
-        regF(tr('Region'), 'map', '<select id="rcRegion"><option value="">'+tr('Choose…')+'</option>'+regionOpts+'</select>'+regIc('chev','fchev'), true) +
-      '</div>' +
-      '<div class="field-row">' +
-        regF(tr('Business phone'), 'phone', '<input id="rcPhone" placeholder="081 234 5678">', true) +
-        regF(tr('Business email'), 'mail', '<input id="rcEmail" type="email" placeholder="shop@example.com">', true) +
-      '</div>' +
-      complianceNoteHtml() +
-      '</div>' +
-      '<div id="regOwnerSec">' +
-      regSecHtml('user', tr('Owner account')) +
-      '<div class="banner"><span class="bi">'+regIc('user')+'</span><span>'+tr('This creates your Owner login, you can add Managers and Cashiers afterwards from Settings → Team.')+'</span></div>' +
-      regF(tr('Owner full name'), 'user', '<input id="rcOwnerName" placeholder="Full name">', false, true) +
-      regF(tr('Owner email (needed to reset a forgotten password)'), 'mail', '<input id="rcOwnerEmail" placeholder="081 234 5678 or you@example.com">', true) +
       '<div class="field-row">' +
         regF(tr('Password'), 'lock', '<input id="rcOwnerPassword" type="password" placeholder="Min. 4 chars">', false, true) +
         regF(tr('Confirm password'), 'lock', '<input id="rcOwnerPassword2" type="password" placeholder="Repeat it">', false, true) +
@@ -6174,6 +6142,7 @@ function renderRegisterCompanyHtml(){
       '</div>' +
       '<div id="rcError"></div>' +
       '<div class="actions"><button class="btn btn-primary btn-block reg-go" id="rcSubmit">'+regIc('userplus')+'<span>'+tr('Register &amp; continue')+'</span>'+regIc('chev')+'</button></div>' +
+      complianceNoteHtml() +
       '<div style="text-align:center;margin-top:10px;"><button class="btn btn-ghost" type="button" data-forgot="1">'+tr('Forgot password?')+'</button></div>' +
       accountPickerHtml() +
       joinSyncHtml() +
@@ -6249,10 +6218,10 @@ function wireRegisterCompany(root){
     });
   })();
   root.querySelector('#rcSubmit').addEventListener('click', function(){
-    var v = function(id){ return root.querySelector(id).value.trim(); };
+    var v = function(id){ var el = root.querySelector(id); return el && el.value ? el.value.trim() : ''; };
     var companyName = v('#rcCompanyName'), regNumber = v('#rcRegNumber'), address = v('#rcAddress'),
         town = v('#rcTown'), region = v('#rcRegion'), phone = v('#rcPhone'),
-        ownerName = v('#rcOwnerName'), ownerContact = v('#rcOwnerEmail'),
+        ownerName = tr('Owner'), ownerContact = '',
         pw = v('#rcOwnerPassword'), pw2 = v('#rcOwnerPassword2');
     var errEl = root.querySelector('#rcError');
     errEl.innerHTML = '';
@@ -6260,7 +6229,6 @@ function wireRegisterCompany(root){
     // Only the essentials are required, everything else can be filled in later,
     // once the business has it, from Settings → Company details.
     if(!companyName) return fail(tr('Enter your business name.'));
-    if(!ownerName) return fail(tr('Enter the owner’s full name.'));
     if(pwProblem(pw)) return fail(pwProblem(pw));
     if(pw !== pw2) return fail(tr('Passwords don’t match.'));
     var btn = root.querySelector('#rcSubmit');
@@ -20229,7 +20197,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.208';
+var APP_VERSION = '2026.10.209';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20538,6 +20506,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.209', items:[
+    'A short sign up: only your business name and a password. No personal details are asked. The owner is called Owner until a name is added in the profile. Registration number, VAT, address, phone and email, and a recovery email, can all be added later in Company details and in the profile'
+  ] },
   { v:'2026.10.208', items:[
     'Pesa Shop now says plainly when there is nothing to list (a product needs a selling price and stock, and sample test products are never listed) instead of making an empty price list or page',
     'Pesa Shop can add 24 demo products (named with (demo) after the name) so you can try publishing a page, and remove them again with a manager or owner password'

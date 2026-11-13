@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
   console.log('csp meta', await p.evaluate(()=>{const m=document.querySelector('meta[http-equiv="Content-Security-Policy"]');return !!m && m.content.length}));
   // password rules at registration
-  await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+  await p.fill('#rcCompanyName','Dinner Shop'); 
   for(const bad of ['abc','password','aaaaaaaa']){ await p.fill('#rcOwnerPassword',bad); await p.fill('#rcOwnerPassword2',bad); await p.click('#rcSubmit'); await p.waitForTimeout(150); console.log('reg', bad, '->', (await p.innerText('#rcError')).trim()); }
   await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
   await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });

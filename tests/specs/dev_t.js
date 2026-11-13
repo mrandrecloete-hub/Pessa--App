@@ -13,7 +13,7 @@ const profiles=[
     const ctx=await b.newContext(Object.assign({serviceWorkers:'block',permissions:['microphone']},opts)); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
     const cdp=await ctx.newCDPSession(p); await cdp.send('Emulation.setCPUThrottlingRate',{rate:slow});
     const t0=Date.now(); await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName',{timeout:60000}); const tLoad=Date.now()-t0;
-    await p.fill('#rcCompanyName','Dev Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
+    await p.fill('#rcCompanyName','Dev Shop'); await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
     await p.waitForSelector('#cnAgree',{timeout:60000}); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card',{timeout:60000});
     console.log('   first load '+tLoad+' ms at '+slow+'x slower CPU');
     // seed

@@ -15,7 +15,7 @@ function handler(r){
 async function newDevice(b){ const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); await ctx.route('https://mock.test/**',handler); const p=await ctx.newPage(); p.errs=[]; p.on('pageerror',e=>p.errs.push(e.message)); await p.goto('http://localhost:8933/index.html'); return p; }
 (async()=>{
   const b=await chromium.launch(); const A=await newDevice(b);
-  await A.waitForSelector('#rcCompanyName'); await A.fill('#rcCompanyName','Secret Bakery Ltd'); await A.fill('#rcOwnerName','Alice'); await A.fill('#rcOwnerEmail','a@x.com');
+  await A.waitForSelector('#rcCompanyName'); await A.fill('#rcCompanyName','Secret Bakery Ltd'); 
   await A.fill('#rcOwnerPassword','aaaa1111'); await A.fill('#rcOwnerPassword2','aaaa1111'); await A.click('#rcSubmit');
   await A.waitForSelector('#cnAgree'); await A.click('#cnAgree'); await A.click('#cnAccept'); await A.waitForSelector('.hero-card');
   await A.evaluate(async()=>{ const T=window.__t; await T.refs.products.doc('p1').set({name:'Sourdough Loaf',sellPrice:35,costPrice:12,stockQty:10}); await T.refs.messages.add({to:'all',toName:'All',fromId:T.State.session.userId,fromName:'Alice',kind:'message',urgent:false,title:'',body:'Top secret hello message',readBy:{},createdAt:new Date().toISOString()}); });
@@ -55,7 +55,7 @@ async function newDevice(b){ const ctx=await b.newContext({viewport:{width:390,h
   // swapped rows (same key, different id) must fail through the bound id
   const m1=[...store.values()].find(r=>r.coll==='products' && r.id==='p1'); m1.data.c=old; // restore
   // legacy shop upgrade flow
-  const L=await newDevice(b); await L.waitForSelector('#rcCompanyName'); await L.fill('#rcCompanyName','Old Shop'); await L.fill('#rcOwnerName','Leo'); await L.fill('#rcOwnerEmail','l@x.com');
+  const L=await newDevice(b); await L.waitForSelector('#rcCompanyName'); await L.fill('#rcCompanyName','Old Shop'); 
   await L.fill('#rcOwnerPassword','aaaa1111'); await L.fill('#rcOwnerPassword2','aaaa1111'); await L.click('#rcSubmit'); await L.waitForSelector('#cnAgree'); await L.click('#cnAgree'); await L.click('#cnAccept'); await L.waitForSelector('.hero-card');
   const LC='LEGA-CYLE-GACY-LEGA-CYYY';
   await L.evaluate(async(c)=>{ await window.__t.refs.products.doc('lp').set({name:'Legacy Plain Item',sellPrice:1,costPrice:1,stockQty:1}); await window.__t.Sync.enable('https://mock.test','k',c,{v:1}); },LC); await L.waitForTimeout(2500);

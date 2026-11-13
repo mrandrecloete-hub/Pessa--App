@@ -4,9 +4,10 @@ const D=(process.env.PESA_OUT||require('os').tmpdir()+'/pesa-tests/');
   const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:390,height:844}, serviceWorkers:'block'});
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message)); p.on('console',m=>{if(m.type()==='error')errs.push('C:'+m.text())});
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
-  await p.fill('#rcCompanyName','Dinner'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+  await p.fill('#rcCompanyName','Dinner'); 
   await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
-  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
+  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); // sign up no longer asks for a name or email, so the spec adds them in the profile
+ await p.evaluate(function(o){ var T = window.__t, u = T.State.users.find(function(x){ return x.role === 'owner'; }); var patch = {}; if(o.n) patch.name = o.n; if(o.e) patch.email = o.e; T.refs.users.doc(u.id).update(patch); Object.assign(u, patch); if(o.n && T.State.session) T.State.session.name = o.n; }, { n:'Alice', e:'' }); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   // data: product, cashier w/ PIN 1234
   await p.evaluate(async()=>{ const r=window.__t.refs; await r.products.doc().set({name:'Bread',sellPrice:17.99,costPrice:13,stockQty:50,createdAt:new Date().toISOString()});
     await r.products.doc().set({name:'Milk',sellPrice:30,costPrice:20,stockQty:50,createdAt:new Date().toISOString()});
