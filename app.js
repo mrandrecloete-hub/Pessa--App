@@ -6022,7 +6022,7 @@ function wireBusinessSwitcher(root){
 }
 
 function complianceNoteHtml(){
-  return '<div class="compliance-note">'+tr('Pesa helps you keep organised company, sales and staff records, it does not register your business for you. Please confirm your registration with the Business and Intellectual Property Authority (BIPA), your tax and VAT obligations with the Namibia Revenue Agency (NamRA), and any staff/labour requirements with the Ministry of Labour, Industrial Relations and Employment Creation. Keep the details below on hand, they will be shown on your invoices and reports.')+'</div>';
+  return '<div class="compliance-note">'+tr('Pesa helps you keep organised company, sales and staff records, it does not register your business for you. Please confirm your registration with the Business and Intellectual Property Authority (BIPA), your tax and VAT obligations with the Namibia Revenue Agency (NamRA), and any staff/labour requirements with the Ministry of Labour, Industrial Relations and Employment Creation. Keep your registration details on hand, you can add them in Company details and they will be shown on your invoices and reports.')+'</div>';
 }
 
 /* ---- BIPA registration details: entered by the owner, never marked "verified" here ----
@@ -20197,7 +20197,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.209';
+var APP_VERSION = '2026.10.210';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20506,6 +20506,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.210', items:[
+    'The note under Register and continue no longer points at details that are not on the page: it says to add your registration details later in Company details'
+  ] },
   { v:'2026.10.209', items:[
     'A short sign up: only your business name and a password. No personal details are asked. The owner is called Owner until a name is added in the profile. Registration number, VAT, address, phone and email, and a recovery email, can all be added later in Company details and in the profile'
   ] },
