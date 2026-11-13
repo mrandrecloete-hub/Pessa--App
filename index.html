@@ -1352,8 +1352,8 @@
   .regpage .reg-nam{ margin-top:4px; font-size:15px; font-weight:400; letter-spacing:.4em; text-transform:uppercase; color:rgba(255,255,255,.95); text-shadow:0 2px 8px rgba(0,70,50,.4); }
   .regpage .reg-slogan{ position:relative; z-index:2; margin-top:12px; font-size:11px; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:#FFF0A0; text-shadow:0 1px 6px rgba(0,70,50,.55); }
   .regpage .reg-map{
-    position:absolute; z-index:2; right:16px; top:calc(max(24px, env(safe-area-inset-top,0px)) + 4px); width:92px;
-    filter:drop-shadow(0 10px 12px rgba(0,50,40,.5)) drop-shadow(0 0 14px rgba(255,255,255,.55));
+    position:absolute; z-index:2; right:16px; top:calc(max(24px, env(safe-area-inset-top,0px)) + 4px); width:92px; height:auto;
+    filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));
     animation:regFloat 5.5s ease-in-out infinite reverse;
   }
   .regpage .reg-wave{ position:absolute; left:0; bottom:-1px; width:100%; height:38px; display:block; }
@@ -1880,4 +1880,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.211"></script>
+<script src="app.js?v=2026.10.212"></script>
