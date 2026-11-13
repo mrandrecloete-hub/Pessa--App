@@ -10076,7 +10076,7 @@ function applyPdfFonts(doc){
   var f = FONT_SETS[pdfFontKey()], all = [f.head, f.body.normal, f.body.bold, f.body.italic];
   if(!all.every(function(n){ return PDF_FONT_CACHE[n]; })) return false;   // not loaded: keep built in font
   all.forEach(function(n){ if(!doc.__pesaFont || !doc.__pesaFont[n]){ doc.addFileToVFS(n+'.ttf', PDF_FONT_CACHE[n]); doc.addFont(n+'.ttf', n, 'normal'); (doc.__pesaFont = doc.__pesaFont || {})[n] = 1; } });
-  var origFont = doc.setFont.bind(doc), origSize = doc.setFontSize.bind(doc), cur = { style:'normal', size:(doc.getFontSize ? doc.getFontSize() : 16) };
+  var origFont = doc.setFont.bind(doc), origSize = doc.setFontSize.bind(doc); doc.__nativeSetFont = origFont; var cur = { style:'normal', size:(doc.getFontSize ? doc.getFontSize() : 16) };
   function eff(){
     var name = (cur.style === 'bold' && cur.size >= 9.5) ? f.head : (f.body[cur.style] || f.body.normal);
     origFont(name, 'normal');
@@ -20198,7 +20198,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.213';
+var APP_VERSION = '2026.10.214';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20507,6 +20507,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.214', items:[
+    'The date on the stamp is now written in the same heavy, condensed capitals as the company name on the stamp'
+  ] },
   { v:'2026.10.213', items:[
     'A new document stamp: Pesa Namibia Pty Ltd, Private Bag 1379, Windhoek, with CERTIFIED and a signature. Today\'s date is written into its date box fresh each time a document is made, as before'
   ] },
@@ -22013,15 +22016,27 @@ function drawWetStamp(doc, pageW, pageH, now){
   // real failure rather than quietly producing a document with no stamp.
   doc.addImage(STAMP_IMG_DATA_URL, 'PNG', ix, iy, D, D, undefined, undefined, tilt);
 
-  // today's date is sized to fill the date box (about four fifths of its width, never taller than about two thirds of its height) and centred in it
-  var dateTxt = fmtStampDate(now), boxWmm = STAMP_DATE_BOX_W * D, boxHmm = STAMP_DATE_BOX_H * D;
-  doc.setFont('helvetica','bold'); doc.setFontSize(20);
-  var fitW = 20 * (boxWmm * 0.8) / Math.max(1, doc.getTextWidth(dateTxt)), fitH = (boxHmm * 0.66) / (0.72 * 0.3528);
-  var dateFs = Math.max(6, Math.min(fitW, fitH, 30)), capH = 0.72 * dateFs * 0.3528;
+  // today's date is written in the same heavy, condensed capitals as the company name on the stamp: the PDF's own Helvetica Bold squeezed
+  // to a narrow width, with a little ink thickness, centred in the date box and spread a little like a pressed stamp
+  var dateTxt = fmtStampDate(now), boxWmm = STAMP_DATE_BOX_W * D, boxHmm = STAMP_DATE_BOX_H * D, SC = 0.74;
+  doc.setFontSize(20);
+  if(doc.__nativeSetFont) doc.__nativeSetFont('helvetica', 'bold'); else doc.setFont('helvetica', 'bold');
+  var nat = doc.getTextWidth(dateTxt) / 20;                       // mm per point at the natural width
+  var dateFs = Math.min((boxHmm * 0.6) / (0.718 * 0.3528), 30);   // capitals about three fifths of the box height
+  var wmm = nat * dateFs * SC;
+  if(wmm > boxWmm * 0.86){ dateFs = dateFs * boxWmm * 0.86 / wmm; wmm = boxWmm * 0.86; }
+  var gaps = Math.max(1, dateTxt.length - 1), cs = Math.max(0, Math.min((boxWmm * 0.8 - wmm) / gaps / SC, 1.6));
+  var spanMm = wmm + cs * SC * gaps, capH = 0.718 * dateFs * 0.3528;
   doc.setFontSize(dateFs);
-  doc.setTextColor(15,15,15);
+  if(doc.__nativeSetFont) doc.__nativeSetFont('helvetica', 'bold');
+  doc.setTextColor(15,15,15); doc.setDrawColor(15,15,15);
+  var oldLw = doc.getLineWidth ? doc.getLineWidth() : 0.2; doc.setLineWidth(0.15);
   var datePt = stampImagePoint(ix, iy, D, tilt, STAMP_DATE_BOX_FX, STAMP_DATE_BOX_FY, capH / 2);
-  doc.text(dateTxt, datePt.x, datePt.y, {align:'center', angle: tilt});
+  var dirX = Math.cos(tilt * Math.PI / 180), dirY = -Math.sin(tilt * Math.PI / 180);   // along the tilted baseline, page y runs downwards
+  doc.internal.write(Math.round(SC * 100) + ' Tz');
+  doc.text(dateTxt, datePt.x - dirX * spanMm / 2, datePt.y - dirY * spanMm / 2, { angle: tilt, charSpace: cs, renderingMode: 'fillThenStroke' });
+  doc.internal.write('100 Tz');
+  doc.setLineWidth(oldLw);
 }
 
 // Builds the "About Pesa" PDF, sharing drawDocHeader() so it carries the
