@@ -63,6 +63,8 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true; buildConfig = true }
     packaging {
+        // Compress the native libraries (OpenCV, ML Kit) inside the APK: a much smaller download for every update.
+        jniLibs.useLegacyPackaging = true
         resources.excludes += setOf("META-INF/{AL2.0,LGPL2.1}", "META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*",
             // Tables for post-quantum algorithms in the crypto library that PDF encryption never uses.
             "org/bouncycastle/pqc/**", "org/bouncycastle/x509/**")
@@ -72,6 +74,9 @@ android {
         unitTests.all { it.maxHeapSize = "2g" }
     }
 }
+
+// Same API, different native code: keep the Android build out of the computer-side tests.
+configurations.matching { it.name.contains("UnitTest", ignoreCase = true) }.configureEach { exclude(group = "org.opencv", module = "opencv") }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -100,9 +105,13 @@ dependencies {
     implementation(libs.pdfbox.android)
     implementation(libs.mlkit.text)
     implementation(libs.mlkit.scanner)
+    implementation(libs.opencv.android)
+    implementation(libs.androidx.exifinterface)
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    // The phone uses the Android OpenCV build. Unit tests run on a computer, so they use the same Java API with desktop native code.
+    testImplementation(libs.opencv.desktop)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(platform(libs.androidx.compose.bom))

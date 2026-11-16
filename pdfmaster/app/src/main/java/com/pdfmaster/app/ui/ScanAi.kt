@@ -105,7 +105,8 @@ fun ScanScreen(vm: AppViewModel, nav: Nav) {
                         Text("The clean up did not work: ${job.error}. Your original scan is saved.", Modifier.padding(top = 10.dp), color = MaterialTheme.colorScheme.error)
                     }
                     if (job?.state != JobState.RUNNING && job != null) {
-                        Text("Try another look", Modifier.padding(top = 22.dp).fillMaxWidth(), style = MaterialTheme.typography.titleSmall)
+                        OutlinedButton(onClick = { nav.c.popBackStack(); nav.tool("restore", d) }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) { Icon(Icons.Outlined.PhotoFilter, null); Text("  Professional restoration with before and after") }
+                        Text("Or try another quick look", Modifier.padding(top = 22.dp).fillMaxWidth(), style = MaterialTheme.typography.titleSmall)
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { scanStyles.forEach { (k, l) -> FilterChip(curStyle == k, { style = k }, label = { Text(l.substringBefore(":")) }) } }
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { scanColours.forEach { (k, l) -> FilterChip(curColour == k, { colour = k }, label = { Text(l) }) } }
                         if (curStyle == "typed") Text("Rebuilt retypes the recognised text so it is perfectly sharp. Check names and numbers afterwards, and note that handwriting stays as a picture.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

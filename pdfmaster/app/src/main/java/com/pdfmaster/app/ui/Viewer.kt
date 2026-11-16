@@ -142,6 +142,7 @@ fun Zoomable(modifier: Modifier = Modifier, onTap: () -> Unit = {}, onScale: (Fl
                 awaitFirstDown(requireUnconsumed = false)
                 do {
                     val e = awaitPointerEvent()
+                    if (e.changes.any { it.isConsumed }) continue
                     val zoom = e.calculateZoom(); val pan = e.calculatePan()
                     if (e.changes.size > 1 || scale > 1.02f) {
                         // Two fingers always zoom; one finger pans only when zoomed in, so normal scrolling still works at 1x.

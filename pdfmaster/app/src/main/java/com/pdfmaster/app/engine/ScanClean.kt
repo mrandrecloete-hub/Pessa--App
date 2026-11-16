@@ -133,7 +133,7 @@ class ScanPdfWriter(private val context: Context, private val mode: ScanClean.Mo
     var retypedLines = 0; private set
     var skippedLines = 0; private set
 
-    fun add(page: ScanPage) {
+    fun add(page: ScanPage, pageMode: ScanClean.Mode = mode) {
         val bmp = page.bitmap
         val w = bmp.width; val h = bmp.height
         val ar = w.toFloat() / h
@@ -152,7 +152,7 @@ class ScanPdfWriter(private val context: Context, private val mode: ScanClean.Mo
             m
         }
         val pdPage = PDPage(box); doc.addPage(pdPage)
-        val img = if (mode == ScanClean.Mode.COLOUR || mode == ScanClean.Mode.GREY) JPEGFactory.createFromImage(doc, image, 0.9f) else LosslessFactory.createFromImage(doc, image)
+        val img = if (pageMode == ScanClean.Mode.COLOUR || pageMode == ScanClean.Mode.GREY) JPEGFactory.createFromImage(doc, image, 0.92f) else LosslessFactory.createFromImage(doc, image)
         PDPageContentStream(doc, pdPage).use { cs ->
             cs.drawImage(img, ox, box.height - oy - sh, sw, sh)
             val lines = if (typed) use else page.lines.filter { it.confidence >= 0.5f }

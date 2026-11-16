@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.pdfmaster.app.data.Doc
 import com.pdfmaster.app.tools.ToolSpec
+import com.pdfmaster.app.tools.accepts
 
 /** Navigation helpers shared by every screen. */
 class Nav(val c: NavHostController, private val askDoc: (ToolSpec) -> Unit) {
@@ -71,13 +72,15 @@ fun PdfMasterRoot(incoming: Uri?, consumed: () -> Unit) {
                     }
                     composable("form/{id}") { FormScreen(vm, nav, it.arguments?.getString("id").orEmpty()) }
                     composable("pages/{id}") { PagesScreen(vm, nav, it.arguments?.getString("id").orEmpty()) }
+                    composable("restore/{id}") { RestoreScreen(vm, nav, it.arguments?.getString("id").orEmpty()) }
                     composable("scan") { ScanScreen(vm, nav) }
                     composable("signatures") { SignaturesScreen(vm, nav) }
                     composable("history") { HistoryScreen(vm, nav) }
                     composable("settings/{page}") { SettingsPage(vm, nav, it.arguments?.getString("page").orEmpty()) }
                 }
                 pickFor?.let { spec ->
-                    DocPickerSheet(vm, title = spec.title, accept = { it.isPdf }, multi = false, onDismiss = { pickFor = null }) { docs ->
+                    DocPickerSheet(vm, title = spec.title, accept = { spec.accepts(it) }, multi = false, onDismiss = { pickFor = null },
+                        mimeTypes = if (spec.input == com.pdfmaster.app.tools.InputKind.PDF_OR_IMAGE) arrayOf("application/pdf", "image/*") else arrayOf("application/pdf")) { docs ->
                         pickFor = null; docs.firstOrNull()?.let { nav.screen(spec, it) }
                     }
                 }

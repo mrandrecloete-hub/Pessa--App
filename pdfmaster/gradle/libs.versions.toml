@@ -16,6 +16,9 @@ hiltAndroidx = "1.2.0"
 pdfbox = "2.0.27.0"
 mlkitText = "16.0.1"
 mlkitScanner = "16.0.0-beta1"
+opencv = "4.11.0"
+opencvDesktop = "4.9.0-0"
+exif = "1.3.7"
 junit = "4.13.2"
 robolectric = "4.14.1"
 androidxTestCore = "1.6.1"
@@ -48,6 +51,9 @@ hilt-androidx-compiler = { module = "androidx.hilt:hilt-compiler", version.ref =
 pdfbox-android = { module = "com.tom-roush:pdfbox-android", version.ref = "pdfbox" }
 mlkit-text = { module = "com.google.mlkit:text-recognition", version.ref = "mlkitText" }
 mlkit-scanner = { module = "com.google.android.gms:play-services-mlkit-document-scanner", version.ref = "mlkitScanner" }
+opencv-android = { module = "org.opencv:opencv", version.ref = "opencv" }
+opencv-desktop = { module = "org.openpnp:opencv", version.ref = "opencvDesktop" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exif" }
 junit = { module = "junit:junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }

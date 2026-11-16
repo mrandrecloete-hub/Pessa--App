@@ -232,6 +232,18 @@ fun ToolsScreen(nav: Nav) {
             OutlinedTextField(query, { query = it }, placeholder = { Text("Find a tool") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, singleLine = true,
                 shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp))
         }
+        if (query.isBlank()) item {
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 6.dp).fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Brush.linearGradient(listOf(Color(0xFF1D3FA8), Brand.Indigo, Brand.Violet)))
+                .clickable { nav.tool("restore") }.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.PhotoFilter, null, tint = Color.White, modifier = Modifier.size(44.dp))
+                Column(Modifier.padding(start = 14.dp).weight(1f)) {
+                    Text("NEW", color = Brand.Cyan, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp)
+                    Text("Professional Document Restoration", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                    Text("Photos and scans become clean, even, professional pages. Compare before and after.", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodySmall)
+                }
+                Icon(Icons.Outlined.ChevronRight, null, tint = Color.White)
+            }
+        }
         for (g in groups) {
             val list = TOOLS.filter { it.group == g && (query.isBlank() || it.title.contains(query.trim(), true) || it.blurb.contains(query.trim(), true)) }
             if (list.isEmpty()) continue
@@ -323,6 +335,7 @@ fun DocActionsSheet(vm: AppViewModel, nav: Nav, doc: Doc, onDismiss: () -> Unit)
             HorizontalDivider(Modifier.padding(vertical = 6.dp))
             if (doc.isPdf) {
                 item(Icons.Outlined.Visibility, "Open") { onDismiss(); vm.opened(doc); nav.open(doc) }
+                item(Icons.Outlined.PhotoFilter, "Professional restoration") { onDismiss(); nav.tool("restore", doc) }
                 item(Icons.Outlined.Edit, "Edit") { onDismiss(); nav.tool("edit", doc) }
                 item(Icons.Outlined.Draw, "Sign") { onDismiss(); nav.tool("sign", doc) }
                 item(Icons.Outlined.GridView, "Organise pages") { onDismiss(); nav.tool("organise", doc) }
@@ -331,6 +344,7 @@ fun DocActionsSheet(vm: AppViewModel, nav: Nav, doc: Doc, onDismiss: () -> Unit)
             } else {
                 item(Icons.Outlined.OpenInNew, "Open in another app") { onDismiss(); if (!vm.library.openExternally(doc)) vm.say("No app on this phone can open ${doc.ext.uppercase()} files") }
                 if (doc.ext in OFFICE_EXTS) item(Icons.Outlined.PictureAsPdf, "Convert to PDF") { onDismiss(); nav.tool("office_pdf", doc) }
+                if (doc.ext in IMAGE_EXTS) item(Icons.Outlined.PhotoFilter, "Professional restoration") { onDismiss(); nav.tool("restore", doc) }
                 if (doc.ext in IMAGE_EXTS) item(Icons.Outlined.PictureAsPdf, "Make a PDF from this picture") { onDismiss(); nav.tool("img_pdf", doc) }
             }
             item(Icons.Outlined.Share, "Share") { onDismiss(); vm.share(listOf(doc)) }

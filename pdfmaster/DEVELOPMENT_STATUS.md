@@ -9,14 +9,14 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 | Item | Status |
 | --- | --- |
 | Debug APK | Built from CI or `./gradlew :app:assembleDebug` |
-| Release APK | Built and signed: `app/build/outputs/apk/release/app-release.apk` (about 39 MB). Pushes build it automatically: see `.github/workflows/pdfmaster-build.yml` |
+| Release APK | Built and signed: `app/build/outputs/apk/release/app-release.apk` (about 47 MB; OpenCV added about 9 MB). Native libraries are stored compressed so updates stay small; Google Play's 16 KB page size rule for new apps has not been checked against the OpenCV build. Pushes build it automatically: see `.github/workflows/pdfmaster-build.yml` |
 | Signature | Verified with `apksigner verify` (APK Signature Scheme v2), zip alignment checked |
 | Package | `com.pdfmaster.app`, min Android 8.0 (API 26), target API 35, arm64-v8a and armeabi-v7a |
 | Installed on a device | **Not done** |
 | Code shrinking (R8) | Off on purpose until it can be tested on a device; turning it on should roughly halve the size |
 
 ## Tests
-`./gradlew :app:testDebugUnitTest`: **40 passed, 0 failed.** `python3 tools/verify_outputs.py`: **8 passed, 0 failed.**
+`./gradlew :app:testDebugUnitTest`: **47 passed, 0 failed.** `python3 tools/verify_outputs.py`: **8 passed, 0 failed.**
 
 | Suite | What it proves |
 | --- | --- |
@@ -27,6 +27,8 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 | AppFlowTest (1) | Import into the library, merge, split, PDF to Word, batch conversion, protect, the password prompt (missing and wrong password), unlock, metadata, compare, page numbers, a failed job saving nothing, history without passwords, delete, temporary files removed |
 | ScanCleanTest (4) + AppFlowTest scan case | Clean up scan: a synthetic badly lit scan (yellow tint, shading, dark corner) becomes even white paper with dark text and a red logo kept; Black and white gives only black and white pixels; pages are fitted to A4 and real typed text is placed over painted-out lines (unsure lines are left alone); the original scan is kept. Run through the real tool path |
 | UpdaterTest (7) | Release list parsing (ignores other apps, drafts, pre-releases and releases without the APK), version order, download from a local test server, checksum match, tampered file rejected and deleted, missing checksum refused, up to date, skip, metered network waits, plain http refused. **The Android installer step itself (PackageInstaller) is not covered by any test**: it needs a real phone |
+| RestoreTest (5) + RestoreFlowTest (2) | Professional Document Restoration with real OpenCV (desktop build of the same Java API) on **simulated** photographs of real rendered document pages (perspective, rotation, shadow, yellow cast, blur, noise, JPEG; a red stamp and blue signature added): page corners found within 0.7 percent of the picture; paper made clean white and even in all six modes; text kept dark; stamp and signature kept in colour modes and kept as dark marks in black and white; output aligned with the straightened original; honest warnings for low resolution, blur and missing page edges; the full save job on a multi-page photo PDF (A4 pages, at least 1900 px, keep-original page, original file byte for byte unchanged, no visible text added); EXIF rotation |
+| verify_restoration.py | Compares each restored page with the TRUE clean page it was photographed from (after alignment): Clean, White Paper and Black and White recover 99.6 to 100 percent of the real ink; marks that are not in the real page stay at or below 0.9 percent (noise, not invented content) |
 | verify_outputs.py (8) | The produced DOCX, XLSX, PPTX, TIFF and PDF files open correctly in independent libraries (python-docx, openpyxl, python-pptx, Pillow, pypdf) |
 
 Not covered by any test: everything in the first section, and the cloud AI connection (no account was available).
@@ -64,6 +66,8 @@ Not covered by any test: everything in the first section, and the cloud AI conne
 - Settings: profile name, theme, default export format, compression, picture quality, OCR after scan, AI privacy, storage and temp files, notifications, about, privacy policy, terms. Language is English only. Save location is the in-app library plus "Save to device".
 
 - Automatic updates (new in 0.4.0): on start and every 6 hours the app reads the public GitHub release list, downloads a newer signed APK (full download, Wi-Fi only in the background), checks its SHA-256 and package and hands it to Android, which also refuses a different signing key. Android 12 and newer can install later updates without a prompt while the app is closed; the first one asks once, and the user must allow "install unknown apps" for PDFMASTER once. Switch in Profile, Updates. **Not yet tested on a real phone.** There are no small delta patches (every update is a full download of about 38 MB).
+
+- Professional Document Restoration (new in 0.5): Tools, first card under Scan and OCR (also on a document's menu and after a scan). OpenCV page detection and perspective correction, skew correction, shadow and uneven light removal, paper whitening, noise reduction, sharpening and contrast; six modes (AI Auto Enhance, Professional Clean Scan, White Paper Restoration, Black and White Document, Colour Document Preservation, Signature and Stamp Preservation); strength slider; before and after slider with pinch zoom; original photo view with the detected outline; page strip for multi-page PDFs; Restore original per page; Rotate; searchable OCR PDF; high resolution (about 280 dpi on A4) output saved as a new PDF. It changes light, colour and geometry only: nothing is retyped or drawn, the original is never overwritten, and it warns about low resolution, blur, glare, strong shadow, cut-off edges, sideways text and unclear OCR lines instead of guessing. Works offline (OpenCV and the ML Kit text model are inside the app). "AI Auto Enhance" is automatic image analysis on the phone (it measures colour cast, noise, softness and picks settings), not a neural network or cloud service. **Not yet tested on a real phone and not tested with real camera photographs**: speed on a phone and results on real photos may differ from the simulated tests. Limits: corners cannot be dragged by hand yet (use Find page edges off or retake the photo); sideways pages are detected and reported but turned only by the Rotate button; a photo with a very busy background may not be cropped; handwriting in pencil can look lighter in Black and White; OCR is Latin script only.
 
 ### Not built yet
 - "Pro" badge and drag and drop import from the design mock-up (there is no Pro plan; import is tap to browse).

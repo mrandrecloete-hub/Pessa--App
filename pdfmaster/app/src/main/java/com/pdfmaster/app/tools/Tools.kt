@@ -14,7 +14,7 @@ import com.pdfmaster.app.data.Settings
 import com.pdfmaster.app.engine.*
 import java.io.File
 
-enum class InputKind { ONE_PDF, MANY_PDF, TWO_PDF, IMAGES, OFFICE }
+enum class InputKind { ONE_PDF, MANY_PDF, TWO_PDF, IMAGES, OFFICE, PDF_OR_IMAGE }
 
 sealed interface Opt { val key: String; val label: String }
 data class ChoiceOpt(override val key: String, override val label: String, val choices: List<Pair<String, String>>, val default: String) : Opt
@@ -256,6 +256,7 @@ val TOOLS: List<ToolSpec> = listOf(
     },
 
     // ---------- Scan and OCR ----------
+    ToolSpec("restore", "Professional Document Restoration", "Turn photos and scans into clean, professional documents. Compare before and after", Icons.Outlined.PhotoFilter, Groups.SCAN, InputKind.PDF_OR_IMAGE, screen = "restore"),
     ToolSpec("scan", "Scan document", "Use the camera: edges, cropping and clean up are automatic", Icons.Outlined.DocumentScanner, Groups.SCAN, InputKind.ONE_PDF, screen = "scan"),
     ToolSpec("polish", "Clean up scan", "Make scanned pages look like freshly created documents: even white paper, sharp text, A4", Icons.Outlined.AutoFixHigh, Groups.SCAN, InputKind.ONE_PDF, listOf(
         ChoiceOpt("style", "Look", listOf("clean" to "Clean (sharp page picture)", "typed" to "Rebuilt (text retyped from the scan)"), "clean"),
@@ -329,6 +330,7 @@ val IMAGE_EXTS = setOf("jpg", "jpeg", "png", "webp", "bmp")
 val OFFICE_EXTS = setOf("docx", "xlsx", "pptx", "html", "htm", "rtf", "txt", "csv", "md")
 fun ToolSpec.accepts(d: Doc): Boolean = when (input) {
     InputKind.ONE_PDF, InputKind.MANY_PDF, InputKind.TWO_PDF -> d.isPdf
+    InputKind.PDF_OR_IMAGE -> d.isPdf || d.ext in IMAGE_EXTS
     InputKind.IMAGES -> d.ext in IMAGE_EXTS
     InputKind.OFFICE -> d.ext in OFFICE_EXTS
 }
