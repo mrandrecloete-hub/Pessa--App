@@ -80,7 +80,7 @@ fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: ()
         item {
             Column(Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color(0xFF0E2A66), MaterialTheme.colorScheme.background))).statusBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(R.drawable.logo_mark), null, Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)))
+                    Image(painterResource(R.drawable.logo_mark), "PDFMASTER logo", Modifier.size(72.dp))
                     Column(Modifier.padding(start = 14.dp).weight(1f)) {
                         Text(buildAnnotatedString { withStyle(SpanStyle(color = Color.White)) { append("PDF") }; withStyle(SpanStyle(color = Brand.Cyan)) { append("MASTER") } }, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp, maxLines = 1)
                         Text("Every Document. Every Format. One Intelligent Workspace.", color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp, lineHeight = 15.sp)

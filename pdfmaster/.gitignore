@@ -9,3 +9,6 @@ keystore.properties
 *.jks
 *.keystore
 .kotlin/
+
+# The repository root ignores *.png for the web app; PDFMASTER needs its brand images.
+!*.png

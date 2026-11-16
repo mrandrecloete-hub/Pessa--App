@@ -1,6 +1,6 @@
 # PDFMASTER development status
 
-Version 0.4.0. Last updated 16 November 2026. Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
+Version 0.4.0. Last updated 16 November 2026. App icon and Home logo replaced with the new PDF and wrenches logo (source: `branding/`). Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
 
 ## The most important limit of this report
 The app has **not been run on a real phone or emulator yet**. The build machine has no emulator support. What was verified is listed under "Tests". Anything that needs a real screen, camera or Android's own PDF renderer (page display, zoom gestures, the editor's touch handling, scanning, OCR, sharing, file pickers, notifications) is written and compiles but is **untested on a device**. Expect bugs there until the first device test.
