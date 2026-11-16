@@ -18,5 +18,6 @@ class PdfMasterApp : Application(), Configuration.Provider {
         super.onCreate()
         PDFBoxResourceLoader.init(this)
         runCatching { com.pdfmaster.app.data.TempCleanupWorker.schedule(this) }
+        runCatching { com.pdfmaster.app.update.UpdateWorker.schedule(this, com.pdfmaster.app.update.Updater.get(this).autoCheck) }
     }
 }

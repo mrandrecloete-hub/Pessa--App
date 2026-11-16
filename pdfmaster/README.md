@@ -52,3 +52,6 @@ With a cable: `adb install -r app/build/outputs/apk/release/app-release.apk`.
 
 ## Libraries and licences
 PdfBox Android 2.0.27 (Apache 2.0), Jetpack Compose, Material 3, Room, DataStore, WorkManager, Navigation, Hilt (all Apache 2.0), Google ML Kit text recognition and document scanner (ML Kit terms; the scanner needs Google Play services), DejaVu fonts (free licence, bundled for text in created PDFs). MuPDF and iText were not used because their AGPL licences would force the whole app to be open source or need a paid licence. Confirm these licences for your own distribution before publishing commercially.
+
+## Automatic updates
+Installed apps update themselves from the GitHub releases of this repository (tags `pdfmaster-vX.Y.Z`). See `docs/RELEASING.md` for the one-time setup (four signing secrets) and how releases are published. `VERSION` holds the lowest version a release may have: raise it when you want a bigger version jump.

@@ -1,6 +1,6 @@
 # PDFMASTER development status
 
-Version 0.3.0. Last updated 16 November 2026. Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
+Version 0.4.0. Last updated 16 November 2026. Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
 
 ## The most important limit of this report
 The app has **not been run on a real phone or emulator yet**. The build machine has no emulator support. What was verified is listed under "Tests". Anything that needs a real screen, camera or Android's own PDF renderer (page display, zoom gestures, the editor's touch handling, scanning, OCR, sharing, file pickers, notifications) is written and compiles but is **untested on a device**. Expect bugs there until the first device test.
@@ -16,7 +16,7 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 | Code shrinking (R8) | Off on purpose until it can be tested on a device; turning it on should roughly halve the size |
 
 ## Tests
-`./gradlew :app:testDebugUnitTest`: **33 passed, 0 failed.** `python3 tools/verify_outputs.py`: **8 passed, 0 failed.**
+`./gradlew :app:testDebugUnitTest`: **40 passed, 0 failed.** `python3 tools/verify_outputs.py`: **8 passed, 0 failed.**
 
 | Suite | What it proves |
 | --- | --- |
@@ -26,6 +26,7 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 | AppLaunchTest (1) | The real app starts (dependency injection, database, settings, navigation) and Home, Tools, a tool screen, the file picker sheet, Documents, AI Assistant, Profile, AI settings and Privacy policy open. Simulated Android (Robolectric), not a phone |
 | AppFlowTest (1) | Import into the library, merge, split, PDF to Word, batch conversion, protect, the password prompt (missing and wrong password), unlock, metadata, compare, page numbers, a failed job saving nothing, history without passwords, delete, temporary files removed |
 | ScanCleanTest (4) + AppFlowTest scan case | Clean up scan: a synthetic badly lit scan (yellow tint, shading, dark corner) becomes even white paper with dark text and a red logo kept; Black and white gives only black and white pixels; pages are fitted to A4 and real typed text is placed over painted-out lines (unsure lines are left alone); the original scan is kept. Run through the real tool path |
+| UpdaterTest (7) | Release list parsing (ignores other apps, drafts, pre-releases and releases without the APK), version order, download from a local test server, checksum match, tampered file rejected and deleted, missing checksum refused, up to date, skip, metered network waits, plain http refused. **The Android installer step itself (PackageInstaller) is not covered by any test**: it needs a real phone |
 | verify_outputs.py (8) | The produced DOCX, XLSX, PPTX, TIFF and PDF files open correctly in independent libraries (python-docx, openpyxl, python-pptx, Pillow, pypdf) |
 
 Not covered by any test: everything in the first section, and the cloud AI connection (no account was available).
@@ -61,6 +62,8 @@ Not covered by any test: everything in the first section, and the cloud AI conne
 - Background work: jobs run off the main thread, survive leaving the screen, show progress and can be stopped. They do **not** survive the app being closed by Android, and interrupted jobs are not resumed.
 - Tablets: layouts adapt (grids), but there is no dedicated two-pane tablet design.
 - Settings: profile name, theme, default export format, compression, picture quality, OCR after scan, AI privacy, storage and temp files, notifications, about, privacy policy, terms. Language is English only. Save location is the in-app library plus "Save to device".
+
+- Automatic updates (new in 0.4.0): on start and every 6 hours the app reads the public GitHub release list, downloads a newer signed APK (full download, Wi-Fi only in the background), checks its SHA-256 and package and hands it to Android, which also refuses a different signing key. Android 12 and newer can install later updates without a prompt while the app is closed; the first one asks once, and the user must allow "install unknown apps" for PDFMASTER once. Switch in Profile, Updates. **Not yet tested on a real phone.** There are no small delta patches (every update is a full download of about 38 MB).
 
 ### Not built yet
 - "Pro" badge and drag and drop import from the design mock-up (there is no Pro plan; import is tap to browse).

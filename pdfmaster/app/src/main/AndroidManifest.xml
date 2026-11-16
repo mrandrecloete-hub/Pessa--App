@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Only used when the user turns on the optional cloud AI assistant. -->
+    <!-- Used by the optional cloud AI assistant (only when the user turns it on) and by the update check of the public GitHub release list. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Lets PDFMASTER install its own updates from its GitHub releases (Android asks the user once). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 12+: after PDFMASTER has installed an update itself, later ones need no confirmation screen. -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <application
         android:name=".PdfMasterApp"
@@ -40,6 +44,8 @@
                 <data android:mimeType="application/pdf" />
             </intent-filter>
         </activity>
+
+        <receiver android:name=".update.InstallResultReceiver" android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

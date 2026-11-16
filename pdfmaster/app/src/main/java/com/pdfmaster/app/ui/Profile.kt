@@ -66,6 +66,8 @@ fun ProfileScreen(vm: AppViewModel, nav: Nav) {
     val s by vm.settings.collectAsStateWithLifecycle()
     val docs by vm.docs.collectAsStateWithLifecycle()
     var dialog by remember { mutableStateOf("") }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
     val notifPerm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> vm.save(s.copy(notifyDone = ok)); if (!ok) vm.say("Notifications stay off. You can allow them in Android settings.") }
     val themes = listOf("system" to "Same as the phone", "light" to "Light", "dark" to "Dark")
     val formats = listOf("docx" to "Word (DOCX)", "xlsx" to "Excel (XLSX)", "pptx" to "PowerPoint (PPTX)", "txt" to "Text (TXT)", "img" to "Pictures (JPG)")
@@ -102,6 +104,14 @@ fun ProfileScreen(vm: AppViewModel, nav: Nav) {
                 Switch(s.notifyDone, { on -> if (on && Build.VERSION.SDK_INT >= 33) notifPerm.launch(Manifest.permission.POST_NOTIFICATIONS) else vm.save(s.copy(notifyDone = on)) })
             }
             Row2(Icons.Outlined.History, "History", "Conversions and other work", { nav.go("history") })
+        }
+        Group("Updates") {
+            val updater = remember { com.pdfmaster.app.update.Updater.get(ctx) }
+            val us by updater.state.collectAsStateWithLifecycle()
+            var auto by remember { mutableStateOf(updater.autoCheck) }
+            Row2(Icons.Outlined.SystemUpdate, "Update automatically", "Checks the public GitHub releases of PDFMASTER. Only signed updates install.") { Switch(auto, { auto = it; updater.autoCheck = it }) }
+            Row2(Icons.Outlined.Refresh, "Check for updates now", when (val u = us) { com.pdfmaster.app.update.UpdateState.Checking -> "Checking..."; com.pdfmaster.app.update.UpdateState.UpToDate -> "PDFMASTER is up to date"
+                is com.pdfmaster.app.update.UpdateState.Failed -> u.message; is com.pdfmaster.app.update.UpdateState.Available -> "Version ${u.release.version} is available"; else -> "Installed version ${BuildConfig.VERSION_NAME}" }, { scope.launch { updater.check() } })
         }
         Group("About") {
             Row2(Icons.Outlined.Info, "About PDFMASTER", "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", { nav.go("settings/about") })
@@ -242,13 +252,17 @@ The document scanner and text recognition use Google ML Kit on the device. The s
 
 Only if you switch on cloud AI, add your own key and confirm for a document, the text of that document is sent directly from your phone to the AI service you chose. PDFMASTER does not receive it. That service's privacy policy applies to what it receives.
 
+# Updates
+
+By default PDFMASTER asks GitHub for the public list of its releases when it opens and every few hours in the background, and downloads a newer version when there is one. Only the request itself is sent (your phone's internet address, as with any website visit, and the app name and version); nothing about you or your documents. You can switch this off in Profile, Updates. A download is installed only if it matches the release checksum and is signed with the same key as the installed app.
+
 # Backups
 
 The app asks Android not to include its documents in cloud backups or device transfers.
 
 # Permissions
 
-Internet: only used for the optional cloud AI. Notifications: only if you ask to be told when long work finishes. Camera access for scanning is handled by the Google scanner, not by this app.
+Internet: used for the update check and, only if you switch it on, the optional cloud AI. Install apps: lets the app install its own downloaded updates (Android asks you once). Notifications: only if you ask to be told when long work finishes. Camera access for scanning is handled by the Google scanner, not by this app.
 """
 
 private val TERMS = """

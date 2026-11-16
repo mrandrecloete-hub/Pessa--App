@@ -57,6 +57,7 @@ fun PdfMasterRoot(incoming: Uri?, consumed: () -> Unit) {
         LaunchedEffect(incoming) {
             if (incoming != null) { vm.import(listOf(incoming)) { docs -> docs.firstOrNull()?.let { vm.opened(it); nav.open(it) } }; consumed() }
         }
+        UpdateDialog()
         Scaffold(snackbarHost = { SnackbarHost(snack) }, contentWindowInsets = WindowInsets(0)) { pad ->
             Box(Modifier.fillMaxSize().padding(pad)) {
                 NavHost(nc, startDestination = "main") {

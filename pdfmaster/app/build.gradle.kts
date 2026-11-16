@@ -26,7 +26,7 @@ android {
         minSdk = 26
         targetSdk = 35
         // CI passes -PpdfmasterVersion=1.2.3. The version code is made from it, so it always rises with the version.
-        val ver = (project.findProperty("pdfmasterVersion") as String?) ?: "0.1.0"
+        val ver = (project.findProperty("pdfmasterVersion") as String?) ?: rootProject.file("VERSION").readText().trim()
         val parts = ver.split(".").map { it.toIntOrNull() ?: 0 } + listOf(0, 0, 0)
         versionName = ver
         versionCode = maxOf(1, parts[0] * 10000 + parts[1] * 100 + parts[2])
