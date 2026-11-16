@@ -312,7 +312,7 @@ object PdfOps {
                         if (dict.containsKey(COSName.SMASK) || dict.containsKey(COSName.MASK) || x.isStencil) continue
                         val oldSize = dict.getLong(COSName.LENGTH, 0L)
                         if (oldSize < 20_000) continue
-                        val bmp = x.image ?: continue
+                        val bmp = Pdfx.imageOf(x) ?: continue
                         val side = max(bmp.width, bmp.height)
                         val scaled = if (side > maxSide) {
                             val s = maxSide.toFloat() / side
@@ -320,7 +320,7 @@ object PdfOps {
                         } else bmp
                         val flat = Bitmap.createBitmap(scaled.width, scaled.height, Bitmap.Config.ARGB_8888)
                         Canvas(flat).apply { drawColor(Color.WHITE); drawBitmap(scaled, 0f, 0f, null) }
-                        val neu = JPEGFactory.createFromImage(doc, flat, q)
+                        val neu = Pdfx.jpeg(doc, flat, q)
                         if (neu.cosObject.getLong(COSName.LENGTH, Long.MAX_VALUE) < oldSize * 0.9) { res.put(name, neu); changed++ }
                         if (scaled !== bmp) scaled.recycle()
                         flat.recycle(); bmp.recycle()
@@ -342,7 +342,7 @@ object PdfOps {
                 for (name in res.xObjectNames) {
                     val x = runCatching { res.getXObject(name) }.getOrNull() as? PDImageXObject ?: continue
                     if (!seen.add(x.cosObject)) continue
-                    val bmp = runCatching { x.image }.getOrNull() ?: continue
+                    val bmp = runCatching { Pdfx.imageOf(x) }.getOrNull() ?: continue
                     val png = bmp.hasAlpha()
                     val f = File(outDir, "$baseName image ${outs.size + 1}.${if (png) "png" else "jpg"}")
                     FileOutputStream(f).use { bmp.compress(if (png) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 92, it) }
@@ -365,7 +365,7 @@ object PdfOps {
                 val img = if (isJpeg) f.inputStream().use { JPEGFactory.createFromStream(doc, it) } else {
                     val bmp = android.graphics.BitmapFactory.decodeFile(f.absolutePath)
                         ?: throw IllegalArgumentException("${f.name} is not a picture this app can read")
-                    (if (bmp.hasAlpha()) LosslessFactory.createFromImage(doc, bmp) else JPEGFactory.createFromImage(doc, bmp, 0.9f)).also { bmp.recycle() }
+                    (if (bmp.hasAlpha()) Pdfx.lossless(doc, bmp) else Pdfx.jpeg(doc, bmp, 0.9f)).also { bmp.recycle() }
                 }
                 val iw = img.width.toFloat(); val ih = img.height.toFloat()
                 val page: PDPage
@@ -436,7 +436,7 @@ object PdfOps {
                 val paint = Paint().apply { color = Color.BLACK; style = Paint.Style.FILL }
                 for (r in boxes.getValue(index)) canvas.drawRect(r[0] * sx, r[1] * sy, r[2] * sx, r[3] * sy, paint)
                 val page = PDPage(PDRectangle(w, h))
-                val img = JPEGFactory.createFromImage(doc, bmp, 0.85f)
+                val img = Pdfx.jpeg(doc, bmp, 0.85f)
                 PDPageContentStream(doc, page).use { it.drawImage(img, 0f, 0f, w, h) }
                 doc.pages.insertAfter(page, old)
                 doc.removePage(old)

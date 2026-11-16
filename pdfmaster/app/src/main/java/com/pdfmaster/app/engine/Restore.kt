@@ -74,7 +74,7 @@ private class Scope {
  */
 object Restore {
     enum class Mode(val label: String, val blurb: String) {
-        AUTO("AI Auto Enhance", "Analyses the page on your phone and picks the settings. Nothing is sent anywhere"),
+        AUTO("AI Auto Enhance", "Analyses the page on this device and picks the settings. Nothing is sent anywhere"),
         CLEAN("Professional Clean Scan", "Even light, clean paper, sharp dark text. Colours are kept"),
         WHITE("White Paper Restoration", "Strong whitening for grey, yellow or stained paper"),
         BW("Black & White Document", "Crisp black text on white, like a printed original. Stamps and signatures keep their tones"),

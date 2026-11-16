@@ -152,7 +152,7 @@ class ScanPdfWriter(private val context: Context, private val mode: ScanClean.Mo
             m
         }
         val pdPage = PDPage(box); doc.addPage(pdPage)
-        val img = if (pageMode == ScanClean.Mode.COLOUR || pageMode == ScanClean.Mode.GREY) JPEGFactory.createFromImage(doc, image, 0.92f) else LosslessFactory.createFromImage(doc, image)
+        val img = if (pageMode == ScanClean.Mode.COLOUR || pageMode == ScanClean.Mode.GREY) Pdfx.jpeg(doc, image, 0.92f) else Pdfx.lossless(doc, image)
         PDPageContentStream(doc, pdPage).use { cs ->
             cs.drawImage(img, ox, box.height - oy - sh, sw, sh)
             val lines = if (typed) use else page.lines.filter { it.confidence >= 0.5f }

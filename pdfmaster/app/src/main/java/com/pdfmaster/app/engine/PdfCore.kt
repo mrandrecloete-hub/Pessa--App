@@ -54,7 +54,7 @@ class PdfBoxRasterizer(file: File, password: String? = null) : PageRasterizer {
     override fun render(index: Int, maxSide: Int): Bitmap {
         val box = doc.getPage(index).cropBox
         val scale = maxSide / maxOf(box.width, box.height)
-        return renderer.renderImage(index, scale)
+        return Pdfx.render(renderer, index, scale)
     }
     override fun close() = doc.close()
 }

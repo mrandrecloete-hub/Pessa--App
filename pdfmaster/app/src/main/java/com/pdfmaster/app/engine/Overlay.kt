@@ -83,7 +83,7 @@ object OverlayWriter {
                 BitmapFactory.decodeByteArray(o.bytes, 0, o.bytes.size, opts)
                 val img = if (opts.outMimeType == "image/jpeg") JPEGFactory.createFromByteArray(doc, o.bytes) else {
                     val bmp = BitmapFactory.decodeByteArray(o.bytes, 0, o.bytes.size) ?: throw IllegalArgumentException("A picture could not be read")
-                    LosslessFactory.createFromImage(doc, bmp).also { bmp.recycle() }
+                    Pdfx.lossless(doc, bmp).also { bmp.recycle() }
                 }
                 cs.drawImage(img, o.x, h - o.y - o.h, o.w, o.h)
             }

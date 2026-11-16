@@ -1,0 +1,8 @@
+build/
+.gradle/
+.kotlin/
+*.iml
+.idea/
+# The repository root ignores *.png for the web app; the desktop app needs its brand images.
+!*.png
+!*.ico

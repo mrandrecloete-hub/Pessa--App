@@ -185,7 +185,7 @@ class DocWriter(private val context: Context, private val pageSize: PDRectangle 
         val img: PDImageXObject = try {
             if (opts.outMimeType == "image/jpeg") JPEGFactory.createFromByteArray(doc, b.bytes) else {
                 val bmp = BitmapFactory.decodeByteArray(b.bytes, 0, b.bytes.size) ?: return
-                (if (bmp.hasAlpha()) LosslessFactory.createFromImage(doc, bmp) else JPEGFactory.createFromImage(doc, bmp, 0.9f)).also { bmp.recycle() }
+                (if (bmp.hasAlpha()) Pdfx.lossless(doc, bmp) else Pdfx.jpeg(doc, bmp, 0.9f)).also { bmp.recycle() }
             }
         } catch (e: Throwable) { return }
         val natW = img.width * 0.75f; val natH = img.height * 0.75f // 96 pixels per inch

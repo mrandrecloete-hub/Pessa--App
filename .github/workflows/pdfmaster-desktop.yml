@@ -1,0 +1,101 @@
+# PDFMASTER for Windows: tests on Linux, builds the installer (.msi) on a Windows runner, and publishes it from main.
+#
+# Every push that changes pdfmaster-desktop/ or the shared document engine (pdfmaster/.../engine/): runs the desktop tests and builds the
+# Windows installer, attached to the run as a download (Actions > the run > Artifacts).
+# Push to main: also publishes a GitHub release  pdfmaster-desktop-vX.Y.Z  with PDFMASTER-Desktop-X.Y.Z.msi and SHA256SUMS.txt.
+# The installed app checks these releases and updates itself. The installer is not code signed, so Windows SmartScreen may show
+# "Windows protected your PC": choose More info, then Run anyway.
+name: PDFMASTER Desktop
+
+on:
+  push:
+    paths:
+      - "pdfmaster-desktop/**"
+      - "pdfmaster/app/src/main/java/com/pdfmaster/app/engine/**"
+      - ".github/workflows/pdfmaster-desktop.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, for example 0.2.0 (empty: next patch version)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pdfmaster-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pdfmaster-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Desktop tests (shared engine, restoration, tools, updater, screens)
+        run: ./gradlew --no-daemon test
+
+  windows:
+    needs: test
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: bash
+        working-directory: pdfmaster-desktop
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Work out the version
+        id: v
+        working-directory: .
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          LAST=$(git tag --list 'pdfmaster-desktop-v*' --sort=-v:refname | head -1)
+          FLOOR=$(tr -d '[:space:]' < pdfmaster-desktop/VERSION)   # releases never go below this
+          if [ -n "$INPUT_VERSION" ]; then V="$INPUT_VERSION"
+          elif [ -z "$LAST" ] || [ "$(printf '%s\n%s\n' "${LAST#pdfmaster-desktop-v}" "$FLOOR" | sort -V | tail -1)" != "${LAST#pdfmaster-desktop-v}" ]; then V="$FLOOR"
+          else IFS=. read -r MA MI PA <<< "${LAST#pdfmaster-desktop-v}"; if [ "$PA" -ge 99 ]; then MI=$((MI+1)); PA=0; else PA=$((PA+1)); fi; V="$MA.$MI.$PA"; fi
+          echo "$V" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,4}$' || { echo "::error::Bad version $V"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"; echo "Version $V (last release: ${LAST:-none})"
+
+      - name: Build the Windows installer
+        run: ./gradlew --no-daemon packageMsi -PdesktopVersion=${{ steps.v.outputs.version }}
+
+      - name: Name and checksum the installer
+        run: |
+          V=${{ steps.v.outputs.version }}
+          MSI=$(find build/compose/binaries -name '*.msi' | head -1); echo "Built: $MSI"; ls -la "$MSI"
+          mkdir -p "$RUNNER_TEMP/out"; cp "$MSI" "$RUNNER_TEMP/out/PDFMASTER-Desktop-$V.msi"
+          cd "$RUNNER_TEMP/out" && sha256sum PDFMASTER-Desktop-*.msi > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDFMASTER-Windows-installer
+          path: ${{ runner.temp }}/out/*
+          retention-days: 30
+
+      - name: Publish the GitHub release (main only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: |
+          V=${{ steps.v.outputs.version }}; TAG="pdfmaster-desktop-v$V"
+          LAST=$(git tag --list 'pdfmaster-desktop-v*' --sort=-v:refname | head -1)
+          { git log --no-merges --format='- %s' ${LAST:+$LAST..}HEAD -- pdfmaster-desktop pdfmaster/app/src/main/java/com/pdfmaster/app/engine | head -20; } > "$RUNNER_TEMP/notes.md"
+          [ -s "$RUNNER_TEMP/notes.md" ] || echo "Improvements and fixes." > "$RUNNER_TEMP/notes.md"
+          printf '\nInstall: download PDFMASTER-Desktop-%s.msi and double-click it. The installer is not code signed, so Windows may warn: choose More info, then Run anyway. Installed apps update themselves.\n' "$V" >> "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" "$RUNNER_TEMP"/out/* --title "PDFMASTER for Windows $V" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA"
