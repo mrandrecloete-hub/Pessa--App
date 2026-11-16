@@ -25,8 +25,11 @@ android {
         applicationId = "com.pdfmaster.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // CI passes -PpdfmasterVersion=1.2.3. The version code is made from it, so it always rises with the version.
+        val ver = (project.findProperty("pdfmasterVersion") as String?) ?: "0.1.0"
+        val parts = ver.split(".").map { it.toIntOrNull() ?: 0 } + listOf(0, 0, 0)
+        versionName = ver
+        versionCode = maxOf(1, parts[0] * 10000 + parts[1] * 100 + parts[2])
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Real phones and tablets. Leaving out x86 (emulators) keeps the download about 20 MB smaller.
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
