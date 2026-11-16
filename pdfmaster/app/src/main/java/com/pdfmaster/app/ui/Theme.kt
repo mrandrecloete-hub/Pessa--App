@@ -22,7 +22,7 @@ object Brand {
     val Cyan = Color(0xFF22D3EE)
     val Violet = Color(0xFF8B5CF6)
     val Grey = Color(0xFFF5F7FB)
-    val Hero = Brush.linearGradient(listOf(Color(0xFF0B1B36), Indigo, Violet))
+    val Hero = Brush.linearGradient(listOf(Color(0xFF0B1B36), Color(0xFF1D3FA8), Indigo))
     val Accent = Brush.linearGradient(listOf(Royal, Indigo, Violet))
 }
 
@@ -36,13 +36,13 @@ private val Light = lightColorScheme(
     surfaceContainerLowest = Color.White, error = Color(0xFFDC2626)
 )
 private val Dark = darkColorScheme(
-    primary = Color(0xFF9B9EFF), onPrimary = Color(0xFF0F1147), primaryContainer = Color(0xFF30338F), onPrimaryContainer = Color(0xFFE4E5FF),
-    secondary = Color(0xFF8FB4FF), onSecondary = Color(0xFF062457), secondaryContainer = Color(0xFF173A7A), onSecondaryContainer = Color(0xFFDCE8FF),
-    tertiary = Brand.Cyan, tertiaryContainer = Color(0xFF0B4F5B), onTertiaryContainer = Color(0xFFD3F7FC),
-    background = Brand.Navy, onBackground = Color(0xFFE8ECF4), surface = Color(0xFF0E1A2D), onSurface = Color(0xFFE8ECF4),
-    surfaceVariant = Color(0xFF1A2942), onSurfaceVariant = Color(0xFFA9B4C8), outline = Color(0xFF52607A), outlineVariant = Color(0xFF26354F),
-    surfaceContainer = Color(0xFF12203A), surfaceContainerLow = Color(0xFF0E1A2D), surfaceContainerHigh = Color(0xFF182843), surfaceContainerHighest = Color(0xFF1F3050),
-    surfaceContainerLowest = Color(0xFF091423), error = Color(0xFFFF8A8A)
+    primary = Color(0xFF3B82F6), onPrimary = Color.White, primaryContainer = Color(0xFF12306B), onPrimaryContainer = Color(0xFFD6E4FF),
+    secondary = Brand.Cyan, onSecondary = Color(0xFF00363D), secondaryContainer = Color(0xFF0E3A5C), onSecondaryContainer = Color(0xFFCFF5FF),
+    tertiary = Brand.Violet, tertiaryContainer = Color(0xFF3B2A7A), onTertiaryContainer = Color(0xFFE9DDFF),
+    background = Color(0xFF050E1D), onBackground = Color(0xFFEAF0FA), surface = Color(0xFF0B1A33), onSurface = Color(0xFFEAF0FA),
+    surfaceVariant = Color(0xFF14284A), onSurfaceVariant = Color(0xFF9FB2D3), outline = Color(0xFF3A5280), outlineVariant = Color(0xFF1E3358),
+    surfaceContainer = Color(0xFF0F2040), surfaceContainerLow = Color(0xFF0B1A33), surfaceContainerHigh = Color(0xFF14284A), surfaceContainerHighest = Color(0xFF1A3159),
+    surfaceContainerLowest = Color(0xFF040B17), error = Color(0xFFFF8A8A)
 )
 
 private val Type = Typography().let { t ->

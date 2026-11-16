@@ -1,6 +1,6 @@
 # PDFMASTER development status
 
-Version 0.1.0 (version code 1). Last updated 16 November 2026.
+Version 0.2.0. Last updated 16 November 2026. Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
 
 ## The most important limit of this report
 The app has **not been run on a real phone or emulator yet**. The build machine has no emulator support. What was verified is listed under "Tests". Anything that needs a real screen, camera or Android's own PDF renderer (page display, zoom gestures, the editor's touch handling, scanning, OCR, sharing, file pickers, notifications) is written and compiles but is **untested on a device**. Expect bugs there until the first device test.
@@ -8,8 +8,8 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 ## APK build status
 | Item | Status |
 | --- | --- |
-| Debug APK | Built: `app/build/outputs/apk/debug/app-debug.apk` (about 45 MB) |
-| Release APK | Built and signed: `app/build/outputs/apk/release/app-release.apk` (about 39 MB) |
+| Debug APK | Built from CI or `./gradlew :app:assembleDebug` |
+| Release APK | Built and signed: `app/build/outputs/apk/release/app-release.apk` (about 39 MB). Pushes build it automatically: see `.github/workflows/pdfmaster-build.yml` |
 | Signature | Verified with `apksigner verify` (APK Signature Scheme v2), zip alignment checked |
 | Package | `com.pdfmaster.app`, min Android 8.0 (API 26), target API 35, arm64-v8a and armeabi-v7a |
 | Installed on a device | **Not done** |
@@ -61,6 +61,7 @@ Not covered by any test: everything in the first section, and the cloud AI conne
 - Settings: profile name, theme, default export format, compression, picture quality, OCR after scan, AI privacy, storage and temp files, notifications, about, privacy policy, terms. Language is English only. Save location is the in-app library plus "Save to device".
 
 ### Not built yet
+- "Pro" badge and drag and drop import from the design mock-up (there is no Pro plan; import is tap to browse).
 - Editing existing PDF text in place (needs a commercial grade PDF engine).
 - Certificate based digital signatures and signature verification.
 - Old DOC, XLS, PPT files and TIFF as input.

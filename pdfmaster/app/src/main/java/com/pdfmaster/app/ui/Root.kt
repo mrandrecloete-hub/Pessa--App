@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -96,13 +97,14 @@ fun MainTabs(vm: AppViewModel, nav: Nav) {
         NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dpValue()) {
             tabs.forEachIndexed { i, t ->
                 NavigationBarItem(selected = tab == i, onClick = { tab = i }, icon = { Icon(if (tab == i) t.selected else t.icon, t.label) },
-                    label = { Text(if (t.label == "AI Assistant") "AI" else t.label, maxLines = 1) })
+                    label = { Text(t.label, maxLines = 1, style = MaterialTheme.typography.labelSmall) },
+                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Color.White, selectedTextColor = MaterialTheme.colorScheme.onSurface, indicatorColor = MaterialTheme.colorScheme.primary))
             }
         }
     }) { pad ->
         Box(Modifier.fillMaxSize().padding(pad)) {
             when (tab) {
-                0 -> HomeScreen(vm, nav, seeAll = { f -> docFilter = f; tab = 2 }, toTools = { tab = 1 })
+                0 -> HomeScreen(vm, nav, seeAll = { f -> docFilter = f; tab = 2 }, toTools = { tab = 1 }, toProfile = { tab = 4 })
                 1 -> ToolsScreen(nav)
                 2 -> DocumentsScreen(vm, nav, docFilter) { docFilter = it }
                 3 -> AiScreen(vm, nav)

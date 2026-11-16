@@ -25,9 +25,8 @@ class AppLaunchTest {
 
     @Test fun launches_andEveryTabAndToolScreenOpens() {
         rule.onNodeWithText("PDFMASTER").assertIsDisplayed()
-        rule.onNodeWithText("Welcome").assertIsDisplayed()
         rule.onNodeWithText("Import PDF").assertIsDisplayed()
-        rule.onNodeWithText("Quick actions").assertIsDisplayed()
+        rule.onNodeWithText("Quick Actions").assertIsDisplayed()
         rule.onNodeWithText("No documents yet").performScrollTo().assertIsDisplayed()
 
         rule.onNodeWithText("Tools").performClick()
@@ -50,8 +49,8 @@ class AppLaunchTest {
         rule.onNodeWithText("Your library is empty").assertExists()
         rule.onNodeWithText("Converted").assertExists()   // a filter chip further along the scrolling row
 
-        rule.onNodeWithText("AI").performClick()
-        rule.onNodeWithText("AI Assistant").assertIsDisplayed()
+        rule.onAllNodesWithText("AI Assistant")[0].performClick()
+        rule.onNodeWithText("Choose a PDF to work with").assertExists()
         rule.onNodeWithText("Choose a PDF to work with").assertIsDisplayed()
 
         rule.onNodeWithText("Profile").performClick()

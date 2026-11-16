@@ -3,6 +3,19 @@ package com.pdfmaster.app.ui
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import com.pdfmaster.app.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -41,11 +54,15 @@ val IMPORT_TYPES = arrayOf("application/pdf", "image/*", "text/*", "application/
 private val QUICK = listOf("edit" to "Edit PDF", "to_docx" to "PDF to Word", "to_xlsx" to "PDF to Excel", "to_pptx" to "PDF to PowerPoint", "merge" to "Merge PDF",
     "split" to "Split PDF", "compress" to "Compress PDF", "form" to "Fill PDF", "sign" to "Sign PDF", "scan" to "Scan document")
 
+private val QUICK_TINT = mapOf("edit" to Color(0xFF3B82F6), "to_docx" to Color(0xFF2563EB), "to_xlsx" to Color(0xFF16A34A), "to_pptx" to Color(0xFFEA580C), "merge" to Color(0xFF8B5CF6),
+    "split" to Color(0xFFA855F7), "compress" to Color(0xFF14B8A6), "form" to Color(0xFF22D3EE), "sign" to Color(0xFFEC4899), "scan" to Color(0xFF38BDF8))
+private fun Color.lighten() = Color(red + (1 - red) * 0.35f, green + (1 - green) * 0.35f, blue + (1 - blue) * 0.35f)
+
 private val TOOL_TINTS = mapOf(Groups.EDIT to Brand.Indigo, Groups.ORGANISE to Brand.Royal, Groups.FROM to Color(0xFF0E8FA3), Groups.TO to Color(0xFFEA580C), Groups.SECURE to Color(0xFFDC2626), Groups.SCAN to Brand.Violet)
 fun tint(spec: ToolSpec): Color = TOOL_TINTS[spec.group] ?: Brand.Indigo
 
 @Composable
-fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: () -> Unit) {
+fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: () -> Unit, toProfile: () -> Unit = {}) {
     val docs by vm.docs.collectAsStateWithLifecycle()
     val settings by vm.settings.collectAsStateWithLifecycle()
     val jobs by vm.jobs.jobs.collectAsStateWithLifecycle()
@@ -61,34 +78,36 @@ fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: ()
 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item {
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)).background(Brand.Hero).statusBarsPadding().padding(20.dp)) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(Color.White), contentAlignment = Alignment.Center) {
-                            Text("M", color = Brand.Indigo, fontWeight = FontWeight.Black, fontSize = 22.sp)
-                        }
-                        Spacer(Modifier.width(10.dp))
-                        Text("PDFMASTER", color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp, letterSpacing = 1.5.sp)
+            Column(Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color(0xFF0E2A66), MaterialTheme.colorScheme.background))).statusBarsPadding().padding(horizontal = 16.dp, vertical = 14.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(R.drawable.logo_mark), null, Modifier.size(64.dp).clip(RoundedCornerShape(18.dp)))
+                    Column(Modifier.padding(start = 14.dp).weight(1f)) {
+                        Text(buildAnnotatedString { withStyle(SpanStyle(color = Color.White)) { append("PDF") }; withStyle(SpanStyle(color = Brand.Cyan)) { append("MASTER") } }, fontSize = 30.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.5).sp, maxLines = 1)
+                        Text("Every Document. Every Format. One Intelligent Workspace.", color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp, lineHeight = 15.sp)
                     }
-                    Spacer(Modifier.height(18.dp))
-                    Text(if (settings.userName.isBlank()) "Welcome" else "Welcome, ${settings.userName}", color = Color.White, style = MaterialTheme.typography.headlineMedium)
-                    Text("Edit, convert, sign and organise your documents", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(16.dp))
-                    TextField(query, { query = it }, placeholder = { Text("Search documents") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, singleLine = true,
-                        trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Outlined.Close, "Clear") } },
-                        shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface, unfocusedContainerColor = MaterialTheme.colorScheme.surface))
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).background(Color.White).clickable { picker.launch(IMPORT_TYPES) }.heightIn(min = 52.dp).padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                            Icon(Icons.Outlined.FileOpen, null, tint = Brand.Indigo); Spacer(Modifier.width(8.dp))
-                            Text("Import PDF", color = Brand.Indigo, style = MaterialTheme.typography.titleSmall)
-                        }
-                        Row(Modifier.clip(RoundedCornerShape(18.dp)).background(Color.White.copy(alpha = 0.18f)).clickable { nav.tool("scan") }.heightIn(min = 52.dp).padding(horizontal = 18.dp),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.DocumentScanner, null, tint = Color.White); Spacer(Modifier.width(8.dp)); Text("Scan", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                    Box(Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.12f)).clickable(onClick = toProfile), contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Person, "Profile", tint = Color.White) }
+                }
+                Spacer(Modifier.height(16.dp))
+                Row(Modifier.fillMaxWidth().height(52.dp).clip(RoundedCornerShape(16.dp)).background(Color.White.copy(alpha = 0.08f)).border(1.dp, Color.White.copy(alpha = 0.16f), RoundedCornerShape(16.dp)).padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Search, null, tint = Color.White.copy(alpha = 0.75f))
+                    BasicTextField(query, { query = it }, singleLine = true, textStyle = androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = 16.sp), cursorBrush = SolidColor(Brand.Cyan), modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
+                        decorationBox = { inner -> Box(contentAlignment = Alignment.CenterStart) { if (query.isEmpty()) Text("Search documents...", color = Color.White.copy(alpha = 0.55f), fontSize = 16.sp); inner() } })
+                    if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Outlined.Close, "Clear", tint = Color.White) }
+                    else IconButton(onClick = { nav.tool("scan") }) { Icon(Icons.Outlined.DocumentScanner, "Scan a document", tint = Color.White) }
+                }
+                Spacer(Modifier.height(16.dp))
+                // Import card: dashed border, tap to choose files.
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0xFF123A8C).copy(alpha = 0.45f)).drawBehind {
+                    drawRoundRect(Brand.Royal, style = Stroke(2.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f))), cornerRadius = androidx.compose.ui.geometry.CornerRadius(22.dp.toPx()))
+                }.clickable { picker.launch(IMPORT_TYPES) }.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(84.dp).clip(RoundedCornerShape(22.dp)).background(Color.White.copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Outlined.CloudUpload, null, tint = Brand.Cyan, modifier = Modifier.size(48.dp))
+                    }
+                    Column(Modifier.padding(start = 16.dp).weight(1f)) {
+                        Text(buildAnnotatedString { withStyle(SpanStyle(color = Color.White)) { append("Import Your ") }; withStyle(SpanStyle(color = Brand.Cyan)) { append("PDF") } }, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text("Tap to browse your phone. Word, Excel, PowerPoint and pictures too.", color = Color.White.copy(alpha = 0.75f), fontSize = 13.sp, lineHeight = 17.sp, modifier = Modifier.padding(top = 2.dp, bottom = 10.dp))
+                        Row(Modifier.clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Brand.Royal, Color(0xFF3B82F6)))).padding(horizontal = 18.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.FolderOpen, null, tint = Color.White, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)); Text("Import PDF", color = Color.White, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -118,16 +137,17 @@ fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: ()
             }
         }
         item {
-            SectionTitle("Quick actions", action = "All tools", onAction = toTools)
+            SectionTitle("Quick Actions", action = "See All  \u2192", onAction = toTools)
             Column(Modifier.padding(horizontal = 12.dp)) {
                 QUICK.chunked(5).forEach { row ->
                     Row(Modifier.fillMaxWidth()) {
                         row.forEach { (id, label) ->
-                            val spec = tool(id)
-                            Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable { nav.tool(id) }.padding(vertical = 10.dp, horizontal = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                IconBadge(spec.icon, tint(spec), 50.dp)
+                            val spec = tool(id); val col = QUICK_TINT[id] ?: tint(spec)
+                            Column(Modifier.weight(1f).padding(3.dp).clip(RoundedCornerShape(16.dp)).background(Brush.verticalGradient(listOf(col.copy(alpha = 0.30f), col.copy(alpha = 0.10f)))).border(1.dp, col.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+                                .clickable { nav.tool(id) }.padding(vertical = 10.dp, horizontal = 2.dp).heightIn(min = 82.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                                Icon(spec.icon, null, tint = col.lighten(), modifier = Modifier.size(28.dp))
                                 Spacer(Modifier.height(6.dp))
-                                Text(label, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 2, lineHeight = 13.sp)
+                                Text(label.replace("PDF to ", "PDF to\n").replace(" PDF", "\nPDF").replace(" document", "\nDocument"), fontSize = 11.sp, textAlign = TextAlign.Center, maxLines = 2, lineHeight = 13.sp, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -142,8 +162,8 @@ fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: ()
             }
         } else {
             val recent = docs.sortedByDescending { maxOf(it.openedAt, it.addedAt) }.take(6)
-            item { SectionTitle("Recent documents", action = "See all") { seeAll("all") } }
-            items(recent, key = { "r" + it.id }) { d -> DocRow(d, { openDoc(d) }, Modifier.padding(horizontal = 8.dp)) { IconButton(onClick = { actions = d }) { Icon(Icons.Outlined.MoreVert, "More") } } }
+            item { SectionTitle("Recent Documents", action = "See All  \u2192") { seeAll("all") } }
+            items(recent, key = { "r" + it.id }) { d -> DocRow(d, { openDoc(d) }, Modifier.padding(horizontal = 16.dp, vertical = 3.dp).background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(16.dp)).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))) { IconButton(onClick = { actions = d }) { Icon(Icons.Outlined.MoreVert, "More") } } }
             val favs = docs.filter { it.favourite }
             if (favs.isNotEmpty()) {
                 item { SectionTitle("Favourites", action = "See all") { seeAll("fav") } }
@@ -168,15 +188,20 @@ fun HomeScreen(vm: AppViewModel, nav: Nav, seeAll: (String) -> Unit, toTools: ()
         }
         storage?.let { s ->
             item {
-                SectionTitle("Storage")
-                SoftCard(Modifier.padding(horizontal = 16.dp).fillMaxWidth().clickable { nav.go("settings/storage") }) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        IconBadge(Icons.Outlined.Storage, Brand.Royal)
-                        Column(Modifier.padding(start = 14.dp).weight(1f)) {
-                            Text("${s.files} file${if (s.files == 1) "" else "s"} using ${human(s.libraryBytes)}", style = MaterialTheme.typography.titleSmall)
-                            Text("${human(s.freeBytes)} free on this phone  ·  ${human(s.tempBytes)} temporary", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Icon(Icons.Outlined.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                val used = if (s.totalBytes > 0) ((s.totalBytes - s.freeBytes).toFloat() / s.totalBytes).coerceIn(0f, 1f) else 0f
+                Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp).fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceContainer).border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                    .clickable { nav.go("settings/storage") }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(progress = { used }, modifier = Modifier.fillMaxSize(), strokeWidth = 6.dp, color = Brand.Cyan, trackColor = MaterialTheme.colorScheme.outlineVariant)
+                        Text("${(used * 100).toInt()}%", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                    Column(Modifier.padding(start = 16.dp).weight(1f)) {
+                        Text("Storage Usage", style = MaterialTheme.typography.titleSmall)
+                        Text("${human(s.totalBytes - s.freeBytes)} / ${human(s.totalBytes)} on this phone", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("PDFMASTER: ${s.files} file${if (s.files == 1) "" else "s"}, ${human(s.libraryBytes)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Row(Modifier.clip(RoundedCornerShape(50)).border(1.dp, Brand.Royal, RoundedCornerShape(50)).padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Settings, null, tint = Color.White, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Manage", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

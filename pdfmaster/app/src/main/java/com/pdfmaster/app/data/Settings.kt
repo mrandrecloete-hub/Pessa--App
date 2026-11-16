@@ -25,7 +25,7 @@ private val Context.store by preferencesDataStore("settings")
 
 data class Settings(
     val userName: String = "",
-    val theme: String = "system",            // system, light, dark
+    val theme: String = "dark",              // system, light, dark
     val exportFormat: String = "docx",       // default "convert PDF to" choice
     val compress: String = "BALANCED",
     val imageDpi: Int = 150,
@@ -48,7 +48,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
     }
 
     val flow: Flow<Settings> = context.store.data.map { p ->
-        Settings(p[K.userName] ?: "", p[K.theme] ?: "system", p[K.exportFormat] ?: "docx", p[K.compress] ?: "BALANCED", p[K.imageDpi] ?: 150,
+        Settings(p[K.userName] ?: "", p[K.theme] ?: "dark", p[K.exportFormat] ?: "docx", p[K.compress] ?: "BALANCED", p[K.imageDpi] ?: 150,
             p[K.ocrAfterScan] ?: true, p[K.aiCloud] ?: false, p[K.aiProvider] ?: "anthropic", p[K.aiBaseUrl] ?: "", p[K.aiModel] ?: "", p[K.aiKeyEnc] ?: "", p[K.notifyDone] ?: true)
     }
 

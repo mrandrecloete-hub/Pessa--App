@@ -44,7 +44,7 @@ class AndroidRasterizer(file: File) : PageRasterizer {
     @Synchronized override fun close() { runCatching { renderer.close() }; runCatching { pfd.close() } }
 }
 
-data class StorageInfo(val files: Int, val libraryBytes: Long, val tempBytes: Long, val freeBytes: Long)
+data class StorageInfo(val files: Int, val libraryBytes: Long, val tempBytes: Long, val freeBytes: Long, val totalBytes: Long = 0)
 
 /** The app's own document library. Imported files are copied in, so the user's originals are never modified. */
 @Singleton
@@ -184,7 +184,7 @@ class Library @Inject constructor(@ApplicationContext private val context: Conte
     private fun size(dir: File): Long = dir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
 
     suspend fun storage(): StorageInfo = withContext(Dispatchers.IO) {
-        StorageInfo(root.listFiles()?.size ?: 0, size(root), size(temp) + size(shared), context.filesDir.usableSpace)
+        StorageInfo(root.listFiles()?.size ?: 0, size(root), size(temp) + size(shared), context.filesDir.usableSpace, context.filesDir.totalSpace)
     }
 
     /** Removes working files. With [olderThanMs] only stale ones go, so running jobs are not disturbed. */
