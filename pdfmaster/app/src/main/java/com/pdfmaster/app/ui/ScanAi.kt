@@ -6,6 +6,7 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -42,23 +43,27 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Camera scanning with Google's document scanner: edge detection, cropping, straightening, filters and several pages. */
+/** Camera scanning with Google's document scanner, then a clean up so the page looks like a freshly made document. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ScanScreen(vm: AppViewModel, nav: Nav) {
     val context = LocalContext.current
     val settings by vm.settings.collectAsStateWithLifecycle()
     val jobs by vm.jobs.jobs.collectAsStateWithLifecycle()
-    var scanned by remember { mutableStateOf<Doc?>(null) }
-    var ocrJob by rememberSaveable { mutableStateOf<Long?>(null) }
+    var original by remember { mutableStateOf<Doc?>(null) }
+    var polishJob by rememberSaveable { mutableStateOf<Long?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var started by rememberSaveable { mutableStateOf(false) }
+    var style by remember { mutableStateOf<String?>(null) }
+    var colour by remember { mutableStateOf<String?>(null) }
+    val curStyle = style ?: settings.scanStyle; val curColour = colour ?: settings.scanColour
+    fun polish(d: Doc) { polishJob = vm.runTool(tool("polish"), listOf(d), mapOf("style" to curStyle, "colour" to curColour, "a4" to "true"), emptyMap()) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { res ->
         val pdf = if (res.resultCode == Activity.RESULT_OK) GmsDocumentScanningResult.fromActivityResultIntent(res.data)?.pdf else null
-        if (pdf == null) { if (scanned == null) nav.back() }
+        if (pdf == null) { if (original == null) nav.back() }
         else vm.import(listOf(pdf.uri), Category.SCANNED) { docs ->
             val d = docs.firstOrNull()
-            if (d == null) error = "The scan could not be saved." else { scanned = d; vm.record("scan", "Scan document", d, detail = "${pdf.pageCount} page(s)")
-                if (settings.ocrAfterScan) ocrJob = vm.runTool(tool("ocr"), listOf(d), mapOf("skip" to "true", "txt" to "false"), emptyMap()) }
+            if (d == null) error = "The scan could not be saved." else { original = d; vm.record("scan", "Scan document", d, detail = "${pdf.pageCount} page(s)"); polish(d) }
         }
     }
     fun scan() {
@@ -70,32 +75,44 @@ fun ScanScreen(vm: AppViewModel, nav: Nav) {
             .addOnFailureListener { error = "The document scanner could not start on this phone. It needs Google Play services and, the first time, an internet connection to download the scanner. (${it.message ?: "no details"})" }
     }
     LaunchedEffect(Unit) { if (!started) { started = true; scan() } }
-    val job = jobs.firstOrNull { it.id == ocrJob }
-    val ocrDoc = (job?.result as? RunResult)?.docs?.firstOrNull { it.isPdf }
+    val job = jobs.firstOrNull { it.id == polishJob }
+    val result = job?.result as? RunResult
+    val clean = result?.docs?.firstOrNull { it.isPdf }
     Scaffold(topBar = { BackBar("Scan document", { nav.back() }) }) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            val d = scanned
+        Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            val d = original
             when {
                 error != null -> { EmptyState(Icons.Outlined.ErrorOutline, "Scanner not available", error!!) { Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Button(onClick = { error = null; scan() }) { Text("Try again") }
                     TextButton(onClick = { nav.c.popBackStack(); nav.tool("img_pdf") }) { Text("Use photos from the gallery instead") } } } }
                 d == null -> { CircularProgressIndicator(Modifier.padding(top = 80.dp)); Text("Opening the scanner", Modifier.padding(top = 16.dp)) }
                 else -> {
-                    Icon(Icons.Outlined.CheckCircle, null, tint = androidx.compose.ui.graphics.Color(0xFF16A34A), modifier = Modifier.size(56.dp))
-                    Text("Scan saved", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
-                    SoftCard(Modifier.fillMaxWidth().padding(top = 14.dp)) { DocRow(ocrDoc ?: d, { val o = ocrDoc ?: d; vm.opened(o); nav.c.popBackStack(); nav.open(o) }, Modifier.padding(4.dp)) }
-                    when (job?.state) {
-                        JobState.RUNNING -> { Text("Recognising the text so the scan can be searched", Modifier.padding(top = 18.dp, bottom = 8.dp), style = MaterialTheme.typography.bodyMedium)
-                            if (job.total > 0) LinearProgressIndicator(progress = { job.done.toFloat() / job.total }, modifier = Modifier.fillMaxWidth()) else LinearProgressIndicator(Modifier.fillMaxWidth()) }
-                        JobState.DONE -> Text(if (ocrDoc != null) "Text recognised. A searchable copy was saved next to the scan." else (job.result as? RunResult)?.notes?.firstOrNull() ?: "No text was found on the pages.",
-                            Modifier.padding(top = 14.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        JobState.FAILED -> Text("Text recognition failed: ${job.error}. The scan itself is saved.", Modifier.padding(top = 14.dp), color = MaterialTheme.colorScheme.error)
-                        else -> if (!settings.ocrAfterScan) Text("Text recognition after scanning is switched off in Profile.", Modifier.padding(top = 14.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (job?.state == JobState.RUNNING || job == null) {
+                        Text("Making your pages look like new", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 24.dp))
+                        Text("Evening out the paper, removing shadows, sharpening the text and fitting the page", Modifier.padding(top = 6.dp, bottom = 16.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        if (job != null && job.total > 0) { LinearProgressIndicator(progress = { job.done.toFloat() / job.total }, modifier = Modifier.fillMaxWidth()); Text("Page ${job.done + 1} of ${job.total}", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall) } else LinearProgressIndicator(Modifier.fillMaxWidth())
+                    } else if (job.state == JobState.DONE && clean != null) {
+                        Icon(Icons.Outlined.CheckCircle, null, tint = androidx.compose.ui.graphics.Color(0xFF16A34A), modifier = Modifier.size(56.dp))
+                        Text("Your document is ready", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 8.dp))
+                        SoftCard(Modifier.fillMaxWidth().padding(top = 14.dp)) { DocRow(clean, { vm.opened(clean); nav.c.popBackStack(); nav.open(clean) }, Modifier.padding(4.dp)) }
+                        Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Button(onClick = { vm.opened(clean); nav.c.popBackStack(); nav.open(clean) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Open") }
+                            OutlinedButton(onClick = { vm.share(listOf(clean)) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Share") }
+                        }
+                        result?.notes?.forEach { Text(it, Modifier.padding(top = 10.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    } else if (job.state == JobState.FAILED) {
+                        Icon(Icons.Outlined.ErrorOutline, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                        Text("The clean up did not work: ${job.error}. Your original scan is saved.", Modifier.padding(top = 10.dp), color = MaterialTheme.colorScheme.error)
                     }
-                    Spacer(Modifier.height(18.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(onClick = { scanned = null; ocrJob = null; scan() }, modifier = Modifier.weight(1f)) { Text("Scan another") }
-                        Button(onClick = { vm.share(listOf(ocrDoc ?: d)) }, modifier = Modifier.weight(1f), enabled = job?.state != JobState.RUNNING) { Text("Share") }
+                    if (job?.state != JobState.RUNNING && job != null) {
+                        Text("Try another look", Modifier.padding(top = 22.dp).fillMaxWidth(), style = MaterialTheme.typography.titleSmall)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { scanStyles.forEach { (k, l) -> FilterChip(curStyle == k, { style = k }, label = { Text(l.substringBefore(":")) }) } }
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { scanColours.forEach { (k, l) -> FilterChip(curColour == k, { colour = k }, label = { Text(l) }) } }
+                        if (curStyle == "typed") Text("Rebuilt retypes the recognised text so it is perfectly sharp. Check names and numbers afterwards, and note that handwriting stays as a picture.", Modifier.padding(top = 6.dp), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        OutlinedButton(onClick = { polish(d) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Apply this look") }
+                        Text("Original scan", Modifier.padding(top = 20.dp).fillMaxWidth(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        DocRow(d, { vm.opened(d); nav.c.popBackStack(); nav.open(d) })
+                        OutlinedButton(onClick = { original = null; polishJob = null; scan() }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Scan another document") }
                     }
                 }
             }

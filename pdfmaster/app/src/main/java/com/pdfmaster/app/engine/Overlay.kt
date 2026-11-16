@@ -162,7 +162,7 @@ object OverlayWriter {
 }
 
 /** One recognised line of text with its box, as fractions (0 to 1) of the displayed page from the top left. */
-data class OcrLine(val text: String, val left: Float, val top: Float, val right: Float, val bottom: Float)
+data class OcrLine(val text: String, val left: Float, val top: Float, val right: Float, val bottom: Float, val confidence: Float = 1f)
 
 object SearchablePdf {
     /**

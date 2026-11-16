@@ -35,7 +35,9 @@ data class Settings(
     val aiBaseUrl: String = "",
     val aiModel: String = "",
     val aiKeyEnc: String = "",               // API key, encrypted with a key in the Android Keystore
-    val notifyDone: Boolean = true
+    val notifyDone: Boolean = true,
+    val scanStyle: String = "clean",         // clean (cleaned page picture) or typed (text retyped from the scan)
+    val scanColour: String = "colour"        // colour, grey or bw
 )
 
 @Singleton
@@ -44,12 +46,12 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         val userName = stringPreferencesKey("userName"); val theme = stringPreferencesKey("theme"); val exportFormat = stringPreferencesKey("exportFormat")
         val compress = stringPreferencesKey("compress"); val imageDpi = intPreferencesKey("imageDpi"); val ocrAfterScan = booleanPreferencesKey("ocrAfterScan")
         val aiCloud = booleanPreferencesKey("aiCloud"); val aiProvider = stringPreferencesKey("aiProvider"); val aiBaseUrl = stringPreferencesKey("aiBaseUrl")
-        val aiModel = stringPreferencesKey("aiModel"); val aiKeyEnc = stringPreferencesKey("aiKeyEnc"); val notifyDone = booleanPreferencesKey("notifyDone")
+        val aiModel = stringPreferencesKey("aiModel"); val aiKeyEnc = stringPreferencesKey("aiKeyEnc"); val notifyDone = booleanPreferencesKey("notifyDone"); val scanStyle = stringPreferencesKey("scanStyle"); val scanColour = stringPreferencesKey("scanColour")
     }
 
     val flow: Flow<Settings> = context.store.data.map { p ->
         Settings(p[K.userName] ?: "", p[K.theme] ?: "dark", p[K.exportFormat] ?: "docx", p[K.compress] ?: "BALANCED", p[K.imageDpi] ?: 150,
-            p[K.ocrAfterScan] ?: true, p[K.aiCloud] ?: false, p[K.aiProvider] ?: "anthropic", p[K.aiBaseUrl] ?: "", p[K.aiModel] ?: "", p[K.aiKeyEnc] ?: "", p[K.notifyDone] ?: true)
+            p[K.ocrAfterScan] ?: true, p[K.aiCloud] ?: false, p[K.aiProvider] ?: "anthropic", p[K.aiBaseUrl] ?: "", p[K.aiModel] ?: "", p[K.aiKeyEnc] ?: "", p[K.notifyDone] ?: true, p[K.scanStyle] ?: "clean", p[K.scanColour] ?: "colour")
     }
 
     suspend fun get(): Settings = flow.first()
@@ -58,7 +60,7 @@ class SettingsStore @Inject constructor(@ApplicationContext private val context:
         context.store.edit { p ->
             p[K.userName] = s.userName; p[K.theme] = s.theme; p[K.exportFormat] = s.exportFormat; p[K.compress] = s.compress; p[K.imageDpi] = s.imageDpi
             p[K.ocrAfterScan] = s.ocrAfterScan; p[K.aiCloud] = s.aiCloud; p[K.aiProvider] = s.aiProvider; p[K.aiBaseUrl] = s.aiBaseUrl; p[K.aiModel] = s.aiModel
-            p[K.aiKeyEnc] = s.aiKeyEnc; p[K.notifyDone] = s.notifyDone
+            p[K.aiKeyEnc] = s.aiKeyEnc; p[K.notifyDone] = s.notifyDone; p[K.scanStyle] = s.scanStyle; p[K.scanColour] = s.scanColour
         }
     }
 }

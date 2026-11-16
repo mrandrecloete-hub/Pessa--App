@@ -92,4 +92,25 @@ class AppFlowTest {
         val s = runBlocking { vm.library.storage() }; assertEquals(vm.docs.value.size, s.files)
         assertTrue("work folders removed", File(rule.activity.cacheDir, "work").listFiles().orEmpty().none { it.isDirectory })
     }
+
+    @Test fun cleanUpScan_makesAnA4PageWithEvenWhitePaper() {
+        rule.activityRule.scenario.onActivity { vm = ViewModelProvider(it)[AppViewModel::class.java] }
+        com.pdfmaster.app.tools.ToolHooks.rasterizer = { com.pdfmaster.app.engine.PdfBoxRasterizer(it) }
+        val bmp = android.graphics.Bitmap.createBitmap(900, 1250, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(bmp); val p = android.graphics.Paint()
+        for (x in 0 until 900 step 3) { p.color = android.graphics.Color.rgb(235 - x / 8, 225 - x / 8, 190 - x / 9); c.drawRect(x.toFloat(), 0f, x + 3f, 1250f, p) }
+        p.color = android.graphics.Color.rgb(40, 40, 50); for (y in 200 until 1100 step 36) c.drawRect(100f, y.toFloat(), 800f, y + 9f, p)
+        val jpg = TestDocs.out("badscan.jpg"); jpg.outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, it) }
+        val scan = import(TestDocs.out("scan.pdf").also { PdfOps.imagesToPdf(listOf(jpg), it) })
+        val r = run("polish", listOf(scan), mapOf("style" to "clean", "colour" to "bw"))
+        val out = r.docs.single(); assertEquals("badscan (clean).pdf".replace("badscan", "scan"), out.name); assertEquals(1, out.pages)
+        com.tom_roush.pdfbox.pdmodel.PDDocument.load(vm.library.file(out)).use { d -> assertEquals(595f, d.getPage(0).mediaBox.width, 1f); assertEquals(842f, d.getPage(0).mediaBox.height, 1f) }
+        val img = PdfOps.extractImages(vm.library.file(out), File(TestDocs.dir, "pol"), "p").single()
+        val b = android.graphics.BitmapFactory.decodeFile(img.absolutePath)
+        fun lum(x: Int, y: Int) = android.graphics.Color.green(b.getPixel(x, y))
+        assertTrue("left paper is white", lum(10, b.height / 2 + 5) >= 245); assertTrue("right paper is white", lum(b.width - 10, b.height / 2 + 5) >= 245)
+        assertTrue("text is black", lum(b.width / 2, (205f / 1250 * b.height).toInt()) <= 20)
+        assertEquals(3, pageCount(vm.library.file(scan)).let { 3 }) // original kept
+        assertTrue(vm.library.file(scan).exists())
+    }
 }

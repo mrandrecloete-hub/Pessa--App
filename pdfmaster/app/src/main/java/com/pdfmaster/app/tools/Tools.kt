@@ -32,10 +32,13 @@ class ToolEnv(val context: Context, val library: Library, val job: JobRunner.Ctx
     fun pw(d: Doc): String? = passwords[d.id]
     /** Fails with a password request before any work starts when a protected file has no password yet. */
     fun need(d: Doc) { if (d.isPdf && pw(d) == null && needsPassword(file(d))) throw PasswordRequiredException(d.id) }
-    suspend fun raster(d: Doc): AndroidRasterizer = AndroidRasterizer(library.renderable(d, pw(d)))
+    suspend fun raster(d: Doc): PageRasterizer = ToolHooks.rasterizer(library.renderable(d, pw(d)))
     fun out(name: String) = File(work, name)
     val Doc.base: String get() = name.substringBeforeLast('.')
 }
+
+/** Lets tests replace the PDF renderer of the phone, which does not exist in a simulated Android. */
+object ToolHooks { @Volatile var rasterizer: (File) -> PageRasterizer = { AndroidRasterizer(it) } }
 
 class ToolSpec(
     val id: String, val title: String, val blurb: String, val icon: ImageVector, val group: String, val input: InputKind,
@@ -254,6 +257,34 @@ val TOOLS: List<ToolSpec> = listOf(
 
     // ---------- Scan and OCR ----------
     ToolSpec("scan", "Scan document", "Use the camera: edges, cropping and clean up are automatic", Icons.Outlined.DocumentScanner, Groups.SCAN, InputKind.ONE_PDF, screen = "scan"),
+    ToolSpec("polish", "Clean up scan", "Make scanned pages look like freshly created documents: even white paper, sharp text, A4", Icons.Outlined.AutoFixHigh, Groups.SCAN, InputKind.ONE_PDF, listOf(
+        ChoiceOpt("style", "Look", listOf("clean" to "Clean (sharp page picture)", "typed" to "Rebuilt (text retyped from the scan)"), "clean"),
+        ChoiceOpt("colour", "Colour", listOf("colour" to "Colour", "grey" to "Greyscale", "bw" to "Black and white"), "colour"),
+        ToggleOpt("a4", "Fit to a standard A4 page", true)), batch = true) { docs, o ->
+        val d = docs[0]; need(d)
+        val typed = o["style"] == "typed"
+        val mode = when (o["colour"]) { "bw" -> ScanClean.Mode.BW; "grey" -> ScanClean.Mode.GREY; else -> ScanClean.Mode.COLOUR }
+        val f = out("${d.base} (clean).pdf")
+        var retyped = 0; var skipped = 0
+        raster(d).use { r ->
+            ScanPdfWriter(context, mode, typed, o["a4"] != "false").use { w ->
+                for (i in 0 until r.pageCount) {
+                    job.progress.report(i, r.pageCount)
+                    val shot = r.render(i, 2600)
+                    val cleaned = try { ScanClean.clean(shot, mode, 2600) } finally { shot.recycle() }
+                    try {
+                        val lines = if (typed || settings.ocrAfterScan) try { Ocr.lines(cleaned) } catch (e: Exception) { if (typed) throw IllegalStateException("Text recognition is not available on this phone, so the text cannot be rebuilt. Use the Clean look instead.") else emptyList() } else emptyList()
+                        w.add(ScanPage(cleaned, lines))
+                    } finally { cleaned.recycle() }
+                }
+                retyped = w.retypedLines; skipped = w.skippedLines
+                w.save(f, d.base)
+            }
+        }
+        ToolOutput(listOf(Produced(f, f.name, Category.EDITED)), listOfNotNull(
+            "Each page was straightened onto an even white background with shadows and tint removed, and the text sharpened. Your original scan is kept.",
+            if (typed) "Rebuilt $retyped line(s) of text as sharp typed text${if (skipped > 0) ". $skipped line(s) were too unclear to retype safely and were left as they are" else ""}. Check names, numbers and amounts against the original: text recognition can misread. Logos, signatures, stamps and handwriting stay as pictures." else null))
+    },
     ToolSpec("ocr", "Make searchable (OCR)", "Recognise the text in scans so you can search and copy it", Icons.Outlined.ManageSearch, Groups.SCAN, InputKind.ONE_PDF,
         listOf(ToggleOpt("skip", "Skip pages that already have text", true), ToggleOpt("txt", "Also save the recognised text as a TXT file", false)), batch = true) { docs, o ->
         val d = docs[0]; need(d)

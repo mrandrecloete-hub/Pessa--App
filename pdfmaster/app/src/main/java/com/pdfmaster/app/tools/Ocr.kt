@@ -17,7 +17,7 @@ object Ocr {
         val w = bitmap.width.toFloat(); val h = bitmap.height.toFloat()
         return result.textBlocks.flatMap { b -> b.lines }.mapNotNull { l ->
             val r = l.boundingBox ?: return@mapNotNull null
-            OcrLine(l.text, (r.left / w).coerceIn(0f, 1f), (r.top / h).coerceIn(0f, 1f), (r.right / w).coerceIn(0f, 1f), (r.bottom / h).coerceIn(0f, 1f))
+            OcrLine(l.text, (r.left / w).coerceIn(0f, 1f), (r.top / h).coerceIn(0f, 1f), (r.right / w).coerceIn(0f, 1f), (r.bottom / h).coerceIn(0f, 1f), l.confidence)
         }.sortedWith(compareBy({ (it.top * 200).toInt() }, { it.left }))
     }
 }

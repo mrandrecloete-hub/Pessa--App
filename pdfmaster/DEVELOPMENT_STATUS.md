@@ -1,6 +1,6 @@
 # PDFMASTER development status
 
-Version 0.2.0. Last updated 16 November 2026. Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
+Version 0.3.0. Last updated 16 November 2026. Home screen and app icon redesigned to the midnight-blue direction (dark theme is now the default; light and system themes remain in Profile).
 
 ## The most important limit of this report
 The app has **not been run on a real phone or emulator yet**. The build machine has no emulator support. What was verified is listed under "Tests". Anything that needs a real screen, camera or Android's own PDF renderer (page display, zoom gestures, the editor's touch handling, scanning, OCR, sharing, file pickers, notifications) is written and compiles but is **untested on a device**. Expect bugs there until the first device test.
@@ -16,7 +16,7 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 | Code shrinking (R8) | Off on purpose until it can be tested on a device; turning it on should roughly halve the size |
 
 ## Tests
-`./gradlew :app:testDebugUnitTest`: **28 passed, 0 failed.** `python3 tools/verify_outputs.py`: **8 passed, 0 failed.**
+`./gradlew :app:testDebugUnitTest`: **33 passed, 0 failed.** `python3 tools/verify_outputs.py`: **8 passed, 0 failed.**
 
 | Suite | What it proves |
 | --- | --- |
@@ -25,6 +25,7 @@ The app has **not been run on a real phone or emulator yet**. The build machine 
 | EditFormsAiTest (5) | All editor item types written to a PDF (also on a rotated page) with the original text intact; searchable text layer; form read, fill, required check, flatten, reset; adding new fields then filling them; on-device analysis |
 | AppLaunchTest (1) | The real app starts (dependency injection, database, settings, navigation) and Home, Tools, a tool screen, the file picker sheet, Documents, AI Assistant, Profile, AI settings and Privacy policy open. Simulated Android (Robolectric), not a phone |
 | AppFlowTest (1) | Import into the library, merge, split, PDF to Word, batch conversion, protect, the password prompt (missing and wrong password), unlock, metadata, compare, page numbers, a failed job saving nothing, history without passwords, delete, temporary files removed |
+| ScanCleanTest (4) + AppFlowTest scan case | Clean up scan: a synthetic badly lit scan (yellow tint, shading, dark corner) becomes even white paper with dark text and a red logo kept; Black and white gives only black and white pixels; pages are fitted to A4 and real typed text is placed over painted-out lines (unsure lines are left alone); the original scan is kept. Run through the real tool path |
 | verify_outputs.py (8) | The produced DOCX, XLSX, PPTX, TIFF and PDF files open correctly in independent libraries (python-docx, openpyxl, python-pptx, Pillow, pypdf) |
 
 Not covered by any test: everything in the first section, and the cloud AI connection (no account was available).
@@ -53,6 +54,7 @@ Not covered by any test: everything in the first section, and the cloud AI conne
 - PDF to PowerPoint: each slide is a picture of the page (not editable text).
 - Office to PDF: text, headings, bold, italic, underline, colour, lists, tables and pictures are kept. Exact fonts, columns, headers, footers, charts, cell colours and slide design are not. Not a pixel-exact Office renderer.
 - OCR: Latin script languages only (bundled model). Recognised text is shown and can be copied, but there is no screen yet to correct it before saving.
+- Scan clean up (new in 0.3.0): after scanning, pages are evened out (shadows, tint and paper colour removed), sharpened and fitted to A4, in colour, greyscale or black and white. The optional Rebuilt look retypes recognised text as real sharp text over painted-out original lines; logos, stamps, signatures and handwriting stay as pictures, and lines the recogniser is unsure about (under 70 percent) are left as they were. Also available for any PDF as Tools, Clean up scan. **Tested only on synthetic pages: the real ML Kit recognition and real camera scans have not been tried, so Rebuilt may misread text and its output must be checked.** Result is not guaranteed to be perfect for very crumpled pages, strong glare or very dark photos.
 - Scanner: uses Google's document scanner (edges, crop, perspective, filters, multi-page). Needs Google Play services; the first use may need internet to download the scanner.
 - Compare: compares text page by page. Pictures and layout are not compared.
 - AI assistant: on the phone it picks key sentences, extracts dates, amounts, emails, phones, links and likely names, and finds passages matching a question, all with page numbers. This is text analysis, not a language model. Real summaries, explanations, translation, notes and table extraction use an optional cloud model (Claude or an OpenAI compatible service) with the user's own key, off by default, with consent per document. **The cloud path has never been run against a live service.** Answers can be saved as a Word document.

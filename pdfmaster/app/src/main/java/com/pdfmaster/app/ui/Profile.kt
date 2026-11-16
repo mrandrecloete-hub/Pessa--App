@@ -58,6 +58,9 @@ private fun ChoiceDialog(title: String, options: List<Pair<String, String>>, cur
     })
 }
 
+val scanStyles = listOf("clean" to "Clean: sharp page picture", "typed" to "Rebuilt: text retyped from the scan")
+val scanColours = listOf("colour" to "Colour", "grey" to "Greyscale", "bw" to "Black and white")
+
 @Composable
 fun ProfileScreen(vm: AppViewModel, nav: Nav) {
     val s by vm.settings.collectAsStateWithLifecycle()
@@ -88,6 +91,7 @@ fun ProfileScreen(vm: AppViewModel, nav: Nav) {
             Row2(Icons.Outlined.FolderOpen, "Save location", "Inside PDFMASTER. Use Save to device or Share to put a file anywhere else.")
             Row2(Icons.Outlined.Compress, "Compression", levels.first { it.first == s.compress }.second, { dialog = "compress" })
             Row2(Icons.Outlined.Image, "Picture quality when converting", "${s.imageDpi} dpi", { dialog = "dpi" })
+            Row2(Icons.Outlined.AutoFixHigh, "Scan look", "${scanStyles.first { it.first == s.scanStyle }.second}, ${scanColours.first { it.first == s.scanColour }.second}", { dialog = "scan" })
             Row2(Icons.Outlined.ManageSearch, "Recognise text after scanning (OCR)", "Makes scans searchable") { Switch(s.ocrAfterScan, { vm.save(s.copy(ocrAfterScan = it)) }) }
             Row2(Icons.Outlined.Draw, "Signatures", "Draw, import and manage", { nav.go("signatures") })
         }
@@ -110,6 +114,13 @@ fun ProfileScreen(vm: AppViewModel, nav: Nav) {
         "theme" -> ChoiceDialog("Theme", themes, s.theme, { dialog = "" }) { vm.save(s.copy(theme = it)); dialog = "" }
         "format" -> ChoiceDialog("Default export format", formats, s.exportFormat, { dialog = "" }) { vm.save(s.copy(exportFormat = it)); dialog = "" }
         "compress" -> ChoiceDialog("Compression", levels, s.compress, { dialog = "" }) { vm.save(s.copy(compress = it)); dialog = "" }
+        "scan" -> AlertDialog({ dialog = "" }, title = { Text("Scan look") }, confirmButton = { TextButton(onClick = { dialog = "" }) { Text("Done") } }, text = {
+            Column { Text("Applied automatically to every new scan.", style = MaterialTheme.typography.bodySmall)
+                Text("Look", Modifier.padding(top = 10.dp), style = MaterialTheme.typography.labelLarge)
+                scanStyles.forEach { (k, l) -> Row(Modifier.fillMaxWidth().clickable { vm.save(s.copy(scanStyle = k)) }, verticalAlignment = Alignment.CenterVertically) { RadioButton(s.scanStyle == k, { vm.save(s.copy(scanStyle = k)) }); Text(l, style = MaterialTheme.typography.bodyMedium) } }
+                Text("Colour", Modifier.padding(top = 10.dp), style = MaterialTheme.typography.labelLarge)
+                scanColours.forEach { (k, l) -> Row(Modifier.fillMaxWidth().clickable { vm.save(s.copy(scanColour = k)) }, verticalAlignment = Alignment.CenterVertically) { RadioButton(s.scanColour == k, { vm.save(s.copy(scanColour = k)) }); Text(l) } } }
+        })
         "dpi" -> ChoiceDialog("Picture quality", dpis, s.imageDpi.toString(), { dialog = "" }) { vm.save(s.copy(imageDpi = it.toInt())); dialog = "" }
     }
 }
