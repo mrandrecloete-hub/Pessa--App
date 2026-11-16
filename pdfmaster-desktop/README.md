@@ -19,4 +19,4 @@ The document engine (PDF tools, converters, restoration) is **the Android app's 
 ./gradlew packageMsi            # Windows installer (must run on Windows, needs WiX 3; CI does this)
 ./gradlew createDistributable   # runnable app folder for the current system
 ```
-The version is in `VERSION`; the release workflow counts up from it. See `.github/workflows/pdfmaster-desktop.yml`.
+Smaller installer: `-PslimPackage=true` keeps only the Material icons the app uses and `-PwindowsOnly=true` keeps only the 64-bit Windows OpenCV library (CI uses both; the installer drops from about 220 MB). The version is in `VERSION`; the release workflow counts up from it. See `.github/workflows/pdfmaster-desktop.yml`.

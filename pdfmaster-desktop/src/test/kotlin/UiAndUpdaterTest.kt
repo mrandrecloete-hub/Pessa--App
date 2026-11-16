@@ -31,7 +31,9 @@ class UiAndUpdaterTest {
         model.screen = Screen.Tool("merge", listOf(photo("photo1"))); shot("tool") { AppRoot(model) {} }
         model.screen = Screen.About; shot("about") { AppRoot(model) {} }
         val m2 = AppModel(); m2.screen = Screen.Restore(photo("photo2")); shot("restore", waitMs = 9000) { AppRoot(m2) {} }
-        assertTrue(File(out, "restore.png").length() > 10_000)
+        val pdf = File(out, "report.pdf").also { f -> javaClass.classLoader.getResourceAsStream("fixtures/report.pdf")!!.use { i -> f.outputStream().use { i.copyTo(it) } } }
+        val m3 = AppModel(); m3.screen = Screen.Viewer(pdf); shot("viewer", waitMs = 3000) { AppRoot(m3) {} }
+        assertTrue(File(out, "restore.png").length() > 10_000); assertTrue(File(out, "viewer.png").length() > 10_000)
     }
 
     // ---------------- updater ----------------

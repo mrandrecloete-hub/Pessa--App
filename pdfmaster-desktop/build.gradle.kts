@@ -37,15 +37,40 @@ tasks.named("processResources") { dependsOn(writeVersion) }
 // Same sample documents as the Android tests.
 sourceSets { test { resources.srcDir("../pdfmaster/app/src/test/resources") } }
 
+// ---- Smaller installer ----
+// -PslimPackage: keep only the Material icons this app uses (the full pack is 38 MB of thousands of icons).
+// -PwindowsOnly: keep only the 64-bit Windows OpenCV library (the OpenCV jar carries native code for every system, 110 MB).
+val slim = providers.gradleProperty("slimPackage").isPresent
+val windowsOnly = providers.gradleProperty("windowsOnly").isPresent
+val slimSources by configurations.creating { isCanBeConsumed = false; isTransitive = false }
+val openpnp by configurations.creating { isCanBeConsumed = false; isTransitive = false }
+dependencies { slimSources("org.jetbrains.compose.material:material-icons-extended-desktop:1.7.3"); openpnp("org.openpnp:opencv:4.9.0-0") }
+val usedIcons: Set<String> by lazy {
+    val re = Regex("Icons\\.Outlined\\.([A-Za-z0-9]+)")
+    fileTree("src/main/kotlin").matching { include("**/*.kt") }.files.flatMap { re.findAll(it.readText()).map { m -> m.groupValues[1] }.toList() }.toSet()
+}
+val slimIcons = tasks.register<Jar>("slimIcons") {
+    archiveBaseName.set("material-icons-used"); destinationDirectory.set(layout.buildDirectory.dir("slim"))
+    from({ zipTree(slimSources.files.first { it.name.startsWith("material-icons-extended") }) }) {
+        val keep = usedIcons; val base = "androidx/compose/material/icons/"
+        eachFile { val n = this.path
+            if (n.startsWith(base) && n.endsWith(".class")) { val m = Regex("""androidx/compose/material/icons/outlined/([A-Za-z0-9]+)Kt(\$.*)?\.class""").matchEntire(n); if (m == null || m.groupValues[1] !in keep) exclude() } }
+    }
+}
+val opencvWindows = tasks.register<Jar>("opencvWindows") {
+    archiveBaseName.set("opencv-windows"); destinationDirectory.set(layout.buildDirectory.dir("slim"))
+    from({ zipTree(openpnp.singleFile) }) { exclude("nu/pattern/opencv/linux/**", "nu/pattern/opencv/osx/**", "nu/pattern/opencv/windows/x86_32/**") }
+}
+
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
-    implementation(compose.materialIconsExtended)
+    if (slim) implementation(files(slimIcons)) else implementation(compose.materialIconsExtended)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
     implementation("org.apache.pdfbox:pdfbox:2.0.31")
     implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
     implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
-    implementation("org.openpnp:opencv:4.9.0-0")          // desktop OpenCV with native code for Windows, macOS and Linux
+    if (windowsOnly) implementation(files(opencvWindows)) else implementation("org.openpnp:opencv:4.9.0-0")   // desktop OpenCV with native code for Windows, macOS and Linux
     implementation("org.json:json:20250517")
     implementation("com.drewnoakes:metadata-extractor:2.19.0")   // reads the photo orientation (EXIF)
     testImplementation(kotlin("test"))

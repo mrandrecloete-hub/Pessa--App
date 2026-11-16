@@ -85,7 +85,7 @@ fun ViewerScreen(model: AppModel, file: File) {
                 Column(Modifier.weight(1f)) { Text(file.name, fontWeight = FontWeight.SemiBold, maxLines = 1); Text(session?.let { "Page ${list.firstVisibleItemIndex + 1} of ${it.count}" } ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 OutlinedTextField(query, { query = it }, Modifier.width(240.dp).height(52.dp), singleLine = true, placeholder = { Text("Search in document") }, trailingIcon = { IconButton({ search() }) { Icon(Icons.Outlined.Search, "Search") } })
                 IconButton({ zoom = (zoom - 0.15f).coerceAtLeast(0.4f) }) { Icon(Icons.Outlined.ZoomOut, "Zoom out") }
-                Text("${(zoom * 100).toInt()}%", Modifier.width(46.dp))
+                Text("${(zoom * 100).toInt()}%", Modifier.width(64.dp), maxLines = 1)
                 IconButton({ zoom = (zoom + 0.15f).coerceAtMost(4f) }) { Icon(Icons.Outlined.ZoomIn, "Zoom in") }
                 TextButton({ model.screen = Screen.Restore(file) }) { Icon(Icons.Outlined.PhotoFilter, null); Text("  Restore") }
                 TextButton({ model.screen = Screen.Tool("compress", listOf(file)) }) { Text("Compress") }

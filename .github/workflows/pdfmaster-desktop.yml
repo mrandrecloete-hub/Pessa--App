@@ -39,7 +39,7 @@ jobs:
           distribution: temurin
           java-version: "17"
       - name: Desktop tests (shared engine, restoration, tools, updater, screens)
-        run: ./gradlew --no-daemon test
+        run: ./gradlew --no-daemon test -PslimPackage=true
 
   windows:
     needs: test
@@ -72,7 +72,7 @@ jobs:
           echo "version=$V" >> "$GITHUB_OUTPUT"; echo "Version $V (last release: ${LAST:-none})"
 
       - name: Build the Windows installer
-        run: ./gradlew --no-daemon packageMsi -PdesktopVersion=${{ steps.v.outputs.version }}
+        run: ./gradlew --no-daemon packageMsi -PdesktopVersion=${{ steps.v.outputs.version }} -PslimPackage=true -PwindowsOnly=true
 
       - name: Name and checksum the installer
         run: |
