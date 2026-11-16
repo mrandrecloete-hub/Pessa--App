@@ -17,5 +17,6 @@ class PdfMasterApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         PDFBoxResourceLoader.init(this)
+        runCatching { com.pdfmaster.app.data.TempCleanupWorker.schedule(this) }
     }
 }
