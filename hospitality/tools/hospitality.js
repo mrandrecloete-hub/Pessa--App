@@ -388,6 +388,7 @@ var HOSP_ICON_DATA = {"messages": "data:image/webp;base64,UklGRsQMAABXRUJQVlA4WA
     var D = HOSP_ICON_DATA;
     ['messages', 'dashboard', 'stock', 'invoices', 'reports', 'expenses', 'smart', 'team', 'bookings', 'rooms', 'tabs', 'kitchen', 'guests', 'licences', 'tools'].forEach(function(n){ ICON3D[n] = D[n]; });
     ICON3D.accountant = D.money; ICON3D.pay = D.account; ICON3D.settings = D.settings; ICON3D.hubmoney = D.money;
+    ICON3D.about = DEV_LOGO_DATA_URL;
     ICON3D_KEY['v-bookings'] = 'bookings'; ICON3D_KEY['v-rooms'] = 'rooms'; ICON3D_KEY['v-tabs'] = 'tabs'; ICON3D_KEY['v-kds'] = 'kitchen'; ICON3D_KEY['v-guests'] = 'guests';
     ICON3D_KEY['v-comply'] = 'licences'; ICON3D_KEY['v-tools'] = 'tools'; ICON3D_KEY.settings = 'settings'; ICON3D_KEY.accountant = 'accountant';
     // the tiles on the dashboard: the action each one opens, and the picture it shows
