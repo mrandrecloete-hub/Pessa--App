@@ -6118,8 +6118,8 @@ function regHeroHtml(){
       '<path d="M-10 60C80 20 160 10 260 30" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4"/>' +
       '<g fill="#FFF6B0"><circle class="reg-spark" cx="300" cy="34" r="2.4"/><circle class="reg-spark" cx="196" cy="22" r="1.8" style="animation-delay:.8s"/><circle class="reg-spark" cx="372" cy="120" r="2" style="animation-delay:1.5s"/><circle class="reg-spark" cx="150" cy="150" r="1.6" style="animation-delay:2.1s"/></g></svg>' +
     '<h1 class="reg-sr">'+tr('Register your business')+'</h1>' +
-    '<div class="reg-brand"><span class="brandmark reg-logo" role="img" aria-label="Pesa"></span>' +
-      '<div><div class="reg-pesa">Pesa</div><div class="reg-nam">Namibia</div></div></div>' +
+    '<div class="reg-brand"><span class="brandmark reg-logo" role="img" aria-label="Pesa Retail Namibia"></span>' +
+      '<div><div class="reg-pesa">Pesa Retail</div><div class="reg-nam">Namibia</div></div></div>' +
     '<div class="reg-slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div>' +
     REG_MAP_SVG +
     '<svg class="reg-wave" viewBox="0 0 440 38" preserveAspectRatio="none" aria-hidden="true">' +
@@ -20258,7 +20258,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.218';
+var APP_VERSION = '2026.10.219';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20567,6 +20567,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.219', items:[
+    'The sign up page header now says Pesa Retail Namibia, and every page that was saved on phones is refreshed so the new names show'
+  ]},
   { v:'2026.10.218', items:[
     'Pesa Retail Namibia is now the name shown on the sign in, sign up and forgot password cards, in the menu and on the documents Pesa makes'
   ]},

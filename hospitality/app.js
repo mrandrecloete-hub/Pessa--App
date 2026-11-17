@@ -20236,7 +20236,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.11.2';
+var APP_VERSION = '2026.11.3';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20545,6 +20545,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.11.3', items:[
+    'The sign in, sign up and forgot password pages now say Pesa Hospitality Namibia, and the slogan is Your Comfort, Our Responsibility'
+  ]},
   { v:'2026.11.2', items:[
     'New app name: Pesa Hospitality Namibia, in the same Pesa green and gold, with the hospitality tools',
     'Room calendar (every room by night, tap an empty night to book), Find a free room, Waiting list with a WhatsApp offer, Housekeeping board, Split bill and merge tabs, Recipes and food cost, Team clock and monthly ratings, Occupancy and rates with CSV, and Guest messages for each stage of a stay'
