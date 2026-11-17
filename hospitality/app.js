@@ -20236,7 +20236,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.11.3';
+var APP_VERSION = '2026.11.4';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20545,6 +20545,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.11.4', items:[
+    'Pesa Hospitality Namibia now keeps its own saved data, apart from Pesa Retail Namibia. Before, both apps shared one browser storage, so the hospitality sign in page showed a company registered in the shop app. It now starts clean'
+  ]},
   { v:'2026.11.3', items:[
     'The sign in, sign up and forgot password pages now say Pesa Hospitality Namibia, and the slogan is Your Comfort, Our Responsibility'
   ]},

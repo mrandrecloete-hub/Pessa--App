@@ -1,6 +1,36 @@
 <meta charset="UTF-8">
 <meta name="referrer" content="no-referrer">
 <script>
+/* Pesa Hospitality Namibia keeps its own storage. It is served from the same web address as Pesa Retail Namibia, and a browser gives both
+   the same storage, so without this the hospitality app would show the shop app's companies and data (and the other way round).
+   Every key and database name this app uses is given the prefix "hosp:", so each app sees only its own records. */
+(function(){ try{
+  var P = 'hosp:';
+  function wrap(st){
+    function own(){ var a = []; for(var i = 0; i < st.length; i++){ var k = st.key(i); if(k && k.indexOf(P) === 0) a.push(k.slice(P.length)); } return a; }
+    var api = {
+      getItem:function(k){ return st.getItem(P + k); }, setItem:function(k, v){ st.setItem(P + k, v); }, removeItem:function(k){ st.removeItem(P + k); },
+      key:function(i){ var a = own(); return i < a.length ? a[i] : null; },
+      clear:function(){ own().forEach(function(k){ st.removeItem(P + k); }); }
+    };
+    return new Proxy(api, {
+      get:function(t, p){ if(p === 'length') return own().length; if(typeof p !== 'string') return undefined; if(p in t) return t[p]; var v = st.getItem(P + p); return v === null ? undefined : v; },
+      set:function(t, p, v){ st.setItem(P + String(p), String(v)); return true; },
+      has:function(t, p){ return (p in t) || st.getItem(P + String(p)) !== null; },
+      deleteProperty:function(t, p){ st.removeItem(P + String(p)); return true; },
+      ownKeys:function(){ return own(); },
+      getOwnPropertyDescriptor:function(t, p){ var v = st.getItem(P + String(p)); return v === null ? undefined : { value:v, writable:true, enumerable:true, configurable:true }; }
+    });
+  }
+  ['localStorage', 'sessionStorage'].forEach(function(n){ var real = window[n], w = wrap(real); Object.defineProperty(window, n, { configurable:true, get:function(){ return w; } }); });
+  if(window.IDBFactory){
+    var o = IDBFactory.prototype.open, d = IDBFactory.prototype.deleteDatabase;
+    IDBFactory.prototype.open = function(name, v){ return arguments.length > 1 ? o.call(this, P + name, v) : o.call(this, P + name); };
+    IDBFactory.prototype.deleteDatabase = function(name){ return d.call(this, P + name); };
+  }
+}catch(e){} })();
+</script>
+<script>
 /* Browser security policy for the live website and the installed app: only Pesa's own files and the PDF library may run,
    nothing can be embedded as a plugin, forms and links cannot be redirected, and data only leaves over https. It is not
    applied inside a preview frame, where the host page controls the rules. */
@@ -1881,4 +1911,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.11.3"></script>
+<script src="app.js?v=2026.11.4"></script>
