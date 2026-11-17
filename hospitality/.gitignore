@@ -7,3 +7,5 @@ tools/blaze_training/train.jsonl
 /*.png
 !/icon-*.png
 !/apple-touch-icon.png
+node_modules
+node_modules/
