@@ -392,7 +392,7 @@ function openAgentSheet(){
     }).join('') + '</div>' : '<div class="ac-help">' + tr('No notes yet. The assistant checks by itself every half hour and leaves notes here and in the Alert centre.') + '</div>') +
     '<div class="ac-btns" style="margin-top:12px;"><button class="btn btn-ghost" id="agAi" type="button">' + tr('Pesa Hospitality AI') + '</button><button class="btn btn-ghost" id="agFile" type="button">' + tr('Attach a CSV file') + '</button><button class="btn btn-ghost" id="agToggle" type="button">' + tr(on ? 'Pause assistant' : 'Turn assistant on') + '</button><button class="btn btn-primary" id="agRun" type="button">' + tr('Check now') + '</button></div>' +
     '<div class="rep-note" style="margin-top:12px;">' + tr('The assistant works from your own records on this device and only does what you confirm. These are signs worth checking, not proof that anyone did anything wrong. It will not remove records: that needs a manager or owner password and a reason on the page itself. Anything it does while offline sends when the connection returns.') + '</div>' +
-    '<div class="ac-foot"><i>Pesa Hospitality</i><span>' + tr('Your Mula, Your Pride') + '</span></div>' +
+    '<div class="ac-foot"><i>Pesa Hospitality</i><span>' + tr('Your Comfort, Our Responsibility') + '</span></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="agClose" type="button">' + tr('Close') + '</button></div>';
   var ov = openSheet(html);
   var shEl = ov.querySelector('.sheet'); if(shEl) shEl.classList.add('ac-dark');

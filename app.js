@@ -1809,7 +1809,7 @@ function resetAccountsForEmail(email){
 
 function renderForgotHtml(){
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Forgot password')+'</h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('Enter the email address on your account and we will send you a 6-digit reset code.')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA RETAIL NAMIBIA</div><h1>'+tr('Forgot password')+'</h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('Enter the email address on your account and we will send you a 6-digit reset code.')+'</p></div>' +
     '<div class="authbox">' +
       '<div id="fpStep1">' +
         '<div class="field"><label>'+tr('Email address')+'</label><input id="fpEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>' +
@@ -2333,7 +2333,7 @@ function showBioLock(){
   var u = State.session && bioUser(State.session.userId); if(!u){ return; }
   appEl.style.display = 'none'; authEl.style.display = 'flex';
   var company = State.company || {};
-  authEl.innerHTML = '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div></div>' +
+  authEl.innerHTML = '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA RETAIL NAMIBIA</div><h1>'+esc(company.tradingName||company.companyName||'Pesa Retail Namibia')+'</h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div></div>' +
     '<div class="authbox" style="text-align:center;">' +
       '<div class="avatar" style="margin:0 auto 8px;width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;background:var(--surface-3);color:var(--primary-dim);">'+esc(initials(u.name))+'</div>' +
       '<div style="font-weight:800;font-size:17px;">'+esc(u.name)+'</div><div style="color:var(--text-muted);font-size:13px;margin-bottom:14px;">'+tr('Pesa is locked')+'</div>' +
@@ -5921,7 +5921,7 @@ function showAuthScreen(view){
 function renderSignedOutHtml(){
   var company = State.company || {};
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('You have been logged out.')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA RETAIL NAMIBIA</div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa Retail Namibia')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('You have been logged out.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
@@ -6308,7 +6308,7 @@ function openInviteSheet(u){
 var _empFails = 0, _empUntil = 0, empSignupActive = false;
 function renderEmployeeSignupHtml(){
   var company = State.company || {};
-  return '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa')+'</h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('New employee sign up')+'</p></div>' +
+  return '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA RETAIL NAMIBIA</div><h1>'+esc(company.tradingName||company.companyName||'Pesa Retail Namibia')+'</h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('New employee sign up')+'</p></div>' +
     '<div class="authbox"><div id="empBox"></div><div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost" id="empBack" type="button">'+tr('Back to sign in')+'</button></div></div></div>';
 }
 function wireEmployeeSignup(root){
@@ -7414,7 +7414,7 @@ function renderLoginHtml(){
     '</button>';
   }).join('');
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('Sign in to continue')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA RETAIL NAMIBIA</div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa Retail Namibia')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div><p>'+tr('Sign in to continue')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
@@ -9233,7 +9233,7 @@ function posClose(){
 }
 function posHead(sub){
   var d = posDevice(), co = State.company || {};
-  return '<div class="pos-head"><div class="pos-logo" aria-hidden="true"></div><div style="min-width:0;flex:1;"><div class="pos-title">'+esc(co.tradingName||co.companyName||'Pesa')+' · '+tr('Point of sale')+'</div>' +
+  return '<div class="pos-head"><div class="pos-logo" aria-hidden="true"></div><div style="min-width:0;flex:1;"><div class="pos-title">'+esc(co.tradingName||co.companyName||'Pesa Retail Namibia')+' · '+tr('Point of sale')+'</div>' +
     '<div class="pos-sub">'+esc(d ? d.name+(d.terminalId?' · '+d.terminalId:'') : tr('This device is not linked to a card terminal'))+(sub?' · '+esc(sub):'')+'</div></div>' +
     '<div class="pos-head-btns">' + (POS.user ? '<button class="btn btn-ghost" id="posLockBtn">'+tr('Lock')+'</button>' : '') + '<button class="btn btn-ghost" id="posExitBtn">'+tr('Close')+'</button></div></div>';
 }
@@ -10883,7 +10883,7 @@ function xpText(blocks, title){
     });
     out.push('');
   });
-  out.push(''); out.push(tr('Created with Pesa') + '. Your Mula, Your Pride');
+  out.push(''); out.push(tr('Created with Pesa Retail Namibia') + '. Your Mula, Your Pride');
   return new Blob(['\uFEFF' + out.join('\r\n')], { type:'text/plain;charset=utf-8' });
 }
 
@@ -10993,7 +10993,7 @@ function xpDocx(blocks, title){
       body += tbl(b.cols.map(function(c){ return { w:c.width, al:c.align }; }), [b.cols.map(function(c){ return String(c.label); })].concat(b.rows), { borders:true, head:true, stripe:true, bold:b.bold });
     }
   });
-  body += para(tr('Created with Pesa') + '. Your Mula, Your Pride', { sz:16, color:'7A8F85' });
+  body += para(tr('Created with Pesa Retail Namibia') + '. Your Mula, Your Pride', { sz:16, color:'7A8F85' });
   var ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
   var document_ = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + ns + '><w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>';
   var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + ns + '><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri" w:eastAsia="Calibri"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-ZA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
@@ -11066,7 +11066,7 @@ function xpHtml(blocks, title){
     'p{margin:3px 0}.b{font-weight:700}table{border-collapse:collapse;width:100%;margin:8px 0 12px}table.g td{padding:3px 12px 3px 0;vertical-align:top}table.t{border:1px solid #D2E3DA}table.t th{background:' + hex + ';color:#fff;text-align:left;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:8px 10px}table.t td{padding:7px 10px;border-top:1px solid #D2E3DA}table.t tbody tr:nth-child(even){background:#F2F8F5}.r{text-align:right!important;font-variant-numeric:tabular-nums}.c{text-align:center}.foot{margin-top:26px;padding-top:10px;border-top:1px solid #D2E3DA;color:#6C8379;font-size:12px}' +
     '@media print{body{background:#fff}.page{margin:0;border:0;border-top:6px solid ' + hex + ';max-width:none}}';
   var html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + xpXe(title) + '</title><style>' + css + '</style></head><body><div class="page">' +
-    (shop ? '<p class="shop">' + xpXe(shop) + '</p>' : '') + body + '<div class="foot">' + xpXe(tr('Created with Pesa')) + '. Your Mula, Your Pride</div></div></body></html>';
+    (shop ? '<p class="shop">' + xpXe(shop) + '</p>' : '') + body + '<div class="foot">' + xpXe(tr('Created with Pesa Retail Namibia')) + '. Your Mula, Your Pride</div></div></body></html>';
   return new Blob([html], { type:'text/html;charset=utf-8' });
 }
 
@@ -11093,7 +11093,7 @@ function xpRtf(blocks, title){
     else { out += row(cols.map(function(c){ return String(c.label); }), true); b.rows.forEach(function(r, ri){ out += row(r, false, b.bold && b.bold.indexOf(ri) !== -1); }); }
     out += '\\pard\\sa60\\par\n';
   });
-  out += '{\\pard\\fs16 ' + esc_(tr('Created with Pesa') + '. Your Mula, Your Pride') + '\\par}}';
+  out += '{\\pard\\fs16 ' + esc_(tr('Created with Pesa Retail Namibia') + '. Your Mula, Your Pride') + '\\par}}';
   return new Blob([out], { type:'application/rtf' });
 }
 
@@ -14462,7 +14462,7 @@ function openDashboardDrawer(){
   overlay.innerHTML = '<div class="drawer">' +
     '<div class="app-watermark" aria-hidden="true"></div>' +
     '<div class="drawer-head"><h2>Menu</h2>' +
-      '<div class="drawer-logo" aria-hidden="true" title="Pesa"></div>' +
+      '<div class="drawer-logo" aria-hidden="true" title="Pesa Retail Namibia"></div>' +
       '<button class="drawer-close" id="drawerCloseBtn" type="button" aria-label="Close">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
     '</button></div>' +
@@ -14508,7 +14508,7 @@ function renderSidebar(){
     }
   }catch(e){}
   var html = '<div class="app-watermark" aria-hidden="true"></div>' +
-    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa"></div><div style="flex:1;min-width:0;"><h2 style="margin:0;">Pesa</h2><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div></div></div>' +
+    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa Retail Namibia"></div><div style="flex:1;min-width:0;"><h2 style="margin:0;">Pesa Retail Namibia</h2><div class="slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div></div></div>' +
     menuRowsHtml();
   if(el._sbHtml !== html){   // only rebuild the menu when it actually changed (it rarely does)
     el.innerHTML = html; el._sbHtml = html;
@@ -20258,7 +20258,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.217';
+var APP_VERSION = '2026.10.218';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20567,6 +20567,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.218', items:[
+    'Pesa Retail Namibia is now the name shown on the sign in, sign up and forgot password cards, in the menu and on the documents Pesa makes'
+  ]},
   { v:'2026.10.217', items:[
     'Fix: the Pesa Hospitality Namibia link opened Pesa Retail\'s saved page and said the browser was too old. The shop app no longer answers anything under /hospitality/'
   ]},

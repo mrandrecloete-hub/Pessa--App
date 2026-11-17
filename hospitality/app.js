@@ -1810,7 +1810,7 @@ function resetAccountsForEmail(email){
 
 function renderForgotHtml(){
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1>'+tr('Forgot password')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Enter the email address on your account and we will send you a 6-digit reset code.')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA HOSPITALITY NAMIBIA</div><h1>'+tr('Forgot password')+'</h1><div class="slogan">Your Comfort, Our Responsibility</div><p>'+tr('Enter the email address on your account and we will send you a 6-digit reset code.')+'</p></div>' +
     '<div class="authbox">' +
       '<div id="fpStep1">' +
         '<div class="field"><label>'+tr('Email address')+'</label><input id="fpEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>' +
@@ -2334,7 +2334,7 @@ function showBioLock(){
   var u = State.session && bioUser(State.session.userId); if(!u){ return; }
   appEl.style.display = 'none'; authEl.style.display = 'flex';
   var company = State.company || {};
-  authEl.innerHTML = '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa Hospitality')+'</h1><div class="slogan">Your Mula, Your Pride</div></div>' +
+  authEl.innerHTML = '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA HOSPITALITY NAMIBIA</div><h1>'+esc(company.tradingName||company.companyName||'Pesa Hospitality Namibia')+'</h1><div class="slogan">Your Comfort, Our Responsibility</div></div>' +
     '<div class="authbox" style="text-align:center;">' +
       '<div class="avatar" style="margin:0 auto 8px;width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;background:var(--surface-3);color:var(--primary-dim);">'+esc(initials(u.name))+'</div>' +
       '<div style="font-weight:800;font-size:17px;">'+esc(u.name)+'</div><div style="color:var(--text-muted);font-size:13px;margin-bottom:14px;">'+tr('Pesa Hospitality is locked')+'</div>' +
@@ -5923,7 +5923,7 @@ function showAuthScreen(view){
 function renderSignedOutHtml(){
   var company = State.company || {};
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa Hospitality')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('You have been logged out.')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA HOSPITALITY NAMIBIA</div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa Hospitality Namibia')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Comfort, Our Responsibility</div><p>'+tr('You have been logged out.')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="actions"><button class="btn btn-primary btn-block" id="soLoginBtn">'+tr('Log in again')+'</button></div>' +
       otherBusinessesHtml(tr('Other businesses on this device')) +
@@ -6122,7 +6122,7 @@ function regHeroHtml(){
     '<h1 class="reg-sr">'+tr('Register your business')+'</h1>' +
     '<div class="reg-brand"><span class="brandmark reg-logo" role="img" aria-label="Pesa Hospitality"></span>' +
       '<div><div class="reg-pesa">Pesa Hospitality</div><div class="reg-nam">Namibia</div></div></div>' +
-    '<div class="reg-slogan">Your Mula, Your Pride</div>' +
+    '<div class="reg-slogan">Your Comfort, Our Responsibility</div>' +
     REG_MAP_SVG +
     '<svg class="reg-wave" viewBox="0 0 440 38" preserveAspectRatio="none" aria-hidden="true">' +
       '<path d="M0 38V20C90 -6 200 4 290 20S410 34 440 12V38Z" fill="#F4F7FF"/>' +
@@ -6343,7 +6343,7 @@ function openInviteSheet(u){
 var _empFails = 0, _empUntil = 0, empSignupActive = false;
 function renderEmployeeSignupHtml(){
   var company = State.company || {};
-  return '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><h1>'+esc(company.tradingName||company.companyName||'Pesa Hospitality')+'</h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('New employee sign up')+'</p></div>' +
+  return '<div class="authcard"><div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA HOSPITALITY NAMIBIA</div><h1>'+esc(company.tradingName||company.companyName||'Pesa Hospitality Namibia')+'</h1><div class="slogan">Your Comfort, Our Responsibility</div><p>'+tr('New employee sign up')+'</p></div>' +
     '<div class="authbox"><div id="empBox"></div><div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost" id="empBack" type="button">'+tr('Back to sign in')+'</button></div></div></div>';
 }
 function wireEmployeeSignup(root){
@@ -7451,7 +7451,7 @@ function renderLoginHtml(){
     '</button>';
   }).join('');
   return '<div class="authcard">' +
-    '<div class="authbrand"><div class="brandmark"></div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa Hospitality')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Mula, Your Pride</div><p>'+tr('Sign in to continue')+'</p></div>' +
+    '<div class="authbrand"><div class="brandmark"></div><div class="authapp">PESA HOSPITALITY NAMIBIA</div><h1 style="display:inline-flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;">'+esc(company.tradingName||company.companyName||'Pesa Hospitality Namibia')+'<button type="button" class="bizdel" data-erase-ws="'+esc(WS.id)+'" aria-label="'+esc(tr('Erase this business without a password'))+'" title="'+esc(tr('Erase this business without a password'))+'" style="width:38px;height:38px;border-radius:12px;">'+ICONS.trash+'</button></h1><div class="slogan">Your Comfort, Our Responsibility</div><p>'+tr('Sign in to continue')+'</p></div>' +
     '<div class="authbox">' +
       '<div class="section-title">'+tr('Who’s working?')+'</div>' +
       (tiles || '<div class="banner">'+ICONS.warn+'<span>'+tr('No staff accounts yet.')+'</span></div>') +
@@ -9214,7 +9214,7 @@ function posClose(){
 }
 function posHead(sub){
   var d = posDevice(), co = State.company || {};
-  return '<div class="pos-head"><div class="pos-logo" aria-hidden="true"></div><div style="min-width:0;flex:1;"><div class="pos-title">'+esc(co.tradingName||co.companyName||'Pesa Hospitality')+' · '+tr('Point of sale')+'</div>' +
+  return '<div class="pos-head"><div class="pos-logo" aria-hidden="true"></div><div style="min-width:0;flex:1;"><div class="pos-title">'+esc(co.tradingName||co.companyName||'Pesa Hospitality Namibia')+' · '+tr('Point of sale')+'</div>' +
     '<div class="pos-sub">'+esc(d ? d.name+(d.terminalId?' · '+d.terminalId:'') : tr('This device is not linked to a card terminal'))+(sub?' · '+esc(sub):'')+'</div></div>' +
     '<div class="pos-head-btns">' + (POS.user ? '<button class="btn btn-ghost" id="posLockBtn">'+tr('Lock')+'</button>' : '') + '<button class="btn btn-ghost" id="posExitBtn">'+tr('Close')+'</button></div></div>';
 }
@@ -10864,7 +10864,7 @@ function xpText(blocks, title){
     });
     out.push('');
   });
-  out.push(''); out.push(tr('Created with Pesa Hospitality') + '. Your Mula, Your Pride');
+  out.push(''); out.push(tr('Created with Pesa Hospitality Namibia') + '. Your Comfort, Our Responsibility');
   return new Blob(['\uFEFF' + out.join('\r\n')], { type:'text/plain;charset=utf-8' });
 }
 
@@ -10974,7 +10974,7 @@ function xpDocx(blocks, title){
       body += tbl(b.cols.map(function(c){ return { w:c.width, al:c.align }; }), [b.cols.map(function(c){ return String(c.label); })].concat(b.rows), { borders:true, head:true, stripe:true, bold:b.bold });
     }
   });
-  body += para(tr('Created with Pesa Hospitality') + '. Your Mula, Your Pride', { sz:16, color:'7A8F85' });
+  body += para(tr('Created with Pesa Hospitality Namibia') + '. Your Comfort, Our Responsibility', { sz:16, color:'7A8F85' });
   var ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
   var document_ = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + ns + '><w:body>' + body + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="567" w:footer="567" w:gutter="0"/></w:sectPr></w:body></w:document>';
   var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + ns + '><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri" w:eastAsia="Calibri"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="en-ZA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
@@ -11047,7 +11047,7 @@ function xpHtml(blocks, title){
     'p{margin:3px 0}.b{font-weight:700}table{border-collapse:collapse;width:100%;margin:8px 0 12px}table.g td{padding:3px 12px 3px 0;vertical-align:top}table.t{border:1px solid #D2D8E3}table.t th{background:' + hex + ';color:#fff;text-align:left;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:8px 10px}table.t td{padding:7px 10px;border-top:1px solid #D2D8E3}table.t tbody tr:nth-child(even){background:#F2F4F8}.r{text-align:right!important;font-variant-numeric:tabular-nums}.c{text-align:center}.foot{margin-top:26px;padding-top:10px;border-top:1px solid #D2D8E3;color:#6C8379;font-size:12px}' +
     '@media print{body{background:#fff}.page{margin:0;border:0;border-top:6px solid ' + hex + ';max-width:none}}';
   var html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + xpXe(title) + '</title><style>' + css + '</style></head><body><div class="page">' +
-    (shop ? '<p class="shop">' + xpXe(shop) + '</p>' : '') + body + '<div class="foot">' + xpXe(tr('Created with Pesa Hospitality')) + '. Your Mula, Your Pride</div></div></body></html>';
+    (shop ? '<p class="shop">' + xpXe(shop) + '</p>' : '') + body + '<div class="foot">' + xpXe(tr('Created with Pesa Hospitality Namibia')) + '. Your Comfort, Our Responsibility</div></div></body></html>';
   return new Blob([html], { type:'text/html;charset=utf-8' });
 }
 
@@ -11074,7 +11074,7 @@ function xpRtf(blocks, title){
     else { out += row(cols.map(function(c){ return String(c.label); }), true); b.rows.forEach(function(r, ri){ out += row(r, false, b.bold && b.bold.indexOf(ri) !== -1); }); }
     out += '\\pard\\sa60\\par\n';
   });
-  out += '{\\pard\\fs16 ' + esc_(tr('Created with Pesa Hospitality') + '. Your Mula, Your Pride') + '\\par}}';
+  out += '{\\pard\\fs16 ' + esc_(tr('Created with Pesa Hospitality Namibia') + '. Your Comfort, Our Responsibility') + '\\par}}';
   return new Blob([out], { type:'application/rtf' });
 }
 
@@ -14059,7 +14059,7 @@ var DKD_CSS = '<style>' +
   '</style>';
 function dashWrap(inner){
   var logo = (typeof PESA_LOGO_DATA_URL !== 'undefined' && PESA_LOGO_DATA_URL) ? PESA_LOGO_DATA_URL : '';
-  return DKD_CSS + '<div class="dkd" style="--dkd-logo:url(\'' + logo + '\');"><div class="dkd-gold"></div><h2 class="dkd-h">' + tr('Dashboard') + '</h2><div class="dkd-tag">' + tr('Your Mula, Your Pride') + '</div>' + inner +
+  return DKD_CSS + '<div class="dkd" style="--dkd-logo:url(\'' + logo + '\');"><div class="dkd-gold"></div><h2 class="dkd-h">' + tr('Dashboard') + '</h2><div class="dkd-tag">' + tr('Your Comfort, Our Responsibility') + '</div>' + inner +
     '<div class="dkd-foot">' + tr('Your numbers. Our focus.') + '</div></div>';
 }
 function renderDashboard(){
@@ -14493,7 +14493,7 @@ function renderSidebar(){
     }
   }catch(e){}
   var html = '<div class="app-watermark" aria-hidden="true"></div>' +
-    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa Hospitality"></div><div style="flex:1;min-width:0;"><h2 style="margin:0;">Pesa Hospitality</h2><div class="slogan">Your Mula, Your Pride</div></div></div>' +
+    '<div class="sidebar-head"><div class="drawer-logo" aria-hidden="true" title="Pesa Hospitality"></div><div style="flex:1;min-width:0;"><h2 style="margin:0;">Pesa Hospitality Namibia</h2><div class="slogan">Your Comfort, Our Responsibility</div></div></div>' +
     menuRowsHtml();
   if(el._sbHtml !== html){   // only rebuild the menu when it actually changed (it rarely does)
     el.innerHTML = html; el._sbHtml = html;
@@ -14619,7 +14619,7 @@ function shareAppHtml(){
     '<div class="banner" style="display:block;">'+tr('Anyone can open this link in a browser and add Pesa Hospitality to their home screen. Their shop data stays on their own device.')+'</div>';
 }
 function wireShareApp(root){
-  var msg = 'Try Pesa Hospitality, a shop and point of sale app for Namibia. Your Mula, Your Pride. ';
+  var msg = 'Try Pesa Hospitality Namibia, an app for lodges, guest houses, restaurants and bars in Namibia. Your Comfort, Our Responsibility. ';
   var g = function(id){ return root.querySelector(id); };
   if(!g('#shCopy')) return;
   g('#shCopy').addEventListener('click', function(){ copyText(appShareLink(), tr('Link copied')); });
@@ -14635,7 +14635,7 @@ function stGrp(title, hint, body, open){
 /* ---- Pesa Hospitality Ad: the promo video with the words to post alongside it ---- */
 var PESA_AD_POINTS = ['Rooms, bookings, tabs and invoices in one app','Works offline, even with no internet','Phone, tablet and computer','Ask Max in plain words','Made in Namibia for lodges, guest houses and hotels'];
 function pesaAdCaption(){
-  return 'Pesa Hospitality. Your Mula, Your Pride.\n\nA shop app built in Namibia, for Namibia. Sell, track stock, manage credit, make invoices and see your day at a glance, on your phone, tablet or computer, even with no internet.\n\n' +
+  return 'Pesa Hospitality Namibia. Your Comfort, Our Responsibility.\n\nAn app built in Namibia, for Namibia. Manage rooms, bookings, tables, stock and invoices and see your day at a glance, on your phone, tablet or computer, even with no internet.\n\n' +
     PESA_AD_POINTS.map(function(p){ return '\u2022 '+p; }).join('\n') + '\n\nFree 14 day trial.';
 }
 function openPesaAdSheet(){
@@ -14643,7 +14643,7 @@ function openPesaAdSheet(){
   var html = '<div class="sheet-head"><h2>'+tr('Pesa Hospitality Ad')+'</h2></div>' +
     '<div style="display:flex;justify-content:center;margin-bottom:12px;"><video id="adVideo" controls playsinline preload="metadata" poster="media/pesa-promo-poster.jpg" style="width:100%;max-width:360px;max-height:64vh;border-radius:16px;background:#060D23;display:block;"><source src="media/pesa-promo.mp4" type="video/mp4"><source src="media/pesa-promo.webm" type="video/webm"></video></div>' +
     '<div id="adVidNote" class="banner" style="display:none;">'+tr('The video needs an internet connection the first time it plays. Connect and try again.')+'</div>' +
-    '<div style="font-family:Inter,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-.3px;margin:6px 0 6px;">'+tr('Pesa Hospitality. Your Mula, Your Pride.')+'</div>' +
+    '<div style="font-family:Inter,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-.3px;margin:6px 0 6px;">'+tr('Pesa Hospitality. Your Comfort, Our Responsibility.')+'</div>' +
     '<p style="margin:0 0 10px;line-height:1.5;">'+tr('A shop app built in Namibia, for Namibia. Sell, track stock, manage credit, make invoices and see your day at a glance, on your phone, tablet or computer, even with no internet.')+'</p>' +
     '<div class="rowlist" style="margin-bottom:10px;">' + PESA_AD_POINTS.map(function(p){ return '<div class="row"><div class="main"><div class="title" style="font-weight:600;">'+esc(tr(p))+'</div></div></div>'; }).join('') + '</div>' +
     '<p style="margin:0 0 10px;font-weight:600;">'+tr('Free 14 day trial.')+'</p>' +
@@ -14767,7 +14767,7 @@ function openSettingsSheet(){
     '<div class="field"><label>'+tr('Font style')+'</label><select id="stFont">' +
       Object.keys(FONT_SETS).map(function(k){ return '<option value="'+k+'" '+(currentFontKey()===k?'selected':'')+'>'+esc(FONT_SETS[k].label)+'</option>'; }).join('') +
     '</select></div>' +
-    '<div class="banner" style="display:block;"><div id="stFontHead" style="font-family:var(--font-head);font-size:20px;font-weight:700;">Invoice INV-0001</div><div style="margin-top:4px;">Your Mula, Your Pride. N$1,250.00 · 12 items · Windhoek, Namibia</div></div>' +
+    '<div class="banner" style="display:block;"><div id="stFontHead" style="font-family:var(--font-head);font-size:20px;font-weight:700;">Invoice INV-0001</div><div style="margin-top:4px;">Your Comfort, Our Responsibility. N$1,250.00 · 12 items · Windhoek, Namibia</div></div>' +
     '<div class="section-title">'+tr('Document template')+'</div>' +
     '<div id="tplGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       Object.keys(DOC_TEMPLATES).map(function(k){
@@ -17819,7 +17819,7 @@ function openVatSummarySheet(){
   var logo = (typeof PESA_LOGO_DATA_URL !== 'undefined' && PESA_LOGO_DATA_URL) ? PESA_LOGO_DATA_URL : '';
   var dlSvg = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#F2C25A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>';
   var html = VS_CSS + '<div class="vs-wm"><img src="' + logo + '" alt="" draggable="false"></div>' +
-    '<div class="vs-top"><img src="' + logo + '" alt="" draggable="false"><div><div class="vs-word">Pesa Hospitality</div><div class="vs-tag">' + tr('Your Mula, Your Pride') + '</div></div></div>' +
+    '<div class="vs-top"><img src="' + logo + '" alt="" draggable="false"><div><div class="vs-word">Pesa Hospitality Namibia</div><div class="vs-tag">' + tr('Your Comfort, Our Responsibility') + '</div></div></div>' +
     '<div class="vs-card">' +
     '<div class="vs-head"><span class="vs-pct"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#F2C25A" stroke-width="2.6" stroke-linecap="round"><path d="M18 5L6 19"/><circle cx="7.5" cy="7.5" r="2.4"/><circle cx="16.5" cy="16.5" r="2.4"/></svg></span><h2>NamRA VAT summary</h2></div>' +
     '<div class="vs-info"><span class="ic"><svg viewBox="0 0 48 48" width="44" height="44"><rect x="9" y="5" width="26" height="36" rx="5" fill="rgba(255,255,255,.1)" stroke="#7C9DF0" stroke-width="2"/><path d="M15 15h14M15 21h14" stroke="#7C9DF0" stroke-width="2.2" stroke-linecap="round"/><text x="22" y="34" text-anchor="middle" font-size="10" font-weight="800" fill="#EAEFFB" font-family="Arial,sans-serif">VAT</text><circle cx="35" cy="35" r="9" fill="#2B57D4"/><path d="M31 35l3 3 6-6" stroke="#F2C25A" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
@@ -18298,7 +18298,7 @@ var LESSONS = [
       where:'Menu → About Pesa Hospitality' },
     { title:'Why it is built this way', text:'Many properties lose time when the internet goes down. Pesa Hospitality saves everything on your own device first, so the front desk, restaurant and bar keep working without a connection. If you turn on sync, the devices share the same records through your own private database.',
       where:'Menu → About Pesa Hospitality' },
-    { title:'Your Mula, Your Pride', text:'Rooms, bookings, guests, tabs, invoices, staff and stock are all in one place. Because your records matter, this application comes with a confidentiality agreement. Here are the three promises that matter most.',
+    { title:'Your Comfort, Our Responsibility', text:'Rooms, bookings, guests, tabs, invoices, staff and stock are all in one place. Because your records matter, this application comes with a confidentiality agreement. Here are the three promises that matter most.',
       where:'Menu → Terms, privacy and support',
       tip:'You can read the full agreement any time under Menu, Terms, privacy and support, and on the About Pesa Hospitality page.' },
     { title:'Promise one: your records belong to your property', text:'Your bookings, guests, tabs, sales and credit accounts belong strictly to your property. Pesa Hospitality has no access to them.',
@@ -18837,7 +18837,7 @@ function generateTrainingPdf(){
   doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
   doc.text('Generated '+fmtDateNice(now)+' at '+stampTime, pageW-margin, ty+6, {align:'right'});
   y += 1;
-  para('Your Mula, Your Pride. This manual holds every training lesson in the app, in the same order, so you can read it on paper or share it with your team. '+lessons.length+' lessons, '+slideCount+' slides.', 9.5, 4.6, dark, false);
+  para('Your Comfort, Our Responsibility. This manual holds every training lesson in the app, in the same order, so you can read it on paper or share it with your team. '+lessons.length+' lessons, '+slideCount+' slides.', 9.5, 4.6, dark, false);
   y += 2;
 
   pdSection(doc, pal, margin, y, contentW, 'Contents'); y += 8;
@@ -24349,7 +24349,7 @@ function openAgentSheet(){
     }).join('') + '</div>' : '<div class="ac-help">' + tr('No notes yet. The assistant checks by itself every half hour and leaves notes here and in the Alert centre.') + '</div>') +
     '<div class="ac-btns" style="margin-top:12px;"><button class="btn btn-ghost" id="agAi" type="button">' + tr('Pesa Hospitality AI') + '</button><button class="btn btn-ghost" id="agFile" type="button">' + tr('Attach a CSV file') + '</button><button class="btn btn-ghost" id="agToggle" type="button">' + tr(on ? 'Pause assistant' : 'Turn assistant on') + '</button><button class="btn btn-primary" id="agRun" type="button">' + tr('Check now') + '</button></div>' +
     '<div class="rep-note" style="margin-top:12px;">' + tr('The assistant works from your own records on this device and only does what you confirm. These are signs worth checking, not proof that anyone did anything wrong. It will not remove records: that needs a manager or owner password and a reason on the page itself. Anything it does while offline sends when the connection returns.') + '</div>' +
-    '<div class="ac-foot"><i>Pesa Hospitality</i><span>' + tr('Your Mula, Your Pride') + '</span></div>' +
+    '<div class="ac-foot"><i>Pesa Hospitality</i><span>' + tr('Your Comfort, Our Responsibility') + '</span></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="agClose" type="button">' + tr('Close') + '</button></div>';
   var ov = openSheet(html);
   var shEl = ov.querySelector('.sheet'); if(shEl) shEl.classList.add('ac-dark');
