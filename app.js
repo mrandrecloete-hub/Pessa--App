@@ -20258,7 +20258,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.221';
+var APP_VERSION = '2026.10.222';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20567,6 +20567,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.222', items:[
+    'The Pesa app icon is back to the plain P. The name Pesa Retail shows only under the icon on the phone home screen'
+  ]},
   { v:'2026.10.221', items:[
     'The Pesa app icon now carries the words PESA RETAIL under the P, so it is clear on the phone which app it is'
   ]},
