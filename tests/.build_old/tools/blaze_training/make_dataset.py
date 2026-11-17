@@ -244,6 +244,7 @@ def t_remember():
     q = ask(R.choice(['remember that %s', 'please save a note: %s', 'note this down, %s']) % w)
     return [('remember', {'text': w})], [{'text': 'Notes are saved only when the owner asks. Tell the owner to type: remember that ... and then confirm.', 'error': True}], 'To save that note, please type in the assistant: remember that %s. Pesa will ask you to confirm, and then it is saved.' % w
 
+
 MAKERS = {m.__name__[2:]: m for m in [t_remember, t_sales_by_period, t_top_products, t_sales_by_staff, t_payment_methods, t_stock_value, t_stock_variances, t_out_of_stock, t_slow_movers, t_supplier_balances, t_supplier_reconciliation, t_reconciliation_status, t_customer_history, t_expenses_summary, t_till_status, t_refunds_summary, t_vat_summary, t_profit_and_loss, t_forecast, t_compare_periods, t_unusual_days, t_alerts_and_notes, t_find_product, t_low_stock, t_customers_owing, t_shop_summary, t_calc, t_recall_memory, t_analyze_csv]}
 
 def build_one(name):
@@ -324,9 +325,13 @@ def legacy_rows():
     return rows
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument('--per-tool', type=int, default=55); ap.add_argument('--existing'); ap.add_argument('--tokenizer'); ap.add_argument('--out', default=os.path.join(HERE, 'train.jsonl'))
+    ap = argparse.ArgumentParser(); ap.add_argument('--per-tool', type=int, default=55); ap.add_argument('--existing'); ap.add_argument('--extra', help='your own examples file (see teach_more.example.jsonl)'); ap.add_argument('--eval-out', default=os.path.join(HERE, 'eval.jsonl')); ap.add_argument('--tokenizer'); ap.add_argument('--out', default=os.path.join(HERE, 'train.jsonl'))
     a = ap.parse_args()
     tools = json.load(open(os.path.join(HERE, 'tools.json'), encoding='utf-8'))
+    base_tools = list(tools)
+    TOOLSETS = {'retail': base_tools}
+    def pick_set(name=None):
+        return base_tools
     names = [t['name'] for t in tools]; missing = [n for n in names if n not in MAKERS]
     if missing: sys.exit('no examples written yet for tools: ' + ', '.join(missing) + '. Add a t_<name> function.')
     unknown = [n for n in MAKERS if n not in names]
@@ -358,10 +363,10 @@ def main():
         got, tries = 0, 0
         while got < a.per_tool and tries < a.per_tool * 20:
             tries += 1
-            if add(tools, build_one(n)): got += 1
+            if add(pick_set(n), build_one(n)): got += 1
     total_tool = len(rows)
     extra = int(total_tool * 0.15)
-    for turns in chat_rows(extra // 2) + refusal_rows(extra // 2) + injection_rows(max(20, total_tool // 60)) + two_tool_rows(max(30, total_tool // 30)): add(tools, turns)
+    for turns in chat_rows(extra // 2) + refusal_rows(extra // 2) + injection_rows(max(20, total_tool // 60)) + two_tool_rows(max(30, total_tool // 30)): add(pick_set(), turns)
     for tl, turns in legacy_rows(): add(tl, turns)
     if a.existing:
         for line in open(a.existing, encoding='utf-8'):
@@ -369,11 +374,36 @@ def main():
             if line:
                 t = json.loads(line).get('text')
                 if t and t not in seen: seen.add(t); rows.append(t)
+    if a.extra:
+        n_extra = 0
+        for line in open(a.extra, encoding='utf-8'):
+            line = line.strip()
+            if not line or line.startswith('#'): continue
+            e = json.loads(line)
+            if e.get('tool'):
+                if e['tool'] not in names: sys.exit('--extra: unknown tool ' + e['tool'])
+                turns = [{'role': 'user', 'content': e['q']}, {'role': 'assistant', 'content': '', 'calls': [{'name': e['tool'], 'arguments': e.get('args', {})}]}, {'role': 'tool', 'content': js(e['response'])}, {'role': 'assistant', 'content': e['answer']}]
+            else: turns = [{'role': 'user', 'content': e['q']}, {'role': 'assistant', 'content': e['answer']}]
+            if not numbers_ok(turns): sys.exit('--extra: the answer repeats a number that is not in the tool response: ' + e['q'])
+            if add(TOOLSETS[e.get('biz') or 'retail'], turns): n_extra += 1
+        print('added', n_extra, 'rows from', a.extra)
+    # a small held out set to test the retrained model (different random draws, never used for training): eval.py scores it
+    R2 = random.Random(77); global R
+    keep = R; R = R2
+    held = []
+    for n in names:
+        for _ in range(6):
+            t = build_one(n)
+            held.append({'q': t[0]['content'], 'tool': t[1]['calls'][0]['name'], 'args': t[1]['calls'][0]['arguments'], 'biz': 'retail'})
+    for q, ans in IDENT[:6]: held.append({'q': q, 'tool': None, 'args': None, 'biz': 'retail'})
+    R = keep
+    with open(a.eval_out, 'w', encoding='utf-8') as f:
+        for h in held: f.write(json.dumps(h, ensure_ascii=False) + '\n')
     R.shuffle(rows)
     with open(a.out, 'w', encoding='utf-8') as f:
         for t in rows: f.write(json.dumps({'text': t}, ensure_ascii=False) + '\n')
     # one fixed example the app's tests compare with blazePrompt() in tools/blaze.js
-    golden = render(SYSTEM, tools[:3], [{'role': 'user', 'content': 'How much did I sell today?'}, {'role': 'assistant', 'content': '', 'calls': [{'name': 'sales_by_period', 'arguments': {'period': 'today'}}]}, {'role': 'tool', 'content': '{"period": "today", "salesAfterRefunds": 1250.5}'}, {'role': 'assistant', 'content': 'You sold N$1,250.50 today.'}, {'role': 'user', 'content': 'thanks'}]) + '<|im_start|>assistant\n'
+    golden = render(SYSTEM, base_tools[:3], [{'role': 'user', 'content': 'How much did I sell today?'}, {'role': 'assistant', 'content': '', 'calls': [{'name': 'sales_by_period', 'arguments': {'period': 'today'}}]}, {'role': 'tool', 'content': '{"period": "today", "salesAfterRefunds": 1250.5}'}, {'role': 'assistant', 'content': 'You sold N$1,250.50 today.'}, {'role': 'user', 'content': 'thanks'}]) + '<|im_start|>assistant\n'
     open(os.path.join(HERE, 'golden_prompt.txt'), 'w', encoding='utf-8').write(golden)
     print('wrote', len(rows), 'rows to', a.out, '(tool rows', total_tool, ', dropped', bad[0], 'whose answer repeated a number not in the tool response)')
 if __name__ == '__main__': main()

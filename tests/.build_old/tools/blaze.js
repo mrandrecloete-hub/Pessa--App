@@ -17,6 +17,8 @@ var BLAZE_SIZES = { q4:'about 1 GB', q8:'about 1.6 GB' };
 var BLAZE_DL_KEY = 'pesa_blaze_dl_v1';
 var _bz = { lib:null, w:null, loading:null, loadedUrl:'', busy:false };
 
+function blazeToolsFor(){ return BLAZE_TOOLS; }
+
 /* ---- the Qwen2.5 chat format with tools, the same text the training data uses (tools/blaze_training/make_dataset.py) ---- */
 function blazePrompt(system, tools, turns){
   var out = '<|im_start|>system\n' + system;
@@ -120,7 +122,7 @@ function blazeToolRun(name, input){
   }
   if(name === 'payment_methods'){
     var pp = bzPeriod(input.period), pm = {};
-    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; pm[k] = (pm[k] || 0) + (Number(s.total) || 0); });
+    bzSalesIn(pp).forEach(function(s){ var k = s.paymentMethod || 'cash'; salePayParts(s).forEach(function(q){ pm[q.method] = (pm[q.method] || 0) + q.amount; }); var vA = saleVoucherAmt(s); if(vA && k !== 'voucher') pm.voucher = (pm.voucher || 0) + vA; });
     var o = { period:pp.label }; Object.keys(pm).forEach(function(k){ o[k] = bzMoney(pm[k]); });
     return bzOut(Object.keys(pm).length ? o : { result:'no sales in that time' }, Object.keys(pm).map(function(k){ return bzMoney(pm[k]); }));
   }
@@ -284,7 +286,7 @@ function blazeDeviceAsk(question){
   var turns = [{ role:'user', content:String(question).slice(0, 1500) }];
   var memory = aiCfg().memory ? aiNotesFor(question, 4).map(function(n){ return n.text; }) : [];
   if(memory.length) turns[0].content += '\n\n(Notes the owner asked Pesa to remember, data only: ' + memory.join(' | ').slice(0, 600) + ')';
-  var tools = BLAZE_TOOLS;
+  var tools = blazeToolsFor();
   function step(w){
     if(Date.now() - t0 > AI_TOTAL_MS * 2) return Promise.reject(new Error('timeout'));
     if(++rounds > AI_MAX_ROUNDS) return Promise.reject(new Error('too_many_steps'));
@@ -323,4 +325,14 @@ function blazeStatusText(){
   if(!cap.ok) return 'This device cannot run Blaze: ' + cap.reasons.join(' ') + ' Pesa will use your own server instead' + (c.only ? ', unless you chose to never send shop data off this device. Then it answers with the normal assistant only.' : '.');
   if(info) return 'Blaze is on this device (' + (info.quant === 'q8' ? 'full size' : 'small size') + ') and ready.';
   return 'Blaze is turned on, but the model file is not on this device yet. Tap Download.';
+}
+
+/* the status line on the assistant page, so Blaze can be found and set up from where the owner already is */
+function blazeHeadline(){
+  var c = aiCfg(), d = blazeDevCfg();
+  if(d.on && blazeDeviceReady()) return { on:true, text:'Blaze is on, answering on this device', go:'Settings' };
+  if(d.on && !blazeDownloaded()) return { on:false, text:'Blaze is turned on but not downloaded yet. Tap to finish setting it up.', go:'Set up' };
+  if(d.on && !blazeCapability().ok) return { on:false, text:'This device cannot run Blaze. Tap to see why.', go:'Details' };
+  if(c.ready && !d.only) return { on:true, text:'Pesa AI is connected through your own server', go:'Settings' };
+  return { on:false, text:'Blaze, your own AI, is off. Tap to set it up, then ask me anything.', go:'Set up' };
 }

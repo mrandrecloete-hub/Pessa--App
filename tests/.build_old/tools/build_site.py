@@ -15,10 +15,14 @@ else:
     head, body = src.split('<!--BODY-->')
     head = head.replace('{{SITE}}', './').replace('{{APP}}', '../')
     body = body.replace('{{SITE}}', './').replace('{{APP}}', '../')
+    desc = 'Pesa is the retail till, stockroom and books in one app, made in Namibia (Retail Automated System). Sell, keep stock, record credit, print invoices and see your VAT summary. Works offline. 14 days free.'
     page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
-            '<meta name="description" content="Pesa is the shop and till app made in Namibia. Sell, keep stock, record credit, print invoices and see your VAT. 14 days free.">\n'
-            '<meta name="theme-color" content="#082E22">\n<link rel="icon" href="img/pesa-icon.png">\n'
+            '<meta name="description" content="' + desc + '">\n'
+            '<meta name="theme-color" content="#05110D">\n<link rel="icon" href="img/pesa-icon.png">\n'
+            '<meta property="og:type" content="website"><meta property="og:title" content="Pesa | Retail Automated System, made in Namibia">\n'
+            '<meta property="og:description" content="' + desc + '"><meta property="og:image" content="' + BASE + 'site/img/og.jpg">\n'
+            '<meta property="og:url" content="' + BASE + 'site/"><meta name="twitter:card" content="summary_large_image">\n'
             + head + '\n</head>\n<body>' + body + '\n</body>\n</html>\n')
     open(os.path.join(root, 'site', 'index.html'), 'w', encoding='utf-8').write(page)
     print('wrote site/index.html')

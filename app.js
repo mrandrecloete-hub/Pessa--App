@@ -8423,6 +8423,7 @@ function setCartQty(productId, qty){
 }
 
 function renderCartBar(){
+  try{ cdRender(); }catch(e){}
   if(POS.open) posRenderCart();
   try{ syncTicks(); }catch(e){}
   var slot = document.getElementById('cartbarSlot');
@@ -8435,6 +8436,60 @@ function renderCartBar(){
   '</div></div>';
   document.getElementById('openCartBtn').addEventListener('click', openCartSheet);
 }
+
+/* ---- customer display: a plain second window for the customer facing screen of a dual screen terminal ----
+   Opened from Settings. It only shows what is in the cart and the total, then a thank you. It is drawn by this window directly,
+   nothing is saved and nothing is sent anywhere. No motion. It closes when Pesa closes so an old cart is never left on show. */
+var CD = { win:null, thanks:null, timer:null };
+function cdAlive(){ try{ return !!(CD.win && !CD.win.closed); }catch(e){ return false; } }
+function cdOpen(){
+  if(cdAlive()){ try{ CD.win.focus(); }catch(e){} cdRender(); return true; }
+  var w = null;
+  try{ w = window.open('', 'pesaCustomerDisplay', 'width=900,height=700'); }catch(e){}
+  if(!w){ toast(tr('The customer display could not open. Allow pop ups for Pesa and try again.')); return false; }
+  CD.win = w;
+  var d = w.document; d.open();
+  d.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(btShop())+'</title><style>' +
+    '*{box-sizing:border-box}html,body{margin:0;height:100%;background:#0d3b2e;color:#fff;font-family:Helvetica,Arial,sans-serif}' +
+    '#cdBody{min-height:100%;display:flex;flex-direction:column;padding:3vh 4vw}' +
+    '.cdh{font-size:3.2vh;letter-spacing:.12em;color:#e8c872;text-transform:uppercase;border-bottom:.4vh solid #d4a62a;padding-bottom:1.6vh}' +
+    '.cdl{flex:1;overflow:auto;padding-top:1.4vh}' +
+    '.cdr{display:flex;justify-content:space-between;gap:3vw;font-size:4vh;padding:1.6vh 0;border-bottom:1px solid rgba(255,255,255,.15)}' +
+    '.cdr small{display:block;font-size:2.6vh;color:#b9d3c8;margin-top:.4vh}.cdr b{white-space:nowrap;font-weight:600}' +
+    '.cdt{display:flex;justify-content:space-between;align-items:baseline;border-top:.4vh solid #d4a62a;padding-top:2vh;font-size:5vh}' +
+    '.cdt b{font-size:9vh;color:#e8c872}' +
+    '.cdm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}' +
+    '.cdm h1{font-size:9vh;margin:0 0 2vh}.cdm p{font-size:4vh;margin:0;color:#e8c872}' +
+    '</style></head><body><div id="cdBody"></div></body></html>');
+  d.close();
+  try{ d.documentElement.addEventListener('dblclick', function(){ try{ if(d.fullscreenElement){ d.exitFullscreen(); } else { d.documentElement.requestFullscreen(); } }catch(e){} }); }catch(e){}
+  cdRender();
+  return true;
+}
+function cdClose(){ try{ if(cdAlive()) CD.win.close(); }catch(e){} CD.win = null; }
+function cdThanks(total){
+  if(!cdAlive()) return;
+  CD.thanks = total; clearTimeout(CD.timer);
+  CD.timer = setTimeout(function(){ CD.thanks = null; cdRender(); }, 9000);
+}
+function cdRender(){
+  if(!cdAlive()) return;
+  var el; try{ el = CD.win.document.getElementById('cdBody'); }catch(e){ return; }
+  if(!el) return;
+  var head = '<div class="cdh">'+esc(btShop())+'</div>', h;
+  if(State.cart.length){
+    CD.thanks = null;
+    h = head + '<div class="cdl">' + State.cart.map(function(i){
+      return '<div class="cdr"><span>'+esc(i.name)+'<small>'+esc(i.qty)+' x '+esc(fmtMoney(i.unitPrice))+'</small></span><b>'+esc(fmtMoney(mMul(i.unitPrice, i.qty) / 100))+'</b></div>';
+    }).join('') + '</div><div class="cdt"><span>'+esc(tr('Total'))+'</span><b>'+esc(fmtMoney(cartTotal()))+'</b></div>';
+  } else if(CD.thanks != null){
+    h = head + '<div class="cdm"><h1>'+esc(tr('Thank you'))+'</h1><p>'+esc(tr('Total paid'))+' '+esc(fmtMoney(CD.thanks))+'</p></div>';
+  } else {
+    h = head + '<div class="cdm"><h1>'+esc(tr('Welcome'))+'</h1><p>'+esc(tr('Your items will show here'))+'</p></div>';
+  }
+  el.innerHTML = h;
+}
+window.addEventListener('pagehide', cdClose);
 
 function cartSheetHtml(){
   if(State.cart.length === 0){
@@ -8771,6 +8826,7 @@ function finalizeSale(method, customer, extra){
     refs.customers.doc(customer.id).collection('ledger').add({ type:'charge', amount: owedNow, note:'Sale on credit', createdAt:new Date().toISOString(), balanceAfter:newBal });
   }
   if(method === 'cash' || sale.cashBack > 0 || (saleIsSplit(sale) && salePayParts(sale).some(function(q){ return q.method === 'cash'; }))) openCashDrawer(false);
+  try{ cdThanks(total); }catch(e){}
   State.cart = [];
   closeModal();
   renderCartBar();
@@ -14764,6 +14820,9 @@ function openSettingsSheet(){
     stGrp('Sales and hardware','Cash drawer and tax records',
 ''+
     (isOwner() && Store.mode() === 'local' ? '<div class="section-title">'+tr('Tax records (NamRA)')+'</div><div class="banner" style="display:block;">'+tr('Keep a numbered, tamper-evident tax record of every sale. Requirements are to be confirmed with the relevant authorities of Namibia.')+'</div><div class="actions"><button class="btn btn-ghost btn-block" id="stTaxBtn" type="button">'+tr('Set up tax records')+'</button></div>' : '') +
+    '<div class="section-title">'+tr('Customer display')+'</div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="stCustDisplay" type="button">'+tr('Open the customer display')+'</button></div>' +
+    '<div style="font-size:12px;color:var(--text-muted);margin:6px 2px 14px;">'+tr('For a terminal with a second screen. A plain window shows the customer the items and the total, then a thank you. Drag it to the customer screen and double click it for full screen. Allow pop ups for Pesa if it does not open.')+'</div>' +
     '<div class="section-title">'+tr('Cash drawer')+'</div>' +
     '<div class="field"><label><input type="checkbox" id="stDrawer"'+(State.settings.drawerKick===false?'':' checked')+' style="width:auto;margin-right:8px;">'+tr('Open the till drawer when a customer pays cash or takes cash back')+'</label></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="stDrawerTest" type="button">'+tr('Connect printer and test the drawer')+'</button></div>' +
@@ -14854,6 +14913,7 @@ function openSettingsSheet(){
     document.documentElement.style.setProperty('--font-head', f.cssHead); document.documentElement.style.setProperty('--font-sans', f.cssBody);
   });
   ov.querySelector('#stDrawerTest').addEventListener('click', function(){ openCashDrawer(true); });
+  ov.querySelector('#stCustDisplay').addEventListener('click', function(){ cdOpen(); });
   var bkOpenCb = ov.querySelector('#stBkOpen'); if(bkOpenCb) bkOpenCb.addEventListener('change', function(){ btSave({ bkShowOnOpen: bkOpenCb.checked }); toast(tr(bkOpenCb.checked ? 'Your backup files will show when you open Pesa' : 'Backup files will no longer show when you open Pesa')); });
   var bkNowBtn = ov.querySelector('#stBkNow'); if(bkNowBtn) bkNowBtn.addEventListener('click', function(){ closeModal(); setTimeout(openBackupsSheet, 350); });
   var stTaxBtn = ov.querySelector('#stTaxBtn'); if(stTaxBtn) stTaxBtn.addEventListener('click', openFiscalSheet);
@@ -20198,7 +20258,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.214';
+var APP_VERSION = '2026.10.215';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20507,6 +20567,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.215', items:[
+    'Customer display for terminals with a second screen: a plain window that shows the customer the items and the total, then a thank you. Open it in Settings under Sales and hardware'
+  ]},
   { v:'2026.10.214', items:[
     'The date on the stamp is now written in the same heavy, condensed capitals as the company name on the stamp'
   ] },

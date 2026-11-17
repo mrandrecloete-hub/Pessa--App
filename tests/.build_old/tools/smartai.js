@@ -131,7 +131,7 @@ function aiAskServer(question){
   var known = [], t0 = Date.now(), rounds = 0, ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, sources = [], used = [], last = null;
   _ai.ctl = ctl; _ai.busy = true; _ai.tools = 0;
   var msgs = [{ role:'user', content:String(question).slice(0, 1500) }];
-  var meta = { shopName:(State.company && (State.company.tradingName || State.company.companyName)) || '', bizType:(typeof bizType === 'function' ? bizType() : 'retail') };
+  var meta = { shopName:(State.company && (State.company.tradingName || State.company.companyName)) || '' };
   var memory = c.memory ? aiNotesFor(question, 6).map(function(n){ return n.text; }) : [];
   function post(){
     if(Date.now() - t0 > AI_TOTAL_MS) return Promise.reject(new Error('timeout'));
@@ -224,7 +224,7 @@ function openAiSettingsSheet(){
       var stopped = false; bzCtl = { stop:function(){ stopped = true; try{ blazeUnload(); }catch(e){} } };
       blazeLoad(function(p){ var pc = p && p.total ? Math.max(2, Math.min(99, Math.round(p.loaded / p.total * 100))) : 5; bzFill.style.width = pc + '%'; bzSt.textContent = tr('Downloading Blaze') + ' ' + pc + '%' + (p && p.total ? ' (' + fmtBytes(p.loaded) + ' of ' + fmtBytes(p.total) + ')' : ''); })
         .then(function(){ bzFill.style.width = '100%'; bzSt.textContent = tr('Blaze is ready on this device.'); bzGo.style.display = ''; bzStop.style.display = 'none'; bzBar.style.display = 'none'; bzPaint(); })
-        .catch(function(e){ bzGo.style.display = ''; bzStop.style.display = 'none'; bzBar.style.display = 'none'; bzSt.textContent = stopped ? tr('Download cancelled.') : tr('Blaze could not be loaded: ') + String((e && e.message) || e).slice(0, 120); });
+        .catch(function(e){ bzGo.style.display = ''; bzStop.style.display = 'none'; bzBar.style.display = 'none'; bzSt.textContent = stopped ? tr('Download cancelled.') : (/firewall/i.test(String((e && e.message) || e)) ? tr('The Pesa firewall blocked the download. In Strict mode, switch the firewall to Standard or allow the model host, then try again.') : tr('Blaze could not be loaded: ') + String((e && e.message) || e).slice(0, 120)); });
     }
     storageRoom(cap.quant, function(ok){ if(!ok){ bzSt.textContent = tr('There may not be enough free space on this device for Blaze (' + BLAZE_SIZES[cap.quant] + ').'); return; }
       if(blazeDownloaded()){ run(); return; }
