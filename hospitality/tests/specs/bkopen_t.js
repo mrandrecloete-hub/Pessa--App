@@ -1,0 +1,24 @@
+const { chromium } = require('playwright');
+let fail=0; const ck=(n,c,x)=>{ console.log((c?'  ok   ':'  FAIL ')+n+(!c&&x!==undefined?'  -> '+JSON.stringify(x).slice(0,200):'')); if(!c) fail++; };
+(async()=>{
+ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:412,height:915},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await require('./biz_boot.js')(p);
+ const uid=()=>p.evaluate(()=>window.__t.State.session.userId);
+ await p.evaluate(()=>window.__t.openSettingsSheet()); await p.waitForTimeout(300);
+ ck('Settings has the backup option, off by default', await p.evaluate(()=>{ document.querySelectorAll('.st-grp').forEach(d=>d.open=true); const c=document.getElementById('stBkOpen'); return !!c && !c.checked; }));
+ await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(400);
+ await p.evaluate(async u=>{ window.__t.bkShowOnOpen(u,0); }, await uid()); await p.waitForTimeout(500);
+ ck('nothing opens while the option is off', !(await p.$('.sheet')));
+ await p.evaluate(()=>window.__t.openSettingsSheet()); await p.waitForTimeout(300);
+ await p.evaluate(()=>{ document.querySelectorAll('.st-grp').forEach(d=>d.open=true); document.getElementById('stBkOpen').click(); }); await p.waitForTimeout(300);
+ ck('turning it on is saved for the business', await p.evaluate(()=>window.__t.State.settings.bkShowOnOpen===true));
+ await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(500);
+ await p.evaluate(async u=>{ window.__t.bkShowOnOpen(u,0); }, await uid()); await p.waitForSelector('#bkNow',{timeout:4000});
+ ck('backup files list opens on app open', /Automatic backups/.test(await p.innerText('.sheet')));
+ await p.evaluate(()=>window.__t.closeModal()); await p.waitForTimeout(400);
+ await p.evaluate(()=>window.__t.openSettingsSheet()); await p.waitForTimeout(300);
+ await p.evaluate(()=>{ document.querySelectorAll('.st-grp').forEach(d=>d.open=true); document.getElementById('stBkNow').click(); }); await p.waitForSelector('#bkNow',{timeout:4000});
+ ck('see my backup files now button works', true);
+ ck('no page errors', errs.length===0, errs);
+ await b.close(); console.log(fail?'FAILED '+fail:'ALL OK'); process.exit(fail?1:0);
+})();

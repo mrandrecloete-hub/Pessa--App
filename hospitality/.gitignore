@@ -1,0 +1,9 @@
+node_modules/
+tests/.build/
+tests/.build_old/
+out_*.pdf
+tests/specs/tsc/
+tools/blaze_training/train.jsonl
+/*.png
+!/icon-*.png
+!/apple-touch-icon.png

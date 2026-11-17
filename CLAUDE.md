@@ -2,6 +2,9 @@
 
 Vanilla HTML/CSS/JS PWA for retail shop management and point of sale (Namibia). Pesa is a retail app only: there are no other business types, dashboards or registration choices. The page is `index.html` (small shell and CSS); ALL app code is in `app.js` (about 2.3 MB, loaded as `app.js?v=VERSION` so the phone keeps its compiled code ready). The Afrikaans and German word lists are `lang_af.js` and `lang_de.js`, loaded only when that language is chosen. Also `sw.js`, `manifest.json`, `version.json`, `media/`, `docs/`, `tools/`, `tests/`.
 
+## Pesa Hospitality Namibia (in this repository)
+The hospitality sister app lives in `hospitality/` (own app.js, index.html, sw.js, tools, tests and CLAUDE.md, in royal blue and gold). It is served at the same site under `/hospitality/`. Work on it from inside that folder (`cd hospitality`, then `node tests/check.js` and `npm test`); its release rules are in `hospitality/CLAUDE.md`. Pesa Retail Namibia, described below, is the root app.
+
 ## Rules
 - Improve only; do not remove working features. No dashes in app wording.
 - Be honest: never claim 100 percent secure, legally compliant, accredited, or approved by NamRA or any body. Tax, privacy and records wording says "to be confirmed with the relevant legal bodies, authorities and entities of Namibia".

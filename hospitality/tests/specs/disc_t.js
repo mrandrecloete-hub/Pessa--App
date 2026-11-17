@@ -1,0 +1,45 @@
+// Discounts at the till: a percent or amount discount is a negative cart line, an owner or manager applies it, a cashier needs approval,
+// VAT and the till follow, and a refund gives back only what was paid.
+const { chromium } = require('playwright');
+let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') + n + (c ? '' : '  -> ' + JSON.stringify(x))); if (!c) fail++; };
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 390, height: 900 }, serviceWorkers: 'block' });
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  await require('./biz_boot.js')(p);
+  await p.evaluate(async () => { const T = window.__t; await T.refs.products.doc('p1').set({ name: 'Milk 1L', category: 'Dairy', sellPrice: 20, costPrice: 12, stockQty: 50, barcode: '600111' }); await T.refs.products.doc('p2').set({ name: 'Bread', category: 'Bakery', sellPrice: 30, costPrice: 18, stockQty: 50, barcode: '600222' }); });
+  await p.waitForTimeout(300);
+  await p.evaluate(() => { const T = window.__t; T.setTab('sell'); T.addToCart('p1'); T.addToCart('p2'); T.openChargeSheet(); });
+  await p.waitForSelector('#dscOpen', { timeout: 8000 });
+  ck('the charge sheet offers a discount', true);
+  await p.click('#dscOpen'); await p.fill('#dscVal', '10');
+  ck('the preview shows what comes off', /5\.00/.test(await p.innerText('#dscPrev')) && /45\.00/.test(await p.innerText('#dscPrev')), await p.innerText('#dscPrev'));
+  await p.click('#dscGo'); await p.waitForSelector('#dscRemove', { timeout: 8000 });
+  const cart = await p.evaluate(() => ({ total: window.__t.cartTotal(), line: window.__t.cartDiscountLine() && window.__t.cartDiscountLine().unitPrice }));
+  ck('an owner applies it with no extra step, and the total is 45', cart.total === 45 && cart.line === -5, cart);
+  await p.evaluate(() => window.__t.finalizeSale('cash', null, { cashReceived: 50, changeGiven: 5 }));
+  await p.waitForTimeout(500);
+  const sale = await p.evaluate(() => { const T = window.__t; const s = T.State.sales.find(x => x.total === 45); return s && { total: s.total, disc: s.discount, items: s.items.length, tax: s.tax && s.tax.gross, cost: s.cost, profit: s.profit }; });
+  ck('the sale is 45 with the discount recorded', sale && sale.total === 45 && sale.disc && sale.disc.amount === 5, sale);
+  ck('profit falls by the discount (45 less cost 30)', sale && sale.profit === 15, sale);
+  ck('stock fell for the real items only', await p.evaluate(() => { const T = window.__t; const a = T.State.products.find(x => x.id === 'p1'), c = T.State.products.find(x => x.id === 'p2'); return a.stockQty === 49 && c.stockQty === 49; }));
+  const till = await p.evaluate(() => { const T = window.__t; const s = T.State.sales.find(x => x.total === 45); return T.salePaidAmt(s); });
+  ck('cash taken is 45', till === 45, till);
+  const rf = await p.evaluate(() => { const T = window.__t; const s = T.State.sales.find(x => x.total === 45); const prods = s.items.filter(i => i.unitPrice > 0); const rec = T.refundBuild(s, prods.map(i => ({ item: i, qty: i.qty })), 'test', 'refund', { name: 'Owner', id: 'o' }); return { total: rec.total }; });
+  ck('refunding every item gives back 45, not 50', rf.total === -45, rf);
+  const rf1 = await p.evaluate(() => { const T = window.__t; const s = T.State.sales.find(x => x.total === 45); const it = s.items.find(i => i.name === 'Bread'); const rec = T.refundBuild(s, [{ item: it, qty: 1 }], 'test', 'refund', { name: 'Owner', id: 'o' }); return rec.total; });
+  ck('refunding the bread alone gives back 27 (30 less 10%)', rf1 === -27, rf1);
+  await p.evaluate(() => { const T = window.__t; T.addToCart('p1'); T.addToCart('p2'); T.openChargeSheet(); });
+  await p.waitForSelector('#dscOpen'); await p.click('#dscOpen'); await p.click('[data-dk=amt]'); await p.fill('#dscVal', '8'); await p.click('#dscGo'); await p.waitForSelector('#dscRemove');
+  ck('an amount discount takes off exactly that', (await p.evaluate(() => window.__t.cartTotal())) === 42);
+  await p.click('#dscRemove'); await p.waitForSelector('#dscOpen');
+  ck('removing it restores the total', (await p.evaluate(() => window.__t.cartTotal())) === 50);
+  await p.click('#dscOpen'); await p.fill('#dscVal', '150'); await p.click('#dscGo');
+  ck('more than 100 percent is refused', (await p.evaluate(() => window.__t.cartTotal())) === 50);
+  await p.evaluate(() => { const T = window.__t; const u = T.State.users.find(x => x.id === T.State.session.userId); window.__orig = u.role; u.role = 'cashier'; });
+  await p.evaluate(() => window.__t.closeModal()); await p.evaluate(() => window.__t.openChargeSheet()); await p.waitForSelector('#dscOpen');
+  await p.click('#dscOpen'); await p.fill('#dscVal', '10'); await p.click('#dscGo');
+  await p.waitForSelector('#apvPass', { timeout: 6000 }).catch(() => {});
+  ck('a cashier is asked for a manager to approve', !!(await p.$('#apvPass')) && (await p.evaluate(() => window.__t.cartTotal())) === 50);
+  ck('no page errors', errs.length === 0, errs);
+  await b.close(); console.log(fail ? 'FAILED ' + fail : 'ALL OK'); process.exit(fail ? 1 : 0);
+})();

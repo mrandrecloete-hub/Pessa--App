@@ -1,0 +1,171 @@
+# Builds, signs and publishes a BlazeCam release. Installed BlazeCam apps find it through their update check.
+#
+# Releases start automatically:
+#   - Every push to main that changes BlazeCam (android-camera-studio/, except docs) publishes the next
+#     patch version (0.2.0 -> 0.2.1) with notes from the commit messages since the last release.
+# Or by hand:
+#   - GitHub > Actions > "Release BlazeCam" > Run workflow, enter a version such as 0.3.0.
+#   - Push a tag:  git tag blazecam-v0.3.0 && git push origin blazecam-v0.3.0
+#
+# Needs repository secrets (Settings > Secrets and variables > Actions):
+#   BLAZECAM_KEYSTORE_BASE64, BLAZECAM_KEYSTORE_PASSWORD, BLAZECAM_KEY_ALIAS, BLAZECAM_KEY_PASSWORD
+name: Release BlazeCam
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, for example 0.3.0 (must be higher than the last release)"
+        required: true
+      notes:
+        description: "What changed (shown in the app's update dialog)"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "blazecam-v*"
+    branches:
+      - main
+    paths:
+      - "android-camera-studio/**"
+      - "!android-camera-studio/docs/**"
+      - "!android-camera-studio/**/*.md"
+      - ".github/workflows/blazecam-release.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: blazecam-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android-camera-studio
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # tags and history, to find the last release and write notes
+
+      - name: Work out the version and notes
+        id: v
+        working-directory: .
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_NOTES: ${{ github.event.inputs.notes }}
+        run: |
+          LAST=$(git tag --list 'blazecam-v*' --sort=-v:refname | head -1)
+          if [ -n "$INPUT_VERSION" ]; then V="$INPUT_VERSION"
+          elif [ "$GITHUB_REF_TYPE" = "tag" ]; then V="${GITHUB_REF_NAME#blazecam-v}"
+          else
+            # Automatic release from main: next patch version after the last release.
+            if [ -z "$LAST" ]; then V="0.2.0"; else
+              IFS=. read -r MA MI PA <<< "${LAST#blazecam-v}"
+              if [ "$PA" -ge 99 ]; then MI=$((MI+1)); PA=0; else PA=$((PA+1)); fi
+              V="$MA.$MI.$PA"
+            fi
+          fi
+          if ! echo "$V" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,2}\.[0-9]{1,2}$'; then
+            echo "::error::Version must look like 1.2.3 (minor and patch at most 99). Got: $V"; exit 1
+          fi
+          # Notes: what was typed, otherwise the commit subjects since the last release (merges and noise left out).
+          if [ -n "$INPUT_NOTES" ]; then printf '%s\n' "$INPUT_NOTES" > "$RUNNER_TEMP/body.md"
+          else
+            RANGE=${LAST:+$LAST..}HEAD
+            git log --no-merges --format='- %s' $RANGE -- android-camera-studio | grep -viE 'version bump|^- Merge' | head -20 > "$RUNNER_TEMP/body.md" || true
+            [ -s "$RUNNER_TEMP/body.md" ] || echo "Improvements and fixes." > "$RUNNER_TEMP/body.md"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Releasing BlazeCam $V (last release: ${LAST:-none})"; cat "$RUNNER_TEMP/body.md"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK packages
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" > /dev/null
+
+      - name: Check the signing secrets are set
+        env:
+          KS: ${{ secrets.BLAZECAM_KEYSTORE_BASE64 }}
+          KSP: ${{ secrets.BLAZECAM_KEYSTORE_PASSWORD }}
+          KA: ${{ secrets.BLAZECAM_KEY_ALIAS }}
+          KP: ${{ secrets.BLAZECAM_KEY_PASSWORD }}
+        run: |
+          for n in KS KSP KA KP; do if [ -z "${!n}" ]; then echo "::error::Signing secrets are missing. See android-camera-studio/docs/RELEASING.md"; exit 1; fi; done
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon :app:testDebugUnitTest
+
+      - name: Build signed release APKs
+        env:
+          BLAZECAM_KEYSTORE_BASE64: ${{ secrets.BLAZECAM_KEYSTORE_BASE64 }}
+          BLAZECAM_KEYSTORE_PASSWORD: ${{ secrets.BLAZECAM_KEYSTORE_PASSWORD }}
+          BLAZECAM_KEY_ALIAS: ${{ secrets.BLAZECAM_KEY_ALIAS }}
+          BLAZECAM_KEY_PASSWORD: ${{ secrets.BLAZECAM_KEY_PASSWORD }}
+        run: |
+          export BLAZECAM_KEYSTORE_FILE="$RUNNER_TEMP/blazecam.jks"
+          echo "$BLAZECAM_KEYSTORE_BASE64" | base64 -d > "$BLAZECAM_KEYSTORE_FILE"
+          ./gradlew --no-daemon :app:assembleRelease -PblazecamVersion=${{ steps.v.outputs.version }}
+          rm -f "$BLAZECAM_KEYSTORE_FILE"
+
+      - name: Name, verify and checksum the APKs
+        run: |
+          V=${{ steps.v.outputs.version }}
+          mkdir -p "$RUNNER_TEMP/out"
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          for f in app/build/outputs/apk/release/app-*-release.apk; do
+            abi=$(basename "$f" | sed -E 's/^app-(.*)-release\.apk$/\1/')
+            dest="$RUNNER_TEMP/out/BlazeCam-$V-$abi.apk"
+            cp "$f" "$dest"
+            "$BT/apksigner" verify --print-certs "$dest" | grep -E "certificate SHA-256" | head -1
+          done
+          cd "$RUNNER_TEMP/out" && sha256sum BlazeCam-*.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Make small update patches from the last 3 releases
+        # Installed apps download only the changes (usually under 1 MB instead of about 70 MB).
+        # A patch that cannot be made is skipped; the app then downloads the full APK.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${{ steps.v.outputs.version }}
+          python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install -q bsdiff4
+          mkdir -p "$RUNNER_TEMP/old"
+          PREV=$(git tag --list 'blazecam-v*' --sort=-v:refname | grep -vx "blazecam-v$V" | head -3)
+          for tag in $PREV; do
+            gh release download "$tag" --dir "$RUNNER_TEMP/old" --pattern 'BlazeCam-*.apk' --clobber || echo "No APKs in $tag"
+          done
+          ls -l "$RUNNER_TEMP/old" || true
+          jobs=""
+          for old in "$RUNNER_TEMP"/old/BlazeCam-*.apk; do
+            [ -e "$old" ] || continue
+            name=$(basename "$old" .apk)              # BlazeCam-0.2.3-arm64-v8a
+            rest=${name#BlazeCam-}; from=${rest%%-*}; abi=${rest#*-}
+            new="$RUNNER_TEMP/out/BlazeCam-$V-$abi.apk"
+            [ -e "$new" ] || continue
+            jobs="$jobs$old|$new|$RUNNER_TEMP/out/BlazeCam-$from-to-$V-$abi.patch"$'\n'
+          done
+          printf '%s' "$jobs" | grep . | xargs -P 3 -I{} sh -c 'IFS="|"; set -- $(echo "{}"); "$0" tools/update/make_patch.py "$1" "$2" "$3" || rm -f "$3"' "$RUNNER_TEMP/py/bin/python" || true
+          ls -l "$RUNNER_TEMP/out"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=${{ steps.v.outputs.version }}
+          TAG="blazecam-v$V"
+          { cat "$RUNNER_TEMP/body.md"; printf '\nInstall: download the APK for your phone (almost all phones: arm64-v8a). Installed BlazeCam apps offer this update themselves.\n'; } > "$RUNNER_TEMP/notes.md"
+          # Up to 3 tries: GitHub sometimes answers a short lived 403 or 5xx.
+          for try in 1 2 3; do
+            if gh release view "$TAG" > /dev/null 2>&1; then
+              gh release upload "$TAG" "$RUNNER_TEMP"/out/* --clobber && exit 0
+            else
+              gh release create "$TAG" "$RUNNER_TEMP"/out/* --title "BlazeCam $V" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA" && exit 0
+            fi
+            echo "Publish try $try failed; waiting before the next try."; sleep $((try * 20))
+          done
+          exit 1

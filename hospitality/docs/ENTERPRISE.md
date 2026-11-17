@@ -1,0 +1,57 @@
+# Pesa Hospitality for bigger operations
+
+This page compares what a large operation (many items, many branches, many staff, an online shop and table service) needs with what Pesa Hospitality already did, and says what was added in 2026.10.182. Code: `tools/enterprise.js` (the ENT block, embedded in `app.js` with `python3 tools/embed_block.py ENT enterprise.js`). Tests: `tests/specs/ent_t.js`.
+
+## The enterprise migration that was reviewed
+
+A proposed Supabase migration and React component (matrix inventory, shifts, e-commerce sync log, hospitality tables) were checked against Pesa Hospitality. Pesa Hospitality does not use those tables or that component: the app is plain JavaScript and every record is a document in a synced collection (`Store.collection(name)`), saved on the device first and then sent to the shop's own `pesa_docs` table. The ideas were built on that model instead, so the SQL does not need to be run and nothing in the existing database setup changes.
+
+| Proposed table or field | Pesa Hospitality version |
+|---|---|
+| `products.parent_id`, `variant_attributes` | `parentId`, `parentName`, `variantAttrs` on ordinary products |
+| `staff_shifts` (clock in, out, break) | the existing `clockLogs` collection, now with `breaks:[{from,to}]` |
+| `ecommerce_sync_logs` | `channelLogs` collection (orders and stock lines, each with a status) |
+| `hospitality_tables` (active cart per table) | the existing `hosTabs` (tabs and tables), plus `kitchenTickets` |
+
+## What Pesa Hospitality already had
+
+Sell, till and cash up, point of sale terminal, branches (records belong to a branch), purchase orders, suppliers and supplier reconciliation, stock take and variances, wastage, batches and expiry, barcodes and labels, loyalty, quotes and recurring invoices, VAT in cents with rate history, an accountant page with filed monthly packs, payroll and payslips, attendance with clock in and out, tips, roles (owner, manager, cashier, stock clerk), refunds and voids with manager approval, audit trail, backups and recovery, offline use with sync, and the three business types (retail, barbershop and salon, hospitality with rooms, bookings and tabs).
+
+## Added in 2026.10.182
+
+| Need | Where | Notes |
+|---|---|---|
+| Product families (matrix inventory) | Business tools, Enterprise tools, Product families | Up to three options (colour, size, style) and 200 variants in one go. Each variant is a normal product, so selling, scanning, counting and the books are unchanged. Colour by size stock grid and one step price change for the whole family |
+| Branch dashboard | Enterprise tools | Sales, profit, number of sales and stock at cost for every branch side by side, today, this month or this year, with a CSV download |
+| Stock transfers between branches | Enterprise tools | Send (stock leaves the first branch at once), then Received (it joins the second branch). Stock in transit is not counted in either branch. Stock moves are recorded for both steps |
+| Online shop and sales channels | Enterprise tools, Sales channels | WooCommerce, Shopify, BigCommerce or CSV orders are read, matched to products by barcode (used as the SKU) or exact name, and recorded through the normal Charge sheet so receipts, VAT, the till and the books apply. The same online order cannot be recorded twice. A stock file (CSV) and a stock queue keep the online shop in step |
+| Kitchen and bar tickets | Tab form, Send to kitchen and bar. Menu, Kitchen and bar board (hospitality) | New items on a tab become one kitchen ticket and one bar ticket, each sent once. The board shows new, preparing, ready and served with a timer. Which category goes to the kitchen or the bar can be set |
+| Breaks on shifts | My shift card | Start and end a break. Break time is taken off the hours worked, so it also lowers hourly pay runs. Clocking out ends an open break |
+
+## Pesa Hospitality Shop (2026.10.204)
+
+| Need | Where | Notes |
+|---|---|---|
+| Order page for customers | Enterprise tools, Pesa Hospitality Shop | One self contained web page built from the shop's stock. A customer picks items (never more than is in stock) and taps Send order on WhatsApp, which opens a message to the shop number in a fixed format starting with PESA ORDER |
+| Price list | Pesa Hospitality Shop | Plain text by category, to share on WhatsApp or copy |
+| Receive an order | Pesa Hospitality Shop | Paste the message. Items are matched by product id, then exact name, and put in the cart at the shop's own current prices. Prices typed into a message are ignored and flagged. Short stock is limited and reported |
+
+With live pages (2026.10.205, setup in `docs/provisioning/SHOP.md`) Pesa Hospitality hosts the page: the owner taps Publish my page and gets a link on the Pesa Hospitality website, kept in step with stock and prices. Without that, the page is a file the owner sends, or puts on any web hosting to get a link. There is no online card payment: the shop confirms the order and takes payment in the normal Charge sheet. Spec: `shop_t`.
+
+## Split payments and discounts (2026.10.203)
+
+A sale can be paid in more than one way (`sale.payments`, parts of cash, card and wallet that add up to what was paid) and can carry a discount (a negative cart line, approved by a manager or the owner). The till, reports, the books, receipts and refunds follow each part. Specs: `split_t`, `disc_t`.
+
+## What is not built yet
+
+Be clear with a customer about these before they buy for a large operation.
+
+- **Live connection to an online shop.** Pesa Hospitality does not log in to WooCommerce, Shopify or BigCommerce and does not receive their webhooks, because the app has no server of its own. Orders are pasted or loaded as JSON or CSV. Stock updates are sent only to a web address (https) that the owner types in, for example their own small service or an automation tool, and are kept in a queue when it cannot be reached. A built in connector needs a server component (see `supabase/functions`).
+- **Split bills between several people.** One sale paid in several ways is built, splitting a bill by person is not.
+- **Recipes and ingredient stock (bill of materials), modifiers.**
+- **Approval chains** such as purchase orders above a limit needing the owner. Refunds and removals already need a manager or owner password.
+- **Price lists** (wholesale and retail prices for different customers) and **layby**.
+- **Central head office view across separate businesses.** The branch dashboard covers branches inside one business.
+- **Roster planning and overtime rules.** Shifts record hours and breaks only.
+
+Tax, privacy and records wording in the app is to be confirmed with the relevant legal bodies, authorities and entities of Namibia.
