@@ -1,0 +1,114 @@
+# PDFMASTER: tests and builds on every push, and publishes a release APK from main.
+#
+# Every push that changes pdfmaster/ (any branch): runs the unit tests and builds the APK, attached to the run as a download.
+# Push to main: also publishes a GitHub release with the signed APK (next patch version, e.g. 0.1.0 -> 0.1.1).
+# By hand: Actions > "PDFMASTER build" > Run workflow, optionally with a version.
+#
+# Signing needs four repository secrets (Settings > Secrets and variables > Actions). Without them the APK is built unsigned
+# as a debug build, which still installs for testing but cannot update an app installed from a release:
+#   PDFMASTER_KEYSTORE_BASE64   the key file, as base64 (base64 -w0 pdfmaster-release.jks)
+#   PDFMASTER_KEYSTORE_PASSWORD, PDFMASTER_KEY_ALIAS (pdfmaster), PDFMASTER_KEY_PASSWORD
+name: PDFMASTER build
+
+on:
+  push:
+    paths:
+      - "pdfmaster/**"
+      - ".github/workflows/pdfmaster-build.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version, for example 0.2.0 (empty: next patch version)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pdfmaster-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pdfmaster
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK packages
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" > /dev/null
+
+      - name: Work out the version
+        id: v
+        working-directory: .
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          LAST=$(git tag --list 'pdfmaster-v*' --sort=-v:refname | head -1)
+          FLOOR=$(tr -d '[:space:]' < pdfmaster/VERSION)   # the version installed phones already have; releases never go below it
+          if [ -n "$INPUT_VERSION" ]; then V="$INPUT_VERSION"
+          elif [ -z "$LAST" ] || [ "$(printf '%s\n%s\n' "${LAST#pdfmaster-v}" "$FLOOR" | sort -V | tail -1)" != "${LAST#pdfmaster-v}" ]; then V="$FLOOR"
+          else IFS=. read -r MA MI PA <<< "${LAST#pdfmaster-v}"; if [ "$PA" -ge 99 ]; then MI=$((MI+1)); PA=0; else PA=$((PA+1)); fi; V="$MA.$MI.$PA"; fi
+          echo "$V" | grep -Eq '^[0-9]{1,3}\.[0-9]{1,2}\.[0-9]{1,2}$' || { echo "::error::Bad version $V"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"; echo "Version $V (last release: ${LAST:-none})"
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon :app:testDebugUnitTest -PpdfmasterVersion=${{ steps.v.outputs.version }}
+
+      - name: Check the test output files with independent software
+        run: |
+          python3 -m venv "$RUNNER_TEMP/py" && "$RUNNER_TEMP/py/bin/pip" install -q python-docx openpyxl python-pptx pypdf pillow
+          "$RUNNER_TEMP/py/bin/python" tools/verify_outputs.py
+
+      - name: Build the APK
+        id: apk
+        env:
+          KS: ${{ secrets.PDFMASTER_KEYSTORE_BASE64 }}
+          PDFMASTER_KEYSTORE_PASSWORD: ${{ secrets.PDFMASTER_KEYSTORE_PASSWORD }}
+          PDFMASTER_KEY_ALIAS: ${{ secrets.PDFMASTER_KEY_ALIAS }}
+          PDFMASTER_KEY_PASSWORD: ${{ secrets.PDFMASTER_KEY_PASSWORD }}
+        run: |
+          V=${{ steps.v.outputs.version }}
+          if [ -n "$KS" ]; then
+            export PDFMASTER_KEYSTORE_FILE="$RUNNER_TEMP/pdfmaster.jks"; echo "$KS" | base64 -d > "$PDFMASTER_KEYSTORE_FILE"
+            ./gradlew --no-daemon :app:assembleRelease -PpdfmasterVersion=$V
+            rm -f "$PDFMASTER_KEYSTORE_FILE"
+            cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/PDFMASTER-$V.apk"
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$RUNNER_TEMP/PDFMASTER-$V.apk" | grep -E "SHA-256|Verifies"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Signing secrets are not set: building a debug APK for testing only."
+            ./gradlew --no-daemon :app:assembleDebug -PpdfmasterVersion=$V
+            cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/PDFMASTER-$V-debug.apk"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+          cd "$RUNNER_TEMP" && sha256sum PDFMASTER-*.apk > SHA256SUMS.txt && cat SHA256SUMS.txt
+          mkdir -p "$RUNNER_TEMP/out" && mv PDFMASTER-*.apk SHA256SUMS.txt "$RUNNER_TEMP/out/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDFMASTER-apk
+          path: ${{ runner.temp }}/out/*
+          retention-days: 30
+
+      - name: Publish the GitHub release (main only, signed builds only)
+        if: github.ref == 'refs/heads/main' && steps.apk.outputs.signed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: |
+          V=${{ steps.v.outputs.version }}; TAG="pdfmaster-v$V"
+          LAST=$(git tag --list 'pdfmaster-v*' --sort=-v:refname | head -1)
+          { git log --no-merges --format='- %s' ${LAST:+$LAST..}HEAD -- pdfmaster | head -20; } > "$RUNNER_TEMP/notes.md"
+          [ -s "$RUNNER_TEMP/notes.md" ] || echo "Improvements and fixes." > "$RUNNER_TEMP/notes.md"
+          printf '\nInstall: download the APK on your phone and open it.\n' >> "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" "$RUNNER_TEMP"/out/* --title "PDFMASTER $V" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA"
