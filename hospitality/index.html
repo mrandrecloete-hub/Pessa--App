@@ -1385,7 +1385,7 @@
   .regpage .reg-nam{ margin-top:4px; font-size:15px; font-weight:400; letter-spacing:.4em; text-transform:uppercase; color:rgba(255,255,255,.95); text-shadow:0 2px 8px rgba(0,18,70,.4); }
   .regpage .reg-slogan{ position:relative; z-index:2; margin-top:12px; font-size:11px; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:#FFF0A0; text-shadow:0 1px 6px rgba(0,18,70,.55); }
   .regpage .reg-map{
-    position:absolute; z-index:2; right:16px; top:calc(max(24px, env(safe-area-inset-top,0px)) + 4px); width:92px; height:auto;
+    position:absolute; z-index:2; right:12px; top:calc(env(safe-area-inset-top,0px) + 2px); width:70px; height:auto;
     filter:drop-shadow(0 8px 12px rgba(0,0,0,.45));
     animation:regFloat 5.5s ease-in-out infinite reverse;
   }
@@ -1498,7 +1498,7 @@
     .regpage .reg-step:not(.on) .l{ display:none; }
     .regpage .reg-pesa{ font-size:40px; }
     .regpage .reg-logo{ width:68px; height:68px; }
-    .regpage .reg-map{ width:80px; }
+    .regpage .reg-map{ width:62px; }
   }
   @media (prefers-reduced-motion: reduce){
     .regpage .reg-logo, .regpage .reg-map, .regpage .reg-spark, .regpage .reg-go::before{ animation:none; }
@@ -1913,4 +1913,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.11.6"></script>
+<script src="app.js?v=2026.11.7"></script>
