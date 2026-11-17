@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
   const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:430,height:900}, serviceWorkers:'block'});
   const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
-  await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+  await p.fill('#rcCompanyName','Dinner Shop'); 
   await p.fill('#rcOwnerPassword','Tr1cky-Pass'); await p.fill('#rcOwnerPassword2','Tr1cky-Pass'); await p.click('#rcSubmit');
   await p.waitForSelector('#cnAgree');
   await p.screenshot({path:'consent.png'});

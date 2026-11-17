@@ -5,13 +5,13 @@ module.exports = async function boot(p, opts){
   await p.goto('http://localhost:8933/index.html');
   await p.waitForSelector('#rcCompanyName');
   await p.fill('#rcCompanyName', opts.name || 'Test Bakery');
-  await p.fill('#rcOwnerName', opts.owner || 'Owner');
-  await p.fill('#rcOwnerEmail', opts.email || 'owner@test.com');
   await p.fill('#rcOwnerPassword', opts.pw || 'aaaa1111');
   await p.fill('#rcOwnerPassword2', opts.pw || 'aaaa1111');
   await p.click('#rcSubmit');
   await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept');
   await p.waitForSelector('.hero-card');
+  // sign up no longer asks for a name or an email, so a spec that wants a named owner or an owner email adds them the way a person would, in the profile
+  if(opts.owner || opts.email) await p.evaluate(function(o){ var T = window.__t, u = T.State.users.find(function(x){ return x.role === 'owner'; }); if(!u) return; var patch = {}; if(o.owner) patch.name = o.owner; if(o.email) patch.email = String(o.email).toLowerCase(); T.refs.users.doc(u.id).update(patch); Object.assign(u, patch); if(o.owner && T.State.session) T.State.session.name = o.owner; }, { owner:opts.owner, email:opts.email });
   // the first run setup guide opens by itself about 2 seconds after sign in on an empty business; keep it from racing with the tests
   if(!opts.keepSetupGuide) await p.evaluate(function(){ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
   // opts.demo: a few ordinary products, for specs that need real stock to work with (new businesses start empty)

@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 (async()=>{ const b=await chromium.launch(); const ctx=await b.newContext({viewport:{width:390,height:844},serviceWorkers:'block'}); const p=await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
  await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
- await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+ await p.fill('#rcCompanyName','Dinner Shop'); 
  await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
  await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
  await p.click('#menuBtn'); await p.waitForSelector('.drawer-row[data-drawer-row="hub-money"]',{state:'attached'}); await p.evaluate(()=>document.querySelector('.drawer-row[data-drawer-row="hub-money"]').click()); await p.waitForTimeout(500); await p.waitForSelector('.drawer-row[data-drawer-row="accountant"]',{state:'attached'});

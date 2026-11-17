@@ -5,7 +5,7 @@ let fail = 0; const ck = (n, c, x) => { console.log((c ? '  ok   ' : '  FAIL ') 
   const b = await chromium.launch(); const ctx = await b.newContext({ viewport: { width: 430, height: 900 }, serviceWorkers: 'block' });
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
-  await p.fill('#rcCompanyName', 'Prompt Shop'); await p.fill('#rcOwnerName', 'Alice'); await p.fill('#rcOwnerEmail', 'a@x.com');
+  await p.fill('#rcCompanyName', 'Prompt Shop'); 
   await p.fill('#rcOwnerPassword', 'aaaa1111'); await p.fill('#rcOwnerPassword2', 'aaaa1111'); await p.click('#rcSubmit');
   await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card');
   // the setup guide is a different prompt; keep it out of the way so only the two we test are watched

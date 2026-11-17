@@ -89,7 +89,7 @@ let fail=0; const ck=(n,c)=>{ console.log((c?'  ok   ':'  FAIL ')+n); if(!c){fai
  // ---------- hospitality: tab form button and the menu row
  { const c2=await b.newContext({viewport:{width:390,height:900},serviceWorkers:'block'}); const q=await c2.newPage(); const e2=[]; q.on('pageerror',e=>e2.push(e.message));
    await q.goto('http://localhost:8933/index.html'); await q.waitForSelector('#rcCompanyName');
-   await q.fill('#rcCompanyName','Lodge'); await q.fill('#rcOwnerName','Owner'); await q.fill('#rcOwnerEmail','o@x.com'); await q.fill('#rcOwnerPassword','aaaa1111'); await q.fill('#rcOwnerPassword2','aaaa1111'); await q.click('#rcSubmit');
+   await q.fill('#rcCompanyName','Lodge'); await q.fill('#rcOwnerPassword','aaaa1111'); await q.fill('#rcOwnerPassword2','aaaa1111'); await q.click('#rcSubmit');
    await q.waitForSelector('#cnAgree'); await q.click('#cnAgree'); await q.click('#cnAccept'); await q.waitForSelector('.dkd, .hero-card');
    await q.evaluate(()=>{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); window.__t.refs.products.doc('h1').set({name:'Steak',category:'Meals',sellPrice:150,costPrice:70,stockQty:20,createdAt:new Date().toISOString()}); });
    await q.waitForTimeout(400);

@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
   const cdp = await ctx.newCDPSession(p); await cdp.send('WebAuthn.enable');
   const {authenticatorId} = await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:false,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true}});
   const reg = async()=>{ await p.goto('http://localhost:8933/index.html'); await p.waitForSelector('#rcCompanyName');
-    await p.fill('#rcCompanyName','Dinner Shop'); await p.fill('#rcOwnerName','Alice'); await p.fill('#rcOwnerEmail','a@x.com');
+    await p.fill('#rcCompanyName','Dinner Shop'); 
     await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
     await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} }); };
   await reg();
