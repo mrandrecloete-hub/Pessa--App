@@ -1,6 +1,6 @@
 {
   "name": "Pesa Retail Namibia",
-  "short_name": "Pesa",
+  "short_name": "Pesa Retail",
   "description": "Shop management, invoicing and reporting for small Namibian businesses.",
   "start_url": "./index.html",
   "scope": "./",
