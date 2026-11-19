@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId 'na.nexus.app'
         minSdk 24; targetSdk 34
-        versionCode 4; versionName '1.2.0-local'
+        versionCode 5; versionName '1.3.0-local'
         // Default server the app opens. Override: gradle assembleDebug -PserverUrl=https://your-host
         buildConfigField 'String', 'DEFAULT_SERVER', "\"${project.findProperty('serverUrl') ?: ''}\""
     }
@@ -16,8 +16,10 @@ android {
 }
 
 // Bundle the on-device web build (npm run build:local -w @nexus/web) into the app.
-tasks.register('copyWeb', Copy) {
+tasks.register('copyWeb', Delete) { delete 'src/main/assets/www' }
+tasks.register('copyWebFiles', Copy) {
+    dependsOn 'copyWeb'
     from('../../web/out') { exclude 'sw.js' }
     into 'src/main/assets/www'
 }
-preBuild.dependsOn 'copyWeb'
+preBuild.dependsOn 'copyWebFiles'

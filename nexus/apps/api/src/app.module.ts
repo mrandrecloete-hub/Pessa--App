@@ -13,12 +13,13 @@ import { AssessmentsController, AssessmentsService } from './assessments/assessm
 import { PlansController, PlansService } from './plans/plans';
 import { DashboardController, DashboardService } from './dashboard/dashboard';
 import { HealthController } from './health';
+import { SyncController, SyncService } from './sync/sync';
 
 @Global()
 @Module({
   imports: [ThrottlerModule.forRoot([{ ttl: 60_000, limit: process.env.NODE_ENV === 'test' ? 10_000 : 300 }])],
-  controllers: [HealthController, AuthController, BusinessesController, ProgrammesController, AssessmentsController, PlansController, DashboardController],
-  providers: [PrismaService, AuditService, AccessService, AuthService, BusinessesService, ProgrammesService, AssessmentsService, PlansService, DashboardService,
+  controllers: [HealthController, AuthController, BusinessesController, ProgrammesController, AssessmentsController, PlansController, DashboardController, SyncController],
+  providers: [PrismaService, AuditService, AccessService, AuthService, BusinessesService, ProgrammesService, AssessmentsService, PlansService, DashboardService, SyncService,
     { provide: APP_GUARD, useClass: ThrottlerGuard }, { provide: APP_GUARD, useClass: AuthGuard }],
 })
 export class AppModule {}

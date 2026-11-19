@@ -18,6 +18,8 @@ services:
       PORT: 4000
       DATABASE_URL: postgresql://nexus:${POSTGRES_PASSWORD}@postgres:5432/nexus?schema=public
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env}
+      # Lets the installed phone app (on-device version) call this server for cloud sync. Add other origins with commas.
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://appassets.nexus.local}
       SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
   web:

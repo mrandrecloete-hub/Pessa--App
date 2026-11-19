@@ -5,6 +5,7 @@ import { hashPassword } from '../src/common/password';
 
 export const TEST_DB = process.env.TEST_DATABASE_URL || 'postgresql://nexus:nexus_dev_password@localhost:5432/nexus_test?schema=public';
 process.env.DATABASE_URL = TEST_DB; process.env.NODE_ENV = 'test';
+process.env.CORS_ORIGINS = 'https://appassets.nexus.local';
 process.env.JWT_ACCESS_SECRET = 'test_secret_value_that_is_long_enough_0123456789';
 
 export async function boot() {

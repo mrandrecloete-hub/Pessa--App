@@ -7,6 +7,16 @@ Updated 2026-11-19. A feature is "Completed" only when implemented AND covered b
 ## On-device version (added)
 `apps/web` builds in two modes: server (API) and local (`build:local`, all data in the phone's storage, no server). The Android app bundles the local build. See `docs/LOCAL.md`. Browser-tested; not tested on a physical phone. Also fixed: the dashboard crashed for an account with no business yet.
 
+## Cloud sync (added 1.3.0)
+Optional sync of the on-device app with a NEXUS server (`/sync` API, `lib/cloud.ts`, Cloud Sync page). API tests: 15 pass (stale push refused, simultaneous pushes, isolation between users, size and shape limits, CORS, mobile tokens). Two-phone browser test passes (push, pull on second phone, rename sync, conflict without overwrite, resolve). Not tested: on a physical phone, over a real internet server.
+
+## Missing list review (from the owner's "still missing" list)
+1. Cloud database and synchronisation: DONE as above (snapshot sync; relational merge not done).
+A. Real verified funding directory (DBN, Agribank, EIF, Namibia Youth Development Fund, SME Fund): NOT DONE. The records exist only as hidden drafts. Real details must be taken from each institution's official source and recorded with the source and date. Needs research and owner confirmation; nothing is invented.
+B. Funding matching with match percentage, why it qualifies, missing requirements, next steps, never a guarantee: DONE (age is a self-declared Youth type, not a date of birth).
+C. Business readiness intelligence: DONE as a self-assessed checklist (6 weighted categories). Not done: automatic scoring from plan, documents or financials.
+D. Business Studio: PARTIAL (16 sections, autosave, versions). Missing: AI plan writer, financial forecast tool, exports.
+
 ## Completed (implemented and tested)
 - Repository inspection; NEXUS lives in `nexus/` beside the Pesa retail app (Pesa untouched except `.gitignore`).
 - Brand assets cut from the supplied images (`brand/extract.py`); design tokens; web design system v1.

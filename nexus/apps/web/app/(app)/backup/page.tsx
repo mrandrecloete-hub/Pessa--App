@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { exportBackup, importBackup, wipeLocal, LOCAL } from '@/lib/local';
 import { Err } from '@/components/ui';
+import { disconnect } from '@/lib/cloud';
 export default function Backup() {
   const [text, setText] = useState(''); const [msg, setMsg] = useState<string | null>(null); const [e, setE] = useState<string | null>(null); const [confirmWipe, setConfirm] = useState(false);
   if (!LOCAL) return <div className="card">Your data is kept on the NEXUS server.</div>;
@@ -11,5 +12,5 @@ export default function Backup() {
     <div className="card stack"><h2>Make a backup</h2><div><button className="btn gold" onClick={copy}>Copy backup text</button></div></div>
     <div className="card stack"><h2>Restore from a backup</h2><textarea aria-label="Backup text" value={text} onChange={ev => setText(ev.target.value)} placeholder="Paste backup text here" /><div><button className="btn" onClick={restore} disabled={!text.trim()}>Restore (replaces what is on this device)</button></div></div>
     <Err e={e} />{msg && <p className="okmsg" role="status">{msg}</p>}
-    <div className="card stack"><h2>Erase everything on this device</h2>{!confirmWipe ? <div><button className="btn ghost" onClick={() => setConfirm(true)}>Erase all my data…</button></div> : <div className="row"><span className="err">This cannot be undone.</span><button className="btn" style={{ background: 'var(--err)' }} onClick={() => { wipeLocal(); location.href = '/dashboard/'; }}>Yes, erase</button><button className="btn ghost" onClick={() => setConfirm(false)}>Cancel</button></div>}</div></div>);
+    <div className="card stack"><h2>Erase everything on this device</h2>{!confirmWipe ? <div><button className="btn ghost" onClick={() => setConfirm(true)}>Erase all my data…</button></div> : <div className="row"><span className="err">This cannot be undone.</span><button className="btn" style={{ background: 'var(--err)' }} onClick={() => { disconnect(); wipeLocal(); location.href = '/dashboard/'; }}>Yes, erase</button><button className="btn ghost" onClick={() => setConfirm(false)}>Cancel</button></div>}</div></div>);
 }

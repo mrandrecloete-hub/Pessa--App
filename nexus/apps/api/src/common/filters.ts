@@ -10,7 +10,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (e instanceof HttpException) {
       const body = e.getResponse() as any; const status = e.getStatus();
       const message = typeof body === 'string' ? body : Array.isArray(body.message) ? body.message.join('; ') : body.message;
-      return res.status(status).json({ statusCode: status, message, requestId });
+      const extra = typeof body === 'object' && body && (body as any).revision !== undefined ? { revision: (body as any).revision, updatedAt: (body as any).updatedAt } : {};
+      return res.status(status).json({ statusCode: status, message, requestId, ...extra });
     }
     this.log.error(`${requestId} ${req.method} ${req.url}: ${(e as Error)?.stack || e}`);
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ statusCode: 500, message: 'Something went wrong. Quote this reference if you contact support.', requestId });

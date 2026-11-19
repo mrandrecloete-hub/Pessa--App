@@ -551,3 +551,14 @@ model AuditLog {
   @@index([entityType, entityId])
   @@map("audit_logs")
 }
+
+/// Cloud copy of one user's on-device NEXUS data. Whole-snapshot sync with an optimistic revision number.
+model SyncSnapshot {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  revision  Int      @default(0)
+  data      Json
+  sizeBytes Int      @default(0)
+  updatedAt DateTime @updatedAt
+  @@map("sync_snapshots")
+}

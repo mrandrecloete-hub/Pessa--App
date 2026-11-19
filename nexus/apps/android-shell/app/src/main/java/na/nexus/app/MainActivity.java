@@ -40,7 +40,8 @@ public class MainActivity extends Activity {
             @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
                 if (!local) return null;
                 Uri u = r.getUrl();
-                if (!HOST.equals(u.getHost())) return new WebResourceResponse("text/plain", "utf-8", 403, "Blocked", null, new ByteArrayInputStream(new byte[0]));
+                // Optional cloud sync: the bundled app may call a NEXUS server over https. Plain http and everything else stays blocked.
+                if (!HOST.equals(u.getHost())) { if ("https".equals(u.getScheme())) return null; return new WebResourceResponse("text/plain", "utf-8", 403, "Blocked", null, new ByteArrayInputStream(new byte[0])); }
                 return asset(u.getPath());
             }
             @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {

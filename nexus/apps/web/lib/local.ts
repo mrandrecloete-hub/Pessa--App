@@ -33,11 +33,21 @@ function seedProgrammes() {
 }
 function load(): Store {
   try { const raw = localStorage.getItem(KEY); if (raw) return JSON.parse(raw); } catch { /* fall through to a fresh store */ }
-  const s: Store = { business: null, readiness: [], plans: [], planVersions: [], saved: [], programmes: seedProgrammes() }; save(s); return s;
+  const s: Store = { business: null, readiness: [], plans: [], planVersions: [], saved: [], programmes: seedProgrammes() }; save(s, true); return s;
 }
-function save(s: Store) {
-  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { throw new ApiError(507, 'This device could not save your data (storage is full or blocked).'); }
+const DIRTY = 'nexus.local.dirty';
+let changeHook: (() => void) | null = null;
+export const setChangeHook = (fn: (() => void) | null) => { changeHook = fn; };
+export const isDirty = () => { try { return localStorage.getItem(DIRTY) === '1'; } catch { return false; } };
+export const markClean = () => { try { localStorage.removeItem(DIRTY); } catch { /* ignore */ } };
+function save(s: Store, quiet = false) {
+  try { localStorage.setItem(KEY, JSON.stringify(s)); if (!quiet) localStorage.setItem(DIRTY, '1'); } catch { throw new ApiError(507, 'This device could not save your data (storage is full or blocked).'); }
+  if (!quiet) changeHook?.();
 }
+function shapeOk(o: any) { return o?.app === 'nexus-namibia-local' && o.data && Array.isArray(o.data.programmes) && Array.isArray(o.data.plans); }
+/** Replace this device's data with a copy from the cloud. Not counted as an unsynced change. */
+export function applyCloud(o: any) { if (!shapeOk(o)) throw new ApiError(400, 'The cloud copy is not a NEXUS backup.'); save(o.data as Store, true); markClean(); }
+export const exportObject = () => ({ app: 'nexus-namibia-local', version: 1, exportedAt: iso(new Date()), data: load() });
 export const exportBackup = () => JSON.stringify({ app: 'nexus-namibia-local', version: 1, exportedAt: iso(new Date()), data: load() });
 export function importBackup(text: string) {
   let o: any; try { o = JSON.parse(text); } catch { throw new ApiError(400, 'That is not a NEXUS backup.'); }

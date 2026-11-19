@@ -45,7 +45,9 @@ textarea{min-height:140px;resize:vertical}input:focus,select:focus,textarea:focu
 .tnav a:hover{background:var(--slate);color:var(--text);text-decoration:none}.tnav a.on{color:var(--gold2);border-bottom-color:var(--gold);font-weight:700;border-radius:8px 8px 0 0}
 .tbiz{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .menubtn{display:none}.thin .soon,.drop .soon{font-size:10px;border:1px solid var(--line);border-radius:99px;padding:0 6px}
-.drop{position:fixed;top:52px;left:0;right:0;background:var(--navy);border-bottom:1px solid var(--line);z-index:19;padding:6px 16px 10px;display:flex;flex-direction:column;max-height:calc(100vh - 52px);overflow-y:auto}
-.drop a{padding:12px 6px;color:var(--text);border-top:1px solid var(--line);display:flex;justify-content:space-between}.drop a.on{color:var(--gold2);font-weight:700}
+.dropback{position:fixed;inset:52px 0 0 0;z-index:18;background:rgba(0,0,0,.25)}
+/* Mini menu: a small panel on the right, not a full width sheet */
+.drop{position:fixed;top:58px;right:10px;left:auto;width:min(250px,calc(100vw - 20px));background:var(--navy);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:19;padding:4px 12px 8px;display:flex;flex-direction:column;max-height:calc(100vh - 130px);overflow-y:auto}
+.drop a{padding:11px 6px;font-size:14px;color:var(--text);border-top:1px solid var(--line);display:flex;justify-content:space-between}.drop a.on{color:var(--gold2);font-weight:700}
 .page{margin:0 auto}
 @media(max-width:900px){.tnav,.tbiz{display:none}.thin{padding:0 14px;justify-content:space-between}.menubtn{display:inline-flex;min-width:42px}.thin .grow{flex:0}}
