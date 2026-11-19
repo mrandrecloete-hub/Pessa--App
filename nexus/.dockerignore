@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+**/dist-test
+**/.next
+**/.env
+**/*.apk
+apps/android-shell
+brand/source
+.git

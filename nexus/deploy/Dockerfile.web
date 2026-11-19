@@ -1,0 +1,20 @@
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY packages/business-logic packages/business-logic
+COPY packages/ui packages/ui
+COPY apps/web apps/web
+COPY apps/api apps/api
+RUN npm ci --no-audit --no-fund
+ARG API_URL=http://api:4000
+ENV API_URL=$API_URL
+RUN npm run build -w @nexus/business-logic && npm run build -w @nexus/web
+
+FROM node:20-bookworm-slim
+ENV NODE_ENV=production API_URL=http://api:4000
+WORKDIR /app
+COPY --from=build /app /app
+USER node
+WORKDIR /app/apps/web
+EXPOSE 3000
+CMD ["npx", "next", "start", "-p", "3000"]

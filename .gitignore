@@ -15,3 +15,5 @@ nexus/**/.env
 nexus/**/dist/
 nexus/**/dist-test/
 nexus/**/.next/
+
+nexus/deploy/.env

@@ -1,0 +1,21 @@
+FROM node:20-bookworm-slim AS build
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY packages/business-logic packages/business-logic
+COPY packages/ui packages/ui
+COPY apps/api apps/api
+COPY apps/web apps/web
+RUN npm ci --no-audit --no-fund
+RUN npm run build -w @nexus/business-logic && npm run build -w @nexus/api
+
+FROM node:20-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build /app /app
+USER node
+WORKDIR /app/apps/api
+EXPOSE 4000
+# Applies pending migrations, then starts. Seed data is a separate, explicit step (see docs/DEPLOYMENT.md).
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

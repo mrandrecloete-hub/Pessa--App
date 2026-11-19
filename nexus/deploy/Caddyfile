@@ -1,0 +1,9 @@
+# Automatic HTTPS from Let's Encrypt. {$DOMAIN} comes from .env (a real domain, or IP.sslip.io).
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy web:3000
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}
