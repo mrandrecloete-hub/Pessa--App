@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId 'na.nexus.app'
         minSdk 24; targetSdk 34
-        versionCode 3; versionName '1.1.1-local'
+        versionCode 4; versionName '1.2.0-local'
         // Default server the app opens. Override: gradle assembleDebug -PserverUrl=https://your-host
         buildConfigField 'String', 'DEFAULT_SERVER', "\"${project.findProperty('serverUrl') ?: ''}\""
     }
