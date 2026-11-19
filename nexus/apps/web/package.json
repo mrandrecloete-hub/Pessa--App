@@ -1,4 +1,24 @@
-{ "name": "@nexus/web", "version": "1.0.0", "private": true,
-  "scripts": { "dev": "next dev -p 3000", "build": "next build", "start": "next start -p 3000" },
-  "dependencies": { "next": "14.2.18", "react": "18.3.1", "react-dom": "18.3.1", "@nexus/ui": "*", "@nexus/business-logic": "*" },
-  "devDependencies": { "typescript": "5.6.3", "@types/node": "20.17.6", "@types/react": "18.3.12", "@types/react-dom": "18.3.1" } }
+{
+  "name": "@nexus/web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "build:local": "NEXUS_LOCAL=1 NEXT_PUBLIC_LOCAL=1 next build && node scripts/make-sw.js"
+  },
+  "dependencies": {
+    "next": "14.2.18",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "@nexus/ui": "*",
+    "@nexus/business-logic": "*"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "@types/node": "20.17.6",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1"
+  }
+}

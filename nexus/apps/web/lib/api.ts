@@ -1,8 +1,11 @@
-export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
+import { ApiError } from './errors';
+import { localApi, LOCAL } from './local';
+export { ApiError };
 async function raw(method: string, path: string, body?: unknown) {
   return fetch('/api/v1' + path, { method, credentials: 'same-origin', headers: body === undefined ? {} : { 'content-type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
 }
 export async function api<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+  if (LOCAL) return localApi(method, path, body) as Promise<T>;
   let r = await raw(method, path, body);
   if (r.status === 401 && !path.startsWith('/auth/')) { const rf = await raw('POST', '/auth/refresh', {}); if (rf.ok) r = await raw(method, path, body); }
   const text = await r.text(); let data: any = null; try { data = text ? JSON.parse(text) : null; } catch { /* not json */ }

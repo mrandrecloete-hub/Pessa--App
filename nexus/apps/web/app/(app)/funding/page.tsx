@@ -21,7 +21,7 @@ export default function Funding() {
     <div className="row between"><span className="muted small">{data ? data.total + ' result(s)' : ''}</span><div className="row"><label htmlFor="so" style={{ margin: 0 }}>Sort</label><select id="so" style={{ width: 'auto' }} value={sort} onChange={e => setSort(e.target.value)}><option value="closing">Closing soonest</option><option value="name">Name</option><option value="newest">Newest</option></select></div></div>
     {e && <p className="err">{e}</p>}{data && data.items.length === 0 && <div className="card muted">No opportunities match these filters.</div>}
     <div className="grid g2">{data?.items.map((p: any) => <div key={p.id} className="card stack"><div className="row between"><VerifyBadge status={p.verificationStatus} at={p.lastVerifiedAt} /><StatusBadge s={p.status} /></div>
-      <div><h3><Link href={'/funding/' + p.id}>{p.name}</Link></h3><div className="muted small">{p.institutionName} · {p.category}</div></div><p className="muted small" style={{ margin: 0 }}>{p.description}</p>
+      <div><h3><Link href={'/funding/view?id=' + p.id}>{p.name}</Link></h3><div className="muted small">{p.institutionName} · {p.category}</div></div><p className="muted small" style={{ margin: 0 }}>{p.description}</p>
       <div className="small">Amount: {p.amountMinNad || p.amountMaxNad ? `${nad(p.amountMinNad)} to ${nad(p.amountMaxNad)}` : 'Not published'} · Closes: {date(p.closesAt)}</div>
-      <div className="row"><Link className="btn sm" href={'/funding/' + p.id}>View details</Link><button className="btn ghost sm" onClick={() => toggle(p)}>{p.saved ? '★ Saved' : '☆ Save'}</button></div></div>)}</div></div>);
+      <div className="row"><Link className="btn sm" href={'/funding/view?id=' + p.id}>View details</Link><button className="btn ghost sm" onClick={() => toggle(p)}>{p.saved ? '★ Saved' : '☆ Save'}</button></div></div>)}</div></div>);
 }

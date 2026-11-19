@@ -4,6 +4,9 @@ Updated 2026-11-19. A feature is "Completed" only when implemented AND covered b
 ## Tests
 `npm test`: 14 business-logic unit tests and 8 API end-to-end tests (real PostgreSQL) pass. The first journey was also run in a real browser (Playwright, manual script, not yet in CI). Web has no automated tests yet.
 
+## On-device version (added)
+`apps/web` builds in two modes: server (API) and local (`build:local`, all data in the phone's storage, no server). The Android app bundles the local build. See `docs/LOCAL.md`. Browser-tested; not tested on a physical phone. Also fixed: the dashboard crashed for an account with no business yet.
+
 ## Completed (implemented and tested)
 - Repository inspection; NEXUS lives in `nexus/` beside the Pesa retail app (Pesa untouched except `.gitignore`).
 - Brand assets cut from the supplied images (`brand/extract.py`); design tokens; web design system v1.

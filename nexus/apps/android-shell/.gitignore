@@ -2,3 +2,4 @@ local.properties
 build/
 .gradle/
 *.apk
+app/src/main/assets/www/

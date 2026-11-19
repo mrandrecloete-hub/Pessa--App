@@ -1,14 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { get, put, del, nad, date } from '@/lib/api';
 import { StatusBadge, VerifyBadge } from '@/components/ui';
 import { useApp } from '@/components/Shell';
 import MatchCard from '@/components/MatchCard';
 import { label } from '@nexus/business-logic';
-export default function Detail() {
-  const { id } = useParams<{ id: string }>(); const { biz } = useApp(); const [p, setP] = useState<any>(null); const [m, setM] = useState<any>(null); const [e, setE] = useState<string | null>(null);
+export default function Page() { return <Suspense fallback={<p className="muted">Loading…</p>}><Detail /></Suspense>; }
+function Detail() {
+  const id = useSearchParams().get('id') ?? ''; const { biz } = useApp(); const [p, setP] = useState<any>(null); const [m, setM] = useState<any>(null); const [e, setE] = useState<string | null>(null);
   const load = () => get('/programmes/' + id).then(setP).catch(x => setE(x.message));
   useEffect(() => { load(); }, [id]); // eslint-disable-line
   useEffect(() => { if (biz) get(`/businesses/${biz.id}/matches/${id}`).then(setM).catch(() => {}); }, [biz, id]);

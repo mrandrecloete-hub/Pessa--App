@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { get, patch, ApiError } from '@/lib/api';
 import { Bar } from '@/components/ui';
 import { SECTION_COMPLETE_MIN_CHARS } from '@nexus/business-logic';
-export default function Editor() {
-  const { id } = useParams<{ id: string }>(); const [plan, setPlan] = useState<any>(null); const [key, setKey] = useState('EXECUTIVE_SUMMARY'); const [text, setText] = useState('');
+export default function Page() { return <Suspense fallback={<p className="muted">Loading…</p>}><Editor /></Suspense>; }
+function Editor() {
+  const id = useSearchParams().get('id') ?? ''; const [plan, setPlan] = useState<any>(null); const [key, setKey] = useState('EXECUTIVE_SUMMARY'); const [text, setText] = useState('');
   const [state, setState] = useState<'saved' | 'saving' | 'dirty' | 'conflict' | 'error'>('saved'); const [msg, setMsg] = useState(''); const timer = useRef<any>(null); const version = useRef(0);
   const load = async () => { const p = await get('/plans/' + id); setPlan(p); version.current = p.version; setText(p.sections[key]?.text ?? ''); setState('saved'); };
   useEffect(() => { load().catch(x => setMsg(x.message)); }, [id]); // eslint-disable-line

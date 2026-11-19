@@ -74,7 +74,7 @@ sq.paste(emb, ((side - emb.width) // 2, (side - emb.height) // 2)); sq.save(os.p
 for s in (32, 64, 180, 192, 512, 1024):
     sq.resize((s, s), Image.LANCZOS).save(os.path.join(OUT, f'emblem-{s}.png'))
 # app icon: emblem centred on deep midnight navy #07111F, with safe margin (maskable friendly)
-for name, pad in (('app-icon-emblem-1024', 0.16), ('app-icon-emblem-maskable-512', 0.26)):
+for name, pad in (('app-icon-emblem-1024', 0.16), ('app-icon-emblem-512', 0.16), ('app-icon-emblem-192', 0.16), ('app-icon-emblem-maskable-512', 0.26)):
     size = int(name.split('-')[-1]); bg = Image.new('RGBA', (size, size), (7, 17, 31, 255))
     inner = int(size * (1 - 2 * pad)); e = sq.resize((inner, inner), Image.LANCZOS)
     bg.paste(e, ((size - inner) // 2, (size - inner) // 2), e); bg.convert('RGB').save(os.path.join(OUT, name + '.png'))
