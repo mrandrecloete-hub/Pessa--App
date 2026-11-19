@@ -1,0 +1,11 @@
+# Local development services. Change the passwords; never reuse these in production.
+services:
+  postgres:
+    image: postgres:16
+    environment: { POSTGRES_USER: nexus, POSTGRES_PASSWORD: nexus_dev_password, POSTGRES_DB: nexus }
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+  redis:   # reserved for BullMQ background jobs (notifications, document scanning); not used by the API yet
+    image: redis:7
+    ports: ["6379:6379"]
+volumes: { pgdata: {} }

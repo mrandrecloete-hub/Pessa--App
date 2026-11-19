@@ -1,0 +1,15 @@
+{
+  "name": "nexus-namibia",
+  "private": true,
+  "version": "1.0.0",
+  "description": "NEXUS NAMIBIA: national funding intelligence and enterprise development platform",
+  "workspaces": ["apps/api", "apps/web", "packages/business-logic", "packages/ui"],
+  "scripts": {
+    "build:logic": "npm run build -w @nexus/business-logic",
+    "db:migrate": "npm run db:migrate -w @nexus/api",
+    "db:seed": "npm run db:seed -w @nexus/api",
+    "dev:api": "npm run start:dev -w @nexus/api",
+    "dev:web": "npm run dev -w @nexus/web",
+    "test": "npm run build:logic && npm test -w @nexus/business-logic && npm test -w @nexus/api"
+  }
+}

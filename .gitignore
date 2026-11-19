@@ -6,3 +6,12 @@ tests/specs/tsc/
 
 !word-of-hope/**/*.png
 tools/blaze_training/train.jsonl
+
+# NEXUS brand assets are crops of the supplied design boards
+!nexus/**/*.png
+
+# NEXUS secrets and build output
+nexus/**/.env
+nexus/**/dist/
+nexus/**/dist-test/
+nexus/**/.next/

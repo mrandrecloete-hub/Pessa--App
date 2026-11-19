@@ -1,0 +1,553 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  CITIZEN
+  CONSULTANT
+  INSTITUTION_OFFICER
+  INSTITUTION_MANAGER
+  REGIONAL_ADMIN
+  NATIONAL_ADMIN
+  SUPER_ADMIN
+}
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+enum VerificationStatus {
+  VERIFIED
+  UNVERIFIED
+  DEMONSTRATION
+}
+enum ProgrammeStatus {
+  DRAFT
+  UPCOMING
+  OPEN
+  CLOSED
+  SUSPENDED
+}
+enum CriterionKind {
+  SECTOR
+  STAGE
+  REGION
+  REGISTRATION
+  APPLICANT_TYPE
+  FUNDING_PURPOSE
+  MIN_YEARS
+  MAX_YEARS
+  MIN_EMPLOYEES
+  MAX_EMPLOYEES
+  MIN_AMOUNT
+  MAX_AMOUNT
+}
+enum ApplicationStatus {
+  PREPARING
+  SUBMITTED
+  UNDER_REVIEW
+  INFO_REQUESTED
+  APPROVED
+  UNSUCCESSFUL
+  WITHDRAWN
+}
+enum ActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+enum OrgType {
+  FUNDING_INSTITUTION
+  DEVELOPMENT_AGENCY
+  CONSULTANCY
+  OTHER
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+  email String @unique
+  passwordHash String
+  firstName String
+  lastName String
+  status UserStatus @default(ACTIVE)
+  mfaEnabled Boolean @default(false)
+  emailVerifiedAt DateTime?
+  failedLogins Int @default(0)
+  lockedUntil DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  profile UserProfile?
+  roles UserRole[]
+  sessions Session[]
+  businessLinks BusinessOwner[]
+  savedProgrammes SavedProgramme[]
+  notifications Notification[]
+  @@map("users")
+}
+model UserProfile {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  phone String?
+  preferredLanguage String @default("en")
+  region String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("user_profiles")
+}
+model UserRole {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  role RoleName
+  organisationId String? @db.Uuid
+  grantedById String? @db.Uuid
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("user_roles")
+}
+model Permission {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique
+  description String?
+  roles RolePermission[]
+  @@map("permissions")
+}
+model RolePermission {
+  role RoleName
+  permissionId String @db.Uuid
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  @@id([role, permissionId])
+  @@map("role_permissions")
+}
+model Session {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  refreshTokenHash String @unique
+  userAgent String?
+  ip String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("sessions")
+}
+model Organisation {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  type OrgType @default(FUNDING_INSTITUTION)
+  status String @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  members OrganisationMember[]
+  programmes FundingProgramme[]
+  @@map("organisations")
+}
+model OrganisationMember {
+  id String @id @default(uuid()) @db.Uuid
+  organisationId String @db.Uuid
+  userId String @db.Uuid
+  role RoleName
+  createdAt DateTime @default(now())
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  @@unique([organisationId, userId])
+  @@map("organisation_members")
+}
+
+model Business {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  owners BusinessOwner[]
+  profile BusinessProfile?
+  assessments EligibilityAssessment[]
+  readiness ReadinessAssessment[]
+  plans BusinessPlan[]
+  forecasts FinancialForecast[]
+  documents Document[]
+  applications Application[]
+  projects FundedProject[]
+  @@map("businesses")
+}
+model BusinessOwner {
+  businessId String @db.Uuid
+  userId String @db.Uuid
+  ownershipPercent Int?
+  createdAt DateTime @default(now())
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([businessId, userId])
+  @@index([userId])
+  @@map("business_owners")
+}
+model BusinessProfile {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @unique @db.Uuid
+  sector String?
+  stage String?
+  region String?
+  town String?
+  registrationStatus String?
+  yearsInOperation Int?
+  employees Int?
+  activity String?
+  fundingPurpose String?
+  fundingRequiredNad Decimal? @db.Decimal(14, 2)
+  availableCapitalNad Decimal? @db.Decimal(14, 2)
+  intendedImpact String?
+  applicantTypes String[]
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@map("business_profiles")
+}
+
+model FundingProgramme {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  institutionName String
+  organisationId String? @db.Uuid
+  category String
+  description String?
+  purpose String?
+  amountMinNad Decimal? @db.Decimal(14, 2)
+  amountMaxNad Decimal? @db.Decimal(14, 2)
+  opensAt DateTime?
+  closesAt DateTime?
+  applicationMethod String?
+  websiteUrl String?
+  contactDetails String?
+  sourceNote String?
+  status ProgrammeStatus @default(DRAFT)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  lastVerifiedAt DateTime?
+  verifiedById String? @db.Uuid
+  version Int @default(1)
+  createdById String? @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organisation Organisation? @relation(fields: [organisationId], references: [id])
+  criteria FundingCriterion[]
+  documents ProgrammeDocument[]
+  saved SavedProgramme[]
+  assessments EligibilityAssessment[]
+  applications Application[]
+  @@index([status, verificationStatus])
+  @@map("funding_programmes")
+}
+model FundingCriterion {
+  id String @id @default(uuid()) @db.Uuid
+  programmeId String @db.Uuid
+  kind CriterionKind
+  values String[]
+  numberValue Decimal? @db.Decimal(14, 2)
+  mandatory Boolean @default(true)
+  description String?
+  programme FundingProgramme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  @@index([programmeId])
+  @@map("funding_criteria")
+}
+model ProgrammeDocument {
+  id String @id @default(uuid()) @db.Uuid
+  programmeId String @db.Uuid
+  category String
+  label String
+  mandatory Boolean @default(true)
+  programme FundingProgramme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  @@index([programmeId])
+  @@map("programme_documents")
+}
+model SavedProgramme {
+  userId String @db.Uuid
+  programmeId String @db.Uuid
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programme FundingProgramme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  @@id([userId, programmeId])
+  @@map("saved_programmes")
+}
+model EligibilityAssessment {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  programmeId String @db.Uuid
+  programmeVersion Int
+  score Int?
+  status String
+  result Json
+  computedAt DateTime @default(now())
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  programme FundingProgramme @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  @@unique([businessId, programmeId])
+  @@map("eligibility_assessments")
+}
+model ReadinessAssessment {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  modelVersion String
+  answers Json
+  overall Int
+  result Json
+  createdById String @db.Uuid
+  createdAt DateTime @default(now())
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  @@index([businessId, createdAt])
+  @@map("readiness_assessments")
+}
+
+model BusinessPlan {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  title String
+  templateKey String @default("standard-16")
+  content Json
+  version Int @default(1)
+  createdById String @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  versions BusinessPlanVersion[]
+  @@index([businessId])
+  @@map("business_plans")
+}
+model BusinessPlanVersion {
+  id String @id @default(uuid()) @db.Uuid
+  planId String @db.Uuid
+  version Int
+  content Json
+  note String?
+  createdById String @db.Uuid
+  createdAt DateTime @default(now())
+  plan BusinessPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  @@unique([planId, version])
+  @@map("business_plan_versions")
+}
+model FinancialForecast {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  name String
+  assumptions Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  scenarios FinancialScenario[]
+  @@map("financial_forecasts")
+}
+model FinancialScenario {
+  id String @id @default(uuid()) @db.Uuid
+  forecastId String @db.Uuid
+  kind String
+  assumptions Json
+  results Json
+  forecast FinancialForecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  @@map("financial_scenarios")
+}
+
+model Document {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  category String
+  name String
+  expiresAt DateTime?
+  createdById String @db.Uuid
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  versions DocumentVersion[]
+  @@index([businessId])
+  @@map("documents")
+}
+model DocumentVersion {
+  id String @id @default(uuid()) @db.Uuid
+  documentId String @db.Uuid
+  version Int
+  storageKey String
+  mimeType String
+  sizeBytes Int
+  sha256 String
+  scanStatus String @default("PENDING")
+  createdAt DateTime @default(now())
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  @@unique([documentId, version])
+  @@map("document_versions")
+}
+
+model Application {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  programmeId String @db.Uuid
+  status ApplicationStatus @default(PREPARING)
+  reference String?
+  submittedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  programme FundingProgramme @relation(fields: [programmeId], references: [id])
+  events ApplicationEvent[]
+  feedback RejectionFeedback[]
+  @@index([businessId])
+  @@map("applications")
+}
+model ApplicationEvent {
+  id String @id @default(uuid()) @db.Uuid
+  applicationId String @db.Uuid
+  type String
+  detail Json?
+  actorId String? @db.Uuid
+  createdAt DateTime @default(now())
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
+  @@map("application_events")
+}
+model RejectionFeedback {
+  id String @id @default(uuid()) @db.Uuid
+  applicationId String @db.Uuid
+  receivedText String
+  aiInterpretation Json?
+  createdAt DateTime @default(now())
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actions RecoveryAction[]
+  @@map("rejection_feedback")
+}
+model RecoveryAction {
+  id String @id @default(uuid()) @db.Uuid
+  feedbackId String @db.Uuid
+  issue String
+  action String
+  status ActionStatus @default(PENDING)
+  dueAt DateTime?
+  feedback RejectionFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  @@map("recovery_actions")
+}
+
+model FundedProject {
+  id String @id @default(uuid()) @db.Uuid
+  businessId String @db.Uuid
+  name String
+  approvedBudgetNad Decimal? @db.Decimal(14, 2)
+  createdAt DateTime @default(now())
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  milestones ProjectMilestone[]
+  performance BusinessPerformance[]
+  schedules RepaymentSchedule[]
+  @@map("funded_projects")
+}
+model ProjectMilestone {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+  title String
+  dueAt DateTime?
+  completedAt DateTime?
+  project FundedProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@map("project_milestones")
+}
+model BusinessPerformance {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+  period DateTime
+  revenueNad Decimal? @db.Decimal(14, 2)
+  costsNad Decimal? @db.Decimal(14, 2)
+  employees Int?
+  project FundedProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@map("business_performance")
+}
+model RepaymentSchedule {
+  id String @id @default(uuid()) @db.Uuid
+  projectId String @db.Uuid
+  project FundedProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repayments Repayment[]
+  @@map("repayment_schedules")
+}
+model Repayment {
+  id String @id @default(uuid()) @db.Uuid
+  scheduleId String @db.Uuid
+  dueAt DateTime
+  amountNad Decimal @db.Decimal(14, 2)
+  paidAt DateTime?
+  schedule RepaymentSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  @@map("repayments")
+}
+
+model OpportunitySubmission {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  region String
+  sector String
+  title String
+  description String
+  consentToPublish Boolean @default(false)
+  moderationStatus String @default("PENDING")
+  createdAt DateTime @default(now())
+  @@map("opportunity_submissions")
+}
+model AiConversation {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  createdAt DateTime @default(now())
+  messages AiMessage[]
+  @@map("ai_conversations")
+}
+model AiMessage {
+  id String @id @default(uuid()) @db.Uuid
+  conversationId String @db.Uuid
+  role String
+  content String
+  sources Json?
+  createdAt DateTime @default(now())
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@map("ai_messages")
+}
+model AiUsageLog {
+  id String @id @default(uuid()) @db.Uuid
+  userId String? @db.Uuid
+  provider String
+  model String
+  promptVersion String?
+  inputTokens Int @default(0)
+  outputTokens Int @default(0)
+  createdAt DateTime @default(now())
+  @@map("ai_usage_logs")
+}
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  type String
+  title String
+  body String?
+  dedupeKey String?
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, dedupeKey])
+  @@map("notifications")
+}
+model Subscription {
+  id String @id @default(uuid()) @db.Uuid
+  userId String? @db.Uuid
+  organisationId String? @db.Uuid
+  plan String @default("CITIZEN_FREE")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now())
+  @@map("subscriptions")
+}
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String? @db.Uuid
+  action String
+  entityType String?
+  entityId String?
+  detail Json?
+  ip String?
+  createdAt DateTime @default(now())
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
