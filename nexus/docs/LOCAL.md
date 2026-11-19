@@ -16,4 +16,6 @@ Rebuild: `npm run build:local -w @nexus/web` then `cd apps/android-shell && grad
 - Not available on the device: password recovery, multi-user roles, institution and national portals, AI, document vault (none exist in either version yet).
 
 ## Honest status
+Fixed in 1.1.1: the first local APK showed a blank "Loading" screen because Android drops asset folders starting with an underscore (Next.js `_next`); the build now keeps them and a replay of the APK contents passes.
+
 Tested: the full journey in a real browser against the static build (profile, directory, matching, readiness, plan, add programme, backup and restore, persistence across reloads). Not tested: the APK on a real phone or emulator (none available in the build environment). The Android file serving code is small but unproven.

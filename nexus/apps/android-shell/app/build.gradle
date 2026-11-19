@@ -5,11 +5,13 @@ android {
     defaultConfig {
         applicationId 'na.nexus.app'
         minSdk 24; targetSdk 34
-        versionCode 2; versionName '1.1.0-local'
+        versionCode 3; versionName '1.1.1-local'
         // Default server the app opens. Override: gradle assembleDebug -PserverUrl=https://your-host
         buildConfigField 'String', 'DEFAULT_SERVER', "\"${project.findProperty('serverUrl') ?: ''}\""
     }
     buildFeatures { buildConfig true }
+    // The default pattern drops folders that start with an underscore, which removes Next's _next folder (all scripts and styles).
+    androidResources { ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~' }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 
