@@ -5,8 +5,8 @@
 //
 // Bump CACHE whenever the shell changes so old installs pick up new
 // deploys immediately instead of serving one version stale.
-var CACHE = 'pesa-hosp-shell-v11';
-var APPJS = './app.js?v=2026.11.12';
+var CACHE = 'pesa-hosp-shell-v12';
+var APPJS = './app.js?v=2026.11.13';
 var SHELL = ['./index.html', APPJS, './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './icon-512-maskable.png', './jspdf.umd.min.js', './lang_af.js', './lang_de.js',
   './fonts/Inter-Regular.ttf', './fonts/Inter-Bold.ttf', './fonts/Inter-Italic.ttf', './fonts/PlayfairDisplay-Bold.ttf',
   './fonts/Montserrat-Bold.ttf', './fonts/Lora-Regular.ttf', './fonts/Lora-Bold.ttf', './fonts/Lora-Italic.ttf', './fonts/PermanentMarker.woff2'];
@@ -55,7 +55,7 @@ self.addEventListener('activate', function(evt){
       // never delete the older saved copy unless this version has its own page saved
       if(!ok) return null;
       return caches.keys().then(function(keys){
-        return Promise.all(keys.filter(function(k){ return k !== CACHE; }).map(function(k){ return caches.delete(k); }));
+        return Promise.all(keys.filter(function(k){ return k !== CACHE && k.indexOf('pesa-hosp-shell-') === 0; }).map(function(k){ return caches.delete(k); }));
       });
     }).then(function(){ return self.clients.claim(); })
   );

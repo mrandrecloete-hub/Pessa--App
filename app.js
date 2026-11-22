@@ -7499,7 +7499,7 @@ function eraseDeviceNow(){
   ids.concat(['default']).forEach(function(rid){ try{ Persist.dropWs(rid); }catch(e){} });
   return Persist.saved().catch(function(){}).then(function(){
     return Promise.all(['pesa_backups_v1', 'pesa_bkfolder_v1'].map(function(n){ return new Promise(function(res){ try{ var r = indexedDB.deleteDatabase(n); r.onsuccess = r.onerror = r.onblocked = function(){ res(); }; setTimeout(res, 1500); }catch(e){ res(); } }); }));
-  }).then(function(){ try{ localStorage.clear(); }catch(e){} try{ sessionStorage.clear(); }catch(e){} });
+  }).then(function(){ try{ [localStorage, sessionStorage].forEach(function(st){ Object.keys(st).forEach(function(k){ if(k.indexOf('hosp:') !== 0) st.removeItem(k); }); }); }catch(e){} });   // Pesa Hospitality Namibia keeps its own records at this address (keys starting hosp:), so erasing the shop app never touches them
 }
 function lastUserKey(){ return 'pesa_last_user_' + WS.id; }
 function wireLoginView(root){
@@ -20279,7 +20279,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.228';
+var APP_VERSION = '2026.10.229';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20588,6 +20588,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.229', items:[
+    'Pesa Retail Namibia and Pesa Hospitality Namibia now keep fully separate records and saved files on the same address: erasing one app no longer erases the other, and each app only clears its own saved copies when it updates'
+  ]},
   { v:'2026.10.228', items:[
     'On a computer or a big screen the menu is no longer pinned open on the side. It stays hidden until you tap the three stripes at the top left, then it slides open, the same as on a phone, so the page has the full width'
   ]},

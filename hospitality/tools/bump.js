@@ -15,7 +15,7 @@ swap('app.js', "var CHANGELOG = [\n  { v:'" + cur + "', items:[", "var CHANGELOG
 swap('index.html', 'app.js?v=' + cur, 'app.js?v=' + next);
 swap('version.json', cur, next);
 swap('sw.js', 'app.js?v=' + cur, 'app.js?v=' + next);
-var sw = rd('sw.js'), m = /var CACHE = 'pesa-shell-v(\d+)'/.exec(sw); if(!m){ console.error('Could not find the cache name in sw.js'); process.exit(1); }
-wr('sw.js', sw.replace(m[0], "var CACHE = 'pesa-shell-v" + (+m[1] + 1) + "'"));
+var sw = rd('sw.js'), m = /var CACHE = 'pesa-hosp-shell-v(\d+)'/.exec(sw); if(!m){ console.error('Could not find the cache name in sw.js'); process.exit(1); }
+wr('sw.js', sw.replace(m[0], "var CACHE = 'pesa-hosp-shell-v" + (+m[1] + 1) + "'"));
 console.log(cur + ' -> ' + next + ', cache v' + m[1] + ' -> v' + (+m[1] + 1));
 try{ console.log(cp.execFileSync('node', [path.join(root, 'tests/check.js')], { cwd:root }).toString().trim().split('\n').slice(-3).join('\n')); }catch(e){ console.error(String(e.stdout || e.message)); process.exit(1); }

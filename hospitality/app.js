@@ -20213,7 +20213,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.11.12';
+var APP_VERSION = '2026.11.13';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20311,7 +20311,7 @@ function pesaForceRefresh(){
       var jsReq = mj ? fetch(mj[1], { cache:'no-store' }).then(function(jr){ if(!jr.ok) throw new Error('x'); return jr; }) : Promise.resolve(null);
       return jsReq.then(function(jr){
         return caches.keys().then(function(ks){
-          var cur = ks.filter(function(k){ return /^pesa-shell-/.test(k); }).sort().pop();
+          var cur = ks.filter(function(k){ return /^pesa-hosp-shell-/.test(k); }).sort().pop();
           if(!cur) return null;
           return caches.open(cur).then(function(c){
             return (jr ? c.put(new Request('./' + mj[1]), jr) : Promise.resolve()).then(function(){ return c.put(new Request('./index.html'), copy); });
@@ -20522,6 +20522,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.11.13', items:[
+    'Each app keeps fully separate records: the hospitality app only clears its own saved copies when it updates. Make sure the app is on this version (Settings, About, Check for updates) so it keeps its own database'
+  ]},
   { v:'2026.11.12', items:[
     'On a computer or a big screen the menu is no longer pinned open on the side. It stays hidden until you tap the three stripes at the top left, then it slides open, the same as on a phone, so the page has the full width'
   ]},
