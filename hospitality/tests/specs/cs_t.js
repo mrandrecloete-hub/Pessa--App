@@ -8,8 +8,8 @@ const { chromium } = require('playwright');
     await p.fill('#rcCompanyName','Dinner Shop'); 
     await p.fill('#rcOwnerPassword','aaaa1111'); await p.fill('#rcOwnerPassword2','aaaa1111'); await p.click('#rcSubmit');
     await p.waitForSelector('#cnAgree'); await p.click('#cnAgree'); await p.click('#cnAccept'); await p.waitForSelector('.hero-card'); await p.evaluate(()=>{ try{ window.__t.btSave({ setupHidden:true }); window.__t.pfSave({ remindAt:Date.now() }); }catch(e){} });
-    if(n==='mob'){ await p.click('#menuBtn'); await p.waitForTimeout(500); }
-    await p.waitForTimeout(600); await p.evaluate(()=>{ const el=document.querySelector(n_sel()); function n_sel(){return window.innerWidth>=1024?'#appSidebar':'.drawer';} const e=document.querySelector(window.innerWidth>=1024?'#appSidebar':'.drawer'); if(e) e.scrollTop=e.scrollHeight; const d=document.querySelector('.soon'); if(d) d.scrollIntoView(); });
+    { await p.click('#menuBtn'); await p.waitForTimeout(500); }
+    await p.waitForTimeout(600); await p.evaluate(()=>{ const el=document.querySelector(n_sel()); function n_sel(){return '.drawer';} const e=document.querySelector('.drawer'); if(e) e.scrollTop=e.scrollHeight; const d=document.querySelector('.soon'); if(d) d.scrollIntoView(); });
     await p.waitForTimeout(300);
     console.log(n, await p.locator('.soon').count(), await p.locator('.soon').first().isVisible());
     await p.screenshot({path:'cs_'+n+'.png'}); console.log(errs); await ctx.close();

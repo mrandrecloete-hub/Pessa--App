@@ -1202,10 +1202,9 @@
       max-width:none; width:100%; height:100vh; height:100dvh; min-height:100vh; min-height:100dvh;
       display:flex; flex-direction:row;
     }
-    #menuBtn{ display:none !important; }
     .app-watermark::before{ width:480px; height:466px; margin-left:-240px; margin-top:-233px; }
     #appSidebar{
-      display:flex; flex-direction:column; flex:0 0 var(--sidebar-w); width:var(--sidebar-w);
+      display:none !important; flex-direction:column; flex:0 0 var(--sidebar-w); width:var(--sidebar-w);
       height:100%; background:var(--surface); border-right:1px solid var(--border);
       overflow-y:auto; -webkit-overflow-scrolling:touch;
       padding:calc(18px + env(safe-area-inset-top,0px)) 12px calc(18px + env(safe-area-inset-bottom,0px));
@@ -1914,4 +1913,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.11.11"></script>
+<script src="app.js?v=2026.11.12"></script>

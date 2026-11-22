@@ -21,8 +21,7 @@ const VPS=[[800,600,1],[1024,600,1],[1024,768,1],[1280,720,1],[1366,768,1],[1536
       if(sh && (sh.top<0||sh.bottom>sh.h+1||sh.left<0||sh.right>sh.w+1)) issues.push(`${w}x${h}@${dpr} sheet ${nm} outside viewport ${JSON.stringify(sh)}`);
       await p.evaluate(()=>window.__t.closeModal());
     }
-    if(w>=1024){ const sb = await p.evaluate(()=>{ const e=document.getElementById('appSidebar'); return e&&getComputedStyle(e).display!=='none'; }); if(!sb) issues.push(`${w}x${h} no sidebar`); }
-    else { const mb = await p.evaluate(()=>{ const e=document.getElementById('menuBtn'); return e&&getComputedStyle(e).display!=='none'; }); if(!mb) issues.push(`${w}x${h} no menu button`); }
+    { const mb = await p.evaluate(()=>{ const e=document.getElementById('menuBtn'); return e&&getComputedStyle(e).display!=='none'; }); if(!mb) issues.push(`${w}x${h} no menu button`); }
     if([1024,768].includes(h)||w===1366||w===3840||w===360) await p.screenshot({path:`mx_${w}x${h}.png`});
     if(errs.length) issues.push(`${w}x${h} JS errors: ${errs.join(' | ')}`);
     await ctx.close();
