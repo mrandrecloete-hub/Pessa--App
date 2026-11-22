@@ -6425,17 +6425,17 @@ function openSetupSheet(){
       return '<div class="row"><div class="main"><div class="title" style="'+(s.done?'color:var(--text-muted);text-decoration:line-through;':'')+'">'+(s.done?'✓ ':'')+tr(s.t)+'</div><div class="sub">'+tr(s.d)+'</div></div>' +
         '<div class="trail">'+(s.done ? '' : '<button class="btn btn-primary" style="padding:6px 14px;min-height:0;" data-sg="'+s.go+'" type="button">'+tr('Do this')+'</button>')+'</div></div>';
     }).join('') + '</div>' +
-    '<div class="actions"><button class="btn btn-ghost btn-block" id="sgHide" type="button">'+tr(State.settings.setupHidden ? 'Show this guide when I sign in' : 'Do not show this guide automatically')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="sgHide" type="button">'+tr(State.settings.setupAuto ? 'Do not show this guide automatically' : 'Show this guide when I sign in')+'</button></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="sgClose" type="button">'+tr('Close')+'</button></div>';
   var ov = openSheet(html);
   ov.querySelector('#sgClose').addEventListener('click', closeModal);
-  ov.querySelector('#sgHide').addEventListener('click', function(){ btSave({ setupHidden: !State.settings.setupHidden }); toast(tr('Saved')); closeModal(); });
+  ov.querySelector('#sgHide').addEventListener('click', function(){ btSave({ setupAuto: !State.settings.setupAuto }); toast(tr('Saved')); closeModal(); });
   ov.querySelectorAll('[data-sg]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); btSetupGo(b.getAttribute('data-sg')); }); });
 }
 var _setupPrompted = false;
 function btMaybeSetupPrompt(){
   try{
-    if(_setupPrompted || !State.session || State.session.role !== 'owner' || State.settings.setupHidden) return;
+    if(_setupPrompted || !State.session || State.session.role !== 'owner' || !State.settings.setupAuto) return;
     if(!State.ready.products || !State.ready.sales) return;
     _setupPrompted = true;
     if(State.products.length === 0 && State.sales.length === 0 && !document.getElementById('modalRoot').innerHTML.trim()) openSetupSheet();
@@ -8001,8 +8001,8 @@ function regHeroHtml(){
       '<path d="M-10 60C80 20 160 10 260 30" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.4"/>' +
       '<g fill="#FFF6B0"><circle class="reg-spark" cx="300" cy="34" r="2.4"/><circle class="reg-spark" cx="196" cy="22" r="1.8" style="animation-delay:.8s"/><circle class="reg-spark" cx="372" cy="120" r="2" style="animation-delay:1.5s"/><circle class="reg-spark" cx="150" cy="150" r="1.6" style="animation-delay:2.1s"/></g></svg>' +
     '<h1 class="reg-sr">'+tr('Register your business')+'</h1>' +
-    '<div class="reg-brand"><span class="brandmark reg-logo" role="img" aria-label="Pesa"></span>' +
-      '<div><div class="reg-pesa">Pesa</div><div class="reg-nam">Namibia</div></div></div>' +
+    '<div class="reg-brand"><span class="brandmark reg-logo" role="img" aria-label="Pesa Retail Namibia"></span>' +
+      '<div><div class="reg-pesa">Pesa Retail</div><div class="reg-nam">Namibia</div></div></div>' +
     '<div class="reg-slogan">Your Mula, Your Pride<span class="slogan-sub">(Retail Automated System)</span></div>' +
     REG_MAP_SVG +
     '<svg class="reg-wave" viewBox="0 0 440 38" preserveAspectRatio="none" aria-hidden="true">' +
@@ -22141,7 +22141,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.218';
+var APP_VERSION = '2026.10.224';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -22450,6 +22450,24 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.224', items:[
+    'The Setup guide no longer opens by itself when you enter the app. It stays in the menu, and the owner can switch the automatic opening on inside the guide'
+  ]},
+  { v:'2026.10.223', items:[
+    'The Pesa icon files have new names so phones fetch the plain P icon again instead of the saved one with the words under it'
+  ]},
+  { v:'2026.10.222', items:[
+    'The Pesa app icon is back to the plain P. The name Pesa Retail shows only under the icon on the phone home screen'
+  ]},
+  { v:'2026.10.221', items:[
+    'The Pesa app icon now carries the words PESA RETAIL under the P, so it is clear on the phone which app it is'
+  ]},
+  { v:'2026.10.220', items:[
+    'The name under the app icon on the phone is now Pesa Retail, so it is not confused with Pesa Hospitality'
+  ]},
+  { v:'2026.10.219', items:[
+    'The sign up page header now says Pesa Retail Namibia, and every page that was saved on phones is refreshed so the new names show'
+  ]},
   { v:'2026.10.218', items:[
     'Pesa Retail Namibia is now the name shown on the sign in, sign up and forgot password cards, in the menu and on the documents Pesa makes'
   ]},

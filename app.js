@@ -4542,17 +4542,17 @@ function openSetupSheet(){
       return '<div class="row"><div class="main"><div class="title" style="'+(s.done?'color:var(--text-muted);text-decoration:line-through;':'')+'">'+(s.done?'✓ ':'')+tr(s.t)+'</div><div class="sub">'+tr(s.d)+'</div></div>' +
         '<div class="trail">'+(s.done ? '' : '<button class="btn btn-primary" style="padding:6px 14px;min-height:0;" data-sg="'+s.go+'" type="button">'+tr('Do this')+'</button>')+'</div></div>';
     }).join('') + '</div>' +
-    '<div class="actions"><button class="btn btn-ghost btn-block" id="sgHide" type="button">'+tr(State.settings.setupHidden ? 'Show this guide when I sign in' : 'Do not show this guide automatically')+'</button></div>' +
+    '<div class="actions"><button class="btn btn-ghost btn-block" id="sgHide" type="button">'+tr(State.settings.setupAuto ? 'Do not show this guide automatically' : 'Show this guide when I sign in')+'</button></div>' +
     '<div class="actions"><button class="btn btn-ghost btn-block" id="sgClose" type="button">'+tr('Close')+'</button></div>';
   var ov = openSheet(html);
   ov.querySelector('#sgClose').addEventListener('click', closeModal);
-  ov.querySelector('#sgHide').addEventListener('click', function(){ btSave({ setupHidden: !State.settings.setupHidden }); toast(tr('Saved')); closeModal(); });
+  ov.querySelector('#sgHide').addEventListener('click', function(){ btSave({ setupAuto: !State.settings.setupAuto }); toast(tr('Saved')); closeModal(); });
   ov.querySelectorAll('[data-sg]').forEach(function(b){ b.addEventListener('click', function(){ closeModal(); btSetupGo(b.getAttribute('data-sg')); }); });
 }
 var _setupPrompted = false;
 function btMaybeSetupPrompt(){
   try{
-    if(_setupPrompted || !State.session || State.session.role !== 'owner' || State.settings.setupHidden) return;
+    if(_setupPrompted || !State.session || State.session.role !== 'owner' || !State.settings.setupAuto) return;
     if(!State.ready.products || !State.ready.sales) return;
     _setupPrompted = true;
     if(State.products.length === 0 && State.sales.length === 0 && !document.getElementById('modalRoot').innerHTML.trim()) openSetupSheet();
@@ -20258,7 +20258,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.223';
+var APP_VERSION = '2026.10.224';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20567,6 +20567,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.224', items:[
+    'The Setup guide no longer opens by itself when you enter the app. It stays in the menu, and the owner can switch the automatic opening on inside the guide'
+  ]},
   { v:'2026.10.223', items:[
     'The Pesa icon files have new names so phones fetch the plain P icon again instead of the saved one with the words under it'
   ]},
