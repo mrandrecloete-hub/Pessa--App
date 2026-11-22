@@ -140,3 +140,4 @@ __LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Smart tools":"Cl
 
 __LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Contact the Pesa Representative Team":"Kontakt zum Pesa Vertreterteam"}); });
 __LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Good morning": "Guten Morgen", "Good afternoon": "Guten Tag", "Good evening": "Guten Abend", "We are glad you are here.": "Wir freuen uns, dass Sie da sind.", "Good to see you!": "Schön, Sie zu sehen!"}); });
+__LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Start a new sale": "Neuen Verkauf starten", "Quick add": "Schnell hinzufügen", "Add product": "Produkt hinzufügen", "Add expense": "Ausgabe hinzufügen", "Add customer": "Kunde hinzufügen", "Customers": "Kunden"}); });

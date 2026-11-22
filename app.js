@@ -14091,6 +14091,24 @@ function dashWrap(inner){
   return DKD_CSS + '<div class="dkd" style="--dkd-logo:url(\'' + logo + '\');"><div class="dkd-gold"></div><div style="font-size:16px;font-weight:700;color:#F2C25A;margin:0 0 6px;line-height:1.3;">' + esc(warmHello()) + '</div><h2 class="dkd-h">' + tr('Dashboard') + '</h2><div class="dkd-tag">' + tr('Your Mula, Your Pride') + '<span class="slogan-sub">(Retail Automated System)</span></div>' + inner +
     '<div class="dkd-foot">' + tr('Your numbers. Our focus.') + '</div></div>';
 }
+/* ---- the dashboard launcher: big, colourful touch tiles for the main jobs, like a till screen ---- */
+function launcherHtml(){
+  var role = State.session ? State.session.role : 'owner', at = roleTabs(role), um = 0;
+  try{ um = unreadMessages().length; }catch(e){}
+  function tile(key, icon, label, cls, extra){
+    return '<button class="lt lt-' + cls + '" type="button" data-launch="' + key + '"><span class="lt-i">' + icon + '</span><span class="lt-l">' + tr(label) + '</span>' + (extra || '') + '</button>';
+  }
+  var h = '<div class="lt-grid">';
+  if(at.indexOf('sell') > -1) h += '<button class="lt lt-sell" type="button" data-launch="tab-sell"><span class="lt-i">' + ico3('sell') + '</span><span class="lt-sl"><b>' + tr('Sell') + '</b><i>' + tr('Start a new sale') + '</i></span></button>';
+  [['tab-stock', 'stock', 'Stock', 'y', 'stock'], ['tab-credit', 'credit', 'Customers', 'b', 'credit'], ['tab-invoices', 'invoices', 'Invoices', 't', 'invoices'],
+   ['tab-reports', 'reports', 'Reports', 'p', 'reports'], ['tab-expenses', 'expenses', 'Expenses', 'o', 'expenses'], ['tab-till', 'till', 'Till', 'g', 'till']].forEach(function(t){
+    if(at.indexOf(t[4]) > -1) h += tile(t[0], ico3(t[1]), t[2], t[3]);
+  });
+  h += tile('inbox', ico3('messages'), 'Messages', 'b', um ? '<span class="lt-badge">' + um + '</span>' : '');
+  if(at.indexOf('team') > -1) h += tile('tab-team', ico3('team'), 'Team', 'p');
+  h += tile('settings', GEAR_ICON_SMALL, 'Settings', 's');
+  return h + '</div>';
+}
 function renderDashboard(){
   if(!State.ready.sales || !State.ready.expenses || !State.ready.products || !State.ready.customers){
     return '<div class="empty">Loading your shop…</div>';
@@ -14143,7 +14161,7 @@ function renderDashboard(){
   var topMax = top.length ? top[0].v : 1;
 
   /* ---- hero ---- */
-  var html = pilotHomeNote() + '<div class="hero-card">' +
+  var html = launcherHtml() + pilotHomeNote() + '<div class="hero-card">' +
     '<div class="hero-top"><div>' +
       '<div class="hero-lbl">Today’s sales</div>' +
       '<div class="hero-val num">'+fmtMoney(todayTotal)+'</div>' +
@@ -14162,12 +14180,11 @@ function renderDashboard(){
     '<div class="pt"><div class="l">'+tr('Credit sales')+'</div><div class="v">'+fmtMoney(pmTotals.credit)+'</div></div>' +
   '</div>';
 
-  /* ---- quick actions ---- */
-  html += '<div class="qa-row">' +
-    '<button class="qa-btn" data-qa="sell"><span class="qa-ico i3d">'+ico3('sell')+'</span><span class="qa-lbl">'+tr('Sell')+'</span></button>' +
-    '<button class="qa-btn" data-qa="stock"><span class="qa-ico i3d">'+ico3('stock')+'</span><span class="qa-lbl">'+tr('Stock')+'</span></button>' +
-    '<button class="qa-btn" data-qa="expense"><span class="qa-ico i3d">'+ico3('expenses')+'</span><span class="qa-lbl">'+tr('Expenses')+'</span></button>' +
-    '<button class="qa-btn" data-qa="customer"><span class="qa-ico i3d">'+ico3('credit')+'</span><span class="qa-lbl">'+tr('Customer')+'</span></button>' +
+  /* ---- quick add ---- */
+  html += '<div class="section-title">'+tr('Quick add')+'</div><div class="qa-row" style="grid-template-columns:repeat(3,1fr);margin-top:6px;">' +
+    '<button class="qa-btn" data-qa="stock"><span class="qa-ico i3d">'+ico3('stock')+'</span><span class="qa-lbl">'+tr('Add product')+'</span></button>' +
+    '<button class="qa-btn" data-qa="expense"><span class="qa-ico i3d">'+ico3('expenses')+'</span><span class="qa-lbl">'+tr('Add expense')+'</span></button>' +
+    '<button class="qa-btn" data-qa="customer"><span class="qa-ico i3d">'+ico3('credit')+'</span><span class="qa-lbl">'+tr('Add customer')+'</span></button>' +
   '</div>';
 
   /* ---- stat grid ---- */
@@ -15453,6 +15470,7 @@ function wireContent(){
     });
   });
 
+  content.querySelectorAll('[data-launch]').forEach(function(el){ el.addEventListener('click', function(){ handleDrawerAction(el.getAttribute('data-launch')); }); });
   content.querySelectorAll('[data-qa]').forEach(function(el){
     el.addEventListener('click', function(){
       var qa = el.getAttribute('data-qa');
@@ -20268,7 +20286,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.225';
+var APP_VERSION = '2026.10.226';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20577,6 +20595,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.226', items:[
+    'A friendlier dashboard: big colourful tiles at the top for Sell, Stock, Customers, Invoices, Reports, Expenses, Till, Messages, Team and Settings, like a till screen. Quick add buttons for a product, an expense and a customer sit below'
+  ]},
   { v:'2026.10.225', items:[
     'A warmer welcome: the dashboard greets you by name and the time of day, and the sign in message is friendlier and stays a little longer'
   ]},

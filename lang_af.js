@@ -140,3 +140,4 @@ __LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Smart tools":"Sl
 
 __LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Contact the Pesa Representative Team":"Kontak die Pesa Verteenwoordigerspan"}); });
 __LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Good morning": "Goeie môre", "Good afternoon": "Goeie middag", "Good evening": "Goeie naand", "We are glad you are here.": "Ons is bly jy is hier.", "Good to see you!": "Lekker om jou te sien!"}); });
+__LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Start a new sale": "Begin 'n nuwe verkoop", "Quick add": "Vinnig byvoeg", "Add product": "Voeg produk by", "Add expense": "Voeg uitgawe by", "Add customer": "Voeg kliënt by", "Customers": "Kliënte"}); });
