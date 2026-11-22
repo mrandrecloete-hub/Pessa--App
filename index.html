@@ -1,5 +1,7 @@
 <meta charset="UTF-8">
 <meta name="referrer" content="no-referrer">
+<script>/* the shop app is installed as the page /index.html (its own area), so the bare address goes to that page and the browser always sees the page inside the app's area */
+try{ if(/^https?:$/.test(location.protocol) && location.pathname === '/') location.replace('/index.html' + location.search + location.hash); }catch(e){}</script>
 <script>
 /* Browser security policy for the live website and the installed app: only Pesa's own files and the PDF library may run,
    nothing can be embedded as a plugin, forms and links cannot be redirected, and data only leaves over https. It is not
@@ -1900,4 +1902,4 @@
   window.addEventListener('online', function(){ window.__loadJsPdf(); });
 })();
 </script>
-<script src="app.js?v=2026.10.230"></script>
+<script src="app.js?v=2026.10.231"></script>

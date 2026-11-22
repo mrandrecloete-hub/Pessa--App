@@ -20279,7 +20279,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.230';
+var APP_VERSION = '2026.10.231';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20588,6 +20588,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.231', items:[
+    'The bare Pesa address now opens the page /index.html, which is the page the installed app covers, so the browser offers Install or Open in app for Pesa Retail only on the right page and not on the Pesa Hospitality page'
+  ]},
   { v:'2026.10.230', items:[
     'Pesa Retail Namibia is now installed as its own app that covers only its own page, so Pesa Hospitality Namibia, which lives under /hospitality/, is no longer treated as part of it. The browser now offers to install Pesa Hospitality as its own app instead of opening it in Pesa'
   ]},
