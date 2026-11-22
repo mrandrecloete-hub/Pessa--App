@@ -14100,13 +14100,13 @@ function launcherHtml(){
   }
   var h = '<div class="lt-grid">';
   if(at.indexOf('sell') > -1) h += '<button class="lt lt-sell" type="button" data-launch="tab-sell"><span class="lt-i">' + ico3('sell') + '</span><span class="lt-sl"><b>' + tr('Sell') + '</b><i>' + tr('Start a new sale') + '</i></span></button>';
-  [['tab-stock', 'stock', 'Stock', 'y', 'stock'], ['tab-credit', 'credit', 'Customers', 'b', 'credit'], ['tab-invoices', 'invoices', 'Invoices', 't', 'invoices'],
-   ['tab-reports', 'reports', 'Reports', 'p', 'reports'], ['tab-expenses', 'expenses', 'Expenses', 'o', 'expenses'], ['tab-till', 'till', 'Till', 'g', 'till']].forEach(function(t){
+  [['tab-stock', 'stock', 'Stock', 'y', 'stock'], ['tab-credit', 'credit', 'Customers', 'g', 'credit'], ['tab-invoices', 'invoices', 'Invoices', 'y', 'invoices'],
+   ['tab-reports', 'reports', 'Reports', 'g', 'reports'], ['tab-expenses', 'expenses', 'Expenses', 'y', 'expenses'], ['tab-till', 'till', 'Till', 'g', 'till']].forEach(function(t){
     if(at.indexOf(t[4]) > -1) h += tile(t[0], ico3(t[1]), t[2], t[3]);
   });
-  h += tile('inbox', ico3('messages'), 'Messages', 'b', um ? '<span class="lt-badge">' + um + '</span>' : '');
-  if(at.indexOf('team') > -1) h += tile('tab-team', ico3('team'), 'Team', 'p');
-  h += tile('settings', GEAR_ICON_SMALL, 'Settings', 's');
+  h += tile('inbox', ico3('messages'), 'Messages', 'y', um ? '<span class="lt-badge">' + um + '</span>' : '');
+  if(at.indexOf('team') > -1) h += tile('tab-team', ico3('team'), 'Team', 'g');
+  h += tile('settings', GEAR_ICON_SMALL, 'Settings', 'd');
   return h + '</div>';
 }
 function renderDashboard(){
@@ -14178,13 +14178,6 @@ function renderDashboard(){
     '<div class="pt"><div class="l">'+tr('Card sales')+'</div><div class="v">'+fmtMoney(pmTotals.card)+'</div></div>' +
     '<div class="pt"><div class="l">'+tr('Mobile wallet sales')+'</div><div class="v">'+fmtMoney(pmTotals.wallet)+'</div></div>' +
     '<div class="pt"><div class="l">'+tr('Credit sales')+'</div><div class="v">'+fmtMoney(pmTotals.credit)+'</div></div>' +
-  '</div>';
-
-  /* ---- quick add ---- */
-  html += '<div class="section-title">'+tr('Quick add')+'</div><div class="qa-row" style="grid-template-columns:repeat(3,1fr);margin-top:6px;">' +
-    '<button class="qa-btn" data-qa="stock"><span class="qa-ico i3d">'+ico3('stock')+'</span><span class="qa-lbl">'+tr('Add product')+'</span></button>' +
-    '<button class="qa-btn" data-qa="expense"><span class="qa-ico i3d">'+ico3('expenses')+'</span><span class="qa-lbl">'+tr('Add expense')+'</span></button>' +
-    '<button class="qa-btn" data-qa="customer"><span class="qa-ico i3d">'+ico3('credit')+'</span><span class="qa-lbl">'+tr('Add customer')+'</span></button>' +
   '</div>';
 
   /* ---- stat grid ---- */
@@ -20286,7 +20279,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.226';
+var APP_VERSION = '2026.10.227';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20595,8 +20588,11 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.227', items:[
+    'The dashboard tiles now use only the Pesa colours, green and gold, and the Quick add row that repeated the tiles is gone. Adding a product, an expense or a customer is done from the Stock, Expenses and Customers pages'
+  ]},
   { v:'2026.10.226', items:[
-    'A friendlier dashboard: big colourful tiles at the top for Sell, Stock, Customers, Invoices, Reports, Expenses, Till, Messages, Team and Settings, like a till screen. Quick add buttons for a product, an expense and a customer sit below'
+    'A friendlier dashboard: big colourful tiles at the top for Sell, Stock, Customers, Invoices, Reports, Expenses, Till, Messages, Team and Settings, like a till screen.'
   ]},
   { v:'2026.10.225', items:[
     'A warmer welcome: the dashboard greets you by name and the time of day, and the sign in message is friendlier and stays a little longer'
