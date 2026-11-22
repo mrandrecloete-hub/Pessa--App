@@ -3,7 +3,7 @@
   "short_name": "Pesa Retail",
   "description": "Shop management, invoicing and reporting for small Namibian businesses.",
   "start_url": "./index.html",
-  "scope": "./",
+  "scope": "./index.html",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0A3329",
