@@ -139,3 +139,4 @@ __LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Keyboard shortcu
 __LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Smart tools":"Clevere Werkzeuge","Stock and suppliers":"Lager und Lieferanten","Money and tax":"Geld und Steuern","Team and branches":"Team und Filialen","Pesa account and ads":"Pesa Konto und Werbung","Manage your business":"Geschäft verwalten"}); });
 
 __LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Contact the Pesa Representative Team":"Kontakt zum Pesa Vertreterteam"}); });
+__LL.de.push(function(LANGS){ Object.assign(LANGS.de.strings, {"Good morning": "Guten Morgen", "Good afternoon": "Guten Tag", "Good evening": "Guten Abend", "We are glad you are here.": "Wir freuen uns, dass Sie da sind.", "Good to see you!": "Schön, Sie zu sehen!"}); });

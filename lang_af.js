@@ -139,3 +139,4 @@ __LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Keyboard shortcu
 __LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Smart tools":"Slim gereedskap","Stock and suppliers":"Voorraad en verskaffers","Money and tax":"Geld en belasting","Team and branches":"Span en takke","Pesa account and ads":"Pesa rekening en advertensies","Manage your business":"Bestuur jou besigheid"}); });
 
 __LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Contact the Pesa Representative Team":"Kontak die Pesa Verteenwoordigerspan"}); });
+__LL.af.push(function(LANGS){ Object.assign(LANGS.af.strings, {"Good morning": "Goeie môre", "Good afternoon": "Goeie middag", "Good evening": "Goeie naand", "We are glad you are here.": "Ons is bly jy is hier.", "Good to see you!": "Lekker om jou te sien!"}); });

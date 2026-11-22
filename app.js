@@ -2122,7 +2122,7 @@ function openJoinSyncSheet(){
 
 function showWelcomeSplash(businessName, done){
   // no splash screen: Pesa goes straight on, with a short welcome message
-  try{ toast(tr('Welcome, ')+businessName+'!'); }catch(e){}
+  try{ toast(tr('Welcome, ')+businessName+'! '+tr('We are glad you are here.'), 3600); }catch(e){}
   if(done) done();
 }
 
@@ -5857,7 +5857,7 @@ function checkAuthAndRoute(){
           pwUpgrade(au, al.secret);
           State.session = { userId:au.id, name:au.name, role:au.role };
           saveSessionLocal(au.id);
-          toast(tr('Welcome back, ')+au.name+'!');
+          toast(tr('Welcome back, ')+au.name+'. '+tr('Good to see you!'), 3600);
           checkAuthAndRoute();
         });
       }
@@ -6358,7 +6358,7 @@ function wireEmployeeSignup(root){
       welcomeMark(u.id);   // the first session gets the one time pilot and backup prompts
       saveSessionLocal(u.id);
       logAudit('create','staff',u.id,u.name+' created their account');
-      toast(tr('Welcome')+', '+u.name+'!');
+      toast(tr('Welcome')+', '+u.name+'! '+tr('We are glad you are here.'), 3600);
       checkAuthAndRoute();
     });
   }
@@ -7530,7 +7530,7 @@ function wireLoginView(root){
             if(ok){
               State.session = { userId:u.id, name:u.name, role:u.role };
               _bioLockPending = false; saveSessionLocal(u.id);
-              toast(tr('Welcome back, ')+u.name+'!'); checkAuthAndRoute();
+              toast(tr('Welcome back, ')+u.name+'. '+tr('Good to see you!'), 3600); checkAuthAndRoute();
             } else msg.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+tr('Not verified')+'</span></div>';
           }, function(e){ msg.innerHTML = '<div class="banner">'+ICONS.warn+'<span>'+esc(bioErrText(e))+'</span></div>'; });
         });
@@ -7551,7 +7551,7 @@ function wireLoginView(root){
             State.session = { userId:u.id, name:u.name, role:u.role };
             _bioLockPending = false;
             saveSessionLocal(u.id);
-            toast(tr('Welcome back, ')+u.name+'!');
+            toast(tr('Welcome back, ')+u.name+'. '+tr('Good to see you!'), 3600);
             checkAuthAndRoute();
           } else {
             unlockBtn.disabled = false;
@@ -7958,15 +7958,25 @@ function openTillDetailSheet(session){
 }
 
 /* ============================== toast ============================== */
-function toast(msg){
+function toast(msg, ms){
   var root = document.getElementById('toastRoot');
   var el = document.createElement('div');
   el.className = 'toast';
   el.textContent = msg;
   root.innerHTML = '';
   root.appendChild(el);
-  setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 2200);
+  setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, ms || 2200);
 }
+/* ---- a warm welcome: the time of day greeting and the person's first name ---- */
+function warmName(){
+  var u = State.session || {}, n = String(u.name || '').trim();
+  var biz = (State.company && (State.company.tradingName || State.company.companyName)) || (State.settings && State.settings.shopName) || '';
+  if(!n || n === 'Owner' || n === tr('Owner')) return biz;
+  return n.split(' ')[0];
+}
+function warmGreeting(){ var h = new Date().getHours(); return h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening'); }
+function warmHello(){ var nm = warmName(); return tr(warmGreeting()) + (nm ? ', ' + nm : '') + '. ' + tr('We are glad you are here.'); }
+
 
 /* ============================== modal helpers ============================== */
 /* ============================== BACK NAVIGATION ============================== */
@@ -14078,7 +14088,7 @@ var DKD_CSS = '<style>' +
   '</style>';
 function dashWrap(inner){
   var logo = (typeof PESA_LOGO_DATA_URL !== 'undefined' && PESA_LOGO_DATA_URL) ? PESA_LOGO_DATA_URL : '';
-  return DKD_CSS + '<div class="dkd" style="--dkd-logo:url(\'' + logo + '\');"><div class="dkd-gold"></div><h2 class="dkd-h">' + tr('Dashboard') + '</h2><div class="dkd-tag">' + tr('Your Mula, Your Pride') + '<span class="slogan-sub">(Retail Automated System)</span></div>' + inner +
+  return DKD_CSS + '<div class="dkd" style="--dkd-logo:url(\'' + logo + '\');"><div class="dkd-gold"></div><div style="font-size:16px;font-weight:700;color:#F2C25A;margin:0 0 6px;line-height:1.3;">' + esc(warmHello()) + '</div><h2 class="dkd-h">' + tr('Dashboard') + '</h2><div class="dkd-tag">' + tr('Your Mula, Your Pride') + '<span class="slogan-sub">(Retail Automated System)</span></div>' + inner +
     '<div class="dkd-foot">' + tr('Your numbers. Our focus.') + '</div></div>';
 }
 function renderDashboard(){
@@ -20258,7 +20268,7 @@ function safetyNote(msg){
 window.addEventListener('error', function(e){ if(e && e.target && e.target !== window) return; safetyNote(e && (e.error || e.message)); });
 window.addEventListener('unhandledrejection', function(e){ safetyNote(e && e.reason); });
 
-var APP_VERSION = '2026.10.224';
+var APP_VERSION = '2026.10.225';
 /* ---- newer version check: a tiny version note is read straight from the network; if it is newer, an Update now bar appears ---- */
 /* An update or reconnect reload must never feel like a sign out: the signed in person stays signed in, a fingerprint lock is not asked again
    for this reload, and a sale in progress (the cart) is kept. Only this tab's own storage is used, and it is used once. */
@@ -20567,6 +20577,9 @@ function openHealthSheet(){
 
 /* ============================== WHAT'S NEW ============================== */
 var CHANGELOG = [
+  { v:'2026.10.225', items:[
+    'A warmer welcome: the dashboard greets you by name and the time of day, and the sign in message is friendlier and stays a little longer'
+  ]},
   { v:'2026.10.224', items:[
     'The Setup guide no longer opens by itself when you enter the app. It stays in the menu, and the owner can switch the automatic opening on inside the guide'
   ]},
